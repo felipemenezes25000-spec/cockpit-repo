@@ -1,0 +1,9 @@
+# Normaliza as quebras de linha: LF no repositório, nativo na máquina.
+* text=auto eol=lf
+
+# Binários e gerados não devem ser diferenciados como texto.
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+package-lock.json linguist-generated=true
