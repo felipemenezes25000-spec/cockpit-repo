@@ -533,3 +533,31 @@ create policy despesas_admin on public.despesas
 -- Auditoria: leitura restrita, escrita apenas pelos gatilhos.
 create policy auditoria_admin_le on public.auditoria
   for select to authenticated using (public.e_administradora());
+
+-- =====================================================================
+-- Permissões
+--
+-- O Supabase já concede por padrão, mas deixamos explícito: quem não está
+-- autenticado não alcança nenhuma tabela, e o RLS acima é o que decide o
+-- que cada perfil enxerga.
+-- =====================================================================
+
+grant usage on schema public to authenticated;
+
+grant select, insert, update, delete on
+  public.perfis,
+  public.profissionais,
+  public.procedimentos,
+  public.pacientes,
+  public.atendimentos,
+  public.retornos,
+  public.pendencias,
+  public.recebimentos,
+  public.despesas
+to authenticated;
+
+-- Trilhas são somente leitura para a aplicação; quem escreve são os gatilhos.
+grant select on public.atendimento_situacoes, public.auditoria to authenticated;
+
+-- Visitante não autenticado não tem acesso a nada.
+revoke all on all tables in schema public from anon;

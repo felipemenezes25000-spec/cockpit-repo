@@ -31,16 +31,16 @@ por tipografia em vez de enfeite.
 
 ## 2. Perfis de usuário previstos
 
-Os perfis abaixo estão **previstos**, não implementados: nesta etapa não há login
-nem controle de acesso, e a interface sempre assume a Dra. Érika.
+A Etapa 2 implementa **dois perfis**. O perfil Profissional fica para quando a
+equipe crescer.
 
-| Perfil | Quem é | O que deve poder fazer |
+| Perfil | Quem é | O que pode fazer |
 |---|---|---|
-| **Administradora** | Dra. Érika Passos | Acesso completo, incluindo financeiro, relatórios e configurações |
-| **Profissional** | Demais profissionais da equipe | Agenda própria, prontuários das pacientes que atende, sem visão financeira ampla |
-| **Recepção** | Atendimento e agendamento | Agenda, cadastro de pacientes, confirmações, recebimentos; sem acesso ao conteúdo clínico |
+| **Administradora** | Dra. Érika Passos | Acesso completo, incluindo despesas, relatórios, configurações e trilha de auditoria |
+| **Recepção** | Atendimento e agendamento | Agenda, cadastro de pacientes, confirmações, retornos, pendências e lançamento de recebimentos. Não acessa despesas, o consolidado financeiro nem conteúdo clínico |
 
-A divisão exata de permissões ainda precisa ser validada — ver seção 7.
+As regras estão nas políticas de acesso do próprio banco, não apenas na
+interface: mesmo que alguém contorne a tela, o banco recusa.
 
 ---
 
@@ -53,7 +53,7 @@ A divisão exata de permissões ainda precisa ser validada — ver seção 7.
 | Pacientes | `/pacientes` | Cadastro e histórico de cada paciente |
 | Prontuários | `/prontuarios` | Registro clínico do atendimento |
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
-| Formulários e Termos | `/formularios` | Anamneses, termos e orientações |
+| Formulários e Termos | `/formularios` | Contratos de prestação de serviços, anamneses, termos e orientações |
 | Relacionamento | `/relacionamento` | Confirmações, retornos, aniversários e pesquisas |
 | Relatórios | `/relatorios` | Indicadores de atendimento e faturamento |
 | Configurações | `/configuracoes` | Clínica, equipe, procedimentos e preferências |
@@ -180,8 +180,9 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 2. **Períodos de retorno por procedimento.** Os intervalos usados na demonstração
    são exemplos. A equipe clínica precisa definir os valores reais antes de virarem
    regra do sistema.
-3. **Divisão de permissões.** O que cada perfil vê do financeiro e do conteúdo
-   clínico.
+3. ~~**Divisão de permissões.**~~ Definida na Etapa 2: administradora e recepção,
+   com as despesas e a auditoria restritas à administradora. O perfil Profissional
+   entra quando a equipe crescer.
 4. **Definição de "atendimento do dia".** Hoje o indicador desconsidera os
    cancelados e conta o restante. Falta confirmar se é assim que a clínica pensa.
 5. **Canal de contato preferencial** para confirmação, retorno e aniversário.
@@ -193,6 +194,9 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
    Brasil, essa decisão precisa ser revista.
 8. **Situações do atendimento.** As sete atuais cobrem a rotina? Falta alguma, como
    "remarcado"?
+9. **Método de assinatura dos contratos.** Assinatura eletrônica simples feita
+   dentro do próprio sistema, com trilha de evidências, ou integração com uma
+   plataforma especializada. Ver a seção 10.
 
 ---
 
@@ -239,3 +243,44 @@ npm run build      # build de produção
 npm run lint       # ESLint
 npm run typecheck  # TypeScript
 ```
+
+---
+
+## 10. Contratos e documentos assinados (Etapa 5)
+
+A clínica precisa de contratos de prestação de serviços assinados pela paciente,
+além das anamneses e termos de consentimento. Contrato e anamnese têm naturezas
+diferentes e o modelo separa as duas:
+
+- **Anamnese e ficha clínica** — conteúdo que evolui. Versionado, com autor e
+  data em cada versão.
+- **Contrato e termo** — depois de assinado, não muda mais. Uma correção gera um
+  novo documento que referencia o anterior.
+
+### Modelo previsto
+
+| Tabela | Papel |
+|---|---|
+| `modelos_documento` | Texto-base de contrato, anamnese, termo ou orientação. Versionado — alterar o modelo não altera o que já foi assinado. |
+| `documentos` | Documento emitido para uma paciente, com o **texto congelado** no momento da emissão e o hash desse texto. |
+| `documento_assinaturas` | Evidência da assinatura: quem assinou, data e hora, IP, dispositivo, como a identidade foi verificada e o hash do que foi assinado. |
+| `documento_campos` | Respostas de formulário, quando o documento for anamnese. |
+
+O ponto central é **congelar o texto na emissão**. Se o modelo de contrato mudar
+em março, o contrato assinado em janeiro continua exibindo exatamente o que a
+paciente leu e aceitou.
+
+### Assinatura
+
+A Lei 14.063/2020 reconhece três níveis de assinatura eletrônica. Para contrato
+entre particulares, a assinatura simples é válida — a diferença entre os níveis
+está na força da prova, caso alguém conteste.
+
+| Caminho | Custo | Força da prova |
+|---|---|---|
+| Assinatura dentro do sistema, com trilha de evidências | R$ 0 | Simples. Válida, mas contestável. |
+| Plataforma especializada (ZapSign, Clicksign, Autentique) | R$ 30 a R$ 50/mês | Trilha auditável independente e PDF com log próprio. |
+
+Decisão pendente — ver seção 7, item 9. A modelagem acima serve aos dois
+caminhos: `documento_assinaturas` guarda a evidência local, e o campo de
+referência externa acomoda o identificador da plataforma, se ela for adotada.

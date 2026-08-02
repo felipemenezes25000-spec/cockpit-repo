@@ -91,11 +91,12 @@ export const MENU: ItemMenu[] = [
     rotulo: "Formulários e Termos",
     icone: FileSignature,
     finalidade:
-      "Modelos de anamnese, termos de consentimento e orientações entregues às pacientes.",
+      "Contratos de prestação de serviços, anamneses, termos de consentimento e orientações entregues às pacientes.",
     proximosPassos: [
-      "Biblioteca de modelos por procedimento",
-      "Preenchimento pela paciente antes do atendimento",
-      "Assinatura e arquivamento do termo",
+      "Modelos de contrato, anamnese e termo por procedimento",
+      "Envio para a paciente ler e assinar",
+      "Assinatura com registro de data, hora e autoria",
+      "Arquivo do que foi assinado, sem alteração posterior",
       "Histórico de versões de cada modelo",
     ],
   },
