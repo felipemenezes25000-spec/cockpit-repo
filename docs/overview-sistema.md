@@ -53,7 +53,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 | Pacientes | `/pacientes` | Cadastro e histórico de cada paciente |
 | Prontuários | `/prontuarios` | Registro clínico do atendimento |
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
-| Formulários e Termos | `/formularios` | Contratos de prestação de serviços, anamneses, termos e orientações |
+| Documentos e Contratos | `/formularios` | Contratos de prestação de serviços, anamneses, termos e orientações |
 | Relacionamento | `/relacionamento` | Confirmações, retornos, aniversários e pesquisas |
 | Relatórios | `/relatorios` | Indicadores de atendimento e faturamento |
 | Configurações | `/configuracoes` | Clínica, equipe, procedimentos e preferências |
@@ -194,9 +194,9 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
    Brasil, essa decisão precisa ser revista.
 8. **Situações do atendimento.** As sete atuais cobrem a rotina? Falta alguma, como
    "remarcado"?
-9. **Método de assinatura dos contratos.** Assinatura eletrônica simples feita
-   dentro do próprio sistema, com trilha de evidências, ou integração com uma
-   plataforma especializada. Ver a seção 10.
+9. ~~**Método de assinatura dos contratos.**~~ Definido: assinatura interna, com
+   o passo isolado atrás de uma interface para permitir conectar uma plataforma
+   externa depois. Ver a seção 10.
 
 ---
 
@@ -281,6 +281,9 @@ está na força da prova, caso alguém conteste.
 | Assinatura dentro do sistema, com trilha de evidências | R$ 0 | Simples. Válida, mas contestável. |
 | Plataforma especializada (ZapSign, Clicksign, Autentique) | R$ 30 a R$ 50/mês | Trilha auditável independente e PDF com log próprio. |
 
-Decisão pendente — ver seção 7, item 9. A modelagem acima serve aos dois
-caminhos: `documento_assinaturas` guarda a evidência local, e o campo de
-referência externa acomoda o identificador da plataforma, se ela for adotada.
+**Decidido:** a assinatura será feita dentro do sistema, com trilha de evidências
+própria, e o passo da assinatura fica isolado atrás de uma interface. Trocar para
+Autentique, ZapSign ou Clicksign depois é implementar um novo conector — não
+redesenhar o módulo. Por isso `documento_assinaturas` já nasce com os campos de
+referência externa (`provedor`, `referencia_externa`, `url_comprovante`), vazios
+enquanto a assinatura for interna.

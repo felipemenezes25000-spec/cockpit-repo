@@ -88,7 +88,7 @@ export const MENU: ItemMenu[] = [
   },
   {
     href: "/formularios",
-    rotulo: "Formulários e Termos",
+    rotulo: "Documentos e Contratos",
     icone: FileSignature,
     finalidade:
       "Contratos de prestação de serviços, anamneses, termos de consentimento e orientações entregues às pacientes.",
