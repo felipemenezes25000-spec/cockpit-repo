@@ -2,6 +2,7 @@
 
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { CLINICA } from "@/lib/nav";
 import { MenuNavegacao } from "./sidebar-nav";
 
 function Marca({ recolhida }: { recolhida: boolean }) {
@@ -11,15 +12,15 @@ function Marca({ recolhida }: { recolhida: boolean }) {
         aria-hidden="true"
         className="flex size-11 items-center justify-center rounded-[var(--radius-controle)] bg-secondary-fixed text-sm font-bold text-primary"
       >
-        ÉP
+        {CLINICA.monograma}
       </span>
     );
   }
 
   return (
     <div className="min-w-0">
-      <p className="t-headline truncate font-bold text-primary">Dra. Érika Passos</p>
-      <p className="rotulo mt-1">Consultório de estética</p>
+      <p className="t-headline truncate font-bold text-primary">{CLINICA.nome}</p>
+      <p className="rotulo mt-1">{CLINICA.descricao}</p>
     </div>
   );
 }

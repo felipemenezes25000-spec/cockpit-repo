@@ -1,0 +1,790 @@
+// Gerado automaticamente a partir do banco. NÃO EDITE À MÃO.
+//
+// Para atualizar depois de uma migração:
+//   npx supabase gen types typescript --linked --schema public > src/lib/supabase/tipos-banco.ts
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.15"
+  }
+  public: {
+    Tables: {
+      atendimento_situacoes: {
+        Row: {
+          atendimento_id: string
+          de: Database["public"]["Enums"]["situacao_atendimento"] | null
+          em: string
+          id: number
+          para: Database["public"]["Enums"]["situacao_atendimento"]
+          por: string | null
+        }
+        Insert: {
+          atendimento_id: string
+          de?: Database["public"]["Enums"]["situacao_atendimento"] | null
+          em?: string
+          id?: never
+          para: Database["public"]["Enums"]["situacao_atendimento"]
+          por?: string | null
+        }
+        Update: {
+          atendimento_id?: string
+          de?: Database["public"]["Enums"]["situacao_atendimento"] | null
+          em?: string
+          id?: never
+          para?: Database["public"]["Enums"]["situacao_atendimento"]
+          por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atendimento_situacoes_atendimento_id_fkey"
+            columns: ["atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "atendimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atendimento_situacoes_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atendimentos: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          duracao_min: number
+          id: string
+          inicio: string
+          observacoes: string | null
+          paciente_id: string
+          procedimento_id: string
+          profissional_id: string
+          situacao: Database["public"]["Enums"]["situacao_atendimento"]
+          valor: number
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          duracao_min: number
+          id?: string
+          inicio: string
+          observacoes?: string | null
+          paciente_id: string
+          procedimento_id: string
+          profissional_id: string
+          situacao?: Database["public"]["Enums"]["situacao_atendimento"]
+          valor?: number
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          duracao_min?: number
+          id?: string
+          inicio?: string
+          observacoes?: string | null
+          paciente_id?: string
+          procedimento_id?: string
+          profissional_id?: string
+          situacao?: Database["public"]["Enums"]["situacao_atendimento"]
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atendimentos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atendimentos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atendimentos_procedimento_id_fkey"
+            columns: ["procedimento_id"]
+            isOneToOne: false
+            referencedRelation: "procedimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atendimentos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria: {
+        Row: {
+          acao: string
+          ator_id: string | null
+          dados: Json | null
+          em: string
+          id: number
+          registro_id: string
+          tabela: string
+        }
+        Insert: {
+          acao: string
+          ator_id?: string | null
+          dados?: Json | null
+          em?: string
+          id?: never
+          registro_id: string
+          tabela: string
+        }
+        Update: {
+          acao?: string
+          ator_id?: string | null
+          dados?: Json | null
+          em?: string
+          id?: never
+          registro_id?: string
+          tabela?: string
+        }
+        Relationships: []
+      }
+      despesas: {
+        Row: {
+          atualizado_em: string
+          categoria: Database["public"]["Enums"]["categoria_despesa"]
+          competencia: string
+          criado_em: string
+          criado_por: string | null
+          descricao: string
+          id: string
+          pago_em: string | null
+          valor: number
+        }
+        Insert: {
+          atualizado_em?: string
+          categoria?: Database["public"]["Enums"]["categoria_despesa"]
+          competencia: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao: string
+          id?: string
+          pago_em?: string | null
+          valor: number
+        }
+        Update: {
+          atualizado_em?: string
+          categoria?: Database["public"]["Enums"]["categoria_despesa"]
+          competencia?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string
+          id?: string
+          pago_em?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pacientes: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          cpf: string | null
+          criado_em: string
+          criado_por: string | null
+          data_nascimento: string | null
+          email: string | null
+          endereco: Json | null
+          id: string
+          nome: string
+          nome_social: string | null
+          observacoes: string | null
+          origem: string | null
+          telefone: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          cpf?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: Json | null
+          id?: string
+          nome: string
+          nome_social?: string | null
+          observacoes?: string | null
+          origem?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          cpf?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: Json | null
+          id?: string
+          nome?: string
+          nome_social?: string | null
+          observacoes?: string | null
+          origem?: string | null
+          telefone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pacientes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pendencias: {
+        Row: {
+          atendimento_id: string | null
+          atualizado_em: string
+          criado_em: string
+          descricao: string
+          id: string
+          paciente_id: string | null
+          prazo: string | null
+          prioridade: Database["public"]["Enums"]["prioridade"]
+          resolvida_em: string | null
+          responsavel_id: string | null
+          situacao: Database["public"]["Enums"]["situacao_pendencia"]
+          tipo: Database["public"]["Enums"]["tipo_pendencia"]
+        }
+        Insert: {
+          atendimento_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          descricao: string
+          id?: string
+          paciente_id?: string | null
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["prioridade"]
+          resolvida_em?: string | null
+          responsavel_id?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_pendencia"]
+          tipo: Database["public"]["Enums"]["tipo_pendencia"]
+        }
+        Update: {
+          atendimento_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string
+          id?: string
+          paciente_id?: string | null
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["prioridade"]
+          resolvida_em?: string | null
+          responsavel_id?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_pendencia"]
+          tipo?: Database["public"]["Enums"]["tipo_pendencia"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pendencias_atendimento_id_fkey"
+            columns: ["atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "atendimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pendencias_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pendencias_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perfis: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          id: string
+          nome: string
+          papel: Database["public"]["Enums"]["papel_usuario"]
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id: string
+          nome: string
+          papel?: Database["public"]["Enums"]["papel_usuario"]
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          nome?: string
+          papel?: Database["public"]["Enums"]["papel_usuario"]
+        }
+        Relationships: []
+      }
+      procedimentos: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          duracao_min: number
+          id: string
+          nome: string
+          retorno_sugerido_dias: number | null
+          valor_padrao: number
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          duracao_min?: number
+          id?: string
+          nome: string
+          retorno_sugerido_dias?: number | null
+          valor_padrao?: number
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          duracao_min?: number
+          id?: string
+          nome?: string
+          retorno_sugerido_dias?: number | null
+          valor_padrao?: number
+        }
+        Relationships: []
+      }
+      profissionais: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          especialidade: string | null
+          id: string
+          nome: string
+          perfil_id: string | null
+          registro_conselho: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          especialidade?: string | null
+          id?: string
+          nome: string
+          perfil_id?: string | null
+          registro_conselho?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          especialidade?: string | null
+          id?: string
+          nome?: string
+          perfil_id?: string | null
+          registro_conselho?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profissionais_perfil_id_fkey"
+            columns: ["perfil_id"]
+            isOneToOne: true
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimentos: {
+        Row: {
+          atendimento_id: string | null
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          descricao: string | null
+          forma: Database["public"]["Enums"]["forma_pagamento"] | null
+          id: string
+          paciente_id: string
+          parcela: number | null
+          recebido_em: string | null
+          situacao: Database["public"]["Enums"]["situacao_recebimento"]
+          total_parcelas: number | null
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          atendimento_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string | null
+          forma?: Database["public"]["Enums"]["forma_pagamento"] | null
+          id?: string
+          paciente_id: string
+          parcela?: number | null
+          recebido_em?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_recebimento"]
+          total_parcelas?: number | null
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          atendimento_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string | null
+          forma?: Database["public"]["Enums"]["forma_pagamento"] | null
+          id?: string
+          paciente_id?: string
+          parcela?: number | null
+          recebido_em?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_recebimento"]
+          total_parcelas?: number | null
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimentos_atendimento_id_fkey"
+            columns: ["atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "atendimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimentos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimentos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retornos: {
+        Row: {
+          atendimento_origem_id: string | null
+          atualizado_em: string
+          criado_em: string
+          id: string
+          observacoes: string | null
+          paciente_id: string
+          procedimento_id: string | null
+          situacao: Database["public"]["Enums"]["situacao_acompanhamento"]
+          sugerido_para: string
+        }
+        Insert: {
+          atendimento_origem_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          observacoes?: string | null
+          paciente_id: string
+          procedimento_id?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_acompanhamento"]
+          sugerido_para: string
+        }
+        Update: {
+          atendimento_origem_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          observacoes?: string | null
+          paciente_id?: string
+          procedimento_id?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_acompanhamento"]
+          sugerido_para?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retornos_atendimento_origem_id_fkey"
+            columns: ["atendimento_origem_id"]
+            isOneToOne: false
+            referencedRelation: "atendimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retornos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retornos_procedimento_id_fkey"
+            columns: ["procedimento_id"]
+            isOneToOne: false
+            referencedRelation: "procedimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      categoria_despesa:
+        | "produtos"
+        | "estrutura"
+        | "equipe"
+        | "marketing"
+        | "impostos"
+        | "outros"
+      forma_pagamento:
+        | "pix"
+        | "credito"
+        | "debito"
+        | "dinheiro"
+        | "transferencia"
+      papel_usuario: "administradora" | "recepcao"
+      prioridade: "alta" | "media" | "baixa"
+      situacao_acompanhamento:
+        | "nao_iniciado"
+        | "em_contato"
+        | "aguardando_resposta"
+        | "agendado"
+        | "recusado"
+      situacao_atendimento:
+        | "agendado"
+        | "aguardando_confirmacao"
+        | "confirmado"
+        | "em_atendimento"
+        | "concluido"
+        | "cancelado"
+        | "ausente"
+      situacao_pendencia: "aberta" | "resolvida" | "cancelada"
+      situacao_recebimento: "em_aberto" | "recebido" | "cancelado"
+      tipo_pendencia:
+        | "anamnese"
+        | "termo"
+        | "confirmacao"
+        | "pagamento"
+        | "retorno"
+        | "pesquisa"
+        | "outro"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      categoria_despesa: [
+        "produtos",
+        "estrutura",
+        "equipe",
+        "marketing",
+        "impostos",
+        "outros",
+      ],
+      forma_pagamento: [
+        "pix",
+        "credito",
+        "debito",
+        "dinheiro",
+        "transferencia",
+      ],
+      papel_usuario: ["administradora", "recepcao"],
+      prioridade: ["alta", "media", "baixa"],
+      situacao_acompanhamento: [
+        "nao_iniciado",
+        "em_contato",
+        "aguardando_resposta",
+        "agendado",
+        "recusado",
+      ],
+      situacao_atendimento: [
+        "agendado",
+        "aguardando_confirmacao",
+        "confirmado",
+        "em_atendimento",
+        "concluido",
+        "cancelado",
+        "ausente",
+      ],
+      situacao_pendencia: ["aberta", "resolvida", "cancelada"],
+      situacao_recebimento: ["em_aberto", "recebido", "cancelado"],
+      tipo_pendencia: [
+        "anamnese",
+        "termo",
+        "confirmacao",
+        "pagamento",
+        "retorno",
+        "pesquisa",
+        "outro",
+      ],
+    },
+  },
+} as const

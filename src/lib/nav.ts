@@ -151,8 +151,9 @@ export function itemAtivo(caminho: string): ItemMenu | undefined {
   return MENU.find((item) => item.href !== "/" && caminho.startsWith(item.href));
 }
 
-export const USUARIO_DEMO = {
+/** Identidade da clínica, exibida no topo do menu lateral e no login. */
+export const CLINICA = {
   nome: "Dra. Érika Passos",
-  papel: "Administradora",
-  registro: "Responsável técnica",
+  descricao: "Consultório de estética",
+  monograma: "ÉP",
 } as const;

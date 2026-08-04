@@ -4,9 +4,16 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { BarraLateral } from "./sidebar";
 import { BarraSuperior } from "./topbar";
+import type { UsuarioAtual } from "@/lib/perfil";
 
 /** Estrutura principal: menu lateral, cabeçalho e área de conteúdo. */
-export function EstruturaApp({ children }: { children: ReactNode }) {
+export function EstruturaApp({
+  children,
+  usuario,
+}: {
+  children: ReactNode;
+  usuario: UsuarioAtual;
+}) {
   const [recolhida, setRecolhida] = useState(false);
   const [gavetaAberta, setGavetaAberta] = useState(false);
   const gatilhoGaveta = useRef<HTMLButtonElement>(null);
@@ -59,7 +66,11 @@ export function EstruturaApp({ children }: { children: ReactNode }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <BarraSuperior ref={gatilhoGaveta} aoAbrirGaveta={() => setGavetaAberta(true)} />
+        <BarraSuperior
+          ref={gatilhoGaveta}
+          aoAbrirGaveta={() => setGavetaAberta(true)}
+          usuario={usuario}
+        />
         <main id="conteudo" className="flex-1 px-4 py-8 sm:px-8 xl:px-20">
           <div className="mx-auto w-full max-w-[1600px]">{children}</div>
         </main>

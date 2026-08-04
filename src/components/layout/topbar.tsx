@@ -7,12 +7,13 @@ import { MenuPerfil } from "./profile-menu";
 import { capitalizar, formatarDataExtenso } from "@/lib/format";
 import { hoje } from "@/lib/dates";
 import { itemAtivo } from "@/lib/nav";
+import type { UsuarioAtual } from "@/lib/perfil";
 import { pendenciasOrdenadas } from "@/data/pendings";
 
 export const BarraSuperior = forwardRef<
   HTMLButtonElement,
-  { aoAbrirGaveta: () => void }
->(function BarraSuperior({ aoAbrirGaveta }, ref) {
+  { aoAbrirGaveta: () => void; usuario: UsuarioAtual }
+>(function BarraSuperior({ aoAbrirGaveta, usuario }, ref) {
   const caminho = usePathname();
   const item = itemAtivo(caminho ?? "/");
   const pendenciasAltas = pendenciasOrdenadas().filter(
@@ -72,7 +73,7 @@ export const BarraSuperior = forwardRef<
           </button>
 
           <div className="border-l border-outline-variant pl-4">
-            <MenuPerfil />
+            <MenuPerfil usuario={usuario} />
           </div>
         </div>
       </div>
