@@ -8,17 +8,13 @@ import { capitalizar, formatarDataExtenso } from "@/lib/format";
 import { hoje } from "@/lib/dates";
 import { itemAtivo } from "@/lib/nav";
 import type { UsuarioAtual } from "@/lib/perfil";
-import { pendenciasOrdenadas } from "@/data/pendings";
 
 export const BarraSuperior = forwardRef<
   HTMLButtonElement,
-  { aoAbrirGaveta: () => void; usuario: UsuarioAtual }
->(function BarraSuperior({ aoAbrirGaveta, usuario }, ref) {
+  { aoAbrirGaveta: () => void; usuario: UsuarioAtual; pendenciasAltas: number }
+>(function BarraSuperior({ aoAbrirGaveta, usuario, pendenciasAltas }, ref) {
   const caminho = usePathname();
   const item = itemAtivo(caminho ?? "/");
-  const pendenciasAltas = pendenciasOrdenadas().filter(
-    (p) => p.prioridade === "alta",
-  ).length;
 
   return (
     <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md sm:px-8 xl:px-20">

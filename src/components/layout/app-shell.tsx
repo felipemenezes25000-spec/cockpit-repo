@@ -10,9 +10,11 @@ import type { UsuarioAtual } from "@/lib/perfil";
 export function EstruturaApp({
   children,
   usuario,
+  pendenciasAltas,
 }: {
   children: ReactNode;
   usuario: UsuarioAtual;
+  pendenciasAltas: number;
 }) {
   const [recolhida, setRecolhida] = useState(false);
   const [gavetaAberta, setGavetaAberta] = useState(false);
@@ -70,6 +72,7 @@ export function EstruturaApp({
           ref={gatilhoGaveta}
           aoAbrirGaveta={() => setGavetaAberta(true)}
           usuario={usuario}
+          pendenciasAltas={pendenciasAltas}
         />
         <main id="conteudo" className="flex-1 px-4 py-8 sm:px-8 xl:px-20">
           <div className="mx-auto w-full max-w-[1600px]">{children}</div>

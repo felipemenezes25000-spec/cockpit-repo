@@ -1,7 +1,7 @@
 import { Activity, Check, CheckCheck, Circle, Clock3, Slash, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
-import type { SituacaoAtendimento } from "@/data/types";
+import type { SituacaoAtendimento } from "@/lib/dominio";
 
 type Estilo = {
   rotulo: string;

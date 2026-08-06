@@ -5,15 +5,11 @@ import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { ItemLista, Lista } from "@/components/ui/data-list";
 import { formatarData } from "@/lib/format";
-import { hoje, somarDias } from "@/lib/dates";
-import { nomePaciente } from "@/data/patients";
-import { procedimentoPorId } from "@/data/procedures";
 import {
   ROTULO_ACOMPANHAMENTO,
-  janelaDeContato,
-  retornosOrdenados,
-} from "@/data/returns";
-import type { Retorno } from "@/data/types";
+  retornosEmAberto,
+  type JanelaContato,
+} from "@/server/consultas/retornos";
 
 const LIMITE = 5;
 
@@ -40,8 +36,7 @@ const FASE = {
  * sugerido para o retorno. Os prazos são demonstrativos e ainda precisam ser
  * definidos pela equipe — não são recomendação clínica.
  */
-function JanelaContato({ retorno }: { retorno: Retorno }) {
-  const janela = janelaDeContato(retorno);
+function BarraJanela({ janela }: { janela: JanelaContato }) {
   const fase = FASE[janela.fase];
   const largura = Math.round(janela.progresso * 100);
 
@@ -50,7 +45,7 @@ function JanelaContato({ retorno }: { retorno: Retorno }) {
       <div
         className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-container"
         role="img"
-        aria-label={`${fase.rotulo}: ${retorno.ultimoAtendimentoEmDias} de ${janela.intervaloSugerido} dias sugeridos`}
+        aria-label={`${fase.rotulo}, dentro de um intervalo sugerido de ${janela.intervaloSugerido} dias`}
       >
         {/* Faixa sugerida de contato, a partir de 85% do intervalo */}
         <span
@@ -76,8 +71,8 @@ function JanelaContato({ retorno }: { retorno: Retorno }) {
   );
 }
 
-export function ProximosRetornos() {
-  const retornos = retornosOrdenados();
+export async function ProximosRetornos() {
+  const retornos = await retornosEmAberto();
   const visiveis = retornos.slice(0, LIMITE);
 
   if (retornos.length === 0) {
@@ -102,29 +97,25 @@ export function ProximosRetornos() {
 
       <CardCorpo>
         <Lista rotulo="Pacientes para retorno">
-          {visiveis.map((retorno) => {
-            const procedimento = procedimentoPorId(retorno.procedimentoId);
-            const ultimaData = somarDias(hoje(), -retorno.ultimoAtendimentoEmDias);
+          {visiveis.map((retorno) => (
+            <ItemLista key={retorno.id}>
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <span className="truncate text-sm font-medium text-on-surface">
+                  {retorno.paciente}
+                </span>
+                <span className="rounded-[var(--radius-tag)] bg-surface-container-low px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
+                  {ROTULO_ACOMPANHAMENTO[retorno.situacao]}
+                </span>
+              </div>
 
-            return (
-              <ItemLista key={retorno.id}>
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                  <span className="truncate text-sm font-medium text-on-surface">
-                    {nomePaciente(retorno.pacienteId)}
-                  </span>
-                  <span className="rounded-[var(--radius-tag)] bg-surface-container-low px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
-                    {ROTULO_ACOMPANHAMENTO[retorno.situacao]}
-                  </span>
-                </div>
+              <p className="mt-1 text-sm text-outline">
+                {retorno.procedimento} · último atendimento em{" "}
+                {formatarData(retorno.ultimoAtendimento)}
+              </p>
 
-                <p className="mt-1 text-sm text-outline">
-                  {procedimento?.nome} · último atendimento em {formatarData(ultimaData)}
-                </p>
-
-                <JanelaContato retorno={retorno} />
-              </ItemLista>
-            );
-          })}
+              <BarraJanela janela={retorno.janela} />
+            </ItemLista>
+          ))}
         </Lista>
       </CardCorpo>
 

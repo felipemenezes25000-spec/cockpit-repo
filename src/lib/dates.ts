@@ -1,60 +1,141 @@
 /**
- * Datas relativas ao dia de hoje.
+ * Datas no relógio da clínica.
  *
- * Todos os mocks derivam daqui, então a demonstração continua coerente
- * qualquer que seja o dia em que o sistema for aberto.
+ * O banco guarda instantes em UTC e o servidor pode rodar em qualquer fuso.
+ * A clínica, porém, pensa em horário de São Paulo: "a agenda de hoje" é o dia
+ * de São Paulo, não o do servidor. Perto da meia-noite os dois divergem.
  *
- * `hoje()` sempre volta à meia-noite: isso mantém o valor estável entre a
- * renderização no servidor e a hidratação no navegador.
+ * Todo cálculo de dia passa por aqui, e toda exibição passa por `format.ts`,
+ * que formata neste mesmo fuso. Servidor e navegador produzem a mesma string.
  */
 
-export function hoje(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+export const FUSO_CLINICA = "America/Sao_Paulo";
+
+const PARTES = new Intl.DateTimeFormat("en-US", {
+  timeZone: FUSO_CLINICA,
+  hour12: false,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
+type PartesData = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
+
+function lerPartes(instante: Date): PartesData {
+  const p: Record<string, number> = {};
+  for (const parte of PARTES.formatToParts(instante)) {
+    if (parte.type !== "literal") p[parte.type] = Number(parte.value);
+  }
+
+  return {
+    year: p.year,
+    month: p.month,
+    day: p.day,
+    // Meia-noite sai como "24" em alguns ambientes.
+    hour: p.hour % 24,
+    minute: p.minute,
+    second: p.second,
+  };
 }
 
-/** Hoje, no horário informado. */
-export function hojeAs(horas: number, minutos = 0): Date {
-  const d = hoje();
-  d.setHours(horas, minutos, 0, 0);
-  return d;
+/** Quantos minutos o fuso da clínica está à frente do UTC neste instante. */
+function deslocamentoMinutos(instante: Date): number {
+  const p = lerPartes(instante);
+  const comoSeFosseUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  return (comoSeFosseUtc - instante.getTime()) / 60_000;
+}
+
+/** Ano, mês e dia segundo o relógio da clínica. */
+export function partesDoDia(instante: Date = new Date()) {
+  const p = lerPartes(instante);
+  return { ano: p.year, mes: p.month, dia: p.day };
+}
+
+/** Instante correspondente a uma data e hora de parede da clínica. */
+export function instanteNaClinica(
+  ano: number,
+  mes: number,
+  dia: number,
+  hora = 0,
+  minuto = 0,
+): Date {
+  const aproximado = Date.UTC(ano, mes - 1, dia, hora, minuto);
+  // Duas passadas bastam: a primeira estima o deslocamento, a segunda o
+  // confirma caso a estimativa tenha caído do outro lado de uma virada.
+  let instante = new Date(aproximado - deslocamentoMinutos(new Date(aproximado)) * 60_000);
+  instante = new Date(aproximado - deslocamentoMinutos(instante) * 60_000);
+  return instante;
+}
+
+/** Meia-noite de hoje no relógio da clínica. */
+export function inicioDoDia(referencia: Date = new Date()): Date {
+  const { ano, mes, dia } = partesDoDia(referencia);
+  return instanteNaClinica(ano, mes, dia);
+}
+
+/** Meia-noite do dia seguinte — limite superior exclusivo das consultas do dia. */
+export function inicioDoDiaSeguinte(referencia: Date = new Date()): Date {
+  const { ano, mes, dia } = partesDoDia(referencia);
+  return instanteNaClinica(ano, mes, dia + 1);
+}
+
+/** Primeiro instante do mês corrente na clínica. */
+export function inicioDoMes(referencia: Date = new Date()): Date {
+  const { ano, mes } = partesDoDia(referencia);
+  return instanteNaClinica(ano, mes, 1);
+}
+
+/** Primeiro instante do mês, deslocado em N meses. */
+export function inicioDeMesRelativo(meses: number, referencia: Date = new Date()): Date {
+  const { ano, mes } = partesDoDia(referencia);
+  return instanteNaClinica(ano, mes + meses, 1);
+}
+
+/** Hoje, à meia-noite da clínica. Base dos cálculos de prazo. */
+export function hoje(): Date {
+  return inicioDoDia();
 }
 
 export function somarDias(data: Date, dias: number): Date {
-  const d = new Date(data);
-  d.setDate(d.getDate() + dias);
-  return d;
+  const { ano, mes, dia } = partesDoDia(data);
+  return instanteNaClinica(ano, mes, dia + dias);
 }
 
-export function somarMeses(data: Date, meses: number): Date {
-  const d = new Date(data);
-  d.setMonth(d.getMonth() + meses, 1);
-  return d;
-}
-
-/** Diferença em dias inteiros entre duas datas (positivo = `data` no futuro). */
-export function diferencaEmDias(data: Date, referencia: Date = hoje()): number {
+/** Diferença em dias inteiros no calendário da clínica. */
+export function diferencaEmDias(data: Date, referencia: Date = new Date()): number {
   const MS_DIA = 86_400_000;
-  const a = new Date(data).setHours(0, 0, 0, 0);
-  const b = new Date(referencia).setHours(0, 0, 0, 0);
-  return Math.round((a - b) / MS_DIA);
+  return Math.round((inicioDoDia(data).getTime() - inicioDoDia(referencia).getTime()) / MS_DIA);
 }
 
 export function mesmoDia(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return inicioDoDia(a).getTime() === inicioDoDia(b).getTime();
 }
 
 export function mesmoMes(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+  const pa = partesDoDia(a);
+  const pb = partesDoDia(b);
+  return pa.ano === pb.ano && pa.mes === pb.mes;
 }
 
-/** Data com dia/mês fixos, no ano corrente — usada nos aniversários. */
-export function aniversarioNesteAno(dia: number, mes: number): Date {
-  const d = hoje();
-  return new Date(d.getFullYear(), mes - 1, dia);
+/** Converte "AAAA-MM-DD" (coluna `date` do banco) em instante da clínica. */
+export function dataDoBanco(texto: string): Date {
+  const [ano, mes, dia] = texto.split("-").map(Number);
+  return instanteNaClinica(ano, mes, dia);
+}
+
+/** Aniversário no ano corrente, a partir da data de nascimento. */
+export function aniversarioNesteAno(nascimento: Date): Date {
+  const nasc = partesDoDia(nascimento);
+  const { ano } = partesDoDia();
+  return instanteNaClinica(ano, nasc.mes, nasc.dia);
 }

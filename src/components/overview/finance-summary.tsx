@@ -5,11 +5,9 @@ import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { formatarMoeda } from "@/lib/format";
 import {
-  despesasDoMes,
-  recebidoNoMes,
-  valoresAReceber,
-  valoresVencidos,
-} from "@/data/selectors";
+  resumoFinanceiro,
+  serieMensalRecebimentos,
+} from "@/server/consultas/financeiro";
 import { EvolucaoRecebimentos } from "./revenue-chart";
 
 type Linha = {
@@ -21,35 +19,37 @@ type Linha = {
   apoioEmAlerta?: boolean;
 };
 
-export function ResumoFinanceiro() {
-  const entradas = recebidoNoMes();
-  const despesas = despesasDoMes();
-  const pendentes = valoresAReceber();
-  const vencidos = valoresVencidos();
+export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
+  const [resumo, serie] = await Promise.all([
+    resumoFinanceiro(),
+    serieMensalRecebimentos(),
+  ]);
 
   const linhas: Linha[] = [
     {
       rotulo: "Entradas do mês",
-      valor: entradas,
+      valor: resumo.recebidoNoMes,
       icone: ArrowUpRight,
       cor: "text-primary",
       apoio: "recebimentos já quitados",
     },
     {
       rotulo: "Despesas do mês",
-      valor: despesas,
+      valor: resumo.despesasDoMes,
       icone: ArrowDownRight,
       cor: "text-error",
       apoio: "lançamentos do período",
     },
     {
       rotulo: "Valores pendentes",
-      valor: pendentes,
+      valor: resumo.aReceber,
       icone: CircleAlert,
       cor: "text-sit-aguardando",
       apoio:
-        vencidos > 0 ? `${formatarMoeda(vencidos)} já vencido` : "nenhum valor vencido",
-      apoioEmAlerta: vencidos > 0,
+        resumo.vencido > 0
+          ? `${formatarMoeda(resumo.vencido)} já vencido`
+          : "nenhum valor vencido",
+      apoioEmAlerta: resumo.vencido > 0,
     },
   ];
 
@@ -57,7 +57,11 @@ export function ResumoFinanceiro() {
     <Card>
       <CardCabecalho
         titulo="Resumo financeiro"
-        descricao="Movimento do mês corrente, com dados fictícios."
+        descricao={
+          exemplo
+            ? "Movimento do mês corrente, com dados fictícios."
+            : "Movimento do mês corrente."
+        }
         acao={
           <BotaoLink href="/financeiro" tamanho="sm">
             Abrir financeiro
@@ -100,13 +104,13 @@ export function ResumoFinanceiro() {
         </div>
 
         <div className="mt-8">
-          <EvolucaoRecebimentos />
+          <EvolucaoRecebimentos serie={serie} exemplo={exemplo} />
         </div>
       </CardCorpo>
 
       <CardRodape className="text-outline">
-        Todos os números são demonstrativos. A regra de lucro ainda não foi definida e
-        por isso não aparece nesta tela.
+        {exemplo ? "Todos os números são demonstrativos. " : ""}A regra de lucro ainda
+        não foi definida e por isso não aparece nesta tela.
       </CardRodape>
     </Card>
   );

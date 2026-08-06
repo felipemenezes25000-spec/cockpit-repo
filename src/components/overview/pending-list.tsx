@@ -7,16 +7,14 @@ import { EstadoVazio } from "@/components/ui/empty-state";
 import { ItemLista, Lista } from "@/components/ui/data-list";
 import { PrioridadeTag } from "@/components/ui/priority-tag";
 import { descreverPrazo, formatarData } from "@/lib/format";
-import { hoje, somarDias } from "@/lib/dates";
-import { nomePaciente } from "@/data/patients";
-import { ROTULO_PENDENCIA, pendenciasOrdenadas } from "@/data/pendings";
+import { ROTULO_PENDENCIA, pendenciasAbertas } from "@/server/consultas/pendencias";
 
 const LIMITE = 6;
 
-export function PendenciasDaClinica() {
-  const todas = pendenciasOrdenadas();
+export async function PendenciasDaClinica() {
+  const todas = await pendenciasAbertas();
   const visiveis = todas.slice(0, LIMITE);
-  const atrasadas = todas.filter((p) => p.prazoEmDias < 0).length;
+  const atrasadas = todas.filter((p) => (p.prazoEmDias ?? 0) < 0).length;
 
   if (todas.length === 0) {
     return (
@@ -50,8 +48,7 @@ export function PendenciasDaClinica() {
       <CardCorpo className="rolagem-discreta max-h-[560px] flex-1 overflow-y-auto">
         <Lista rotulo="Pendências da clínica">
           {visiveis.map((pendencia) => {
-            const atrasada = pendencia.prazoEmDias < 0;
-            const data = somarDias(hoje(), pendencia.prazoEmDias);
+            const atrasada = (pendencia.prazoEmDias ?? 0) < 0;
 
             return (
               <ItemLista key={pendencia.id}>
@@ -60,17 +57,18 @@ export function PendenciasDaClinica() {
                     <span className="rounded-[var(--radius-tag)] bg-surface-container-low px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
                       {ROTULO_PENDENCIA[pendencia.tipo]}
                     </span>
-                    <span className="truncate text-sm font-medium text-on-surface">
-                      {nomePaciente(pendencia.pacienteId)}
-                    </span>
+                    {pendencia.paciente ? (
+                      <span className="truncate text-sm font-medium text-on-surface">
+                        {pendencia.paciente}
+                      </span>
+                    ) : null}
                   </div>
 
                   <Link
                     href={pendencia.destino}
-                    aria-label={`Resolver: ${pendencia.detalhe}`}
+                    aria-label={`Resolver: ${pendencia.descricao}`}
                     className={cn(
                       "inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-cartao)] px-3 py-1.5 text-xs font-medium transition-colors",
-                      /* A pendência mais urgente carrega o botão cheio */
                       atrasada
                         ? "bg-primary-container text-on-primary hover:bg-primary"
                         : "border border-primary text-primary hover:bg-surface-container-low",
@@ -81,19 +79,26 @@ export function PendenciasDaClinica() {
                   </Link>
                 </div>
 
-                <p className="mb-3 text-sm text-on-surface-variant">{pendencia.detalhe}</p>
+                <p className="mb-3 text-sm text-on-surface-variant">
+                  {pendencia.descricao}
+                </p>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                   <PrioridadeTag prioridade={pendencia.prioridade} />
-                  <span
-                    className={cn(
-                      "tabular text-xs",
-                      atrasada ? "font-medium text-error" : "text-outline",
-                    )}
-                  >
-                    {atrasada ? "Venceu " : "Prazo "}
-                    {descreverPrazo(pendencia.prazoEmDias)} · {formatarData(data)}
-                  </span>
+                  {pendencia.prazo ? (
+                    <span
+                      className={cn(
+                        "tabular text-xs",
+                        atrasada ? "font-medium text-error" : "text-outline",
+                      )}
+                    >
+                      {atrasada ? "Venceu " : "Prazo "}
+                      {descreverPrazo(pendencia.prazoEmDias ?? 0)} ·{" "}
+                      {formatarData(pendencia.prazo)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-outline">Sem prazo definido</span>
+                  )}
                 </div>
               </ItemLista>
             );

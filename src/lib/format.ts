@@ -1,11 +1,13 @@
 /**
- * Formatação pt-BR.
+ * Formatação pt-BR no fuso da clínica.
  *
- * O locale é sempre explícito para que a saída não dependa da configuração da
- * máquina. O fuso, ao contrário, fica no padrão local de propósito: os dados
- * fictícios são criados como horário de parede local (`hojeAs(14, 30)`), então
- * exibi-los no mesmo fuso em que foram criados mantém "14:30" como "14:30".
+ * Locale e fuso são sempre explícitos. O banco guarda instantes em UTC e o
+ * servidor pode rodar em qualquer fuso, mas a clínica lê tudo em horário de
+ * São Paulo — e é assim que servidor e navegador chegam à mesma string, sem
+ * divergência de hidratação.
  */
+
+import { FUSO_CLINICA } from "./dates";
 
 const LOCALE = "pt-BR";
 
@@ -24,11 +26,13 @@ const dataCurta = new Intl.DateTimeFormat(LOCALE, {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
+  timeZone: FUSO_CLINICA,
 });
 
 const diaMes = new Intl.DateTimeFormat(LOCALE, {
   day: "2-digit",
   month: "2-digit",
+  timeZone: FUSO_CLINICA,
 });
 
 const dataExtenso = new Intl.DateTimeFormat(LOCALE, {
@@ -36,16 +40,19 @@ const dataExtenso = new Intl.DateTimeFormat(LOCALE, {
   day: "numeric",
   month: "long",
   year: "numeric",
+  timeZone: FUSO_CLINICA,
 });
 
 const hora = new Intl.DateTimeFormat(LOCALE, {
   hour: "2-digit",
   minute: "2-digit",
   hour12: false,
+  timeZone: FUSO_CLINICA,
 });
 
 const mesCurto = new Intl.DateTimeFormat(LOCALE, {
   month: "short",
+  timeZone: FUSO_CLINICA,
 });
 
 /** R$ 1.250,00 */

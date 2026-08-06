@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 import { capitalizar, formatarMesCurto, formatarMoeda } from "@/lib/format";
-import { hoje, mesmoMes } from "@/lib/dates";
-import { serieMensal } from "@/data/finance";
+import { mesmoMes } from "@/lib/dates";
+import type { PontoMensal } from "@/server/consultas/financeiro";
 
 /**
  * Evolução dos recebimentos nos últimos seis meses.
@@ -10,10 +10,15 @@ import { serieMensal } from "@/data/finance";
  * o que a barra representa. O mês corrente é hachurado e rotulado como "em
  * andamento" — a diferença não fica só na cor.
  */
-export function EvolucaoRecebimentos() {
-  const serie = serieMensal();
+export function EvolucaoRecebimentos({
+  serie,
+  exemplo,
+}: {
+  serie: PontoMensal[];
+  exemplo: boolean;
+}) {
   const teto = Math.max(...serie.map((p) => p.recebido), 1);
-  const referencia = hoje();
+  const agora = new Date();
 
   const hachura =
     "bg-primary-fixed [background-image:repeating-linear-gradient(135deg,transparent_0_4px,color-mix(in_srgb,var(--color-primary-container)_40%,transparent)_4px_5px)]";
@@ -23,13 +28,13 @@ export function EvolucaoRecebimentos() {
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span className="rotulo">Recebido por mês</span>
         <span className="text-xs text-outline">
-          últimos 6 meses · valores demonstrativos
+          últimos 6 meses{exemplo ? " · valores demonstrativos" : ""}
         </span>
       </figcaption>
 
       <ul className="mt-5 flex h-[140px] items-end gap-2 sm:gap-3">
         {serie.map((ponto) => {
-          const emAndamento = mesmoMes(ponto.data, referencia);
+          const emAndamento = mesmoMes(ponto.data, agora);
           const altura = Math.max(4, Math.round((ponto.recebido / teto) * 100));
           const mes = capitalizar(formatarMesCurto(ponto.data).replace(".", ""));
 
@@ -54,9 +59,7 @@ export function EvolucaoRecebimentos() {
                 aria-hidden="true"
                 className={cn(
                   "w-full rounded-t-[var(--radius-tag)] transition-colors",
-                  emAndamento
-                    ? hachura
-                    : "bg-primary-container group-hover:bg-primary",
+                  emAndamento ? hachura : "bg-primary-container group-hover:bg-primary",
                 )}
                 style={{ height: `${altura}%` }}
               />
@@ -73,7 +76,7 @@ export function EvolucaoRecebimentos() {
               key={ponto.data.toISOString()}
               className={cn(
                 "min-w-0 flex-1 truncate text-center text-xs",
-                mesmoMes(ponto.data, referencia)
+                mesmoMes(ponto.data, agora)
                   ? "font-semibold text-on-surface"
                   : "text-outline",
               )}

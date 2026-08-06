@@ -3,15 +3,16 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { ESTILO_SITUACAO, SituacaoChip } from "@/components/ui/status-chip";
 import { formatarHora } from "@/lib/format";
-import { duracaoDoAtendimento } from "@/data/appointments";
-import { nomePaciente } from "@/data/patients";
-import { procedimentoPorId } from "@/data/procedures";
-import { nomeCurto, profissionalPorId } from "@/data/professionals";
-import type { Atendimento } from "@/data/types";
+import type { AtendimentoDoDia } from "@/server/consultas/agenda";
 
-export function ItemLinhaDoDia({ atendimento }: { atendimento: Atendimento }) {
-  const procedimento = procedimentoPorId(atendimento.procedimentoId);
-  const profissional = profissionalPorId(atendimento.profissionalId);
+/** Primeiro nome com o título, quando houver: "Dra. Marina". */
+function nomeCurto(nome: string): string {
+  const partes = nome.split(" ");
+  if (partes[0].endsWith(".")) return `${partes[0]} ${partes[1] ?? ""}`.trim();
+  return partes[0];
+}
+
+export function ItemLinhaDoDia({ atendimento }: { atendimento: AtendimentoDoDia }) {
   const estilo = ESTILO_SITUACAO[atendimento.situacao];
 
   const emCurso = atendimento.situacao === "em_atendimento";
@@ -21,7 +22,7 @@ export function ItemLinhaDoDia({ atendimento }: { atendimento: Atendimento }) {
   return (
     <Link
       href="/agenda"
-      aria-label={`Ver atendimento de ${nomePaciente(atendimento.pacienteId)} às ${formatarHora(atendimento.inicio)}`}
+      aria-label={`Ver atendimento de ${atendimento.paciente} às ${formatarHora(atendimento.inicio)}`}
       className={cn(
         "group relative mb-2 flex items-center justify-between gap-4 rounded-[var(--radius-cartao)] border p-4 transition-all",
         /* O atendimento em curso sobe: fundo branco, sombra e ponto pulsando */
@@ -60,7 +61,7 @@ export function ItemLinhaDoDia({ atendimento }: { atendimento: Atendimento }) {
                 encerrado && "line-through decoration-outline",
               )}
             >
-              {nomePaciente(atendimento.pacienteId)}
+              {atendimento.paciente}
             </span>
             <SituacaoChip situacao={atendimento.situacao} compacto />
           </span>
@@ -70,9 +71,9 @@ export function ItemLinhaDoDia({ atendimento }: { atendimento: Atendimento }) {
               emCurso ? "font-medium text-on-surface-variant" : "text-outline",
             )}
           >
-            {procedimento?.nome}
-            {profissional ? ` · ${nomeCurto(profissional.nome)}` : ""}
-            {` · ${duracaoDoAtendimento(atendimento)} min`}
+            {atendimento.procedimento}
+            {atendimento.profissional ? ` · ${nomeCurto(atendimento.profissional)}` : ""}
+            {` · ${atendimento.duracaoMin} min`}
           </span>
         </span>
       </span>

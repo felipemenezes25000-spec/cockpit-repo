@@ -7,6 +7,7 @@ import { LinhaDoDia } from "@/components/overview/day-rail";
 import { PendenciasDaClinica } from "@/components/overview/pending-list";
 import { ProximosRetornos } from "@/components/overview/returns-panel";
 import { ResumoFinanceiro } from "@/components/overview/finance-summary";
+import { temDadosDeExemplo } from "@/server/consultas/exemplo";
 
 export const metadata: Metadata = {
   title: "Visão Geral",
@@ -14,7 +15,11 @@ export const metadata: Metadata = {
     "O dia da clínica em uma tela: atendimentos, pendências, retornos e resultados.",
 };
 
-export default function PaginaVisaoGeral() {
+export default async function PaginaVisaoGeral() {
+  // Marca os números financeiros como demonstrativos enquanto houver dado
+  // de exemplo carregado.
+  const exemplo = await temDadosDeExemplo();
+
   return (
     <div>
       <FaixaDemonstracao className="mb-8" />
@@ -24,13 +29,13 @@ export default function PaginaVisaoGeral() {
       </div>
 
       <div className="mb-12">
-        <CartoesIndicadores />
+        <CartoesIndicadores exemplo={exemplo} />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-10 pb-10 xl:grid-cols-12">
         <div className="flex flex-col gap-10 xl:col-span-8">
           <LinhaDoDia />
-          <ResumoFinanceiro />
+          <ResumoFinanceiro exemplo={exemplo} />
         </div>
 
         <div className="flex flex-col gap-10 xl:col-span-4">

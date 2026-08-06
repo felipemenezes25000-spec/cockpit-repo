@@ -10,16 +10,7 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
-import {
-  atendimentosConcluidosHoje,
-  atendimentosConfirmados,
-  confirmacoesPendentes,
-  pacientesAguardandoRetorno,
-  recebidoNoMes,
-  totalAtendimentosHoje,
-  valoresAReceber,
-  valoresVencidos,
-} from "@/data/selectors";
+import { indicadores } from "@/server/consultas/indicadores";
 
 type Indicador = {
   rotulo: string;
@@ -28,70 +19,63 @@ type Indicador = {
   icone: LucideIcon;
   href: string;
   /** Números financeiros ganham marca de demonstrativo e corpo menor. */
-  demonstrativo?: boolean;
+  financeiro?: boolean;
   /** Deixa a linha de apoio em vermelho quando o número pede atenção. */
   atencao?: boolean;
 };
 
-function montarIndicadores(): Indicador[] {
-  const total = totalAtendimentosHoje();
-  const confirmados = atendimentosConfirmados();
-  const pendentes = confirmacoesPendentes();
-  const concluidos = atendimentosConcluidosHoje();
-  const vencidos = valoresVencidos();
+export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
+  const n = await indicadores();
 
-  return [
+  const lista: Indicador[] = [
     {
       rotulo: "Atendimentos de hoje",
-      valor: String(total),
-      apoio: `${concluidos} já ${concluidos === 1 ? "concluído" : "concluídos"}`,
+      valor: String(n.atendimentosHoje),
+      apoio: `${n.concluidos} já ${n.concluidos === 1 ? "concluído" : "concluídos"}`,
       icone: CalendarDays,
       href: "/agenda",
     },
     {
       rotulo: "Confirmados",
-      valor: String(confirmados),
-      apoio: `de ${total} na agenda de hoje`,
+      valor: String(n.confirmados),
+      apoio: `de ${n.atendimentosHoje} na agenda de hoje`,
       icone: BadgeCheck,
       href: "/agenda",
     },
     {
       rotulo: "Confirmações pendentes",
-      valor: String(pendentes),
-      apoio: pendentes > 0 ? "precisam de contato hoje" : "nenhuma em aberto",
+      valor: String(n.confirmacoesPendentes),
+      apoio:
+        n.confirmacoesPendentes > 0 ? "precisam de contato hoje" : "nenhuma em aberto",
       icone: Clock3,
       href: "/agenda",
-      atencao: pendentes > 0,
+      atencao: n.confirmacoesPendentes > 0,
     },
     {
       rotulo: "Aguardando retorno",
-      valor: String(pacientesAguardandoRetorno()),
+      valor: String(n.aguardandoRetorno),
       apoio: "pacientes na janela de contato",
       icone: Repeat2,
       href: "/relacionamento",
     },
     {
       rotulo: "Recebido no mês",
-      valor: formatarMoeda(recebidoNoMes()),
+      valor: formatarMoeda(n.recebidoNoMes),
       apoio: "lançamentos já quitados",
       icone: Wallet,
       href: "/financeiro",
-      demonstrativo: true,
+      financeiro: true,
     },
     {
       rotulo: "A receber",
-      valor: formatarMoeda(valoresAReceber()),
-      apoio: vencidos > 0 ? `${formatarMoeda(vencidos)} já vencido` : "nada vencido",
+      valor: formatarMoeda(n.aReceber),
+      apoio: n.vencido > 0 ? `${formatarMoeda(n.vencido)} já vencido` : "nada vencido",
       icone: CalendarClock,
       href: "/financeiro",
-      demonstrativo: true,
-      atencao: vencidos > 0,
+      financeiro: true,
+      atencao: n.vencido > 0,
     },
   ];
-}
-
-export function CartoesIndicadores() {
-  const indicadores = montarIndicadores();
 
   return (
     <section aria-labelledby="indicadores">
@@ -99,7 +83,7 @@ export function CartoesIndicadores() {
         Indicadores principais
       </h2>
       <div className="grid grid-cols-2 gap-6 md:grid-cols-3 xl:grid-cols-6">
-        {indicadores.map((ind) => {
+        {lista.map((ind) => {
           const Icone = ind.icone;
           return (
             <Link
@@ -120,7 +104,7 @@ export function CartoesIndicadores() {
               <span
                 className={cn(
                   "tabular mb-2 text-on-surface",
-                  ind.demonstrativo ? "t-headline mt-auto" : "t-display",
+                  ind.financeiro ? "t-headline mt-auto" : "t-display",
                 )}
               >
                 {ind.valor}
@@ -128,14 +112,14 @@ export function CartoesIndicadores() {
 
               <span
                 className={cn(
-                  ind.demonstrativo ? "mb-1 text-xs" : "text-sm",
+                  ind.financeiro ? "mb-1 text-xs" : "text-sm",
                   ind.atencao ? "text-error" : "text-outline",
                 )}
               >
                 {ind.apoio}
               </span>
 
-              {ind.demonstrativo ? (
+              {ind.financeiro && exemplo ? (
                 <span className="text-[0.625rem] text-outline-variant uppercase">
                   Valor demonstrativo
                 </span>

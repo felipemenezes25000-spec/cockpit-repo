@@ -1,7 +1,7 @@
 import { SignalHigh, SignalLow, SignalMedium } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
-import type { Prioridade } from "@/data/types";
+import type { Prioridade } from "@/lib/dominio";
 
 const ESTILO: Record<Prioridade, { rotulo: string; classes: string; icone: LucideIcon }> = {
   alta: { rotulo: "Prioridade alta", classes: "text-error font-medium", icone: SignalHigh },

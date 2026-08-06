@@ -4,9 +4,9 @@ import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { ESTILO_SITUACAO, SITUACOES_EM_ORDEM } from "@/components/ui/status-chip";
-import { hojeAs } from "@/lib/dates";
+import { inicioDoDia, inicioDoDiaSeguinte } from "@/lib/dates";
 import { formatarHora } from "@/lib/format";
-import { ATENDIMENTOS_HOJE, duracaoDoAtendimento } from "@/data/appointments";
+import { atendimentosDeHoje } from "@/server/consultas/agenda";
 import { IntervaloLivre, ItemLinhaDoDia } from "./day-rail-item";
 import { MarcadorAgora } from "./now-marker";
 
@@ -17,15 +17,8 @@ import { MarcadorAgora } from "./now-marker";
  * vazios entre eles ganham altura proporcional: um buraco na agenda vira um
  * buraco visível na tela.
  */
-export function LinhaDoDia() {
-  const atendimentos = ATENDIMENTOS_HOJE;
-  /**
-   * As faixas do marcador "agora" vão de um início de atendimento ao próximo e
-   * cobrem o dia inteiro sem buraco — inclusive enquanto um atendimento está
-   * acontecendo, quando o marcador aparece logo abaixo dele.
-   */
-  const inicioDoDia = hojeAs(0).getTime();
-  const fimDoDia = hojeAs(23, 59).getTime();
+export async function LinhaDoDia() {
+  const atendimentos = await atendimentosDeHoje();
 
   if (atendimentos.length === 0) {
     return (
@@ -48,11 +41,19 @@ export function LinhaDoDia() {
   const primeiro = atendimentos[0];
   const ultimo = atendimentos[atendimentos.length - 1];
 
+  /**
+   * As faixas do marcador "agora" vão de um início de atendimento ao próximo e
+   * cobrem o dia inteiro sem buraco — inclusive enquanto um atendimento está
+   * acontecendo, quando o marcador aparece logo abaixo dele.
+   */
+  const aberturaDoDia = inicioDoDia().getTime();
+  const fimDoDia = inicioDoDiaSeguinte().getTime();
+
   return (
     <Card>
       <CardCabecalho
         titulo="Agenda de hoje"
-        descricao={`${atendimentos.length} horários entre ${formatarHora(primeiro.inicio)} e ${formatarHora(ultimo.inicio)}`}
+        descricao={`${atendimentos.length} ${atendimentos.length === 1 ? "horário" : "horários"} entre ${formatarHora(primeiro.inicio)} e ${formatarHora(ultimo.inicio)}`}
         acao={
           <BotaoLink href="/agenda" tamanho="sm">
             Ver agenda completa
@@ -64,18 +65,18 @@ export function LinhaDoDia() {
         <div
           className={[
             "relative",
-            /* Linha do tempo esmaecendo nas duas pontas, como no mockup */
+            /* Linha do tempo esmaecendo nas duas pontas */
             "before:absolute before:top-0 before:bottom-0 before:left-[4.5rem] before:w-0.5",
             "before:bg-gradient-to-b before:from-transparent before:via-card-border before:to-transparent",
             "sm:before:left-[5.5rem]",
           ].join(" ")}
         >
-          <MarcadorAgora de={inicioDoDia} ate={primeiro.inicio.getTime()} />
+          <MarcadorAgora de={aberturaDoDia} ate={primeiro.inicio.getTime()} />
 
           {atendimentos.map((atendimento, i) => {
             const anterior = atendimentos[i - 1];
             const fimAnterior = anterior
-              ? anterior.inicio.getTime() + duracaoDoAtendimento(anterior) * 60_000
+              ? anterior.inicio.getTime() + anterior.duracaoMin * 60_000
               : null;
             const vazio = fimAnterior
               ? Math.round((atendimento.inicio.getTime() - fimAnterior) / 60_000)

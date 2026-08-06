@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { EstruturaApp } from "@/components/layout/app-shell";
 import { usuarioAtual } from "@/lib/auth";
+import { pendenciasAbertas } from "@/server/consultas/pendencias";
 
 /**
- * A Visão Geral se apoia na data de hoje e na sessão de quem está logado. Sem
- * isto o Next congelaria a tela na data e no usuário do build.
+ * As telas dependem da data de hoje e da sessão de quem está logado. Sem isto
+ * o Next congelaria tudo no momento do build.
  */
 export const dynamic = "force-dynamic";
 
@@ -16,5 +17,12 @@ export default async function LayoutApp({ children }: { children: ReactNode }) {
   // sessão válida mas perfil desativado — a conta existe e não foi liberada.
   if (!usuario) redirect("/sem-acesso");
 
-  return <EstruturaApp usuario={usuario}>{children}</EstruturaApp>;
+  const pendencias = await pendenciasAbertas();
+  const altas = pendencias.filter((p) => p.prioridade === "alta").length;
+
+  return (
+    <EstruturaApp usuario={usuario} pendenciasAltas={altas}>
+      {children}
+    </EstruturaApp>
+  );
 }

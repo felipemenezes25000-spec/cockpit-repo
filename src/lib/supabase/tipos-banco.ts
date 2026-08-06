@@ -1,7 +1,6 @@
 // Gerado automaticamente a partir do banco. NÃO EDITE À MÃO.
 //
-// Para atualizar depois de uma migração:
-//   npx supabase gen types typescript --linked --schema public > src/lib/supabase/tipos-banco.ts
+// Para atualizar depois de uma migração:  npm run db:tipos
 
 export type Json =
   | string
@@ -67,6 +66,7 @@ export type Database = {
           criado_em: string
           criado_por: string | null
           duracao_min: number
+          exemplo: boolean
           id: string
           inicio: string
           observacoes: string | null
@@ -81,6 +81,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           duracao_min: number
+          exemplo?: boolean
           id?: string
           inicio: string
           observacoes?: string | null
@@ -95,6 +96,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           duracao_min?: number
+          exemplo?: boolean
           id?: string
           inicio?: string
           observacoes?: string | null
@@ -173,6 +175,7 @@ export type Database = {
           criado_em: string
           criado_por: string | null
           descricao: string
+          exemplo: boolean
           id: string
           pago_em: string | null
           valor: number
@@ -184,6 +187,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           descricao: string
+          exemplo?: boolean
           id?: string
           pago_em?: string | null
           valor: number
@@ -195,6 +199,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           descricao?: string
+          exemplo?: boolean
           id?: string
           pago_em?: string | null
           valor?: number
@@ -219,6 +224,7 @@ export type Database = {
           data_nascimento: string | null
           email: string | null
           endereco: Json | null
+          exemplo: boolean
           id: string
           nome: string
           nome_social: string | null
@@ -235,6 +241,7 @@ export type Database = {
           data_nascimento?: string | null
           email?: string | null
           endereco?: Json | null
+          exemplo?: boolean
           id?: string
           nome: string
           nome_social?: string | null
@@ -251,6 +258,7 @@ export type Database = {
           data_nascimento?: string | null
           email?: string | null
           endereco?: Json | null
+          exemplo?: boolean
           id?: string
           nome?: string
           nome_social?: string | null
@@ -274,6 +282,7 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           descricao: string
+          exemplo: boolean
           id: string
           paciente_id: string | null
           prazo: string | null
@@ -288,6 +297,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           descricao: string
+          exemplo?: boolean
           id?: string
           paciente_id?: string | null
           prazo?: string | null
@@ -302,6 +312,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           descricao?: string
+          exemplo?: boolean
           id?: string
           paciente_id?: string | null
           prazo?: string | null
@@ -368,6 +379,7 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           duracao_min: number
+          exemplo: boolean
           id: string
           nome: string
           retorno_sugerido_dias: number | null
@@ -378,6 +390,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           duracao_min?: number
+          exemplo?: boolean
           id?: string
           nome: string
           retorno_sugerido_dias?: number | null
@@ -388,6 +401,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           duracao_min?: number
+          exemplo?: boolean
           id?: string
           nome?: string
           retorno_sugerido_dias?: number | null
@@ -401,6 +415,7 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           especialidade: string | null
+          exemplo: boolean
           id: string
           nome: string
           perfil_id: string | null
@@ -411,6 +426,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           especialidade?: string | null
+          exemplo?: boolean
           id?: string
           nome: string
           perfil_id?: string | null
@@ -421,6 +437,7 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           especialidade?: string | null
+          exemplo?: boolean
           id?: string
           nome?: string
           perfil_id?: string | null
@@ -443,6 +460,7 @@ export type Database = {
           criado_em: string
           criado_por: string | null
           descricao: string | null
+          exemplo: boolean
           forma: Database["public"]["Enums"]["forma_pagamento"] | null
           id: string
           paciente_id: string
@@ -459,6 +477,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           descricao?: string | null
+          exemplo?: boolean
           forma?: Database["public"]["Enums"]["forma_pagamento"] | null
           id?: string
           paciente_id: string
@@ -475,6 +494,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           descricao?: string | null
+          exemplo?: boolean
           forma?: Database["public"]["Enums"]["forma_pagamento"] | null
           id?: string
           paciente_id?: string
@@ -514,6 +534,7 @@ export type Database = {
           atendimento_origem_id: string | null
           atualizado_em: string
           criado_em: string
+          exemplo: boolean
           id: string
           observacoes: string | null
           paciente_id: string
@@ -525,6 +546,7 @@ export type Database = {
           atendimento_origem_id?: string | null
           atualizado_em?: string
           criado_em?: string
+          exemplo?: boolean
           id?: string
           observacoes?: string | null
           paciente_id: string
@@ -536,6 +558,7 @@ export type Database = {
           atendimento_origem_id?: string | null
           atualizado_em?: string
           criado_em?: string
+          exemplo?: boolean
           id?: string
           observacoes?: string | null
           paciente_id?: string
