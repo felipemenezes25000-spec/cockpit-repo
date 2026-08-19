@@ -53,11 +53,14 @@ export const MENU: ItemMenu[] = [
     icone: Users,
     finalidade:
       "Cadastro e histórico de cada paciente, com contatos, procedimentos realizados e observações.",
+    // Cadastro, busca, ficha e linha do tempo já existem — o módulo não usa
+    // mais a página provisória. Aqui fica só o que ainda falta.
     proximosPassos: [
-      "Cadastro completo com dados de contato",
-      "Busca e filtros por procedimento e período",
-      "Linha do tempo de atendimentos",
+      "Filtros por procedimento e período",
       "Anexos e fotos de evolução",
+      "Junção de cadastros duplicados",
+      "Exportação da ficha em PDF",
+      "Importação de planilha em .xlsx, sem converter para CSV",
     ],
   },
   {

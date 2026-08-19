@@ -12,6 +12,7 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0002_endurece_funcoes.sql` | Fixa o `search_path` das funções e tira as funções de gatilho da API pública. |
 | `0003_funcoes_em_schema_privado.sql` | Move as funções auxiliares das políticas para o schema `private`, fora do que o PostgREST publica. |
 | `0004_cadastro_nao_concede_acesso.sql` | Perfil novo nasce inativo e como recepção. O papel deixa de vir do metadado do cadastro. |
+| `0005_marca_dados_de_exemplo.sql` | Coluna `exemplo` nas tabelas de conteúdo, para o sistema saber o que é fictício e avisar na tela. |
 
 ## Projeto
 

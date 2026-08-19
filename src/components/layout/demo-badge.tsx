@@ -24,11 +24,11 @@ export async function FaixaDemonstracao({ className }: { className?: string }) {
         <span className="text-xs font-medium">
           {exemplo
             ? "Dados de exemplo carregados — nada aqui é real"
-            : "Etapa 2 — banco de dados e acesso"}
+            : "Etapa 3 — cadastro de pacientes"}
         </span>
       </span>
       <span className="text-xs font-medium text-outline">
-        {exemplo ? "npm run dados:limpar remove" : "Cadastro pelos módulos, em breve"}
+        {exemplo ? "npm run dados:limpar remove" : "Agenda e financeiro, em breve"}
       </span>
     </div>
   );
