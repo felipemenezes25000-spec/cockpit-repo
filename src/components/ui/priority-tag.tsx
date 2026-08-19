@@ -3,9 +3,14 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { Prioridade } from "@/lib/dominio";
 
+/**
+ * Alta é vermelha porque é o que não pode esperar. Média é atenção — precisa
+ * ser feito, não está errado. Baixa fica neutra: destacar tudo é não destacar
+ * nada.
+ */
 const ESTILO: Record<Prioridade, { rotulo: string; classes: string; icone: LucideIcon }> = {
-  alta: { rotulo: "Prioridade alta", classes: "text-error font-medium", icone: SignalHigh },
-  media: { rotulo: "Prioridade média", classes: "text-outline", icone: SignalMedium },
+  alta: { rotulo: "Prioridade alta", classes: "text-negativo font-medium", icone: SignalHigh },
+  media: { rotulo: "Prioridade média", classes: "text-atencao", icone: SignalMedium },
   baixa: { rotulo: "Prioridade baixa", classes: "text-outline", icone: SignalLow },
 };
 

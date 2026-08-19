@@ -30,21 +30,25 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       rotulo: "Entradas do mês",
       valor: resumo.recebidoNoMes,
       icone: ArrowUpRight,
-      cor: "text-primary",
+      // Dinheiro que entrou é coisa boa.
+      cor: "text-positivo",
       apoio: "recebimentos já quitados",
     },
     {
       rotulo: "Despesas do mês",
       valor: resumo.despesasDoMes,
       icone: ArrowDownRight,
-      cor: "text-error",
+      // Despesa é saída, não é problema: uma clínica que gasta está operando.
+      // Vermelho aqui gastaria o alarme com o que é rotina.
+      cor: "text-outline",
       apoio: "lançamentos do período",
     },
     {
       rotulo: "Valores pendentes",
       valor: resumo.aReceber,
       icone: CircleAlert,
-      cor: "text-sit-aguardando",
+      // Em aberto é cobrança a fazer — atenção. Só o que venceu é negativo.
+      cor: "text-atencao-acento",
       apoio:
         resumo.vencido > 0
           ? `${formatarMoeda(resumo.vencido)} já vencido`
@@ -93,7 +97,7 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
                 <p
                   className={cn(
                     "mt-1.5 text-xs",
-                    linha.apoioEmAlerta ? "font-medium text-error" : "text-outline",
+                    linha.apoioEmAlerta ? "font-medium text-negativo" : "text-outline",
                   )}
                 >
                   {linha.apoio}

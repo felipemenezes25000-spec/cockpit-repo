@@ -1,68 +1,116 @@
 @import "tailwindcss";
 
+/*
+ * `docs/redesign` é o mockup do Google Stitch: HTML com dezenas de cores
+ * escritas à mão em classes como `bg-[#4A5D4E]`. A detecção automática de
+ * conteúdo do Tailwind varria a pasta e gerava esses utilitários no CSS de
+ * produção — código morto que ainda por cima reintroduzia o verde antigo no
+ * pacote depois da troca da marca. O mockup é referência de design, não fonte.
+ */
+@source not "../../docs";
+
 /* ------------------------------------------------------------------
    Cockpit Consultório — identidade visual
 
-   Baseada no mockup em docs/redesign (Material 3, verde clínico sobre
-   branco). Os nomes seguem o vocabulário do Material para que a origem de
-   cada cor continue evidente. Nenhuma cor deve ser escrita fora daqui.
+   Duas famílias de cor, com papéis que não se misturam:
+
+   1. MARCA (azul). Navegação, ações principais, links, títulos e foco.
+      Não comunica estado nenhum — é a cor de "o sistema", não de "a
+      situação". Antes era o verde do mockup do Stitch; virou azul para
+      liberar o verde a significar só coisa boa.
+
+   2. ESTADO. Quatro semânticas fixas, e cada uma quer dizer uma coisa só:
+
+      negativo   vermelho  algo deu errado ou exige ação imediata
+      atenção    laranja   falta fazer algo; não é erro
+      positivo   verde     deu certo, está resolvido
+      informativo azul     neutro, em curso, apenas informa
+
+   Vermelho é reservado ao que é de fato negativo. Pendência comum,
+   confirmação em aberto e prazo se aproximando são atenção, não erro:
+   se tudo grita, nada é ouvido.
+
+   Cor nunca comunica sozinha — todo indicador de estado leva também
+   ícone e texto.
+
+   Nenhuma cor deve ser escrita fora daqui.
 ------------------------------------------------------------------- */
 
 @theme {
   /* Superfícies */
   --color-surface: #ffffff;
-  --color-surface-bright: #fcf9f8;
+  --color-surface-bright: #fcfcfd;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f6f3f2;
-  --color-surface-container: #f0eded;
-  --color-surface-container-high: #eae7e7;
-  --color-surface-variant: #e5e2e1;
+  --color-surface-container-low: #f4f6f8;
+  --color-surface-container: #edeff2;
+  --color-surface-container-high: #e6e9ed;
+  --color-surface-variant: #e1e4e8;
 
-  /* Painéis e cartões — cinza levemente mais quente que a página */
-  --color-card: #f9f9f9;
-  --color-card-border: #e5e5e5;
+  /* Painéis e cartões */
+  --color-card: #f9f9fa;
+  --color-card-border: #e3e5e8;
 
   /* Texto e contornos */
-  --color-on-surface: #1c1b1b;
-  --color-on-surface-variant: #434843;
-  --color-outline: #737872;
-  --color-outline-variant: #c3c8c1;
-
-  /* Verde da marca */
-  --color-primary: #334537;
-  --color-primary-container: #4a5d4e;
-  --color-on-primary: #ffffff;
-  --color-primary-fixed: #d3e8d5;
-  --color-primary-fixed-dim: #b7ccb9;
-  --color-secondary: #54634b;
-  --color-secondary-fixed: #d8e8ca;
-  --color-secondary-fixed-dim: #bccbaf;
-  --color-on-secondary-container: #5a6951;
-
-  /* Erro */
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
+  --color-on-surface: #1b1c1e;
+  --color-on-surface-variant: #43474d;
+  --color-outline: #72767c;
+  --color-outline-variant: #c1c6cd;
 
   /*
-   * Situações do atendimento. O mockup define três; as outras quatro foram
-   * derivadas no mesmo tom da paleta, mantendo matizes distintas entre si.
-   * Cor nunca comunica sozinha — todo indicador leva ícone e texto.
+   * Azul da marca. `primary` é o tom escuro, para texto e título;
+   * `primary-container` é o preenchimento de botão.
    */
-  --color-sit-agendado: #737872;
-  --color-sit-agendado-fundo: #f0eded;
-  --color-sit-aguardando: #7a5209;
-  --color-sit-aguardando-fundo: #fbefd9;
-  --color-sit-confirmado: #434843;
-  --color-sit-confirmado-fundo: #ffffff;
-  --color-sit-atendimento: #334537;
-  --color-sit-atendimento-fundo: #d8e8ca;
-  --color-sit-concluido: #4a5d4e;
-  --color-sit-concluido-fundo: #f5f5f0;
-  --color-sit-cancelado: #93000a;
-  --color-sit-cancelado-fundo: #ffdad6;
-  --color-sit-ausente: #4c4076;
-  --color-sit-ausente-fundo: #eeeaf7;
+  --color-primary: #0854a0;
+  --color-primary-container: #0a6ed1;
+  --color-on-primary: #ffffff;
+  --color-primary-fixed: #d1e8ff;
+  --color-primary-fixed-dim: #a7cdf2;
+  --color-secondary: #4a6c8f;
+  --color-secondary-fixed: #d6e9fb;
+  --color-secondary-fixed-dim: #b4d3ef;
+  --color-on-secondary-container: #0854a0;
+
+  /* ---- Estado: negativo ----
+     Não compareceu · cancelado · vencido · falha · pendência crítica */
+  --color-negativo: #bb0000;
+  --color-negativo-fundo: #fceaea;
+  --color-negativo-borda: #e6a3a3;
+
+  /* ---- Estado: atenção ----
+     Confirmação pendente · aguardando assinatura · retorno próximo ·
+     cadastro incompleto.
+
+     São dois tons de propósito: `acento` (#e9730c) é o laranja pedido e
+     fica em ícone e borda; `atencao` é o mesmo laranja mais escuro, para
+     texto. #e9730c sobre o fundo suave dá 2.75:1 e reprova no WCAG —
+     ilegível para quem tem baixa visão. O tom escuro dá 6.2:1. */
+  --color-atencao: #8f4700;
+  --color-atencao-acento: #e9730c;
+  --color-atencao-fundo: #fff3d6;
+  --color-atencao-borda: #f1c40f;
+
+  /* ---- Estado: positivo ----
+     Confirmado · recebido · concluído · finalizado */
+  --color-positivo: #107e3e;
+  --color-positivo-fundo: #eaf5ea;
+  --color-positivo-borda: #a9d3a9;
+
+  /* ---- Estado: informativo ----
+     Agendado · em atendimento · aviso neutro.
+     O texto usa o azul escuro da marca: sobre o fundo suave, o azul de
+     ação dá 4.49:1 e fica logo abaixo do mínimo. */
+  --color-informativo: #0a6ed1;
+  --color-informativo-texto: #0854a0;
+  --color-informativo-fundo: #eaf3fb;
+  --color-informativo-borda: #a3c4e6;
+
+  /*
+   * `error` é o negativo, com os nomes que o Material usa. Existe para a
+   * validação de formulário continuar legível como "erro" no código.
+   */
+  --color-error: #bb0000;
+  --color-error-container: #fceaea;
+  --color-on-error-container: #8e0000;
 
   /* Tipografia — uma família só, como no mockup */
   --font-sans: var(--fonte-sans), ui-sans-serif, system-ui, sans-serif;

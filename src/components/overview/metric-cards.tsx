@@ -20,8 +20,14 @@ type Indicador = {
   href: string;
   /** Números financeiros ganham marca de demonstrativo e corpo menor. */
   financeiro?: boolean;
-  /** Deixa a linha de apoio em vermelho quando o número pede atenção. */
-  atencao?: boolean;
+  /**
+   * Ênfase da linha de apoio.
+   *
+   * `atencao` é laranja: falta fazer algo. `negativo` é vermelho: algo já
+   * deu errado. A distinção existe para o vermelho não perder o efeito — se
+   * toda pendência normal fosse vermelha, o valor vencido não se destacaria.
+   */
+  enfase?: "atencao" | "negativo";
 };
 
 export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
@@ -49,7 +55,8 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
         n.confirmacoesPendentes > 0 ? "precisam de contato hoje" : "nenhuma em aberto",
       icone: Clock3,
       href: "/agenda",
-      atencao: n.confirmacoesPendentes > 0,
+      // Falta ligar para a paciente. É tarefa em aberto, não erro.
+      enfase: n.confirmacoesPendentes > 0 ? "atencao" : undefined,
     },
     {
       rotulo: "Aguardando retorno",
@@ -73,7 +80,8 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
       icone: CalendarClock,
       href: "/financeiro",
       financeiro: true,
-      atencao: n.vencido > 0,
+      // Vencido é dinheiro que já deveria ter entrado.
+      enfase: n.vencido > 0 ? "negativo" : undefined,
     },
   ];
 
@@ -113,7 +121,11 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
               <span
                 className={cn(
                   ind.financeiro ? "mb-1 text-xs" : "text-sm",
-                  ind.atencao ? "text-error" : "text-outline",
+                  ind.enfase === "negativo"
+                    ? "font-medium text-negativo"
+                    : ind.enfase === "atencao"
+                      ? "font-medium text-atencao"
+                      : "text-outline",
                 )}
               >
                 {ind.apoio}

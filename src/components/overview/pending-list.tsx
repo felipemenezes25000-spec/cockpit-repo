@@ -37,7 +37,7 @@ export async function PendenciasDaClinica() {
           atrasadas > 0 ? (
             <>
               {todas.length} em aberto ·{" "}
-              <span className="font-medium text-error">{atrasadas} fora do prazo</span>
+              <span className="font-medium text-negativo">{atrasadas} fora do prazo</span>
             </>
           ) : (
             `${todas.length} em aberto`
@@ -89,7 +89,7 @@ export async function PendenciasDaClinica() {
                     <span
                       className={cn(
                         "tabular text-xs",
-                        atrasada ? "font-medium text-error" : "text-outline",
+                        atrasada ? "font-medium text-negativo" : "text-outline",
                       )}
                     >
                       {atrasada ? "Venceu " : "Prazo "}

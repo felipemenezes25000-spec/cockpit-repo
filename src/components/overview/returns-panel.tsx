@@ -13,6 +13,10 @@ import {
 
 const LIMITE = 5;
 
+/**
+ * Nenhuma fase é vermelha: retorno é oportunidade de cuidado, não falha.
+ * "Passou do período" é a paciente que precisa de um telefonema — atenção.
+ */
 const FASE = {
   aguardando: {
     rotulo: "Ainda cedo",
@@ -21,13 +25,13 @@ const FASE = {
   },
   no_periodo: {
     rotulo: "No período",
-    barra: "bg-primary-container",
-    texto: "text-primary",
+    barra: "bg-informativo",
+    texto: "text-informativo-texto",
   },
   passou: {
     rotulo: "Passou do período",
-    barra: "bg-sit-aguardando",
-    texto: "text-sit-aguardando",
+    barra: "bg-atencao-acento",
+    texto: "text-atencao",
   },
 } as const;
 

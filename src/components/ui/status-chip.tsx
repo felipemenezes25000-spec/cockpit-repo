@@ -12,53 +12,67 @@ type Estilo = {
 };
 
 /**
- * Cada situação tem matiz própria E ícone próprio: a cor nunca é a única
- * informação, para quem não a distingue continuar entendendo a agenda.
+ * Cada situação recebe a semântica que ela realmente tem:
  *
- * "Confirmado" é o único em contorno, como no mockup — ainda não aconteceu.
+ * | Situação                | Semântica   | Por quê |
+ * |-------------------------|-------------|---------|
+ * | Agendado                | informativo | Só informa: nada a fazer ainda |
+ * | Aguardando confirmação  | atenção     | Falta alguém ligar. Não é erro |
+ * | Confirmado              | positivo    | Deu certo |
+ * | Em atendimento          | informativo | Está acontecendo agora |
+ * | Concluído               | positivo    | Terminou bem |
+ * | Cancelado               | negativo    | Perdeu-se o horário |
+ * | Não compareceu          | negativo    | Perdeu-se o horário sem aviso |
+ *
+ * Cancelado e não compareceu dividem o vermelho porque as duas são a mesma
+ * má notícia. O que as separa é o ícone, o rótulo e o preenchimento: cancelado
+ * vem sólido, ausência vem em contorno. Cor nunca decide sozinha.
+ *
+ * "Em atendimento" é o único preenchido com a cor cheia — é o que está
+ * acontecendo neste minuto e precisa saltar na lista.
  */
 export const ESTILO_SITUACAO: Record<SituacaoAtendimento, Estilo> = {
   agendado: {
     rotulo: "Agendado",
     icone: Circle,
-    classes: "bg-sit-agendado-fundo text-sit-agendado",
-    marcador: "bg-outline-variant",
+    classes: "bg-informativo-fundo text-informativo-texto",
+    marcador: "bg-informativo-borda",
   },
   aguardando_confirmacao: {
     rotulo: "Aguardando confirmação",
     icone: Clock3,
-    classes: "bg-sit-aguardando-fundo text-sit-aguardando",
-    marcador: "bg-sit-aguardando",
+    classes: "bg-atencao-fundo text-atencao",
+    marcador: "bg-atencao-acento",
   },
   confirmado: {
     rotulo: "Confirmado",
     icone: Check,
-    classes: "border border-outline-variant bg-sit-confirmado-fundo text-sit-confirmado",
-    marcador: "bg-outline-variant",
+    classes: "border border-positivo-borda bg-positivo-fundo text-positivo",
+    marcador: "bg-positivo",
   },
   em_atendimento: {
     rotulo: "Em atendimento",
     icone: Activity,
-    classes: "bg-sit-atendimento-fundo font-semibold text-sit-atendimento",
-    marcador: "bg-primary-container",
+    classes: "bg-informativo font-semibold text-on-primary",
+    marcador: "bg-informativo",
   },
   concluido: {
     rotulo: "Concluído",
     icone: CheckCheck,
-    classes: "bg-sit-concluido-fundo text-sit-concluido",
-    marcador: "bg-secondary-fixed-dim",
+    classes: "bg-positivo-fundo text-positivo",
+    marcador: "bg-positivo-borda",
   },
   cancelado: {
     rotulo: "Cancelado",
     icone: X,
-    classes: "bg-sit-cancelado-fundo text-sit-cancelado",
-    marcador: "bg-sit-cancelado",
+    classes: "bg-negativo-fundo text-negativo",
+    marcador: "bg-negativo",
   },
   ausente: {
     rotulo: "Paciente não compareceu",
     icone: Slash,
-    classes: "bg-sit-ausente-fundo text-sit-ausente",
-    marcador: "bg-sit-ausente",
+    classes: "border border-negativo-borda bg-surface text-negativo",
+    marcador: "bg-negativo-borda",
   },
 };
 
