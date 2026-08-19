@@ -1,10 +1,10 @@
 # Cockpit — Consultório Dra. Érika Passos
 
 Documento de referência do sistema. Registra o propósito, o que já existe e o que
-ainda é provisório. Atualizado ao final da **Etapa 1**.
+ainda é provisório. Atualizado ao final da **Etapa 3**.
 
-> Todo o conteúdo exibido no sistema hoje é fictício. Nenhum dado real da clínica
-> foi utilizado.
+> O conteúdo exibido hoje vem de dados de demonstração, marcados como tais no
+> banco. Nenhum dado real da clínica foi utilizado.
 
 ---
 
@@ -95,9 +95,10 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 
 ### Páginas provisórias
 
-As oito rotas de módulo existem e são acessíveis. Cada uma mostra o nome do
-módulo, sua finalidade, a lista do que vai trazer nas próximas etapas, o aviso de
-que está em construção e um botão de volta para a Visão Geral.
+As sete rotas de módulo ainda sem implementação existem e são acessíveis. Cada
+uma mostra o nome do módulo, sua finalidade, a lista do que vai trazer nas
+próximas etapas, o aviso de que está em construção e um botão de volta para a
+Visão Geral.
 
 ### Base técnica
 
@@ -111,34 +112,81 @@ que está em construção e um botão de volta para a Visão Geral.
 
 ### Identidade visual
 
-A interface segue o mockup em `docs/redesign`, gerado no Google Stitch. É um
-sistema Material 3 de verde clínico sobre branco:
+A estrutura, a tipografia e o espaçamento vêm do mockup em `docs/redesign`,
+gerado no Google Stitch. **A paleta não**: o mockup era verde sobre branco, e o
+verde passou a significar "deu certo" — não podia continuar sendo também a cor
+do menu e dos botões.
 
-| Papel | Cor |
-|---|---|
-| Página | `#FFFFFF` |
-| Painel | `#F9F9F9` com borda `#E5E5E5` |
-| Cartão interno | `#FFFFFF` |
-| Verde principal | `#334537` |
-| Verde de ação | `#4A5D4E` |
-| Verde claro de apoio | `#D8E8CA` |
-| Texto | `#1C1B1B` · secundário `#434843` · terciário `#737872` |
-| Erro | `#BA1A1A` |
+Duas famílias de cor, com papéis que não se misturam.
 
-Decisões tomadas a partir do mockup:
+#### 1. Marca — azul
+
+Navegação, ações principais, links, títulos e foco. Não comunica estado nenhum:
+é a cor de "o sistema", não de "a situação".
+
+| Papel | Cor | Contraste |
+|---|---|---|
+| Azul escuro — título e texto | `#0854A0` | 7.54:1 sobre branco |
+| Azul de ação — botão | `#0A6ED1` | 5.04:1 com texto branco |
+| Azul claro de apoio | `#D6E9FB` | — |
+| Página | `#FFFFFF` · painel `#F9F9FA` com borda `#E3E5E8` |  |
+| Texto | `#1B1C1E` · secundário `#43474D` · terciário `#72767C` | 9.35:1 · 4.57:1 |
+
+#### 2. Estado — quatro semânticas fixas
+
+Cada uma quer dizer uma coisa só, e a regra que as separa é o que importa:
+**vermelho é para o que deu errado, laranja é para o que falta fazer.** Se toda
+pendência normal for vermelha, o valor vencido deixa de se destacar.
+
+| Semântica | Texto | Fundo | Borda | Quando |
+|---|---|---|---|---|
+| **Negativo** | `#BB0000` | `#FCEAEA` | `#E6A3A3` | Não compareceu · cancelado · vencido · falha · pendência crítica · prazo perdido |
+| **Atenção** | `#8F4700` | `#FFF3D6` | `#F1C40F` | Confirmação pendente · aguardando assinatura · retorno próximo · cadastro incompleto |
+| **Positivo** | `#107E3E` | `#EAF5EA` | `#A9D3A9` | Confirmado · recebido · concluído · finalizado |
+| **Informativo** | `#0854A0` | `#EAF3FB` | `#A3C4E6` | Agendado · em atendimento · aviso neutro |
+
+O laranja tem **dois tons de propósito**: `#E9730C` fica em ícone e borda,
+`#8F4700` fica em texto. `#E9730C` sobre `#FFF3D6` dá **2.75:1** e reprova no
+WCAG AA — ilegível para quem tem baixa visão. O tom escuro dá 6.20:1 e lê como
+a mesma família.
+
+#### Situações do atendimento
+
+| Situação | Semântica | Por quê |
+|---|---|---|
+| Agendado | informativo | Só informa; nada a fazer ainda |
+| Aguardando confirmação | atenção | Falta ligar para a paciente. Não é erro |
+| Confirmado | positivo | Deu certo |
+| Em atendimento | informativo, preenchido | Está acontecendo neste minuto |
+| Concluído | positivo | Terminou bem |
+| Cancelado | negativo | Perdeu-se o horário |
+| Não compareceu | negativo, em contorno | Perdeu-se o horário sem aviso |
+
+Cancelado e não compareceu dividem o vermelho porque são a mesma má notícia. O
+que as separa é o ícone, o rótulo e o preenchimento.
+
+#### Acessibilidade da cor
+
+Todo par de texto sobre fundo passa no WCAG AA (mínimo 4.5:1); o mais apertado é
+o verde positivo, em 4.60:1. As bordas ficam entre 1.5:1 e 2.1:1, abaixo do
+mínimo de 3:1 para elemento não-textual — **aceitável porque nenhuma borda
+carrega significado sozinha**: todo estado é identificado por texto, ícone
+próprio e preenchimento.
+
+#### Outras decisões do mockup
 
 - **Ícones**: o mockup usa Material Symbols, que o `next/font` não hospeda. Ficou
   `lucide-react` com traço 1.5, que imita o peso 300 do Material sem exigir
   requisição externa nem provocar piscada no carregamento.
-- **Situações do atendimento**: o mockup define três (Concluído, Em atendimento,
-  Confirmado). As outras quatro foram derivadas dentro da mesma paleta, com
-  matizes distintas entre si — e todas continuam levando ícone e texto, nunca só
-  cor.
 - **Foto do usuário**: o mockup usa uma foto de banco de imagens. Foi mantido o
   avatar de iniciais, para não apresentar a foto de outra pessoa como sendo a
   Dra. Érika.
 - **Menu**: o mockup mostra cinco itens; o sistema mantém os nove módulos
   previstos para a Etapa 1.
+- **O mockup não é fonte para o Tailwind.** `globals.css` traz
+  `@source not "../../docs"`: a detecção automática varria o HTML do Stitch e
+  gerava utilitários mortos no CSS de produção — 12 classes de cor escrita à
+  mão, que reintroduziam o verde antigo no pacote mesmo depois da troca.
 
 ---
 
@@ -146,15 +194,14 @@ Decisões tomadas a partir do mockup:
 
 | Item | Situação |
 |---|---|
-| Todos os dados | Fictícios, em `src/data/`. Nenhuma persistência. |
-| Usuário "Dra. Érika Passos — Administradora" | Fixo no código, sem autenticação. |
-| Busca global no cabeçalho | Apenas visual, marcada como indisponível. |
+| Dados de demonstração | Marcados com a coluna `exemplo` no banco. `npm run dados:limpar` remove, e o aviso na tela some junto. |
+| Busca global no cabeçalho | Apenas visual, marcada como indisponível. A busca do módulo Pacientes funciona. |
 | Ícone de notificações | Mostra a contagem de pendências altas, mas não abre nada. |
 | Menu de perfil | Opções visíveis e desabilitadas, com a razão no `title`. |
 | Botões "Resolver" das pendências | Navegam para o módulo correspondente; não resolvem nada. |
 | Botão "Enviar mensagem" dos aniversariantes | Visivelmente indisponível. |
-| Ações rápidas | Navegam para as páginas provisórias; não abrem formulário. |
-| Oito páginas de módulo | Só descrevem o que virá. |
+| Ações rápidas | Só a primeira abre formulário de verdade. As outras quatro param na página do módulo. |
+| Sete páginas de módulo | Só descrevem o que virá. Pacientes saiu dessa lista. |
 | Períodos de retorno | Demonstrativos. Não são recomendação clínica. |
 | Números financeiros | Identificados como demonstrativos na própria tela. |
 
@@ -204,20 +251,37 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 
 ```
 src/
+  middleware.ts           renova a sessão e barra rota protegida
   app/
     layout.tsx            fontes e idioma
     globals.css           tokens de cor, tipografia, raio e sombra
+    entrar/               login: página, formulário e ação
+    sem-acesso/           conta existe mas não foi liberada
     (app)/
-      layout.tsx          estrutura principal
+      layout.tsx          estrutura principal, exige sessão válida
       page.tsx            Visão Geral
-      agenda/ …           oito páginas provisórias
+      pacientes/          lista, cadastro, ficha, edição e importação
+      agenda/ …           sete páginas provisórias
   components/
     layout/               estrutura, menu, cabeçalho, perfil, selo, placeholder
-    ui/                   cartão, botão, situação, prioridade, lista, avatar, estado vazio
+    ui/                   cartão, botão, campo, situação, prioridade, lista, avatar, vazio
     overview/             indicadores, Linha do Dia, pendências, retornos, financeiro,
                           gráfico, aniversariantes, ações rápidas
-  data/                   dados fictícios e indicadores derivados
-  lib/                    menu, formatação pt-BR, datas, utilidades
+    pacientes/            busca, lista, paginação, formulário, ficha, importador
+  server/
+    consultas/            leitura do banco — `server-only`, uma função por assunto
+    acoes/                escrita no banco — `"use server"`, validação de verdade
+  lib/
+    supabase/             clientes de servidor, navegador e middleware; tipos gerados
+    auth.ts               usuário da sessão com o perfil carregado
+    dates.ts              todo cálculo de dia, no fuso da clínica
+    format.ts             pt-BR: moeda, data, hora
+    paciente.ts           regras do cadastro: CPF, telefone, endereço, validação
+    csv.ts                leitor de CSV: separador, aspas, BOM, Latin-1
+    importacao.ts         planilha → linhas validadas, sem gravar nada
+    nav.ts                fonte única do menu
+supabase/
+  migrations/             estrutura do banco, versionada
 docs/
   overview-sistema.md     este documento
   redesign                mockup do Google Stitch que define a identidade visual
@@ -225,9 +289,16 @@ docs/
 
 Regras que valem para as próximas etapas:
 
-- Nenhum número da interface é escrito direto no componente: tudo passa por
-  `src/data/selectors.ts`.
-- Cor nenhuma fora de `globals.css`.
+- **Componente não conversa com o banco.** Leitura passa por
+  `src/server/consultas/`, escrita por `src/server/acoes/`.
+- **Toda escrita valida no servidor.** A validação do formulário é conveniência;
+  quem envia por fora não passa por ela.
+- **A chave `service_role` não entra na aplicação.** Quem decide o que cada
+  pessoa enxerga é a RLS, a partir do usuário da sessão.
+- Cor nenhuma fora de `globals.css`. Nada de `bg-[#ABC123]` no componente.
+- **Vermelho só para o que é negativo.** Pendência comum, confirmação em aberto e
+  prazo se aproximando são atenção, não erro. Se tudo grita, nada é ouvido.
+- **Verde só para o que é positivo.** Não é cor de marca — é resultado.
 - Situação e prioridade nunca são comunicadas só por cor — sempre acompanham texto
   e uma forma própria.
 - Botão que não executa nada fica visivelmente indisponível, com a razão à vista.
@@ -246,7 +317,132 @@ npm run typecheck  # TypeScript
 
 ---
 
-## 10. Contratos e documentos assinados (Etapa 5)
+## 10. Módulo Pacientes (Etapa 3)
+
+Primeiro módulo que escreve no banco. Serve de modelo para os próximos: mesma
+divisão entre consulta, ação e componente, e a mesma postura de validar no
+servidor.
+
+### Telas
+
+| Rota | O que faz |
+|---|---|
+| `/pacientes` | Lista em ordem alfabética, 20 por página, com busca e filtro por situação |
+| `/pacientes/novo` | Cadastro. Só o nome é obrigatório |
+| `/pacientes/[id]` | Ficha: cadastro, histórico de atendimentos, resumo, pendências e retornos |
+| `/pacientes/[id]/editar` | Edição do mesmo formulário do cadastro |
+| `/pacientes/importar` | Importação de planilha. Restrita à administradora |
+
+### Busca
+
+Cobre nome, nome social, e-mail e telefone. Quando o termo é só dígito, procura
+também no CPF — a recepção digita `11987654321`, não o formato exato guardado.
+
+O termo, o filtro e a página ficam na **URL**, não em memória: dá para recarregar,
+voltar pelo navegador e mandar o link para outra pessoa. A digitação navega
+sozinha depois de uma pausa de 350 ms, e o formulário continua sendo um
+`form method="get"` — sem JavaScript, o Enter ainda busca.
+
+Vírgula, parêntese, aspas, barra invertida, `*` e `%` são retirados do termo
+antes de ele virar filtro. Os quatro primeiros são a gramática do próprio
+PostgREST; os dois últimos viram curinga no `ilike`, e quem digitasse `%`
+listaria a base inteira.
+
+### Validação
+
+O formulário valida antes de enviar, mas **a validação que vale é a do
+servidor** — quem envia o formulário por fora não passa pela primeira. As duas
+usam as mesmas funções de `src/lib/paciente.ts`, que por isso não é
+`server-only`.
+
+| Campo | Regra |
+|---|---|
+| Nome | Obrigatório, mínimo de 3 caracteres |
+| CPF | Opcional. Quando informado, confere os dois dígitos verificadores e recusa sequências de um dígito só |
+| Telefone | Opcional. DDD a partir de 11; celular com 11 dígitos precisa do 9 |
+| E-mail | Opcional, checagem de forma |
+| Data de nascimento | Não pode estar no futuro nem antes de 1900 |
+| UF | Precisa estar na lista dos 27 estados |
+| Origem | Lista fechada — texto livre não vira relatório depois |
+
+CPF repetido é recusado pelo índice único do banco, não só pela tela: o erro
+`23505` vira "Já existe uma paciente cadastrada com este CPF".
+
+### Importação em massa
+
+É como a clínica sai da planilha e entra no sistema. Dois passos: o primeiro lê
+e mostra, o segundo grava. **Nada é gravado antes da confirmação.**
+
+O leitor de CSV é escrito à mão, sem dependência nova, porque o que uma planilha
+brasileira produz tem três particularidades que uma biblioteca genérica não
+resolve sozinha:
+
+| Particularidade | Tratamento |
+|---|---|
+| Separador `;` | O Excel em pt-BR usa ponto-e-vírgula, porque a vírgula já é o separador decimal. O separador é detectado, contando apenas fora das aspas — um endereço "Rua X, 100" não faz a vírgula vencer |
+| Acento em Windows-1252 | "Salvar como CSV" grava em Latin-1. Tentamos UTF-8 em modo estrito primeiro; se os bytes não formarem UTF-8 válido, caímos em Windows-1252. A ordem importa: Latin-1 nunca falha, então testá-lo antes leria todo arquivo UTF-8 com acento errado. A tela avisa quando não era UTF-8 |
+| BOM | O "CSV UTF-8" do Excel começa com uma marca invisível que grudaria no nome da primeira coluna |
+| Data `dd/mm/aaaa` | Convertida para o formato do banco. Ano de dois dígitos é aceito com aviso, e a data interpretada aparece na prévia para conferência |
+
+**As colunas são reconhecidas pelo nome**, sem acento e sem maiúscula:
+"Celular", "Data de Nascimento", "E-mail", "Endereço" chegam ao campo certo. Só
+a coluna do nome é obrigatória. Coluna que o sistema não usa é listada como
+ignorada, em vez de fazer a importação falhar — a planilha da clínica tem
+"Convênio" e o sistema ainda não tem onde guardar isso.
+
+**A validação é a mesma do cadastro manual.** `validarPaciente` é chamada pelos
+dois caminhos: um CPF recusado no formulário precisa ser recusado aqui também,
+senão a importação vira a porta dos fundos das regras.
+
+O que a prévia separa:
+
+| Situação | O que acontece |
+|---|---|
+| Pronta | Entra |
+| Com erro | Fica de fora, com o motivo por linha e o número da linha como aparece no Excel |
+| Já cadastrada | Pulada. Só o CPF marca duplicata — homônimo existe, nome igual não prova que é a mesma pessoa |
+
+CPF repetido **dentro do próprio arquivo** também é detectado: a primeira
+ocorrência entra, as seguintes apontam para a linha original.
+
+O arquivo é enviado nos dois passos e reprocessado no servidor. Devolver as
+linhas já analisadas seria mais rápido, mas então o que entra no banco seria o
+que o navegador disse ter lido — e não é ele quem decide.
+
+A gravação vai em lotes de 100. Se um lote cair por causa de uma linha (alguém
+cadastrou o mesmo CPF durante a importação), aquele lote é reenviado linha a
+linha, para gravar o que dá e dizer exatamente qual ficou de fora.
+
+**Restrita à administradora.** Isto é regra da aplicação, não do banco: a RLS
+permite que a recepção cadastre paciente, porque cadastrar uma a uma é trabalho
+dela. Trazer uma base inteira de uma vez é outra coisa. A checagem existe na
+página e **de novo na ação de servidor** — esconder o botão não é proteger a rota.
+
+Limites: 2 MB e 2000 linhas por arquivo.
+
+### Arquivar em vez de apagar
+
+Não existe excluir paciente. Ela tem atendimento, recebimento e — mais adiante —
+documento assinado apontando para o cadastro; o banco recusaria a exclusão
+(`on delete restrict`), e apagar histórico não é o que a clínica quer. Arquivar
+tira da lista de ativas, preserva tudo e é reversível no clique seguinte.
+
+### Decisões desta etapa
+
+- **Nome social tem precedência em toda a interface.** O nome de registro só
+  aparece na ficha e na lista, identificado como tal.
+- **Observações são administrativas.** Preferência de horário, quem indicou,
+  forma de contato. Conteúdo clínico vai para o prontuário — está escrito no
+  próprio campo e no comentário da coluna no banco.
+- **Endereço em `jsonb`**, lido com tolerância: registro antigo fora do formato
+  não quebra a ficha.
+- **Ficha inexistente e ficha sem permissão devolvem a mesma tela.** A RLS não
+  distingue as duas, e a interface também não deve — dizer que o registro existe
+  já é informação.
+
+---
+
+## 11. Contratos e documentos assinados (Etapa 5)
 
 A clínica precisa de contratos de prestação de serviços assinados pela paciente,
 além das anamneses e termos de consentimento. Contrato e anamnese têm naturezas
