@@ -50,6 +50,7 @@ export default async function PaginaFichaPaciente({ params }: Props) {
           <HistoricoAtendimentos
             atendimentos={historico.atendimentos}
             exemplo={paciente.exemplo && exemplo}
+            pacienteId={paciente.id}
           />
         </div>
 

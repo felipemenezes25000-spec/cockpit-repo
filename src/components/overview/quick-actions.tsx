@@ -17,7 +17,7 @@ type Acao = { rotulo: string; href: string; icone: LucideIcon };
  */
 const ACOES: Acao[] = [
   { rotulo: "Nova paciente", href: "/pacientes/novo", icone: UserPlus },
-  { rotulo: "Novo agendamento", href: "/agenda", icone: CalendarPlus },
+  { rotulo: "Novo agendamento", href: "/agenda/novo", icone: CalendarPlus },
   { rotulo: "Registrar atendimento", href: "/prontuarios", icone: ClipboardPlus },
   { rotulo: "Registrar recebimento", href: "/financeiro", icone: Wallet },
   { rotulo: "Criar tarefa", href: "/relacionamento", icone: ListTodo },

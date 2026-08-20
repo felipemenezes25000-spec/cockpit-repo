@@ -40,10 +40,10 @@ export const MENU: ItemMenu[] = [
     icone: CalendarDays,
     finalidade:
       "Marcar, remarcar e acompanhar os atendimentos da clínica por dia, semana e profissional.",
+    // Marcar, remarcar, confirmar e mudar situação já existem. Fica o que falta.
     proximosPassos: [
-      "Visualização por dia, semana e profissional",
+      "Visualização por semana e por profissional",
       "Bloqueio de horários e intervalos",
-      "Confirmação de presença pela recepção",
       "Sincronização com o Google Calendar",
     ],
   },

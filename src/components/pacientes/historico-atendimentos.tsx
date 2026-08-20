@@ -1,5 +1,5 @@
 import { CalendarPlus, History } from "lucide-react";
-import { BotaoIndisponivel } from "@/components/ui/button";
+import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { SituacaoChip } from "@/components/ui/status-chip";
@@ -15,9 +15,11 @@ import type { AtendimentoDoHistorico } from "@/server/consultas/pacientes";
 export function HistoricoAtendimentos({
   atendimentos,
   exemplo,
+  pacienteId,
 }: {
   atendimentos: AtendimentoDoHistorico[];
   exemplo: boolean;
+  pacienteId: string;
 }) {
   return (
     <Card>
@@ -29,10 +31,14 @@ export function HistoricoAtendimentos({
             : `${atendimentos.length} atendimentos registrados`
         }
         acao={
-          <BotaoIndisponivel motivo="Marcar atendimento chega junto com o módulo Agenda">
+          <BotaoLink
+            href={`/agenda/novo?paciente=${pacienteId}`}
+            variante="secundaria"
+            tamanho="sm"
+          >
             <CalendarPlus aria-hidden="true" size={16} strokeWidth={1.75} />
             Marcar atendimento
-          </BotaoIndisponivel>
+          </BotaoLink>
         }
       />
 

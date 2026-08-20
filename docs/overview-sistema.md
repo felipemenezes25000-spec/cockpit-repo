@@ -442,7 +442,40 @@ tira da lista de ativas, preserva tudo e é reversível no clique seguinte.
 
 ---
 
-## 11. Contratos e documentos assinados (Etapa 5)
+## 11. Módulo Agenda (Etapa 4)
+
+Marcar, remarcar e acompanhar o dia. Mesma arquitetura do módulo Pacientes:
+consulta, ação e componente, com validação de verdade no servidor.
+
+### Telas
+
+| Rota | O que faz |
+|---|---|
+| `/agenda?dia=AAAA-MM-DD` | O dia na ordem do relógio, com as ações de situação em cada cartão. O dia mora na URL |
+| `/agenda/novo` | Marcar. Aceita `?paciente=` (vem da ficha) e `?dia=` (vem da agenda) |
+| `/agenda/[id]/editar` | Remarcar, editar e a trilha de situações |
+
+### Decisões
+
+- **Escolher o procedimento preenche duração e valor da tabela**, editáveis
+  caso a caso — o combinado pode ser outro.
+- **Seletor de paciente busca no servidor** (mesma consulta e RLS da listagem),
+  devolve até 8 opções e guarda só o `paciente_id`. A base nunca desce inteira.
+- **Choque de horário é recusado** para o mesmo profissional, com o nome de
+  quem já ocupa o horário. Cancelados e ausências liberam a vaga.
+- **A situação não é máquina de estados rígida.** A interface oferece só os
+  caminhos que fazem sentido (confirmar → iniciar → concluir; cancelado
+  reabre como agendado), mas o servidor aceita qualquer situação válida —
+  engano precisa ter volta. Toda mudança é gravada por gatilho no banco, com
+  autor e hora, e aparece na tela de edição.
+- **Os botões de situação funcionam sem JavaScript**: são formulários de
+  verdade, um por transição.
+- Hora é lida como **hora de parede da clínica** (`instanteNaClinica`), nunca
+  do servidor.
+
+---
+
+## 12. Contratos e documentos assinados (Etapa 5)
 
 A clínica precisa de contratos de prestação de serviços assinados pela paciente,
 além das anamneses e termos de consentimento. Contrato e anamnese têm naturezas

@@ -127,6 +127,13 @@ export function mesmoMes(a: Date, b: Date): boolean {
   return pa.ano === pb.ano && pa.mes === pb.mes;
 }
 
+/** "AAAA-MM-DD" do dia no relógio da clínica — chave de URL e de `input date`. */
+export function chaveDoDia(instante: Date = new Date()): string {
+  const { ano, mes, dia } = partesDoDia(instante);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${ano}-${pad(mes)}-${pad(dia)}`;
+}
+
 /** Converte "AAAA-MM-DD" (coluna `date` do banco) em instante da clínica. */
 export function dataDoBanco(texto: string): Date {
   const [ano, mes, dia] = texto.split("-").map(Number);
