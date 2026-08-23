@@ -475,7 +475,34 @@ consulta, ação e componente, com validação de verdade no servidor.
 
 ---
 
-## 12. Contratos e documentos assinados (Etapa 5)
+## 12. Configurações: tabela de procedimentos
+
+Primeira seção real do módulo Configurações. `/configuracoes` virou um hub —
+Procedimentos funciona; equipe, dados da clínica, horário e permissões estão
+marcados como "em breve".
+
+| Rota | O que faz |
+|---|---|
+| `/configuracoes/procedimentos` | A tabela: nome, duração, valor de tabela, retorno sugerido e quantos atendimentos já usaram cada um |
+| `/configuracoes/procedimentos/novo` | Cadastro. Restrito à administradora |
+| `/configuracoes/procedimentos/[id]/editar` | Edição, com o aviso de que mudar o padrão não altera o que já foi marcado |
+
+Decisões:
+
+- **Todo mundo vê a tabela; só a administradora escreve** — na página e de novo
+  na ação, espelhando a política `procedimentos_escrita` do banco. Quem não
+  pode editar não vê os botões: botão que vai falhar é pior que botão ausente.
+- **Procedimento não se apaga.** O histórico de atendimentos aponta para ele e
+  o banco recusaria (`on delete restrict`). "Tirar da agenda" esconde das novas
+  marcações — o formulário da Agenda só lista ativos — e preserva o passado.
+- **Editar muda o padrão, não o passado.** Duração e valor gravados em cada
+  atendimento são cópias do momento da marcação.
+- **Produtos não existem no sistema.** "Produtos" hoje é só categoria de
+  despesa. Estoque e venda de produto são decisão futura, com migration própria.
+
+---
+
+## 13. Contratos e documentos assinados (Etapa 5)
 
 A clínica precisa de contratos de prestação de serviços assinados pela paciente,
 além das anamneses e termos de consentimento. Contrato e anamnese têm naturezas

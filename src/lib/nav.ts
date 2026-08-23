@@ -135,9 +135,9 @@ export const MENU: ItemMenu[] = [
     icone: Settings,
     finalidade:
       "Dados da clínica, equipe, procedimentos, horários de atendimento e preferências do sistema.",
+    // A tabela de procedimentos já existe. Fica o que falta.
     proximosPassos: [
       "Dados da clínica e da equipe",
-      "Tabela de procedimentos e valores",
       "Horários de funcionamento",
       "Perfis de acesso e permissões",
     ],
