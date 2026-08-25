@@ -82,11 +82,11 @@ export const MENU: ItemMenu[] = [
     icone: Wallet,
     finalidade:
       "Recebimentos, despesas, formas de pagamento e acompanhamento do que está em aberto.",
+    // Vendas, recebimentos, despesas, taxas e fluxo já existem. Fica o que falta.
     proximosPassos: [
-      "Lançamento de recebimentos e despesas",
-      "Parcelamentos e formas de pagamento",
-      "Contas a receber e cobrança",
-      "Fechamento mensal e exportação",
+      "Cobrança automática do que venceu",
+      "Exportação para contabilidade",
+      "Emissão de nota fiscal",
     ],
   },
   {

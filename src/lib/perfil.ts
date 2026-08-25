@@ -19,4 +19,5 @@ export type UsuarioAtual = {
 export const ROTULO_PAPEL: Record<Papel, string> = {
   administradora: "Administradora",
   recepcao: "Recepção",
+  financeiro: "Financeiro",
 };

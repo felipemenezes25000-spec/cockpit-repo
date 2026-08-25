@@ -168,8 +168,8 @@ insert into public.pendencias (tipo, paciente_id, descricao, prazo, prioridade, 
 -- ---------------------------------------------------------------------
 
 insert into public.recebimentos
-  (paciente_id, descricao, valor, forma, situacao, vencimento, recebido_em, exemplo)
-select d.paciente, d.descricao, d.valor, d.forma::public.forma_pagamento, 'recebido',
+  (paciente_id, descricao, valor, valor_recebido, forma, situacao, vencimento, recebido_em, exemplo)
+select d.paciente, d.descricao, d.valor, d.valor, d.forma::public.forma_pagamento, 'recebido',
        greatest(date_trunc('month', pg_temp.hoje_sp())::date,
                 pg_temp.hoje_sp() - (d.ordem * (extract(day from pg_temp.hoje_sp())::int - 1) / 13)),
        greatest(date_trunc('month', pg_temp.hoje_sp())::date,
@@ -193,26 +193,36 @@ select d.paciente, d.descricao, d.valor, d.forma::public.forma_pagamento, 'receb
 
 insert into public.recebimentos
   (paciente_id, descricao, valor, forma, situacao, vencimento, exemplo) values
-  ('c0000000-0000-4000-8000-000000000016','Peeling químico — 2ª parcela',      270.00,'pix',    'em_aberto', pg_temp.hoje_sp() - 3,  true),
-  ('c0000000-0000-4000-8000-000000000005','Microagulhamento — saldo',          340.00,'pix',    'em_aberto', pg_temp.hoje_sp() + 4,  true),
-  ('c0000000-0000-4000-8000-000000000003','Toxina botulínica — 2ª parcela',    725.00,'credito','em_aberto', pg_temp.hoje_sp() + 9,  true),
-  ('c0000000-0000-4000-8000-000000000015','Bioestimulador — 2ª parcela',      1300.00,'credito','em_aberto', pg_temp.hoje_sp() + 14, true),
-  ('c0000000-0000-4000-8000-000000000001','Toxina botulínica — 2ª parcela',    725.00,'credito','em_aberto', pg_temp.hoje_sp() + 21, true);
+  ('c0000000-0000-4000-8000-000000000016','Peeling químico — 2ª parcela',      270.00,'pix',    'previsto', pg_temp.hoje_sp() - 3,  true),
+  ('c0000000-0000-4000-8000-000000000005','Microagulhamento — saldo',          340.00,'pix',    'previsto', pg_temp.hoje_sp() + 4,  true),
+  ('c0000000-0000-4000-8000-000000000003','Toxina botulínica — 2ª parcela',    725.00,'credito','previsto', pg_temp.hoje_sp() + 9,  true),
+  ('c0000000-0000-4000-8000-000000000015','Bioestimulador — 2ª parcela',      1300.00,'credito','previsto', pg_temp.hoje_sp() + 14, true),
+  ('c0000000-0000-4000-8000-000000000001','Toxina botulínica — 2ª parcela',    725.00,'credito','previsto', pg_temp.hoje_sp() + 21, true);
 
-insert into public.despesas (descricao, categoria, valor, competencia, pago_em, exemplo) values
-  ('Reposição de toxina e preenchedores','produtos',  4820.00, date_trunc('month', pg_temp.hoje_sp())::date,      date_trunc('month', pg_temp.hoje_sp())::date,     true),
-  ('Aluguel da sala',                    'estrutura', 3200.00, date_trunc('month', pg_temp.hoje_sp())::date,      date_trunc('month', pg_temp.hoje_sp())::date + 4, true),
-  ('Equipe de apoio',                    'equipe',    2900.00, date_trunc('month', pg_temp.hoje_sp())::date,      date_trunc('month', pg_temp.hoje_sp())::date + 4, true),
-  ('Descartáveis e higienização',        'produtos',   760.00, date_trunc('month', pg_temp.hoje_sp())::date,      null,                                        true),
-  ('Gestão de redes sociais',            'marketing', 1100.00, date_trunc('month', pg_temp.hoje_sp())::date,      date_trunc('month', pg_temp.hoje_sp())::date + 9, true),
-  ('Energia, água e internet',           'estrutura',  690.00, date_trunc('month', pg_temp.hoje_sp())::date,      null,                                        true),
-  ('Impostos do mês',                    'impostos',  1840.00, date_trunc('month', pg_temp.hoje_sp())::date,      null,                                        true);
+insert into public.despesas (descricao, categoria, valor, competencia, vencimento, pago_em, situacao, exemplo)
+select d.descricao, d.categoria::public.categoria_despesa, d.valor,
+       date_trunc('month', pg_temp.hoje_sp())::date,
+       date_trunc('month', pg_temp.hoje_sp())::date + d.vence_dia,
+       case when d.paga then date_trunc('month', pg_temp.hoje_sp())::date + d.vence_dia else null end,
+       case when d.paga then 'paga' else 'pendente' end::public.situacao_despesa,
+       true
+  from (values
+    -- Uma pendente com vencimento passado aparece como vencida — de propósito,
+    -- para a tela de despesas mostrar os três estados.
+    ('Reposição de toxina e preenchedores', 'produtos',  4820.00, 0,  true),
+    ('Aluguel da sala',                     'estrutura', 3200.00, 4,  true),
+    ('Equipe de apoio',                     'equipe',    2900.00, 4,  true),
+    ('Descartáveis e higienização',         'produtos',   760.00, 2,  false),
+    ('Gestão de redes sociais',             'marketing', 1100.00, 9,  true),
+    ('Energia, água e internet',            'estrutura',  690.00, 24, false),
+    ('Impostos do mês',                     'impostos',  1840.00, 19, false)
+  ) as d(descricao, categoria, valor, vence_dia, paga);
 
 -- Recebimentos dos cinco meses anteriores, para o gráfico ter história.
 insert into public.recebimentos
-  (paciente_id, descricao, valor, forma, situacao, vencimento, recebido_em, exemplo)
+  (paciente_id, descricao, valor, valor_recebido, forma, situacao, vencimento, recebido_em, exemplo)
 select 'c0000000-0000-4000-8000-000000000001', 'Faturamento do mês (exemplo)',
-       h.valor, 'pix', 'recebido',
+       h.valor, h.valor, 'pix', 'recebido',
        (date_trunc('month', pg_temp.hoje_sp()) - (h.meses || ' months')::interval)::date + 14,
        (date_trunc('month', pg_temp.hoje_sp()) - (h.meses || ' months')::interval)::date + 14,
        true

@@ -32,16 +32,22 @@ export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
   const hoje = inicioDoDia();
 
   const [quitados, emAberto, despesas] = await Promise.all([
+    // O que de fato entrou: o valor efetivo, líquido de taxa de cartão.
     supabase
       .from("recebimentos")
-      .select("valor")
-      .eq("situacao", "recebido")
+      .select("valor_recebido")
+      .in("situacao", ["recebido", "recebido_divergencia"])
       .gte("recebido_em", dataParaColuna(inicioMes))
       .lt("recebido_em", dataParaColuna(inicioProximoMes)),
-    supabase.from("recebimentos").select("valor, vencimento").eq("situacao", "em_aberto"),
+    // Em aberto = previsto ou pendente, pelo líquido previsto.
+    supabase
+      .from("recebimentos")
+      .select("valor_liquido, vencimento")
+      .in("situacao", ["previsto", "pendente"]),
     supabase
       .from("despesas")
       .select("valor")
+      .neq("situacao", "cancelada")
       .gte("competencia", dataParaColuna(inicioMes))
       .lt("competencia", dataParaColuna(inicioProximoMes)),
   ]);
@@ -49,18 +55,21 @@ export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
   const erro = quitados.error ?? emAberto.error ?? despesas.error;
   if (erro) throw new Error(`Não foi possível carregar o financeiro: ${erro.message}`);
 
-  const somar = (linhas: { valor: number }[] | null) =>
-    (linhas ?? []).reduce((total, l) => total + Number(l.valor), 0);
-
   const vencido = (emAberto.data ?? [])
     .filter((l) => dataDoBanco(l.vencimento).getTime() < hoje.getTime())
-    .reduce((total, l) => total + Number(l.valor), 0);
+    .reduce((total, l) => total + Number(l.valor_liquido ?? 0), 0);
 
   return {
-    recebidoNoMes: somar(quitados.data),
-    aReceber: somar(emAberto.data),
+    recebidoNoMes: (quitados.data ?? []).reduce(
+      (total, l) => total + Number(l.valor_recebido ?? 0),
+      0,
+    ),
+    aReceber: (emAberto.data ?? []).reduce(
+      (total, l) => total + Number(l.valor_liquido ?? 0),
+      0,
+    ),
     vencido,
-    despesasDoMes: somar(despesas.data),
+    despesasDoMes: (despesas.data ?? []).reduce((total, l) => total + Number(l.valor), 0),
   };
 });
 
@@ -73,8 +82,8 @@ export const serieMensalRecebimentos = cache(async (): Promise<PontoMensal[]> =>
 
   const { data, error } = await supabase
     .from("recebimentos")
-    .select("valor, recebido_em")
-    .eq("situacao", "recebido")
+    .select("valor_recebido, recebido_em")
+    .in("situacao", ["recebido", "recebido_divergencia"])
     .gte("recebido_em", dataParaColuna(inicio))
     .lt("recebido_em", dataParaColuna(fim));
 
@@ -97,7 +106,7 @@ export const serieMensalRecebimentos = cache(async (): Promise<PontoMensal[]> =>
     if (!linha.recebido_em) continue;
     const { ano, mes } = partesDoDia(dataDoBanco(linha.recebido_em));
     const indice = indicePorChave.get(`${ano}-${mes}`);
-    if (indice !== undefined) baldes[indice].recebido += Number(linha.valor);
+    if (indice !== undefined) baldes[indice].recebido += Number(linha.valor_recebido ?? 0);
   }
 
   return baldes;

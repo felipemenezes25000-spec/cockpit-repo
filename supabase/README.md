@@ -13,6 +13,10 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0003_funcoes_em_schema_privado.sql` | Move as funções auxiliares das políticas para o schema `private`, fora do que o PostgREST publica. |
 | `0004_cadastro_nao_concede_acesso.sql` | Perfil novo nasce inativo e como recepção. O papel deixa de vir do metadado do cadastro. |
 | `0005_marca_dados_de_exemplo.sql` | Coluna `exemplo` nas tabelas de conteúdo, para o sistema saber o que é fictício e avisar na tela. |
+| `0006_financeiro_enums.sql` | Enums do Financeiro: formas boleto/outra, papel `financeiro`, situações do recebimento (em_aberto vira previsto), tipo de cartão e situação de despesa. |
+| `0007_financeiro_fundacao.sql` | Vendas, tabela de taxas de cartão, histórico de alterações e ajustes. A conta fecha por CHECK constraint; registro financeiro não tem política de DELETE. |
+| `0008_operacoes_de_venda.sql` | Funções `venda_registrar` e `venda_alterar_pagamento`: gravações compostas em transação, com a RLS de quem chama. |
+| `0009_anon_fora_das_tabelas_novas.sql` | Revoga o anon das tabelas novas e muda o default para as futuras já nascerem sem o grant. |
 
 ## Projeto
 
@@ -60,8 +64,9 @@ npx supabase db diff --linked
 
 | Perfil | Alcance |
 |---|---|
-| `administradora` | Tudo, inclusive despesas, auditoria e gestão de usuários |
-| `recepcao` | Pacientes, agenda, retornos, pendências e recebimentos. Sem despesas, sem auditoria |
+| `administradora` | Tudo, inclusive despesas, auditoria, gestão de usuários e a tabela de taxas de cartão |
+| `financeiro` | Vendas, recebimentos, despesas e alteração de taxa com justificativa. Não configura a tabela de taxas nem gerencia usuários |
+| `recepcao` | Pacientes, agenda, retornos, pendências e registro de venda com a taxa padrão. Sem despesas, sem auditoria |
 
 O papel fica em `public.perfis.papel` e é lido pelas funções
 `private.papel_atual()`, `private.e_administradora()` e `private.tem_acesso()`,

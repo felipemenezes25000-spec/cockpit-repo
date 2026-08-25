@@ -47,3 +47,9 @@ export async function ehAdministradora(): Promise<boolean> {
   const usuario = await usuarioAtual();
   return usuario?.papel === "administradora";
 }
+
+/** Administradora ou perfil financeiro — quem opera o módulo Financeiro. */
+export async function ehFinanceira(): Promise<boolean> {
+  const usuario = await usuarioAtual();
+  return usuario?.papel === "administradora" || usuario?.papel === "financeiro";
+}

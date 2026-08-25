@@ -290,8 +290,12 @@ export const historicoDoPaciente = cache(
 
     const financeiro = (recebimentos.data ?? []).reduce(
       (acumulado, r) => {
-        if (r.situacao === "recebido") acumulado.recebido += r.valor;
-        if (r.situacao === "em_aberto") acumulado.emAberto += r.valor;
+        if (r.situacao === "recebido" || r.situacao === "recebido_divergencia") {
+          acumulado.recebido += r.valor;
+        }
+        if (r.situacao === "previsto" || r.situacao === "pendente") {
+          acumulado.emAberto += r.valor;
+        }
         return acumulado;
       },
       { recebido: 0, emAberto: 0 },

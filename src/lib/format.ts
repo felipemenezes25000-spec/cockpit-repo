@@ -55,6 +55,12 @@ const mesCurto = new Intl.DateTimeFormat(LOCALE, {
   timeZone: FUSO_CLINICA,
 });
 
+const mesAno = new Intl.DateTimeFormat(LOCALE, {
+  month: "long",
+  year: "numeric",
+  timeZone: FUSO_CLINICA,
+});
+
 /** R$ 1.250,00 */
 export function formatarMoeda(valor: number): string {
   return moeda.format(valor);
@@ -88,6 +94,11 @@ export function formatarHora(data: Date): string {
 /** jul. */
 export function formatarMesCurto(data: Date): string {
   return mesCurto.format(data);
+}
+
+/** agosto de 2026 */
+export function formatarMesAno(data: Date): string {
+  return mesAno.format(data);
 }
 
 /** Primeira letra maiúscula, respeitando acentos. */

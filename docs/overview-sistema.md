@@ -502,7 +502,75 @@ Decisões:
 
 ---
 
-## 13. Contratos e documentos assinados (Etapa 5)
+## 13. Módulo Financeiro (Etapa 5)
+
+Vendas, recebimentos, despesas, taxas de cartão, movimentações e fluxo de
+caixa. Seis áreas em abas dentro de `/financeiro`, todas com o mês na URL.
+
+### O modelo
+
+| Tabela | Papel |
+|---|---|
+| `vendas` | O fato gerador: paciente, procedimento, valores, forma, parcelas e a **cópia congelada da taxa** |
+| `taxas_cartao` | Tabela padrão por operadora, tipo e parcelas. Alterar aqui vale só para as próximas vendas |
+| `recebimentos` | Ganharam `venda_id`, `taxa_valor`, `valor_recebido` e o líquido calculado pelo banco |
+| `venda_alteracoes` | Histórico imutável (sem UPDATE nem DELETE no banco): fotografia de antes e depois, motivo, autor e hora |
+| `ajustes_financeiros` | A diferença quando a mudança acontece depois de o recebimento já estar confirmado |
+
+### As regras que valem dinheiro
+
+- **Cartão parcelado, repasse único.** A paciente parcela, a operadora
+  antecipa, a clínica recebe uma vez — a taxa já inclui a antecipação. Uma
+  venda em 5x gera UM recebimento. Não existem parcelas mensais de repasse.
+- **A taxa é da clínica, não da paciente**: desconta do valor final, nunca
+  acrescenta. `líquido = final − (final × taxa)`.
+- **Centavos inteiros.** Todo cálculo em `lib/moeda.ts` usa inteiros; o
+  percentual vira pontos-base (6,5% = 650) e há um único arredondamento por
+  operação. E o banco confere de novo: `original − desconto = final` e
+  `final − taxa = líquido` são CHECK constraints.
+- **A taxa nunca conta duas vezes.** Ela é dedução do líquido; não existe como
+  despesa. Resultado de caixa = líquido recebido − despesas pagas.
+- **Gravação composta é função do banco.** `venda_registrar` e
+  `venda_alterar_pagamento` fazem tudo ou nada, SECURITY INVOKER — a RLS de
+  quem chama continua valendo.
+- **Registro financeiro não se apaga.** Nenhuma tabela nova tem política de
+  DELETE. Corrigir é cancelar, ajustar ou reabrir.
+
+### Mudança de forma de pagamento e de taxa
+
+Antes de confirmar, a tela mostra o comparativo antes → depois (forma,
+parcelas, taxa, líquido) e exige motivo. Depois:
+
+- Recebimento **ainda previsto**: é reescrito com os valores novos.
+- Recebimento **já confirmado**: o registro original não é tocado — a
+  diferença vira uma linha em `ajustes_financeiros`.
+- Tudo entra em `venda_alteracoes`, com autor, data e hora.
+
+Taxa manual exige justificativa, fica marcada na venda
+("Taxa alterada manualmente") e **não toca a tabela padrão**.
+
+### Situações
+
+Recebimento: previsto · pendente · recebido · recebido com divergência
+(valor efetivo ≠ líquido previsto — decidido pelo sistema, não por opinião) ·
+cancelado. Despesa: pendente · paga · cancelada — "vencida" é derivada
+(pendente com prazo no passado), nunca gravada, para não envelhecer errado.
+
+### Permissões
+
+| Ação | Recepção | Financeiro | Administradora |
+|---|---|---|---|
+| Registrar venda com taxa padrão | ✓ | ✓ | ✓ |
+| Confirmar recebimento, lançar despesa | — | ✓ | ✓ |
+| Alterar forma de pagamento / taxa (com motivo) | — | ✓ | ✓ |
+| Configurar a tabela de taxas | — | — | ✓ |
+
+Nas três camadas: interface (não oferece a porta), ação de servidor (recusa
+com mensagem) e RLS/função do banco (recusa mesmo sem as outras duas).
+
+---
+
+## 14. Contratos e documentos assinados (Etapa 6)
 
 A clínica precisa de contratos de prestação de serviços assinados pela paciente,
 além das anamneses e termos de consentimento. Contrato e anamnese têm naturezas

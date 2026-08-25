@@ -1,7 +1,3 @@
-// Gerado automaticamente a partir do banco. NÃO EDITE À MÃO.
-//
-// Para atualizar depois de uma migração:  npm run db:tipos
-
 export type Json =
   | string
   | number
@@ -18,6 +14,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      ajustes_financeiros: {
+        Row: {
+          criado_em: string
+          criado_por: string | null
+          exemplo: boolean
+          id: string
+          motivo: string
+          recebimento_id: string | null
+          valor: number
+          venda_id: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por?: string | null
+          exemplo?: boolean
+          id?: string
+          motivo: string
+          recebimento_id?: string | null
+          valor: number
+          venda_id: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por?: string | null
+          exemplo?: boolean
+          id?: string
+          motivo?: string
+          recebimento_id?: string | null
+          valor?: number
+          venda_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ajustes_financeiros_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ajustes_financeiros_recebimento_id_fkey"
+            columns: ["recebimento_id"]
+            isOneToOne: false
+            referencedRelation: "recebimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ajustes_financeiros_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atendimento_situacoes: {
         Row: {
           atendimento_id: string
@@ -176,9 +227,13 @@ export type Database = {
           criado_por: string | null
           descricao: string
           exemplo: boolean
+          forma: Database["public"]["Enums"]["forma_pagamento"] | null
           id: string
+          observacoes: string | null
           pago_em: string | null
+          situacao: Database["public"]["Enums"]["situacao_despesa"]
           valor: number
+          vencimento: string
         }
         Insert: {
           atualizado_em?: string
@@ -188,9 +243,13 @@ export type Database = {
           criado_por?: string | null
           descricao: string
           exemplo?: boolean
+          forma?: Database["public"]["Enums"]["forma_pagamento"] | null
           id?: string
+          observacoes?: string | null
           pago_em?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_despesa"]
           valor: number
+          vencimento: string
         }
         Update: {
           atualizado_em?: string
@@ -200,9 +259,13 @@ export type Database = {
           criado_por?: string | null
           descricao?: string
           exemplo?: boolean
+          forma?: Database["public"]["Enums"]["forma_pagamento"] | null
           id?: string
+          observacoes?: string | null
           pago_em?: string | null
+          situacao?: Database["public"]["Enums"]["situacao_despesa"]
           valor?: number
+          vencimento?: string
         }
         Relationships: [
           {
@@ -467,9 +530,13 @@ export type Database = {
           parcela: number | null
           recebido_em: string | null
           situacao: Database["public"]["Enums"]["situacao_recebimento"]
+          taxa_valor: number
           total_parcelas: number | null
           valor: number
+          valor_liquido: number | null
+          valor_recebido: number | null
           vencimento: string
+          venda_id: string | null
         }
         Insert: {
           atendimento_id?: string | null
@@ -484,9 +551,13 @@ export type Database = {
           parcela?: number | null
           recebido_em?: string | null
           situacao?: Database["public"]["Enums"]["situacao_recebimento"]
+          taxa_valor?: number
           total_parcelas?: number | null
           valor: number
+          valor_liquido?: number | null
+          valor_recebido?: number | null
           vencimento: string
+          venda_id?: string | null
         }
         Update: {
           atendimento_id?: string | null
@@ -501,9 +572,13 @@ export type Database = {
           parcela?: number | null
           recebido_em?: string | null
           situacao?: Database["public"]["Enums"]["situacao_recebimento"]
+          taxa_valor?: number
           total_parcelas?: number | null
           valor?: number
+          valor_liquido?: number | null
+          valor_recebido?: number | null
           vencimento?: string
+          venda_id?: string | null
         }
         Relationships: [
           {
@@ -525,6 +600,13 @@ export type Database = {
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimentos_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
             referencedColumns: ["id"]
           },
         ]
@@ -590,12 +672,226 @@ export type Database = {
           },
         ]
       }
+      taxas_cartao: {
+        Row: {
+          ativa: boolean
+          atualizado_em: string
+          criado_em: string
+          id: string
+          operadora: string
+          parcelas: number
+          percentual: number
+          tipo: Database["public"]["Enums"]["tipo_cartao"]
+        }
+        Insert: {
+          ativa?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          operadora: string
+          parcelas?: number
+          percentual: number
+          tipo: Database["public"]["Enums"]["tipo_cartao"]
+        }
+        Update: {
+          ativa?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          operadora?: string
+          parcelas?: number
+          percentual?: number
+          tipo?: Database["public"]["Enums"]["tipo_cartao"]
+        }
+        Relationships: []
+      }
+      venda_alteracoes: {
+        Row: {
+          de: Json
+          em: string
+          id: number
+          motivo: string
+          para: Json
+          por: string | null
+          tipo: string
+          venda_id: string
+        }
+        Insert: {
+          de: Json
+          em?: string
+          id?: never
+          motivo: string
+          para: Json
+          por?: string | null
+          tipo: string
+          venda_id: string
+        }
+        Update: {
+          de?: Json
+          em?: string
+          id?: never
+          motivo?: string
+          para?: Json
+          por?: string | null
+          tipo?: string
+          venda_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venda_alteracoes_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venda_alteracoes_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          data_venda: string
+          desconto: number
+          exemplo: boolean
+          forma: Database["public"]["Enums"]["forma_pagamento"]
+          id: string
+          observacoes: string | null
+          paciente_id: string
+          parcelas: number
+          procedimento_id: string
+          taxa_cartao_id: string | null
+          taxa_justificativa: string | null
+          taxa_manual: boolean
+          taxa_percentual: number
+          taxa_valor: number
+          valor_final: number
+          valor_liquido: number
+          valor_original: number
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_venda: string
+          desconto?: number
+          exemplo?: boolean
+          forma: Database["public"]["Enums"]["forma_pagamento"]
+          id?: string
+          observacoes?: string | null
+          paciente_id: string
+          parcelas?: number
+          procedimento_id: string
+          taxa_cartao_id?: string | null
+          taxa_justificativa?: string | null
+          taxa_manual?: boolean
+          taxa_percentual?: number
+          taxa_valor?: number
+          valor_final: number
+          valor_liquido: number
+          valor_original: number
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_venda?: string
+          desconto?: number
+          exemplo?: boolean
+          forma?: Database["public"]["Enums"]["forma_pagamento"]
+          id?: string
+          observacoes?: string | null
+          paciente_id?: string
+          parcelas?: number
+          procedimento_id?: string
+          taxa_cartao_id?: string | null
+          taxa_justificativa?: string | null
+          taxa_manual?: boolean
+          taxa_percentual?: number
+          taxa_valor?: number
+          valor_final?: number
+          valor_liquido?: number
+          valor_original?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_procedimento_id_fkey"
+            columns: ["procedimento_id"]
+            isOneToOne: false
+            referencedRelation: "procedimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_taxa_cartao_id_fkey"
+            columns: ["taxa_cartao_id"]
+            isOneToOne: false
+            referencedRelation: "taxas_cartao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      venda_alterar_pagamento: {
+        Args: {
+          p_forma: Database["public"]["Enums"]["forma_pagamento"]
+          p_motivo: string
+          p_parcelas: number
+          p_taxa_cartao_id: string
+          p_taxa_manual: boolean
+          p_taxa_percentual: number
+          p_taxa_valor: number
+          p_tipo: string
+          p_venda_id: string
+        }
+        Returns: undefined
+      }
+      venda_registrar: {
+        Args: {
+          p_data_venda: string
+          p_desconto: number
+          p_descricao: string
+          p_forma: Database["public"]["Enums"]["forma_pagamento"]
+          p_observacoes: string
+          p_paciente_id: string
+          p_parcelas: number
+          p_procedimento_id: string
+          p_recebido_em: string
+          p_situacao_inicial: Database["public"]["Enums"]["situacao_recebimento"]
+          p_taxa_cartao_id: string
+          p_taxa_justificativa: string
+          p_taxa_manual: boolean
+          p_taxa_percentual: number
+          p_taxa_valor: number
+          p_valor_original: number
+          p_vencimento: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       categoria_despesa:
@@ -611,7 +907,9 @@ export type Database = {
         | "debito"
         | "dinheiro"
         | "transferencia"
-      papel_usuario: "administradora" | "recepcao"
+        | "boleto"
+        | "outra"
+      papel_usuario: "administradora" | "recepcao" | "financeiro"
       prioridade: "alta" | "media" | "baixa"
       situacao_acompanhamento:
         | "nao_iniciado"
@@ -627,8 +925,15 @@ export type Database = {
         | "concluido"
         | "cancelado"
         | "ausente"
+      situacao_despesa: "pendente" | "paga" | "cancelada"
       situacao_pendencia: "aberta" | "resolvida" | "cancelada"
-      situacao_recebimento: "em_aberto" | "recebido" | "cancelado"
+      situacao_recebimento:
+        | "previsto"
+        | "recebido"
+        | "cancelado"
+        | "pendente"
+        | "recebido_divergencia"
+      tipo_cartao: "debito" | "credito"
       tipo_pendencia:
         | "anamnese"
         | "termo"
@@ -778,8 +1083,10 @@ export const Constants = {
         "debito",
         "dinheiro",
         "transferencia",
+        "boleto",
+        "outra",
       ],
-      papel_usuario: ["administradora", "recepcao"],
+      papel_usuario: ["administradora", "recepcao", "financeiro"],
       prioridade: ["alta", "media", "baixa"],
       situacao_acompanhamento: [
         "nao_iniciado",
@@ -797,8 +1104,16 @@ export const Constants = {
         "cancelado",
         "ausente",
       ],
+      situacao_despesa: ["pendente", "paga", "cancelada"],
       situacao_pendencia: ["aberta", "resolvida", "cancelada"],
-      situacao_recebimento: ["em_aberto", "recebido", "cancelado"],
+      situacao_recebimento: [
+        "previsto",
+        "recebido",
+        "cancelado",
+        "pendente",
+        "recebido_divergencia",
+      ],
+      tipo_cartao: ["debito", "credito"],
       tipo_pendencia: [
         "anamnese",
         "termo",
