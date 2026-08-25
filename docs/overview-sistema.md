@@ -296,9 +296,15 @@ Regras que valem para as próximas etapas:
 - **A chave `service_role` não entra na aplicação.** Quem decide o que cada
   pessoa enxerga é a RLS, a partir do usuário da sessão.
 - Cor nenhuma fora de `globals.css`. Nada de `bg-[#ABC123]` no componente.
-- **Vermelho só para o que é negativo.** Pendência comum, confirmação em aberto e
-  prazo se aproximando são atenção, não erro. Se tudo grita, nada é ouvido.
-- **Verde só para o que é positivo.** Não é cor de marca — é resultado.
+- **Vermelho tem dois papéis, e só dois.** Estado negativo (cancelado, vencido,
+  não compareceu) e **dinheiro saindo** — todo valor de despesa é vermelho, na
+  convenção contábil, por decisão da clínica. Pendência comum, confirmação em
+  aberto e prazo se aproximando continuam sendo atenção, não erro.
+- **Verde para o positivo e para dinheiro entrando.** Não é cor de marca — é
+  resultado. O chip de situação segue semântico: despesa "paga" é verde no chip
+  (tarefa resolvida) com o valor vermelho (saiu do caixa) — são eixos diferentes.
+- **A taxa de cartão não herda o vermelho de despesa**: ela não é despesa — é
+  dedução do líquido, mostrada como "−" na conta da venda.
 - Situação e prioridade nunca são comunicadas só por cor — sempre acompanham texto
   e uma forma própria.
 - Botão que não executa nada fica visivelmente indisponível, com a razão à vista.

@@ -16,7 +16,7 @@ import type { Movimentacao, TipoMovimentacao } from "@/server/consultas/painel-f
 const ESTILO: Record<TipoMovimentacao, { icone: LucideIcon; rotulo: string; classes: string }> = {
   venda: { icone: Receipt, rotulo: "Venda", classes: "bg-informativo-fundo text-informativo-texto" },
   recebimento: { icone: ArrowUpRight, rotulo: "Entrada", classes: "bg-positivo-fundo text-positivo" },
-  despesa: { icone: ArrowDownRight, rotulo: "Saída", classes: "bg-surface-container text-on-surface-variant" },
+  despesa: { icone: ArrowDownRight, rotulo: "Saída", classes: "bg-negativo-fundo text-negativo" },
   ajuste: { icone: Scale, rotulo: "Ajuste", classes: "bg-atencao-fundo text-atencao" },
 };
 
@@ -69,7 +69,8 @@ export function ListaMovimentacoes({ itens }: { itens: Movimentacao[] }) {
                 "tabular shrink-0 text-sm",
                 !ehCaixa && "text-outline",
                 ehCaixa && item.valor >= 0 && "font-medium text-positivo",
-                ehCaixa && item.valor < 0 && "font-medium text-on-surface-variant",
+                // Dinheiro saindo é vermelho — despesa paga e ajuste negativo.
+                ehCaixa && item.valor < 0 && "font-medium text-negativo",
               )}
             >
               {ehCaixa && item.valor > 0 ? "+ " : ""}

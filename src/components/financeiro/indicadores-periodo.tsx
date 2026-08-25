@@ -77,17 +77,19 @@ export function IndicadoresPeriodo({
       tom: n.aReceberVencido > 0 ? "atencao" : undefined,
     },
     {
+      // Despesa é sempre vermelha: dinheiro saindo, na convenção contábil.
       rotulo: "Despesas pagas",
       valor: n.despesasPagas,
       apoio: "saídas do período",
       icone: ArrowDownRight,
+      tom: "negativo",
     },
     {
       rotulo: "Despesas pendentes",
       valor: n.despesasPendentes,
       apoio: "a pagar até o fim do mês",
       icone: ReceiptText,
-      tom: n.despesasPendentes > 0 ? "atencao" : undefined,
+      tom: "negativo",
     },
     {
       rotulo: "Resultado de caixa",
@@ -114,7 +116,10 @@ export function IndicadoresPeriodo({
                   aria-hidden="true"
                   size={16}
                   strokeWidth={1.5}
-                  className="shrink-0 text-outline-variant"
+                  className={cn(
+                    "shrink-0",
+                    cartao.tom === "negativo" ? "text-negativo" : "text-outline-variant",
+                  )}
                 />
               </div>
 

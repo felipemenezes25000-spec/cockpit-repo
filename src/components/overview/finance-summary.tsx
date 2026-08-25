@@ -15,6 +15,8 @@ type Linha = {
   valor: number;
   icone: LucideIcon;
   cor: string;
+  /** Cor do número. Convenção contábil: entrada verde, saída vermelha. */
+  corValor?: string;
   apoio: string;
   apoioEmAlerta?: boolean;
 };
@@ -30,17 +32,19 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       rotulo: "Entradas do mês",
       valor: resumo.recebidoNoMes,
       icone: ArrowUpRight,
-      // Dinheiro que entrou é coisa boa.
+      // Convenção contábil, a pedido da clínica: entrada verde, saída
+      // vermelha. É um segundo papel do vermelho — direção do dinheiro —
+      // separado do papel de estado (cancelado, vencido).
       cor: "text-positivo",
+      corValor: "text-positivo",
       apoio: "recebimentos já quitados",
     },
     {
       rotulo: "Despesas do mês",
       valor: resumo.despesasDoMes,
       icone: ArrowDownRight,
-      // Despesa é saída, não é problema: uma clínica que gasta está operando.
-      // Vermelho aqui gastaria o alarme com o que é rotina.
-      cor: "text-outline",
+      cor: "text-negativo",
+      corValor: "text-negativo",
       apoio: "lançamentos do período",
     },
     {
@@ -91,7 +95,12 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
                   />
                   <span className="rotulo">{linha.rotulo}</span>
                 </span>
-                <p className="tabular t-headline mt-3 text-on-surface">
+                <p
+                  className={cn(
+                    "tabular t-headline mt-3",
+                    linha.corValor ?? "text-on-surface",
+                  )}
+                >
                   {formatarMoeda(linha.valor)}
                 </p>
                 <p

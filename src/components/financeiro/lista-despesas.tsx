@@ -56,7 +56,7 @@ export function ListaDespesas({
               </div>
 
               <p className="tabular mt-1 text-xs text-outline">
-                {ROTULO_CATEGORIA[despesa.categoria]} · {formatarMoeda(despesa.valor)}
+                {ROTULO_CATEGORIA[despesa.categoria]}
                 {despesa.situacao === "paga" && despesa.pagoEm
                   ? ` · paga em ${formatarData(despesa.pagoEm)}${despesa.forma ? ` (${ROTULO_FORMA[despesa.forma]})` : ""}`
                   : ` · vence ${formatarData(despesa.vencimento)} (${descreverPrazo(despesa.venceEmDias)})`}
@@ -67,7 +67,20 @@ export function ListaDespesas({
               ) : null}
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
+              {/* Saída de dinheiro é vermelha. Cancelada perde a força:
+                  o valor não saiu nem vai sair. */}
+              <span
+                className={cn(
+                  "tabular text-base font-semibold",
+                  despesa.situacao === "cancelada"
+                    ? "text-outline line-through"
+                    : "text-negativo",
+                )}
+              >
+                − {formatarMoeda(despesa.valor)}
+              </span>
+
               <Link
                 href={`/financeiro/despesas/${despesa.id}/editar`}
                 className="inline-flex h-8 items-center rounded-[var(--radius-cartao)] border border-card-border px-3 text-xs font-medium text-on-surface-variant transition-colors hover:border-primary hover:text-primary"

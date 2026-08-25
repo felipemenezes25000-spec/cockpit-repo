@@ -34,10 +34,11 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
                   {capitalizar(formatarMesAno(mes.mes))}
                   {ultimo ? <span className="ml-2 text-xs text-outline">(em curso)</span> : null}
                 </td>
-                <td className="tabular py-2.5 pr-4 text-right text-on-surface">
+                <td className="tabular py-2.5 pr-4 text-right text-positivo">
                   {formatarMoedaCompacta(mes.recebido)}
                 </td>
-                <td className="tabular py-2.5 pr-4 text-right text-on-surface-variant">
+                {/* Entrada verde, saída vermelha — convenção contábil. */}
+                <td className="tabular py-2.5 pr-4 text-right text-negativo">
                   {formatarMoedaCompacta(mes.despesas)}
                 </td>
                 <td
