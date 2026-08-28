@@ -7,9 +7,22 @@ import { formatarData, formatarMoeda } from "@/lib/format";
 import { ROTULO_FORMA } from "@/lib/venda";
 import type { VendaDaLista } from "@/server/consultas/vendas";
 
-export function ListaVendas({ vendas }: { vendas: VendaDaLista[] }) {
+export function ListaVendas({
+  vendas,
+  filtrada = false,
+}: {
+  vendas: VendaDaLista[];
+  /** A lista está vazia por causa dos filtros, não por falta de venda. */
+  filtrada?: boolean;
+}) {
   if (vendas.length === 0) {
-    return (
+    return filtrada ? (
+      <EstadoVazio
+        icone={Receipt}
+        titulo="Nada com estes filtros"
+        descricao="Afrouxe os filtros ou troque o mês para encontrar a venda."
+      />
+    ) : (
       <EstadoVazio
         icone={Receipt}
         titulo="Nenhuma venda neste mês"

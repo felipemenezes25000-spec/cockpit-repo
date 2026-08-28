@@ -511,7 +511,11 @@ Decisões:
 ## 13. Módulo Financeiro (Etapa 5)
 
 Vendas, recebimentos, despesas, taxas de cartão, movimentações e fluxo de
-caixa. Seis áreas em abas dentro de `/financeiro`, todas com o mês na URL.
+caixa. Seis áreas em abas dentro de `/financeiro`, todas com o mês na URL —
+e as listas com filtros também na URL: situação, forma e busca por paciente
+nas vendas; situação (incluindo a vencida derivada) e categoria nas despesas;
+tipo nas movimentações. O filtro acontece depois da consulta, no servidor:
+o volume é mensal, dezenas de linhas.
 
 ### O modelo
 

@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
 import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
+import { FiltrosFinanceiro } from "@/components/financeiro/filtros";
 import { ListaMovimentacoes } from "@/components/financeiro/lista-movimentacoes";
 import { NavegacaoMes } from "@/components/financeiro/navegacao-mes";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { ehFinanceira } from "@/lib/auth";
 import { lerMes } from "@/lib/periodo";
-import { movimentacoes } from "@/server/consultas/painel-financeiro";
+import {
+  movimentacoes,
+  type TipoMovimentacao,
+} from "@/server/consultas/painel-financeiro";
+
+/** Rótulo da URL → tipo interno. */
+const TIPOS: Record<string, TipoMovimentacao> = {
+  vendas: "venda",
+  entradas: "recebimento",
+  saidas: "despesa",
+  ajustes: "ajuste",
+};
 
 export const metadata: Metadata = {
   title: "Movimentações",
@@ -21,10 +33,15 @@ export default async function PaginaMovimentacoes({
   const parametros = await searchParams;
   const periodo = lerMes(parametros.mes);
 
-  const [itens, podeFinanceiro] = await Promise.all([
+  const tipoBruto = Array.isArray(parametros.tipo) ? parametros.tipo[0] : parametros.tipo;
+  const tipo = tipoBruto && TIPOS[tipoBruto] ? TIPOS[tipoBruto] : null;
+
+  const [todos, podeFinanceiro] = await Promise.all([
     movimentacoes(periodo),
     ehFinanceira(),
   ]);
+
+  const itens = tipo ? todos.filter((i) => i.tipo === tipo) : todos;
 
   return (
     <div className="flex flex-col gap-6">
@@ -36,8 +53,23 @@ export default async function PaginaMovimentacoes({
           titulo="Histórico das movimentações"
           descricao="Vendas, entradas, saídas e ajustes, na ordem em que aconteceram."
         />
-        <CardCorpo className="flex flex-col gap-6">
+        <CardCorpo className="flex flex-col gap-5">
           <NavegacaoMes periodo={periodo} />
+          <FiltrosFinanceiro
+            grupos={[
+              {
+                param: "tipo",
+                rotulo: "Tipo",
+                opcoes: [
+                  { valor: "", rotulo: "Tudo" },
+                  { valor: "vendas", rotulo: "Vendas" },
+                  { valor: "entradas", rotulo: "Entradas" },
+                  { valor: "saidas", rotulo: "Saídas" },
+                  { valor: "ajustes", rotulo: "Ajustes" },
+                ],
+              },
+            ]}
+          />
           <ListaMovimentacoes itens={itens} />
         </CardCorpo>
       </Card>
