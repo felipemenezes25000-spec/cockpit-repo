@@ -222,6 +222,7 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `0008_operacoes_de_venda.sql` | Funções `venda_registrar` e `venda_alterar_pagamento` |
 | `0009_anon_fora_das_tabelas_novas.sql` | Revoga `anon` das tabelas novas e muda o default para as futuras |
 | `0010_prontuarios.sql` | Prontuários clínicos versionados, restritos à administradora |
+| `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado no Storage, metadados em tabela, e a **primeira exceção ao "não se apaga"** |
 
 ### Tabelas
 
@@ -243,6 +244,7 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `ajustes_financeiros` | A diferença quando a mudança acontece após confirmação | Financeiro insere |
 | `prontuarios` | Cabeçalho do registro clínico: paciente, atendimento opcional, data e título | Administradora |
 | `prontuario_versoes` | Conteúdo clínico versionado: queixa, avaliação, conduta, evolução, orientações e observações | Administradora insere; ninguém edita nem apaga |
+| `prontuario_imagens` | Fotos de evolução: caminho no bucket e metadados. **Única tabela que pode apagar** — ver §8.5 | Administradora |
 | `auditoria` | Quem alterou o quê, por gatilho | Só os gatilhos (leitura: administradora) |
 
 Gatilhos de auditoria em: `pacientes`, `atendimentos`, `recebimentos`, `vendas`,
@@ -850,6 +852,59 @@ administradora porque ainda não existe perfil `profissional`.
 Campos clínicos atuais: queixa/anamnese, avaliação, conduta, evolução,
 orientações e observações clínicas. Pelo menos um precisa estar preenchido.
 
+#### Fotos de evolução (migração 0011)
+
+> **Só a fundação de banco existe.** O bucket, a tabela e as políticas estão em
+> produção; **não há tela nem upload ainda**. Nada no `src/` toca em imagem.
+
+É a informação mais sensível que o sistema guarda: dado de saúde com a pessoa
+identificável na própria imagem.
+
+- **O arquivo não entra no Postgres.** Bucket privado `prontuario-imagens`
+  (10 MB, só jpeg/png/webp); a tabela `prontuario_imagens` guarda caminho e
+  metadados. A exibição usa URL assinada de validade curta — nunca URL pública.
+- **A imagem pertence ao prontuário, não à versão.** Versionar serve para texto
+  que se corrige; foto se acrescenta ou se remove. Amarrá-la a
+  `prontuario_versoes` faria cada correção de texto orfanar ou duplicar as
+  fotos. O eixo da evolução é a `data_captura` de cada imagem — quando foi
+  *tirada*, não quando foi enviada.
+- **O caminho tem forma obrigatória:** `<prontuario_id>/<uuid>.<ext>`, com CHECK
+  no banco. Sem isso uma linha poderia apontar para o arquivo de outra paciente.
+- **Existe uma quarta porta.** A RLS da tabela não protege o arquivo: quem sabe
+  o caminho fala com `storage.objects`, que tem política própria. As quatro
+  políticas de Storage da 0011 são as primeiras do projeto — **toda tabela nova
+  que use Storage precisa das suas.**
+
+##### A exceção ao "não se apaga"
+
+`prontuario_imagens` é a **única tabela com política de DELETE**, e é
+deliberado. Venda e recebimento não se apagam porque são memória contábil:
+quem apaga, esconde. Foto do corpo de uma paciente é outra coisa — a LGPD
+(art. 18, VI) lhe dá o direito de pedir eliminação, e guardar a imagem contra
+a vontade dela não protege ninguém.
+
+O que permanece é a auditoria: o gatilho grava caminho, metadados, autor e
+hora da linha removida — prova de que a imagem existiu e foi eliminada, **sem
+a imagem**.
+
+Duas coisas para quem for implementar o upload:
+
+1. **Apagar a linha não apaga o arquivo.** São dois lugares, e a ordem importa:
+   **arquivo primeiro**. Invertida, se a remoção do arquivo falhar sobra um
+   objeto órfão no bucket — dado de saúde sem dono e sem rastro.
+2. **`arquivada` não é eliminação.** Ela tira da tela e preserva (foto tremida,
+   duplicada, enquadramento errado). Eliminar é DELETE, e só a pedido da
+   titular, com motivo e confirmação.
+
+##### Aberto
+
+**Consentimento não está modelado.** Foto de paciente normalmente exige termo
+assinado, que viverá no módulo Documentos — decidido em 29/08/2026 que os dois
+módulos **não se acoplam**: a paciente assina o termo e tira as fotos, sem o
+sistema ligar uma coisa à outra. Consequência a assumir: não há, no banco,
+registro de qual termo autorizou qual foto. Se isso passar a ser exigido, entra
+por migração nova.
+
 ### 8.6 Visão Geral
 
 Agrega tudo: indicadores do dia e do mês, linha do dia com marcador "agora",
@@ -960,7 +1015,7 @@ Já decididas e **fechadas** — não reabra sem motivo novo: divisão de permis
 
 Não implemente sem pedido explícito: integração com Google Calendar · integração
 com WhatsApp · envio de e-mails · emissão de nota fiscal · processamento de
-pagamentos · upload de fotos · automações · inteligência artificial · **qualquer
+pagamentos · automações · inteligência artificial · **qualquer
 recomendação clínica automática** (decisão de escopo — o sistema não sugere
 conduta).
 

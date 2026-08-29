@@ -221,7 +221,7 @@ próprio e preenchimento.
 
 ## 6. O que não faz parte desta etapa
 
-Upload de fotos · assinatura de termos · integração com Google Calendar ·
+Assinatura de termos · integração com Google Calendar ·
 integração com WhatsApp · envio de e-mails · emissão de nota fiscal ·
 processamento de pagamentos · regras de lucro ou saldo · automações ·
 inteligência artificial · dados reais.
@@ -613,6 +613,33 @@ principal é `/prontuarios`; também há criação por paciente
 - O conteúdo clínico tem seis campos: queixa/anamnese, avaliação, conduta,
   evolução, orientações e observações clínicas.
 - Pelo menos um campo clínico precisa estar preenchido.
+
+### Fotos de evolução
+
+O registro visual do antes, durante e depois do tratamento. **A fundação de
+banco está pronta e em produção; a tela ainda não existe.**
+
+| Onde | O quê |
+|---|---|
+| Bucket `prontuario-imagens` | O arquivo. Privado, 10 MB, só jpeg/png/webp. Exibição por URL assinada de validade curta — nunca URL pública |
+| `prontuario_imagens` | Caminho e metadados: nome original, tipo, tamanho, dimensões, legenda, data da captura e ordem |
+
+Decisões:
+
+- **A imagem pertence ao prontuário, não à versão do texto.** Versionar serve
+  para o que se corrige; foto se acrescenta ou se remove. O eixo da evolução é a
+  data da captura de cada foto — quando foi tirada, não quando foi enviada.
+- **Arquivar e eliminar são coisas diferentes.** Arquivar tira da tela e
+  preserva (foto tremida, duplicada, mal enquadrada). Eliminar apaga de verdade,
+  e existe por causa da LGPD: o art. 18 dá à paciente o direito de pedir a
+  remoção da própria imagem. É a única exceção do sistema à regra de que
+  registro não se apaga. A auditoria guarda que a foto existiu e foi eliminada,
+  sem guardar a foto.
+- **Mesmo alcance do prontuário**: só a administradora, também no Storage.
+- **Consentimento não está ligado ao sistema.** A paciente assina o termo (no
+  módulo Documentos, quando existir) e tira as fotos; o banco não registra qual
+  termo autorizou qual imagem. Decisão de 29/08/2026 — os dois módulos não se
+  acoplam.
 
 ## 15. Contratos e documentos assinados (planejado)
 

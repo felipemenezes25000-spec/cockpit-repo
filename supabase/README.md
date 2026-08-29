@@ -18,6 +18,7 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0008_operacoes_de_venda.sql` | Funções `venda_registrar` e `venda_alterar_pagamento`: gravações compostas em transação, com a RLS de quem chama. |
 | `0009_anon_fora_das_tabelas_novas.sql` | Revoga o anon das tabelas novas e muda o default para as futuras já nascerem sem o grant. |
 | `0010_prontuarios.sql` | Prontuários clínicos versionados, com RLS restrita à administradora e funções transacionais de criação/nova versão. |
+| `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado `prontuario-imagens`, metadados em `prontuario_imagens` e as quatro políticas de `storage.objects` — as primeiras do projeto. Única tabela com política de DELETE, por causa da LGPD. |
 
 ## Projeto
 

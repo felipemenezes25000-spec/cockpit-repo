@@ -516,6 +516,78 @@ export type Database = {
           },
         ]
       }
+      prontuario_imagens: {
+        Row: {
+          altura: number | null
+          arquivada: boolean
+          atualizado_em: string
+          caminho: string
+          criado_em: string
+          criado_por: string | null
+          data_captura: string
+          exemplo: boolean
+          id: string
+          largura: number | null
+          legenda: string
+          nome_original: string
+          ordem: number
+          prontuario_id: string
+          tamanho_bytes: number
+          tipo_mime: string
+        }
+        Insert: {
+          altura?: number | null
+          arquivada?: boolean
+          atualizado_em?: string
+          caminho: string
+          criado_em?: string
+          criado_por?: string | null
+          data_captura: string
+          exemplo?: boolean
+          id?: string
+          largura?: number | null
+          legenda?: string
+          nome_original: string
+          ordem?: number
+          prontuario_id: string
+          tamanho_bytes: number
+          tipo_mime: string
+        }
+        Update: {
+          altura?: number | null
+          arquivada?: boolean
+          atualizado_em?: string
+          caminho?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_captura?: string
+          exemplo?: boolean
+          id?: string
+          largura?: number | null
+          legenda?: string
+          nome_original?: string
+          ordem?: number
+          prontuario_id?: string
+          tamanho_bytes?: number
+          tipo_mime?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prontuario_imagens_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prontuario_imagens_prontuario_id_fkey"
+            columns: ["prontuario_id"]
+            isOneToOne: false
+            referencedRelation: "prontuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prontuario_versoes: {
         Row: {
           atualizado_em: string
