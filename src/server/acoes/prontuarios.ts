@@ -94,7 +94,11 @@ export async function criarProntuario(
   const supabase = await clienteServidor();
   const { data, error } = await supabase.rpc("prontuario_registrar", {
     p_paciente_id: valores.paciente_id,
-    p_atendimento_id: valores.atendimento_id || null,
+    // O gerador de tipos do Supabase declara todo parâmetro de função como
+    // obrigatório: sem DEFAULT no SQL, ele não sabe que este aceita nulo. A
+    // função trata o nulo de propósito — prontuário sem atendimento vinculado.
+    // Mesmo contorno já usado em `acoes/vendas.ts`.
+    p_atendimento_id: (valores.atendimento_id || null) as unknown as string,
     p_data_registro: valores.data_registro,
     p_titulo: valores.titulo,
     p_queixa: valores.queixa,
@@ -149,7 +153,11 @@ export async function registrarNovaVersao(
   const supabase = await clienteServidor();
   const { error } = await supabase.rpc("prontuario_nova_versao", {
     p_prontuario_id: prontuarioId,
-    p_atendimento_id: valores.atendimento_id || null,
+    // O gerador de tipos do Supabase declara todo parâmetro de função como
+    // obrigatório: sem DEFAULT no SQL, ele não sabe que este aceita nulo. A
+    // função trata o nulo de propósito — prontuário sem atendimento vinculado.
+    // Mesmo contorno já usado em `acoes/vendas.ts`.
+    p_atendimento_id: (valores.atendimento_id || null) as unknown as string,
     p_data_registro: valores.data_registro,
     p_titulo: valores.titulo,
     p_motivo: valores.motivo,

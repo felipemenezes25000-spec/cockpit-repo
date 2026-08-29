@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -516,6 +516,130 @@ export type Database = {
           },
         ]
       }
+      prontuario_versoes: {
+        Row: {
+          atualizado_em: string
+          avaliacao: string
+          conduta: string
+          criado_em: string
+          criado_por: string | null
+          evolucao: string
+          exemplo: boolean
+          id: number
+          motivo: string
+          observacoes: string
+          orientacoes: string
+          prontuario_id: string
+          queixa: string
+          versao: number
+        }
+        Insert: {
+          atualizado_em?: string
+          avaliacao?: string
+          conduta?: string
+          criado_em?: string
+          criado_por?: string | null
+          evolucao?: string
+          exemplo?: boolean
+          id?: never
+          motivo: string
+          observacoes?: string
+          orientacoes?: string
+          prontuario_id: string
+          queixa?: string
+          versao: number
+        }
+        Update: {
+          atualizado_em?: string
+          avaliacao?: string
+          conduta?: string
+          criado_em?: string
+          criado_por?: string | null
+          evolucao?: string
+          exemplo?: boolean
+          id?: never
+          motivo?: string
+          observacoes?: string
+          orientacoes?: string
+          prontuario_id?: string
+          queixa?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prontuario_versoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prontuario_versoes_prontuario_id_fkey"
+            columns: ["prontuario_id"]
+            isOneToOne: false
+            referencedRelation: "prontuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prontuarios: {
+        Row: {
+          atendimento_id: string | null
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          data_registro: string
+          exemplo: boolean
+          id: string
+          paciente_id: string
+          titulo: string
+        }
+        Insert: {
+          atendimento_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_registro: string
+          exemplo?: boolean
+          id?: string
+          paciente_id: string
+          titulo: string
+        }
+        Update: {
+          atendimento_id?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_registro?: string
+          exemplo?: boolean
+          id?: string
+          paciente_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prontuarios_atendimento_da_paciente"
+            columns: ["atendimento_id", "paciente_id"]
+            isOneToOne: false
+            referencedRelation: "atendimentos"
+            referencedColumns: ["id", "paciente_id"]
+          },
+          {
+            foreignKeyName: "prontuarios_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prontuarios_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recebimentos: {
         Row: {
           atendimento_id: string | null
@@ -856,6 +980,37 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      prontuario_nova_versao: {
+        Args: {
+          p_atendimento_id: string
+          p_avaliacao: string
+          p_conduta: string
+          p_data_registro: string
+          p_evolucao: string
+          p_motivo: string
+          p_observacoes: string
+          p_orientacoes: string
+          p_prontuario_id: string
+          p_queixa: string
+          p_titulo: string
+        }
+        Returns: undefined
+      }
+      prontuario_registrar: {
+        Args: {
+          p_atendimento_id: string
+          p_avaliacao: string
+          p_conduta: string
+          p_data_registro: string
+          p_evolucao: string
+          p_observacoes: string
+          p_orientacoes: string
+          p_paciente_id: string
+          p_queixa: string
+          p_titulo: string
+        }
+        Returns: string
+      }
       venda_alterar_pagamento: {
         Args: {
           p_forma: Database["public"]["Enums"]["forma_pagamento"]
