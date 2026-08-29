@@ -13,9 +13,13 @@ import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 import type { IndicadoresDoPeriodo } from "@/server/consultas/painel-financeiro";
 
+/** Razão à vista, no lugar do número — mesma postura do botão indisponível. */
+const RESTRITO = "restrito ao financeiro";
+
 type Cartao = {
   rotulo: string;
-  valor: number;
+  /** `null` = o perfil não enxerga este número. Nunca vira zero. */
+  valor: number | null;
   apoio: string;
   icone: LucideIcon;
   /** Sem semântica forçada: só o resultado e o vencido ganham cor. */
@@ -27,6 +31,11 @@ type Cartao = {
  *
  * A taxa de cartão aparece uma vez só: como dedução entre o bruto e o
  * líquido. Ela não existe nas despesas — somar lá de novo dobraria o custo.
+ *
+ * Os três números que dependem de despesa chegam como `null` para a recepção,
+ * porque a RLS a impede de ver despesas. O cartão continua na tela, com traço
+ * no lugar do valor e a razão à vista: esconder faria a pessoa procurar, e
+ * imprimir zero seria mentir.
  */
 export function IndicadoresPeriodo({
   numeros,
@@ -80,23 +89,29 @@ export function IndicadoresPeriodo({
       // Despesa é sempre vermelha: dinheiro saindo, na convenção contábil.
       rotulo: "Despesas pagas",
       valor: n.despesasPagas,
-      apoio: "saídas do período",
+      apoio: n.despesasPagas === null ? RESTRITO : "saídas do período",
       icone: ArrowDownRight,
-      tom: "negativo",
+      tom: n.despesasPagas === null ? undefined : "negativo",
     },
     {
       rotulo: "Despesas pendentes",
       valor: n.despesasPendentes,
-      apoio: "a pagar até o fim do mês",
+      apoio: n.despesasPendentes === null ? RESTRITO : "a pagar até o fim do mês",
       icone: ReceiptText,
-      tom: "negativo",
+      tom: n.despesasPendentes === null ? undefined : "negativo",
     },
     {
       rotulo: "Resultado de caixa",
       valor: n.resultadoDeCaixa,
-      apoio: "líquido recebido − despesas pagas",
+      apoio:
+        n.resultadoDeCaixa === null ? RESTRITO : "líquido recebido − despesas pagas",
       icone: Scale,
-      tom: n.resultadoDeCaixa >= 0 ? "positivo" : "negativo",
+      tom:
+        n.resultadoDeCaixa === null
+          ? undefined
+          : n.resultadoDeCaixa >= 0
+            ? "positivo"
+            : "negativo",
     },
   ];
 
@@ -126,13 +141,15 @@ export function IndicadoresPeriodo({
               <span
                 className={cn(
                   "tabular text-lg font-semibold",
+                  cartao.valor === null && "text-outline-variant",
                   cartao.tom === "positivo" && "text-positivo",
                   cartao.tom === "negativo" && "text-negativo",
-                  !cartao.tom && "text-on-surface",
+                  cartao.valor !== null && !cartao.tom && "text-on-surface",
                   cartao.tom === "atencao" && "text-on-surface",
                 )}
+                title={cartao.valor === null ? RESTRITO : undefined}
               >
-                {formatarMoeda(cartao.valor)}
+                {cartao.valor === null ? "—" : formatarMoeda(cartao.valor)}
               </span>
 
               <span
@@ -144,7 +161,7 @@ export function IndicadoresPeriodo({
                 {cartao.apoio}
               </span>
 
-              {exemplo ? (
+              {exemplo && cartao.valor !== null ? (
                 <span className="mt-1 text-[0.625rem] text-outline-variant uppercase">
                   Demonstrativo
                 </span>

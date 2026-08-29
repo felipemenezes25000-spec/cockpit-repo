@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { ehFinanceira } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
 import {
   dataDoBanco,
@@ -14,7 +15,12 @@ export type ResumoFinanceiro = {
   recebidoNoMes: number;
   aReceber: number;
   vencido: number;
-  despesasDoMes: number;
+  /**
+   * `null` quando o perfil não enxerga despesas — não é zero.
+   * A RLS de `despesas` filtra em silêncio: somar para a recepção daria zero,
+   * e "não posso ver" apareceria na tela como "não há".
+   */
+  despesasDoMes: number | null;
 };
 
 export type PontoMensal = { data: Date; recebido: number };
@@ -31,6 +37,8 @@ export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
   const inicioProximoMes = inicioDeMesRelativo(1);
   const hoje = inicioDoDia();
 
+  const veDespesas = await ehFinanceira();
+
   const [quitados, emAberto, despesas] = await Promise.all([
     // O que de fato entrou: o valor efetivo, líquido de taxa de cartão.
     supabase
@@ -44,15 +52,17 @@ export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
       .from("recebimentos")
       .select("valor_liquido, vencimento")
       .in("situacao", ["previsto", "pendente"]),
-    supabase
-      .from("despesas")
-      .select("valor")
-      .neq("situacao", "cancelada")
-      .gte("competencia", dataParaColuna(inicioMes))
-      .lt("competencia", dataParaColuna(inicioProximoMes)),
+    veDespesas
+      ? supabase
+          .from("despesas")
+          .select("valor")
+          .neq("situacao", "cancelada")
+          .gte("competencia", dataParaColuna(inicioMes))
+          .lt("competencia", dataParaColuna(inicioProximoMes))
+      : Promise.resolve(null),
   ]);
 
-  const erro = quitados.error ?? emAberto.error ?? despesas.error;
+  const erro = quitados.error ?? emAberto.error ?? despesas?.error;
   if (erro) throw new Error(`Não foi possível carregar o financeiro: ${erro.message}`);
 
   const vencido = (emAberto.data ?? [])
@@ -69,7 +79,9 @@ export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
       0,
     ),
     vencido,
-    despesasDoMes: (despesas.data ?? []).reduce((total, l) => total + Number(l.valor), 0),
+    despesasDoMes: despesas
+      ? (despesas.data ?? []).reduce((total, l) => total + Number(l.valor), 0)
+      : null,
   };
 });
 

@@ -51,7 +51,11 @@ export default async function PaginaMovimentacoes({
       <Card>
         <CardCabecalho
           titulo="Histórico das movimentações"
-          descricao="Vendas, entradas, saídas e ajustes, na ordem em que aconteceram."
+          descricao={
+            podeFinanceiro
+              ? "Vendas, entradas, saídas e ajustes, na ordem em que aconteceram."
+              : "Vendas, entradas e ajustes, na ordem em que aconteceram. As saídas são da área do financeiro."
+          }
         />
         <CardCorpo className="flex flex-col gap-5">
           <NavegacaoMes periodo={periodo} />
@@ -64,7 +68,9 @@ export default async function PaginaMovimentacoes({
                   { valor: "", rotulo: "Tudo" },
                   { valor: "vendas", rotulo: "Vendas" },
                   { valor: "entradas", rotulo: "Entradas" },
-                  { valor: "saidas", rotulo: "Saídas" },
+                  // A RLS já esconde as despesas da recepção: o filtro
+                  // "Saídas" só devolveria lista vazia, sempre.
+                  ...(podeFinanceiro ? [{ valor: "saidas", rotulo: "Saídas" }] : []),
                   { valor: "ajustes", rotulo: "Ajustes" },
                 ],
               },

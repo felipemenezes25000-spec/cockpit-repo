@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 
 /**
- * As áreas do módulo Financeiro. Despesas e taxas não aparecem para a
+ * As áreas do módulo Financeiro. Despesas, taxas e fluxo não aparecem para a
  * recepção — o servidor e a RLS barram de qualquer jeito; aqui só não se
  * oferece a porta que não abre.
+ *
+ * O fluxo entrou nessa lista porque a tabela inteira é entradas menos saídas:
+ * sem enxergar despesa, resultado e acumulado sairiam errados em toda linha.
  */
 export function AbasFinanceiro({ podeFinanceiro }: { podeFinanceiro: boolean }) {
   const caminho = usePathname() ?? "";
@@ -22,7 +25,7 @@ export function AbasFinanceiro({ podeFinanceiro }: { podeFinanceiro: boolean }) 
         ]
       : []),
     { href: "/financeiro/movimentacoes", rotulo: "Movimentações" },
-    { href: "/financeiro/fluxo", rotulo: "Fluxo mensal" },
+    ...(podeFinanceiro ? [{ href: "/financeiro/fluxo", rotulo: "Fluxo mensal" }] : []),
   ];
 
   return (

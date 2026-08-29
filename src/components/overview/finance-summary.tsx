@@ -12,7 +12,8 @@ import { EvolucaoRecebimentos } from "./revenue-chart";
 
 type Linha = {
   rotulo: string;
-  valor: number;
+  /** `null` = o perfil não enxerga este número. Nunca vira zero. */
+  valor: number | null;
   icone: LucideIcon;
   cor: string;
   /** Cor do número. Convenção contábil: entrada verde, saída vermelha. */
@@ -40,12 +41,18 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       apoio: "recebimentos já quitados",
     },
     {
+      // A recepção não enxerga despesas (RLS). O número vira traço com a razão
+      // à vista: um zero aqui seria "não há despesa", que é falso.
       rotulo: "Despesas do mês",
       valor: resumo.despesasDoMes,
       icone: ArrowDownRight,
-      cor: "text-negativo",
-      corValor: "text-negativo",
-      apoio: "lançamentos do período",
+      cor: resumo.despesasDoMes === null ? "text-outline-variant" : "text-negativo",
+      corValor:
+        resumo.despesasDoMes === null ? "text-outline-variant" : "text-negativo",
+      apoio:
+        resumo.despesasDoMes === null
+          ? "restrito ao financeiro"
+          : "lançamentos do período",
     },
     {
       rotulo: "Valores pendentes",
@@ -100,8 +107,9 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
                     "tabular t-headline mt-3",
                     linha.corValor ?? "text-on-surface",
                   )}
+                  title={linha.valor === null ? "restrito ao financeiro" : undefined}
                 >
-                  {formatarMoeda(linha.valor)}
+                  {linha.valor === null ? "—" : formatarMoeda(linha.valor)}
                 </p>
                 <p
                   className={cn(

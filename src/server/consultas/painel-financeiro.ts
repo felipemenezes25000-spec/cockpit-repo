@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { ehFinanceira } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, inicioDeMesRelativo, inicioDoDia, partesDoDia } from "@/lib/dates";
 import { dataParaColuna, type Periodo } from "@/lib/periodo";
@@ -14,6 +15,14 @@ import type { FormaPagamento } from "@/lib/venda";
  * líquido recebido − despesas pagas — a taxa já foi descontada antes.
  *
  * Lucro não entra: a regra ainda não foi definida pela clínica.
+ *
+ * ATENÇÃO À RLS. A política de `despesas` é restrita ao financeiro, e uma
+ * política de SELECT não recusa: ela devolve menos linhas, sem erro. Somar
+ * `despesas` para a recepção daria zero — e "não posso ver" viraria "não
+ * existe", com o resultado de caixa aparecendo errado na tela como se fosse
+ * fato. Por isso o que depende de despesa é `number | null`: `null` quer dizer
+ * "não visível para este perfil", e o tipo obriga quem consome a dizer isso na
+ * tela em vez de imprimir um zero mentiroso.
  */
 
 export type IndicadoresDoPeriodo = {
@@ -25,9 +34,10 @@ export type IndicadoresDoPeriodo = {
   ajustes: number;
   aReceber: number;
   aReceberVencido: number;
-  despesasPagas: number;
-  despesasPendentes: number;
-  resultadoDeCaixa: number;
+  /** `null` quando o perfil não enxerga despesas — não é zero. */
+  despesasPagas: number | null;
+  despesasPendentes: number | null;
+  resultadoDeCaixa: number | null;
 };
 
 export const indicadoresDoPeriodo = cache(
@@ -37,7 +47,11 @@ export const indicadoresDoPeriodo = cache(
     const ate = dataParaColuna(periodo.ate);
     const hoje = inicioDoDia();
 
-    const [vendas, confirmados, emAberto, ajustes, pagas, pendentes] = await Promise.all([
+    // Sem permissão, as consultas de despesa nem são feitas: a RLS devolveria
+    // zero linhas em silêncio, e um zero desses é pior que a ausência.
+    const veDespesas = await ehFinanceira();
+
+    const [vendas, confirmados, emAberto, ajustes, despesas] = await Promise.all([
       supabase
         .from("vendas")
         .select("valor_final")
@@ -60,22 +74,26 @@ export const indicadoresDoPeriodo = cache(
         .select("valor")
         .gte("criado_em", periodo.de.toISOString())
         .lt("criado_em", periodo.ate.toISOString()),
-      supabase
-        .from("despesas")
-        .select("valor")
-        .eq("situacao", "paga")
-        .gte("pago_em", de)
-        .lt("pago_em", ate),
-      supabase
-        .from("despesas")
-        .select("valor")
-        .eq("situacao", "pendente")
-        .lt("vencimento", ate),
+      veDespesas
+        ? Promise.all([
+            supabase
+              .from("despesas")
+              .select("valor")
+              .eq("situacao", "paga")
+              .gte("pago_em", de)
+              .lt("pago_em", ate),
+            supabase
+              .from("despesas")
+              .select("valor")
+              .eq("situacao", "pendente")
+              .lt("vencimento", ate),
+          ])
+        : Promise.resolve(null),
     ]);
 
     const erro =
       vendas.error ?? confirmados.error ?? emAberto.error ?? ajustes.error ??
-      pagas.error ?? pendentes.error;
+      despesas?.[0].error ?? despesas?.[1].error;
     if (erro) throw new Error(`Não foi possível carregar os indicadores: ${erro.message}`);
 
     const soma = (linhas: Record<string, unknown>[] | null, campo: string) =>
@@ -85,7 +103,7 @@ export const indicadoresDoPeriodo = cache(
     const taxasDeCartao = soma(confirmados.data, "taxa_valor");
     const efetivo = soma(confirmados.data, "valor_recebido");
     const somaAjustes = soma(ajustes.data, "valor");
-    const despesasPagas = soma(pagas.data, "valor");
+    const despesasPagas = despesas ? soma(despesas[0].data, "valor") : null;
 
     const aReceberVencido = (emAberto.data ?? [])
       .filter((l) => dataDoBanco(l.vencimento as string).getTime() < hoje.getTime())
@@ -102,8 +120,9 @@ export const indicadoresDoPeriodo = cache(
       aReceber: soma(emAberto.data, "valor_liquido"),
       aReceberVencido,
       despesasPagas,
-      despesasPendentes: soma(pendentes.data, "valor"),
-      resultadoDeCaixa: liquidoRecebido - despesasPagas,
+      despesasPendentes: despesas ? soma(despesas[1].data, "valor") : null,
+      // Sem enxergar as saídas não existe resultado de caixa — e não é zero.
+      resultadoDeCaixa: despesasPagas === null ? null : liquidoRecebido - despesasPagas,
     };
   },
 );
@@ -120,8 +139,22 @@ export type MesDoFluxo = {
   acumulado: number;
 };
 
-/** Últimos 12 meses, do mais antigo ao atual, com saldo acumulado. */
+/**
+ * Últimos 12 meses, do mais antigo ao atual, com saldo acumulado.
+ *
+ * Exige o perfil financeiro e **falha alto** quando não o tem. Aqui não cabe o
+ * `null` dos indicadores: a tabela inteira é entradas menos saídas, e sem as
+ * saídas cada linha de resultado e de acumulado seria mentira. A rota
+ * `/financeiro/fluxo` já barra antes; esta checagem existe para que um consumo
+ * novo e desatento estoure em vez de exibir número errado.
+ */
 export const fluxoMensal = cache(async (): Promise<MesDoFluxo[]> => {
+  if (!(await ehFinanceira())) {
+    throw new Error(
+      "Fluxo de caixa é restrito ao financeiro: sem acesso às despesas, o resultado seria falso.",
+    );
+  }
+
   const supabase = await clienteServidor();
 
   const inicio = inicioDeMesRelativo(-11);

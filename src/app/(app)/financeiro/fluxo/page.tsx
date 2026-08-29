@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
 import { FluxoMensal } from "@/components/financeiro/fluxo-mensal";
+import { SomenteFinanceiro } from "@/components/financeiro/somente-financeiro";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { ehFinanceira } from "@/lib/auth";
 import { fluxoMensal } from "@/server/consultas/painel-financeiro";
@@ -12,7 +13,14 @@ export const metadata: Metadata = {
 };
 
 export default async function PaginaFluxo() {
-  const [meses, podeFinanceiro] = await Promise.all([fluxoMensal(), ehFinanceira()]);
+  // A tela inteira é entradas menos saídas. Quem não enxerga despesas veria
+  // todo resultado e todo acumulado errados — então não vê a tela.
+  const podeFinanceiro = await ehFinanceira();
+  if (!podeFinanceiro) {
+    return <SomenteFinanceiro voltarPara="/financeiro" />;
+  }
+
+  const meses = await fluxoMensal();
 
   return (
     <div className="flex flex-col gap-6">
