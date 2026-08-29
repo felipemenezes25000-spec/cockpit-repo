@@ -1,7 +1,7 @@
 # Cockpit — Consultório Dra. Érika Passos
 
 Documento de referência do sistema. Registra o propósito, o que já existe e o que
-ainda é provisório. Atualizado ao final da **Etapa 3**.
+ainda é provisório. Atualizado em **agosto de 2026**.
 
 > O conteúdo exibido hoje vem de dados de demonstração, marcados como tais no
 > banco. Nenhum dado real da clínica foi utilizado.
@@ -31,12 +31,13 @@ por tipografia em vez de enfeite.
 
 ## 2. Perfis de usuário previstos
 
-A Etapa 2 implementa **dois perfis**. O perfil Profissional fica para quando a
-equipe crescer.
+Hoje existem **três perfis**. O perfil Profissional fica para quando a equipe
+crescer.
 
 | Perfil | Quem é | O que pode fazer |
 |---|---|---|
 | **Administradora** | Dra. Érika Passos | Acesso completo, incluindo despesas, relatórios, configurações e trilha de auditoria |
+| **Financeiro** | Quem opera o caixa | Vendas, recebimentos, despesas e alteração de taxa com justificativa. Não configura tabela de taxas nem gerencia usuários |
 | **Recepção** | Atendimento e agendamento | Agenda, cadastro de pacientes, confirmações, retornos, pendências e lançamento de recebimentos. Não acessa despesas, o consolidado financeiro nem conteúdo clínico |
 
 As regras estão nas políticas de acesso do próprio banco, não apenas na
@@ -51,7 +52,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 | Visão Geral | `/` | O dia da clínica em uma tela |
 | Agenda | `/agenda` | Marcar, remarcar e acompanhar atendimentos |
 | Pacientes | `/pacientes` | Cadastro e histórico de cada paciente |
-| Prontuários | `/prontuarios` | Registro clínico do atendimento |
+| Prontuários | `/prontuarios` | Registro clínico versionado, restrito à administradora |
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
 | Documentos e Contratos | `/formularios` | Contratos de prestação de serviços, anamneses, termos e orientações |
 | Relacionamento | `/relacionamento` | Confirmações, retornos, aniversários e pesquisas |
@@ -77,7 +78,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 
 ### Visão Geral
 
-- **Ações rápidas** — cinco atalhos que navegam de verdade para os módulos.
+- **Ações rápidas** — cinco atalhos que navegam de verdade para os fluxos dos módulos.
 - **Indicadores** — seis cartões, todos calculados a partir dos dados fictícios:
   atendimentos de hoje, confirmados, confirmações pendentes, pacientes aguardando
   retorno, recebido no mês e valores a receber.
@@ -93,12 +94,23 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
   recebimentos nos últimos seis meses.
 - **Aniversariantes do mês** — nome, data, último atendimento e botão de contato.
 
+### Prontuários
+
+- **Listagem** — busca por título do prontuário e por dados da paciente.
+- **Novo registro** — pode começar pela listagem, pela ficha da paciente ou por
+  um atendimento específico.
+- **Ficha clínica** — queixa/anamnese, avaliação, conduta, evolução, orientações
+  e observações clínicas.
+- **Versionamento** — alteração não sobrescreve conteúdo; cria nova versão com
+  motivo, autor e data.
+- **Permissão** — acesso restrito à administradora em interface, ação de servidor
+  e RLS/função do banco.
+
 ### Páginas provisórias
 
-As sete rotas de módulo ainda sem implementação existem e são acessíveis. Cada
-uma mostra o nome do módulo, sua finalidade, a lista do que vai trazer nas
-próximas etapas, o aviso de que está em construção e um botão de volta para a
-Visão Geral.
+As rotas de módulo ainda sem implementação existem e são acessíveis. Cada uma
+mostra o nome do módulo, sua finalidade, a lista do que vai trazer nas próximas
+etapas, o aviso de que está em construção e um botão de volta para a Visão Geral.
 
 ### Base técnica
 
@@ -195,13 +207,13 @@ próprio e preenchimento.
 | Item | Situação |
 |---|---|
 | Dados de demonstração | Marcados com a coluna `exemplo` no banco. `npm run dados:limpar` remove, e o aviso na tela some junto. |
-| Busca global no cabeçalho | Apenas visual, marcada como indisponível. A busca do módulo Pacientes funciona. |
+| Busca global no cabeçalho | Apenas visual, marcada como indisponível. A busca dos módulos Pacientes e Prontuários funciona. |
 | Ícone de notificações | Mostra a contagem de pendências altas, mas não abre nada. |
 | Menu de perfil | Opções visíveis e desabilitadas, com a razão no `title`. |
 | Botões "Resolver" das pendências | Navegam para o módulo correspondente; não resolvem nada. |
 | Botão "Enviar mensagem" dos aniversariantes | Visivelmente indisponível. |
-| Ações rápidas | Só a primeira abre formulário de verdade. As outras quatro param na página do módulo. |
-| Sete páginas de módulo | Só descrevem o que virá. Pacientes saiu dessa lista. |
+| Ações rápidas | Nova paciente, novo agendamento, prontuário e venda abrem fluxo real; criar tarefa ainda para em Relacionamento. |
+| Páginas de módulo restantes | Documentos, Relacionamento e Relatórios só descrevem o que virá. Configurações ainda é parcial. |
 | Períodos de retorno | Demonstrativos. Não são recomendação clínica. |
 | Números financeiros | Identificados como demonstrativos na própria tela. |
 
@@ -209,11 +221,10 @@ próprio e preenchimento.
 
 ## 6. O que não faz parte desta etapa
 
-Banco de dados real · login e autenticação · controle definitivo de permissões ·
-cadastro completo de pacientes · prontuário funcional · upload de fotos ·
-assinatura de termos · integração com Google Calendar · integração com WhatsApp ·
-envio de e-mails · emissão de nota fiscal · processamento de pagamentos · regras
-de lucro ou saldo · automações · inteligência artificial · dados reais.
+Upload de fotos · assinatura de termos · integração com Google Calendar ·
+integração com WhatsApp · envio de e-mails · emissão de nota fiscal ·
+processamento de pagamentos · regras de lucro ou saldo · automações ·
+inteligência artificial · dados reais.
 
 Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 
@@ -580,7 +591,30 @@ com mensagem) e RLS/função do banco (recusa mesmo sem as outras duas).
 
 ---
 
-## 14. Contratos e documentos assinados (Etapa 6)
+## 14. Módulo Prontuários
+
+O prontuário guarda o conteúdo clínico que evolui ao longo do atendimento. A rota
+principal é `/prontuarios`; também há criação por paciente
+(`/prontuarios/novo?paciente=`) e por atendimento
+(`/prontuarios/novo?atendimento=`).
+
+### O modelo
+
+| Tabela | Papel |
+|---|---|
+| `prontuarios` | Cabeçalho atual: paciente, atendimento opcional, data do registro e título |
+| `prontuario_versoes` | Conteúdo clínico versionado, com motivo, autor e data |
+
+### Regras
+
+- O acesso fica restrito à administradora até existir perfil clínico próprio.
+- Criar prontuário grava cabeçalho e versão 1 na mesma transação.
+- Editar cria nova versão; não há edição nem exclusão de versão existente.
+- O conteúdo clínico tem seis campos: queixa/anamnese, avaliação, conduta,
+  evolução, orientações e observações clínicas.
+- Pelo menos um campo clínico precisa estar preenchido.
+
+## 15. Contratos e documentos assinados (planejado)
 
 A clínica precisa de contratos de prestação de serviços assinados pela paciente,
 além das anamneses e termos de consentimento. Contrato e anamnese têm naturezas

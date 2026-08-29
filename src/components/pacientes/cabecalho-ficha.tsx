@@ -1,4 +1,4 @@
-import { Archive, ArrowLeft, Cake, Pencil } from "lucide-react";
+import { Archive, ArrowLeft, Cake, ClipboardPlus, Pencil } from "lucide-react";
 import Link from "next/link";
 import { BotaoArquivar } from "./botao-arquivar";
 import { Avatar } from "@/components/ui/avatar";
@@ -8,7 +8,13 @@ import { descreverPrazo } from "@/lib/format";
 import { diasAteAniversario, idadeEm } from "@/lib/paciente";
 import type { PacienteCompleto } from "@/server/consultas/pacientes";
 
-export function CabecalhoFicha({ paciente }: { paciente: PacienteCompleto }) {
+export function CabecalhoFicha({
+  paciente,
+  podeProntuario = false,
+}: {
+  paciente: PacienteCompleto;
+  podeProntuario?: boolean;
+}) {
   const diasAte = paciente.nascimento
     ? diasAteAniversario(paciente.nascimento)
     : null;
@@ -67,6 +73,17 @@ export function CabecalhoFicha({ paciente }: { paciente: PacienteCompleto }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {podeProntuario ? (
+            <BotaoLink
+              href={`/prontuarios/novo?paciente=${paciente.id}`}
+              variante="primaria"
+              tamanho="sm"
+            >
+              <ClipboardPlus aria-hidden="true" size={16} strokeWidth={1.75} />
+              Novo prontuário
+            </BotaoLink>
+          ) : null}
+
           <BotaoLink
             href={`/pacientes/${paciente.id}/editar`}
             variante="secundaria"

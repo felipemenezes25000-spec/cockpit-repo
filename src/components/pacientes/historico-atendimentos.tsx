@@ -1,4 +1,4 @@
-import { CalendarPlus, History } from "lucide-react";
+import { CalendarPlus, ClipboardPlus, History } from "lucide-react";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
@@ -16,10 +16,12 @@ export function HistoricoAtendimentos({
   atendimentos,
   exemplo,
   pacienteId,
+  podeProntuario = false,
 }: {
   atendimentos: AtendimentoDoHistorico[];
   exemplo: boolean;
   pacienteId: string;
+  podeProntuario?: boolean;
 }) {
   return (
     <Card>
@@ -86,6 +88,19 @@ export function HistoricoAtendimentos({
                   <p className="mt-2 text-sm text-on-surface-variant">
                     {atendimento.observacoes}
                   </p>
+                ) : null}
+
+                {podeProntuario ? (
+                  <div className="mt-3">
+                    <BotaoLink
+                      href={`/prontuarios/novo?atendimento=${atendimento.id}`}
+                      variante="contorno"
+                      tamanho="sm"
+                    >
+                      <ClipboardPlus aria-hidden="true" size={16} strokeWidth={1.75} />
+                      Registrar prontuário
+                    </BotaoLink>
+                  </div>
                 ) : null}
               </li>
             ))}

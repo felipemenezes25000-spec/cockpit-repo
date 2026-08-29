@@ -9,6 +9,7 @@ import {
   ResumoDaPaciente,
   RetornosDaPaciente,
 } from "@/components/pacientes/painel-acompanhamento";
+import { ehAdministradora } from "@/lib/auth";
 import { historicoDoPaciente, pacientePorId } from "@/server/consultas/pacientes";
 import { temDadosDeExemplo } from "@/server/consultas/exemplo";
 
@@ -34,16 +35,17 @@ export default async function PaginaFichaPaciente({ params }: Props) {
   // também não deve: revelar que o registro existe já é informação.
   if (!paciente) notFound();
 
-  const [historico, exemplo] = await Promise.all([
+  const [historico, exemplo, podeProntuario] = await Promise.all([
     historicoDoPaciente(paciente.id),
     temDadosDeExemplo(),
+    ehAdministradora(),
   ]);
 
   return (
     <div>
       <FaixaDemonstracao className="mb-8" />
 
-      <CabecalhoFicha paciente={paciente} />
+      <CabecalhoFicha paciente={paciente} podeProntuario={podeProntuario} />
 
       <div className="grid grid-cols-1 items-start gap-8 pb-10 xl:grid-cols-12">
         <div className="flex flex-col gap-8 xl:col-span-7">
@@ -51,6 +53,7 @@ export default async function PaginaFichaPaciente({ params }: Props) {
             atendimentos={historico.atendimentos}
             exemplo={paciente.exemplo && exemplo}
             pacienteId={paciente.id}
+            podeProntuario={podeProntuario}
           />
         </div>
 

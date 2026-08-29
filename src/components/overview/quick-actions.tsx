@@ -11,14 +11,11 @@ import { cn } from "@/lib/cn";
 
 type Acao = { rotulo: string; href: string; icone: LucideIcon };
 
-/**
- * Cada atalho leva ao módulo responsável. O primeiro já abre o formulário de
- * verdade; os demais param na página do módulo até ele existir.
- */
+/** Cada atalho leva ao fluxo principal do módulo responsável. */
 const ACOES: Acao[] = [
   { rotulo: "Nova paciente", href: "/pacientes/novo", icone: UserPlus },
   { rotulo: "Novo agendamento", href: "/agenda/novo", icone: CalendarPlus },
-  { rotulo: "Registrar atendimento", href: "/prontuarios", icone: ClipboardPlus },
+  { rotulo: "Registrar atendimento", href: "/prontuarios/novo", icone: ClipboardPlus },
   { rotulo: "Registrar venda", href: "/financeiro/vendas/nova", icone: Wallet },
   { rotulo: "Criar tarefa", href: "/relacionamento", icone: ListTodo },
 ];

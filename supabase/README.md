@@ -17,6 +17,7 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0007_financeiro_fundacao.sql` | Vendas, tabela de taxas de cartão, histórico de alterações e ajustes. A conta fecha por CHECK constraint; registro financeiro não tem política de DELETE. |
 | `0008_operacoes_de_venda.sql` | Funções `venda_registrar` e `venda_alterar_pagamento`: gravações compostas em transação, com a RLS de quem chama. |
 | `0009_anon_fora_das_tabelas_novas.sql` | Revoga o anon das tabelas novas e muda o default para as futuras já nascerem sem o grant. |
+| `0010_prontuarios.sql` | Prontuários clínicos versionados, com RLS restrita à administradora e funções transacionais de criação/nova versão. |
 
 ## Projeto
 
