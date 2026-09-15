@@ -67,7 +67,8 @@ function cortar(valor: string, limite: number): string {
   return valor.trim().slice(0, limite);
 }
 
-function dataValida(valor: string): boolean {
+/** Data no formato do banco (AAAA-MM-DD) que existe de verdade no calendário. */
+export function dataValida(valor: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
 
   const [ano, mes, dia] = valor.split("-").map(Number);

@@ -15,7 +15,8 @@ export class EstruturaProntuarioPendenteError extends Error {
   }
 }
 
-function estruturaPendente(
+/** A migração de prontuários (0010/0011) ainda não chegou neste banco. */
+export function estruturaPendente(
   error: { code?: string; message?: string } | null,
 ): boolean {
   if (!error) return false;
@@ -23,7 +24,8 @@ function estruturaPendente(
     error.code === "PGRST205" ||
     error.message?.includes("schema cache") ||
     error.message?.includes("public.prontuarios") ||
-    error.message?.includes("public.prontuario_versoes"),
+    error.message?.includes("public.prontuario_versoes") ||
+    error.message?.includes("public.prontuario_imagens"),
   );
 }
 

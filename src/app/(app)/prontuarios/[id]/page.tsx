@@ -5,6 +5,8 @@ import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restri
 import { DetalheProntuario } from "@/components/prontuarios/detalhe-prontuario";
 import { EstruturaPendenteProntuario } from "@/components/prontuarios/estrutura-pendente";
 import { ehAdministradora } from "@/lib/auth";
+import { chaveDoDia } from "@/lib/dates";
+import { fotosDoProntuario } from "@/server/consultas/prontuario-imagens";
 import {
   EstruturaProntuarioPendenteError,
   prontuarioPorId,
@@ -46,10 +48,27 @@ export default async function PaginaProntuario({
   }
   if (!prontuario) notFound();
 
+  const fotos = await fotosDoProntuario(id).catch((erro: unknown) => {
+    if (erro instanceof EstruturaProntuarioPendenteError) return undefined;
+    throw erro;
+  });
+  if (fotos === undefined) {
+    return (
+      <div>
+        <FaixaDemonstracao className="mb-8" />
+        <EstruturaPendenteProntuario />
+      </div>
+    );
+  }
+
   return (
     <div>
       <FaixaDemonstracao className="mb-8" />
-      <DetalheProntuario prontuario={prontuario} />
+      <DetalheProntuario
+        prontuario={prontuario}
+        fotos={fotos}
+        hojeNaClinica={chaveDoDia()}
+      />
     </div>
   );
 }

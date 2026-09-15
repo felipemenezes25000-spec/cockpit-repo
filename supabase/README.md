@@ -19,6 +19,7 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0009_anon_fora_das_tabelas_novas.sql` | Revoga o anon das tabelas novas e muda o default para as futuras já nascerem sem o grant. |
 | `0010_prontuarios.sql` | Prontuários clínicos versionados, com RLS restrita à administradora e funções transacionais de criação/nova versão. |
 | `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado `prontuario-imagens`, metadados em `prontuario_imagens` e as quatro políticas de `storage.objects` — as primeiras do projeto. Única tabela com política de DELETE, por causa da LGPD. |
+| `0012_eliminacao_de_imagem.sql` | Onde o motivo da eliminação pousa: `prontuario_imagem_eliminacoes` (sem UPDATE, sem DELETE) e a função `prontuario_imagem_eliminar`, que registra e apaga na mesma transação. O arquivo sai antes, pela aplicação. |
 
 ## Projeto
 

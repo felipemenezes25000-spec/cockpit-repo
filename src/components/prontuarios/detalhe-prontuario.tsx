@@ -9,10 +9,12 @@ import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { formatarData, formatarHora } from "@/lib/format";
+import type { FotosDoProntuario } from "@/server/consultas/prontuario-imagens";
 import type {
   ProntuarioCompleto,
   VersaoDoProntuario,
 } from "@/server/consultas/prontuarios";
+import { FotosDeEvolucao } from "./fotos-evolucao";
 
 function Metadado({
   icone: Icone,
@@ -87,8 +89,12 @@ function VersaoHistorico({ versao }: { versao: VersaoDoProntuario }) {
 
 export function DetalheProntuario({
   prontuario,
+  fotos,
+  hojeNaClinica,
 }: {
   prontuario: ProntuarioCompleto;
+  fotos: FotosDoProntuario;
+  hojeNaClinica: string;
 }) {
   const versaoAtual = prontuario.versaoAtual;
 
@@ -218,6 +224,15 @@ export function DetalheProntuario({
           </Card>
         </aside>
       </div>
+
+      {/* Fora da grade de duas colunas de propósito: comparar antes e depois
+          pede a largura inteira da página, não a coluna do texto. */}
+      <FotosDeEvolucao
+        fotos={fotos}
+        prontuarioId={prontuario.id}
+        dataSugerida={prontuario.dataRegistroCampo}
+        hojeNaClinica={hojeNaClinica}
+      />
     </div>
   );
 }

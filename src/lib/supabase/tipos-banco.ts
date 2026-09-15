@@ -516,6 +516,57 @@ export type Database = {
           },
         ]
       }
+      prontuario_imagem_eliminacoes: {
+        Row: {
+          caminho: string
+          data_captura: string
+          eliminada_em: string
+          eliminada_por: string | null
+          id: number
+          imagem_id: string
+          motivo: string
+          nome_original: string
+          prontuario_id: string
+        }
+        Insert: {
+          caminho: string
+          data_captura: string
+          eliminada_em?: string
+          eliminada_por?: string | null
+          id?: never
+          imagem_id: string
+          motivo: string
+          nome_original: string
+          prontuario_id: string
+        }
+        Update: {
+          caminho?: string
+          data_captura?: string
+          eliminada_em?: string
+          eliminada_por?: string | null
+          id?: never
+          imagem_id?: string
+          motivo?: string
+          nome_original?: string
+          prontuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prontuario_imagem_eliminacoes_eliminada_por_fkey"
+            columns: ["eliminada_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prontuario_imagem_eliminacoes_prontuario_id_fkey"
+            columns: ["prontuario_id"]
+            isOneToOne: false
+            referencedRelation: "prontuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prontuario_imagens: {
         Row: {
           altura: number | null
@@ -1052,6 +1103,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      prontuario_imagem_eliminar: {
+        Args: { p_imagem_id: string; p_motivo: string }
+        Returns: undefined
+      }
       prontuario_nova_versao: {
         Args: {
           p_atendimento_id: string

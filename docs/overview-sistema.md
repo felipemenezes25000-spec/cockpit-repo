@@ -52,7 +52,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 | Visão Geral | `/` | O dia da clínica em uma tela |
 | Agenda | `/agenda` | Marcar, remarcar e acompanhar atendimentos |
 | Pacientes | `/pacientes` | Cadastro e histórico de cada paciente |
-| Prontuários | `/prontuarios` | Registro clínico versionado, restrito à administradora |
+| Prontuários | `/prontuarios` | Registro clínico versionado e fotos de evolução, restritos à administradora |
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
 | Documentos e Contratos | `/formularios` | Contratos de prestação de serviços, anamneses, termos e orientações |
 | Relacionamento | `/relacionamento` | Confirmações, retornos, aniversários e pesquisas |
@@ -103,8 +103,10 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
   e observações clínicas.
 - **Versionamento** — alteração não sobrescreve conteúdo; cria nova versão com
   motivo, autor e data.
+- **Fotos de evolução** — envio em lote, galeria em ordem cronológica, ampliação
+  sem sair da página, legenda e data corrigíveis, arquivar e eliminar.
 - **Permissão** — acesso restrito à administradora em interface, ação de servidor
-  e RLS/função do banco.
+  e RLS/função do banco — inclusive no armazenamento das fotos.
 
 ### Páginas provisórias
 
@@ -616,30 +618,49 @@ principal é `/prontuarios`; também há criação por paciente
 
 ### Fotos de evolução
 
-O registro visual do antes, durante e depois do tratamento. **A fundação de
-banco está pronta e em produção; a tela ainda não existe.**
+O registro visual do antes, durante e depois do tratamento. A galeria fica no
+fim da página do prontuário.
 
 | Onde | O quê |
 |---|---|
-| Bucket `prontuario-imagens` | O arquivo. Privado, 10 MB, só jpeg/png/webp. Exibição por URL assinada de validade curta — nunca URL pública |
+| Bucket `prontuario-imagens` | O arquivo. Privado, 10 MB, só jpeg/png/webp. Exibição por URL assinada que expira em 15 minutos — nunca URL pública |
 | `prontuario_imagens` | Caminho e metadados: nome original, tipo, tamanho, dimensões, legenda, data da captura e ordem |
+| `prontuario_imagem_eliminacoes` | Por que cada foto foi eliminada, e a pedido de quem. Não se corrige nem se apaga |
+
+Na tela:
+
+- **Enviar** — várias fotos de uma vez (até 12), com a data da captura e uma
+  legenda que valem para o lote. A data vem preenchida com a do registro do
+  prontuário, que é o palpite mais provável.
+- **Ampliar** — clique na foto abre em tamanho cheio, sem sair da página e sem
+  expor o endereço da imagem na barra do navegador.
+- **Corrigir** — legenda e data da captura mudam a qualquer momento.
+- **Arquivar** — tira da ficha e preserva.
+- **Eliminar** — pede motivo escrito e confirmação marcada.
 
 Decisões:
 
 - **A imagem pertence ao prontuário, não à versão do texto.** Versionar serve
   para o que se corrige; foto se acrescenta ou se remove. O eixo da evolução é a
   data da captura de cada foto — quando foi tirada, não quando foi enviada.
+- **A galeria vai da mais antiga para a mais recente**, ao contrário do resto do
+  sistema. Evolução se lê do antes para o depois.
 - **Arquivar e eliminar são coisas diferentes.** Arquivar tira da tela e
   preserva (foto tremida, duplicada, mal enquadrada). Eliminar apaga de verdade,
   e existe por causa da LGPD: o art. 18 dá à paciente o direito de pedir a
   remoção da própria imagem. É a única exceção do sistema à regra de que
-  registro não se apaga. A auditoria guarda que a foto existiu e foi eliminada,
-  sem guardar a foto.
+  registro não se apaga. Ficam guardados o motivo, quem eliminou e quando —
+  prova de que a foto existiu e foi eliminada, sem a foto.
+- **O arquivo sai antes da linha.** Se o armazenamento recusar a remoção, nada é
+  eliminado: uma imagem no bucket sem nenhum registro apontando para ela seria
+  dado de saúde sem dono e sem rastro.
 - **Mesmo alcance do prontuário**: só a administradora, também no Storage.
 - **Consentimento não está ligado ao sistema.** A paciente assina o termo (no
   módulo Documentos, quando existir) e tira as fotos; o banco não registra qual
   termo autorizou qual imagem. Decisão de 29/08/2026 — os dois módulos não se
   acoplam.
+- **Não há reordenação manual** das fotos: dentro do mesmo dia, vale a ordem de
+  envio.
 
 ## 15. Contratos e documentos assinados (planejado)
 

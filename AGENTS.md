@@ -223,6 +223,7 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `0009_anon_fora_das_tabelas_novas.sql` | Revoga `anon` das tabelas novas e muda o default para as futuras |
 | `0010_prontuarios.sql` | Prontuários clínicos versionados, restritos à administradora |
 | `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado no Storage, metadados em tabela, e a **primeira exceção ao "não se apaga"** |
+| `0012_eliminacao_de_imagem.sql` | Onde o motivo da eliminação pousa, e a função que registra e apaga na mesma transação |
 
 ### Tabelas
 
@@ -245,6 +246,7 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `prontuarios` | Cabeçalho do registro clínico: paciente, atendimento opcional, data e título | Administradora |
 | `prontuario_versoes` | Conteúdo clínico versionado: queixa, avaliação, conduta, evolução, orientações e observações | Administradora insere; ninguém edita nem apaga |
 | `prontuario_imagens` | Fotos de evolução: caminho no bucket e metadados. **Única tabela que pode apagar** — ver §8.5 | Administradora |
+| `prontuario_imagem_eliminacoes` | Por que cada foto foi eliminada, e a pedido de quem. Sem UPDATE e sem DELETE | Administradora insere |
 | `auditoria` | Quem alterou o quê, por gatilho | Só os gatilhos (leitura: administradora) |
 
 Gatilhos de auditoria em: `pacientes`, `atendimentos`, `recebimentos`, `vendas`,
@@ -456,7 +458,7 @@ src/
   components/
     layout/               estrutura, menu, cabeçalho, perfil, selo
     ui/                   cartão, botão, campo, chip de situação, prioridade, lista, avatar, vazio
-    overview/  pacientes/  agenda/  financeiro/  configuracoes/
+    overview/  pacientes/  agenda/  financeiro/  configuracoes/  prontuarios/
   server/
     consultas/            LEITURA do banco — `server-only`, uma função por assunto
     acoes/                ESCRITA no banco — `"use server"`, validação de verdade
@@ -470,6 +472,7 @@ src/
     periodo.ts            o mês da URL (?mes=AAAA-MM)
     moeda.ts              centavos inteiros e pontos-base
     venda.ts  despesa.ts  paciente.ts  procedimento.ts  atendimento.ts   regras de negócio
+    prontuario.ts  prontuario-imagens.ts   regras do registro clínico e das fotos
     csv.ts  importacao.ts leitor de planilha e validação da importação
     nav.ts                fonte única do menu + identidade da clínica
 supabase/
@@ -852,10 +855,10 @@ administradora porque ainda não existe perfil `profissional`.
 Campos clínicos atuais: queixa/anamnese, avaliação, conduta, evolução,
 orientações e observações clínicas. Pelo menos um precisa estar preenchido.
 
-#### Fotos de evolução (migração 0011)
+#### Fotos de evolução (migrações 0011 e 0012)
 
-> **Só a fundação de banco existe.** O bucket, a tabela e as políticas estão em
-> produção; **não há tela nem upload ainda**. Nada no `src/` toca em imagem.
+A galeria fica no fim da página do prontuário: enviar, ampliar, corrigir
+legenda e data, arquivar e eliminar.
 
 É a informação mais sensível que o sistema guarda: dado de saúde com a pessoa
 identificável na própria imagem.
@@ -885,16 +888,73 @@ a vontade dela não protege ninguém.
 
 O que permanece é a auditoria: o gatilho grava caminho, metadados, autor e
 hora da linha removida — prova de que a imagem existiu e foi eliminada, **sem
-a imagem**.
+a imagem**. E o **motivo**, que a 0012 acrescentou: `auditoria` guarda o que a
+imagem era, não por que deixou de existir, e o papel `authenticated` só tem
+SELECT nela. Sem uma tabela própria, a tela pediria uma justificativa que o
+sistema descartaria no mesmo instante.
 
-Duas coisas para quem for implementar o upload:
+Duas coisas que a implementação respeita, e que precisam continuar valendo:
 
 1. **Apagar a linha não apaga o arquivo.** São dois lugares, e a ordem importa:
    **arquivo primeiro**. Invertida, se a remoção do arquivo falhar sobra um
-   objeto órfão no bucket — dado de saúde sem dono e sem rastro.
+   objeto órfão no bucket — dado de saúde sem dono e sem rastro. Quando o
+   Storage recusa, `eliminarImagem` para ali e não apaga nada.
 2. **`arquivada` não é eliminação.** Ela tira da tela e preserva (foto tremida,
    duplicada, enquadramento errado). Eliminar é DELETE, e só a pedido da
-   titular, com motivo e confirmação.
+   titular, com motivo (mínimo de 10 caracteres, guardado) e confirmação
+   marcada — as duas conferidas de novo no servidor.
+
+##### O arquivo não passa pela ação de servidor
+
+O navegador manda o arquivo direto para o Storage; a ação de servidor grava
+só a linha. **Não é otimização:** a Vercel corta o corpo de uma requisição de
+função em 4,5 MB e o bucket aceita 10 MB — uma foto no meio dessa faixa
+morreria com um erro de plataforma que a tela não teria como explicar.
+
+Quem autoriza o envio é a política de Storage da 0011, que só deixa a
+administradora escrever no bucket. É a mesma barreira, em outro lugar.
+
+Duas consequências que a implementação carrega:
+
+- **O servidor não acredita no cliente.** `registrarImagem` lê tamanho e tipo
+  de volta do objeto (`storage.list`) antes de gravar a linha. O navegador
+  poderia declarar qualquer coisa, e uma linha que descreve um arquivo
+  diferente do que está lá é pior do que nenhuma linha. A ida ao Storage
+  também confirma que o upload chegou.
+- **Se a linha falha, o arquivo sai junto.** A ordem de criação é o inverso da
+  de eliminação, pelo mesmo motivo: arquivo sem linha é dado de saúde sem dono.
+- As fotos sobem **uma de cada vez**. A `ordem` de cada foto vem da maior já
+  gravada; em paralelo, duas do mesmo dia leriam o mesmo número.
+
+##### Exibir
+
+URL assinada de **15 minutos**, geradas em lote (`createSignedUrls`) na
+consulta que monta a página. Curto para um endereço que entrega dado de saúde
+a quem o tiver, e tempo de sobra para o que a página faz com ele — carregar as
+fotos assim que abre.
+
+Por isso a grade **não** usa `loading="lazy"`: uma foto abaixo da dobra,
+buscada meia hora depois, chegaria com a assinatura vencida. Baixar tudo
+enquanto a assinatura vale é mais honesto do que esticá-la para caber na
+rolagem. Quem sustenta a visita depois é o cache do navegador.
+
+**Nada de `next/image` aqui.** O otimizador faria uma cópia da foto no cache da
+CDN — fora do bucket privado e fora da RLS que protege o resto. Dado de saúde
+não sai pela porta que o guarda. É a razão dos dois
+`eslint-disable-next-line @next/next/no-img-element` do módulo, e não há
+miniatura: a grade carrega o arquivo inteiro, o que é aceitável para as poucas
+fotos por prontuário e evita uma segunda cópia da mesma imagem no bucket.
+
+Quando o objeto não está mais no bucket, a URL volta nula e a linha aparece na
+grade **sem imagem, com o aviso**. É assim que se descobre um arquivo perdido,
+em vez de a foto sumir da tela sem explicação.
+
+##### Ordem na tela
+
+Cronológica **crescente** — o contrário do resto do sistema, onde o mais
+recente vem no topo. Evolução se lê do antes para o depois. A coluna `ordem`
+desempata dentro do mesmo dia, que é quando a clínica fotografa vários ângulos
+de uma vez. **Não há reordenação manual** na tela: a ordem é a de envio.
 
 ##### Aberto
 
