@@ -277,6 +277,320 @@ export type Database = {
           },
         ]
       }
+      documento_assinaturas: {
+        Row: {
+          assinado_em: string
+          canal: string
+          cpf_informado: string | null
+          dispositivo: string | null
+          documento_id: string
+          exemplo: boolean
+          hash_assinado: string
+          id: string
+          ip: unknown
+          link_id: string | null
+          nome_informado: string
+          operador_id: string | null
+          provedor: string
+          referencia_externa: string | null
+          url_comprovante: string | null
+          verificacao_identidade: string
+        }
+        Insert: {
+          assinado_em?: string
+          canal?: string
+          cpf_informado?: string | null
+          dispositivo?: string | null
+          documento_id: string
+          exemplo?: boolean
+          hash_assinado: string
+          id?: string
+          ip?: unknown
+          link_id?: string | null
+          nome_informado: string
+          operador_id?: string | null
+          provedor?: string
+          referencia_externa?: string | null
+          url_comprovante?: string | null
+          verificacao_identidade: string
+        }
+        Update: {
+          assinado_em?: string
+          canal?: string
+          cpf_informado?: string | null
+          dispositivo?: string | null
+          documento_id?: string
+          exemplo?: boolean
+          hash_assinado?: string
+          id?: string
+          ip?: unknown
+          link_id?: string | null
+          nome_informado?: string
+          operador_id?: string | null
+          provedor?: string
+          referencia_externa?: string | null
+          url_comprovante?: string | null
+          verificacao_identidade?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_assinaturas_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: true
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documento_assinaturas_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "documento_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documento_assinaturas_operador_id_fkey"
+            columns: ["operador_id"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documento_links: {
+        Row: {
+          aberto_em: string | null
+          aberturas: number
+          canal_envio: string
+          criado_em: string
+          criado_por: string | null
+          documento_id: string
+          exemplo: boolean
+          expira_em: string
+          id: string
+          revogado_em: string | null
+          tentativas: number
+          token_hash: string
+        }
+        Insert: {
+          aberto_em?: string | null
+          aberturas?: number
+          canal_envio?: string
+          criado_em?: string
+          criado_por?: string | null
+          documento_id: string
+          exemplo?: boolean
+          expira_em: string
+          id?: string
+          revogado_em?: string | null
+          tentativas?: number
+          token_hash: string
+        }
+        Update: {
+          aberto_em?: string | null
+          aberturas?: number
+          canal_envio?: string
+          criado_em?: string
+          criado_por?: string | null
+          documento_id?: string
+          exemplo?: boolean
+          expira_em?: string
+          id?: string
+          revogado_em?: string | null
+          tentativas?: number
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_links_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documento_links_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos: {
+        Row: {
+          atualizado_em: string
+          corpo_congelado: string
+          corpo_hash: string
+          documento_anterior_id: string | null
+          emitido_em: string
+          emitido_por: string | null
+          exemplo: boolean
+          id: string
+          modelo_id: string | null
+          modelo_versao: number | null
+          motivo_cancelamento: string
+          paciente_id: string
+          situacao: Database["public"]["Enums"]["situacao_documento"]
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          corpo_congelado: string
+          corpo_hash?: string
+          documento_anterior_id?: string | null
+          emitido_em?: string
+          emitido_por?: string | null
+          exemplo?: boolean
+          id?: string
+          modelo_id?: string | null
+          modelo_versao?: number | null
+          motivo_cancelamento?: string
+          paciente_id: string
+          situacao?: Database["public"]["Enums"]["situacao_documento"]
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+          titulo: string
+        }
+        Update: {
+          atualizado_em?: string
+          corpo_congelado?: string
+          corpo_hash?: string
+          documento_anterior_id?: string | null
+          emitido_em?: string
+          emitido_por?: string | null
+          exemplo?: boolean
+          id?: string
+          modelo_id?: string | null
+          modelo_versao?: number | null
+          motivo_cancelamento?: string
+          paciente_id?: string
+          situacao?: Database["public"]["Enums"]["situacao_documento"]
+          tipo?: Database["public"]["Enums"]["tipo_documento"]
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_documento_anterior_id_fkey"
+            columns: ["documento_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_emitido_por_fkey"
+            columns: ["emitido_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_documento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_documento_versoes: {
+        Row: {
+          corpo: string
+          criado_em: string
+          criado_por: string | null
+          exemplo: boolean
+          id: number
+          modelo_id: string
+          motivo: string
+          versao: number
+        }
+        Insert: {
+          corpo: string
+          criado_em?: string
+          criado_por?: string | null
+          exemplo?: boolean
+          id?: never
+          modelo_id: string
+          motivo: string
+          versao: number
+        }
+        Update: {
+          corpo?: string
+          criado_em?: string
+          criado_por?: string | null
+          exemplo?: boolean
+          id?: never
+          modelo_id?: string
+          motivo?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_documento_versoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_documento_versoes_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_documento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelos_documento: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          descricao: string
+          exemplo: boolean
+          id: string
+          nome: string
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string
+          exemplo?: boolean
+          id?: string
+          nome: string
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string
+          exemplo?: boolean
+          id?: string
+          nome?: string
+          tipo?: Database["public"]["Enums"]["tipo_documento"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelos_documento_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacientes: {
         Row: {
           ativo: boolean
@@ -1103,6 +1417,90 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      documento_assinar: {
+        Args: {
+          p_cpf: string
+          p_dispositivo: string
+          p_documento_id: string
+          p_ip: string
+          p_nome: string
+          p_verificacao: string
+        }
+        Returns: undefined
+      }
+      documento_assinar_por_link: {
+        Args: {
+          p_cpf: string
+          p_dispositivo: string
+          p_ip: string
+          p_nascimento: string
+          p_nome: string
+          p_token: string
+        }
+        Returns: string
+      }
+      documento_emitir: {
+        Args: {
+          p_documento_anterior_id: string
+          p_modelo_id: string
+          p_paciente_id: string
+          p_titulo: string
+        }
+        Returns: string
+      }
+      documento_link_criar: {
+        Args: {
+          p_canal: string
+          p_dias: number
+          p_documento_id: string
+          p_token: string
+        }
+        Returns: string
+      }
+      documento_link_estado: {
+        Args: { p_token: string }
+        Returns: {
+          situacao: string
+          tipo: string
+        }[]
+      }
+      documento_link_revogar: {
+        Args: { p_link_id: string }
+        Returns: undefined
+      }
+      documento_para_assinatura: {
+        Args: { p_nascimento: string; p_token: string }
+        Returns: {
+          assinado_em: string
+          assinado_por: string
+          corpo: string
+          emitido_em: string
+          hash: string
+          paciente: string
+          situacao: string
+          tipo: string
+          titulo: string
+        }[]
+      }
+      modelo_documento_criar: {
+        Args: {
+          p_corpo: string
+          p_descricao: string
+          p_nome: string
+          p_tipo: Database["public"]["Enums"]["tipo_documento"]
+        }
+        Returns: string
+      }
+      modelo_documento_nova_versao: {
+        Args: {
+          p_corpo: string
+          p_descricao: string
+          p_modelo_id: string
+          p_motivo: string
+          p_nome: string
+        }
+        Returns: undefined
+      }
       prontuario_imagem_eliminar: {
         Args: { p_imagem_id: string; p_motivo: string }
         Returns: undefined
@@ -1208,6 +1606,7 @@ export type Database = {
         | "cancelado"
         | "ausente"
       situacao_despesa: "pendente" | "paga" | "cancelada"
+      situacao_documento: "emitido" | "assinado" | "cancelado" | "substituido"
       situacao_pendencia: "aberta" | "resolvida" | "cancelada"
       situacao_recebimento:
         | "previsto"
@@ -1216,6 +1615,7 @@ export type Database = {
         | "pendente"
         | "recebido_divergencia"
       tipo_cartao: "debito" | "credito"
+      tipo_documento: "contrato" | "termo" | "orientacao" | "anamnese"
       tipo_pendencia:
         | "anamnese"
         | "termo"
@@ -1239,12 +1639,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1268,11 +1668,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1293,11 +1693,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1318,11 +1718,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1335,11 +1735,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1387,6 +1787,7 @@ export const Constants = {
         "ausente",
       ],
       situacao_despesa: ["pendente", "paga", "cancelada"],
+      situacao_documento: ["emitido", "assinado", "cancelado", "substituido"],
       situacao_pendencia: ["aberta", "resolvida", "cancelada"],
       situacao_recebimento: [
         "previsto",
@@ -1396,6 +1797,7 @@ export const Constants = {
         "recebido_divergencia",
       ],
       tipo_cartao: ["debito", "credito"],
+      tipo_documento: ["contrato", "termo", "orientacao", "anamnese"],
       tipo_pendencia: [
         "anamnese",
         "termo",

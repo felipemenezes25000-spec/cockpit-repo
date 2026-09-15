@@ -215,3 +215,61 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------------
+   Impressão
+   
+   Existe por um motivo só: a paciente precisa sair com a via do que
+   assinou, e "Salvar em PDF" do navegador é o caminho que funciona em
+   todo aparelho sem o sistema carregar uma biblioteca de PDF.
+
+   O que sai no papel é a folha marcada com `.folha`; o resto da página
+   — cabeçalho da clínica, botões, avisos — leva `.sem-impressao` e
+   desaparece. Fundo e borda saem junto: tinta colorida em contrato não
+   ajuda ninguém a ler.
+--------------------------------------------------------------------- */
+
+@media print {
+  .sem-impressao {
+    display: none !important;
+  }
+
+  .folha,
+  .folha * {
+    visibility: visible;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .folha {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Rolagem não existe no papel: o texto inteiro precisa sair. */
+  .folha-texto {
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Quebrar o bloco de evidências ao meio tiraria a leitura do conjunto,
+     que é justamente o que dá valor a ele. */
+  .folha-evidencias {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 18mm 16mm;
+  }
+}

@@ -224,6 +224,10 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `0010_prontuarios.sql` | Prontuários clínicos versionados, restritos à administradora |
 | `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado no Storage, metadados em tabela, e a **primeira exceção ao "não se apaga"** |
 | `0012_eliminacao_de_imagem.sql` | Onde o motivo da eliminação pousa, e a função que registra e apaga na mesma transação |
+| `0013_documentos.sql` | Documentos e contratos: modelos versionados, texto congelado na emissão com hash, e a trilha da assinatura |
+| `0014_assinatura_por_link.sql` | Assinatura à distância — e a **primeira superfície anônima** do sistema: três funções que `anon` executa |
+| `0015_canal_do_link.sql` | `grant update` de **coluna** em `canal_envio`: o canal passa a ser gravado no clique do envio, não na criação |
+| `0016_via_da_paciente.sql` | Assinar deixa de revogar o link, e a função pública passa a devolver o texto depois de assinado — a via da paciente |
 
 ### Tabelas
 
@@ -247,6 +251,11 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `prontuario_versoes` | Conteúdo clínico versionado: queixa, avaliação, conduta, evolução, orientações e observações | Administradora insere; ninguém edita nem apaga |
 | `prontuario_imagens` | Fotos de evolução: caminho no bucket e metadados. **Única tabela que pode apagar** — ver §8.5 | Administradora |
 | `prontuario_imagem_eliminacoes` | Por que cada foto foi eliminada, e a pedido de quem. Sem UPDATE e sem DELETE | Administradora insere |
+| `modelos_documento` | Catálogo de texto-base: contrato, termo, orientação. Cabeçalho mutável | Administradora |
+| `modelo_documento_versoes` | Versões imutáveis do texto do modelo | Administradora insere; ninguém edita nem apaga |
+| `documentos` | Documento emitido, com o **texto congelado** e o hash dele. Corpo nunca muda — gatilho | Todos os perfis; anamnese só administradora |
+| `documento_assinaturas` | Evidência da assinatura: quem, quando, IP, dispositivo, identidade conferida, hash | Todos inserem; ninguém edita nem apaga |
+| `documento_links` | Links de assinatura à distância. Guarda o **hash** do token, nunca o token | Só as funções da 0014 escrevem |
 | `auditoria` | Quem alterou o quê, por gatilho | Só os gatilhos (leitura: administradora) |
 
 Gatilhos de auditoria em: `pacientes`, `atendimentos`, `recebimentos`, `vendas`,
@@ -975,30 +984,169 @@ pendências, próximos retornos, resumo financeiro e aniversariantes.
 - A Linha do Dia hoje se ajusta aos atendimentos existentes, porque o **horário
   de funcionamento ainda não foi definido**.
 
-### 8.7 Documentos e Contratos (planejado, ainda não implementado)
+### 8.7 Documentos e Contratos (migração 0013)
 
-Modelo já desenhado. Contrato e anamnese têm naturezas diferentes:
+Contrato, termo e orientação: cadastrar o modelo, emitir para a paciente e
+colher a assinatura. Rota `/formularios`; modelos em `/formularios/modelos`.
 
-- **Anamnese e ficha clínica** — conteúdo que evolui. Versionado, com autor e
-  data em cada versão.
-- **Contrato e termo** — depois de assinado, **não muda mais**. Correção gera
-  documento novo que referencia o anterior.
+Contrato e anamnese têm naturezas diferentes, e o modelo separa as duas:
 
-Tabelas previstas: `modelos_documento`, `documentos`, `documento_assinaturas`,
-`documento_campos`.
+- **Modelo** — texto que se corrige. Versionado, com autor, data e motivo em
+  cada versão, no mesmo desenho de `prontuarios` + `prontuario_versoes`.
+- **Documento emitido** — depois de emitido, **não muda mais**. Correção gera
+  documento novo que referencia o anterior, e o anterior vira `substituido`.
 
-**O ponto central é congelar o texto na emissão.** Se o modelo mudar em março, o
-contrato assinado em janeiro continua exibindo exatamente o que a paciente leu e
-aceitou — com o hash desse texto.
+#### Congelar o texto é o ponto central
 
-**Assinatura: decidido que será interna**, com trilha de evidências própria
-(quem, quando, IP, dispositivo, como a identidade foi verificada, hash do que foi
-assinado). A Lei 14.063/2020 reconhece a assinatura simples como válida entre
-particulares. O passo da assinatura fica **isolado atrás de uma interface**:
-trocar para Autentique, ZapSign ou Clicksign depois é implementar um conector,
-não redesenhar o módulo. Por isso `documento_assinaturas` já nasce com
-`provedor`, `referencia_externa` e `url_comprovante`, vazios enquanto for
-interna.
+Se o modelo mudar em março, o contrato assinado em janeiro continua exibindo
+exatamente o que a paciente leu — porque `documentos.corpo_congelado` guarda a
+cópia integral, e `corpo_hash` guarda o SHA-256 dela.
+
+**Quem congela é o banco, não a aplicação.** `documento_emitir` lê o corpo da
+versão vigente do modelo dentro da própria função. Se o texto viesse por
+parâmetro, quem soubesse chamar a API congelaria o que quisesse — e o hash
+atestaria a mentira com a mesma confiança. É o mesmo princípio que faz
+`registrarImagem` reler tamanho e tipo do Storage (§8.5).
+
+O hash é calculado pelo gatilho `documento_congelar`, com `sha256` e
+`convert_to` — embutidos do Postgres, sem depender de extensão instalada. E o
+gatilho `documento_texto_nao_muda` recusa qualquer UPDATE que toque o corpo ou o
+hash, e recusa tirar um documento assinado dessa situação. Congelar só vale se
+for para valer.
+
+#### Quem opera
+
+Decidido em 13/09/2026, dividido por natureza do documento:
+
+| O quê | Quem |
+|---|---|
+| Modelos — criar, versionar, aposentar | Só administradora |
+| Modelos — consultar | Todo perfil ativo (a recepção precisa para emitir) |
+| Contrato, termo, orientação — emitir, assinar, cancelar | Todo perfil ativo |
+| Anamnese — qualquer coisa | Só administradora, como o prontuário |
+
+A condição da anamnese aparece em **toda** política da 0013, inclusive nas de
+`documento_assinaturas`, para não existir porta lateral: ler a assinatura
+revelaria que o documento existe e para quem.
+
+#### Assinatura: dois caminhos
+
+A Lei 14.063/2020 reconhece a assinatura simples entre particulares. O que lhe
+dá força é o conjunto de circunstâncias, e é ele que `documento_assinaturas`
+guarda: nome, CPF (opcional), data e hora, como a identidade foi conferida e o
+hash do texto assinado. A coluna `canal` diz por onde entrou, porque **as duas
+não têm a mesma força de prova**:
+
+| Canal | Como a identidade é conferida | Prova |
+|---|---|---|
+| `balcao` | Alguém da clínica olha documento com foto | Mais forte |
+| `link` | Posse do endereço + data de nascimento | Mais fraca, e o registro diz isso |
+
+**IP e dispositivo vêm dos cabeçalhos da requisição, nunca do formulário.**
+Evidência que o próprio assinante pudesse digitar não serviria de evidência.
+Quando o ambiente não informa, ficam nulos — não saber o IP não invalida o que
+foi acordado.
+
+#### A primeira superfície anônima (migração 0014)
+
+> **Decidido em 13/09/2026**, invertendo a decisão tomada no mesmo dia de
+> assinar só no balcão. A clínica quer mandar o link pela paciente assinar de
+> onde estiver. O balcão continua funcionando.
+
+Isto muda a postura do projeto e precisa estar na cara de quem for mexer:
+**`anon` deixou de alcançar nada e passou a alcançar três funções.** Nenhuma
+tabela — as quatro da 0013 e a `documento_links` continuam com
+`revoke all ... from anon`, respondendo 401.
+
+```
+documento_link_estado       o link serve? (sem revelar conteúdo)
+documento_para_assinatura   revela o texto, mediante data de nascimento
+documento_assinar_por_link  assina
+```
+
+Cinco decisões contêm o risco, e nenhuma é dispensável:
+
+1. **A porta é a função, não a tabela.** Cada uma devolve campo escolhido a
+   dedo. `anon` não faz `select` em `documentos`, em `pacientes`, em lugar
+   nenhum.
+2. **O token não é guardado.** A tabela guarda o SHA-256. Um dump do banco
+   entrega hashes, que não abrem link nenhum. O token em claro existe uma vez:
+   no retorno de `criarLinkAssinatura`, para virar endereço. **Nem o sistema
+   consegue remontá-lo depois** — perdido, gera-se outro, e o anterior é
+   revogado na mesma transação.
+3. **Dois fatores fracos.** O token (256 bits) prova posse do link; a data de
+   nascimento prova que quem abriu é a paciente, e não quem recebeu o
+   encaminhamento no grupo da família. Link de WhatsApp é encaminhado,
+   fotografado e vai para backup em nuvem.
+4. **Data de nascimento tem ~36 mil combinações**, então o link conta erros e
+   se fecha no décimo. Por isso as funções públicas **devolvem situação em vez
+   de levantar exceção**: exceção desfaria a transação e apagaria a contagem
+   que deveria proteger. Se for mexer nelas, mantenha isso.
+5. **Sem data de nascimento cadastrada, não nasce link.** `data_nascimento` é
+   opcional no cadastro; emitir link para quem não tem a data daria um link
+   protegido só pelo token. A criação recusa e manda cadastrar.
+
+A tela também não ensina nada a quem não deveria estar ali: link inexistente,
+revogado e expirado dão respostas distintas apenas porque nenhuma delas revela
+se o token existe — e só "data incorreta" diz o que houve, porque quem errou a
+própria data precisa corrigir.
+
+**`/assinar/[token]` é a única rota fora de `(app)`** e a única em `PUBLICAS`
+no middleware além de `/entrar` e `/sem-acesso`. Ela não consulta o banco fora
+das três funções.
+
+#### A via da paciente (migração 0016)
+
+A 0014 fechava o link no instante da assinatura. Estava errado, e o erro era de
+fundo: **quem assina um contrato tem direito à via do que assinou**, e o sistema
+entregava uma tela de agradecimento e mais nada.
+
+Duas mudanças, e é bom entender por que elas não afrouxam nada:
+
+1. **Assinar não revoga.** O link vale até a data de expiração, agora em modo
+   leitura. A paciente volta e salva a via dela.
+2. **`documento_para_assinatura` devolve o corpo também quando `ja_assinado`**,
+   com quem assinou e quando. Antes o texto só saía enquanto havia o que
+   assinar — o contrário do que uma via exige.
+
+A data de nascimento continua sendo exigida a cada abertura, a contagem de
+tentativas continua valendo, e a clínica continua podendo revogar na mão. Ler a
+via é o **mesmo grau de acesso** que ler antes de assinar, não um grau novo.
+
+Consequência assumida: o documento fica legível por quem tiver o link e a data
+durante toda a validade, não só até a assinatura. Quem quiser encurtar isso
+escolhe 7 dias na emissão, ou revoga depois que a paciente confirmar que salvou.
+Cancelado e substituído continuam sem corpo — não há via de documento que
+deixou de valer.
+
+**O arquivo sai pela impressão do navegador**, não por biblioteca de PDF: o
+botão chama `window.print()` e a pessoa escolhe "Salvar como PDF". Funciona em
+todo aparelho e evita o sistema passar a manter paginação de contrato longo. O
+bloco `@media print` do `globals.css` é quem faz isso valer — `.folha` é o que
+sai no papel, `.sem-impressao` é o que some, `.folha-texto` perde a rolagem
+(senão o papel sairia cortado no mesmo ponto da tela) e `.folha-evidencias` não
+se parte entre páginas.
+
+> **Links assinados antes da 0016 continuam revogados.** A migração muda o
+> comportamento daqui para frente; ela não ressuscita o que já foi fechado.
+
+O passo da assinatura fica **isolado atrás de uma interface**: trocar para
+Autentique, ZapSign ou Clicksign é implementar um conector, não redesenhar o
+módulo. Por isso `documento_assinaturas` já nasce com `provedor`,
+`referencia_externa` e `url_comprovante`, vazios enquanto for interna.
+
+#### O que esta leva não entrega
+
+**Anamnese e `documento_campos`.** O valor `anamnese` já existe no enum
+`tipo_documento` — valor novo não pode ser usado na mesma transação em que é
+acrescentado (a lição da 0006), e adiá-lo custaria uma migração só para isso.
+As políticas já o tratam como conteúdo clínico. O que falta é a tabela de
+respostas e o construtor de formulário, que é praticamente um módulo dentro do
+módulo.
+
+**Reordenação e exclusão de modelo.** Modelo se aposenta (`ativo = false`),
+nunca se apaga: ele explica os documentos que gerou. Nenhuma das quatro tabelas
+tem política de DELETE.
 
 ---
 
@@ -1011,6 +1159,7 @@ errada, ou precisa de uma conversa com a clínica antes.
 
 - [ ] RLS ligada em toda tabela nova, com política associada
 - [ ] `anon` revogado nas tabelas novas
+- [ ] Nenhuma função nova ficou executável por `anon` — as três da 0014 são a **única** exceção, e foram decididas com o dono do projeto
 - [ ] `service_role` não aparece em lugar nenhum da aplicação
 - [ ] Função auxiliar de política criada em `private`, não em `public`
 - [ ] `getUser()`, nunca `getSession()`

@@ -54,7 +54,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 | Pacientes | `/pacientes` | Cadastro e histórico de cada paciente |
 | Prontuários | `/prontuarios` | Registro clínico versionado e fotos de evolução, restritos à administradora |
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
-| Documentos e Contratos | `/formularios` | Contratos de prestação de serviços, anamneses, termos e orientações |
+| Documentos e Contratos | `/formularios` | Contratos, termos e orientações emitidos e assinados pelas pacientes |
 | Relacionamento | `/relacionamento` | Confirmações, retornos, aniversários e pesquisas |
 | Relatórios | `/relatorios` | Indicadores de atendimento e faturamento |
 | Configurações | `/configuracoes` | Clínica, equipe, procedimentos e preferências |
@@ -215,7 +215,7 @@ próprio e preenchimento.
 | Botões "Resolver" das pendências | Navegam para o módulo correspondente; não resolvem nada. |
 | Botão "Enviar mensagem" dos aniversariantes | Visivelmente indisponível. |
 | Ações rápidas | Nova paciente, novo agendamento, prontuário e venda abrem fluxo real; criar tarefa ainda para em Relacionamento. |
-| Páginas de módulo restantes | Documentos, Relacionamento e Relatórios só descrevem o que virá. Configurações ainda é parcial. |
+| Páginas de módulo restantes | Relacionamento e Relatórios só descrevem o que virá. Configurações ainda é parcial. |
 | Períodos de retorno | Demonstrativos. Não são recomendação clínica. |
 | Números financeiros | Identificados como demonstrativos na própria tela. |
 
@@ -662,29 +662,47 @@ Decisões:
 - **Não há reordenação manual** das fotos: dentro do mesmo dia, vale a ordem de
   envio.
 
-## 15. Contratos e documentos assinados (planejado)
+## 15. Documentos e Contratos
 
-A clínica precisa de contratos de prestação de serviços assinados pela paciente,
-além das anamneses e termos de consentimento. Contrato e anamnese têm naturezas
-diferentes e o modelo separa as duas:
+Contratos de prestação de serviços, termos de consentimento e orientações
+entregues às pacientes. A rota principal é `/formularios`; os modelos ficam em
+`/formularios/modelos`.
 
-- **Anamnese e ficha clínica** — conteúdo que evolui. Versionado, com autor e
-  data em cada versão.
-- **Contrato e termo** — depois de assinado, não muda mais. Uma correção gera um
-  novo documento que referencia o anterior.
-
-### Modelo previsto
+### O modelo
 
 | Tabela | Papel |
 |---|---|
-| `modelos_documento` | Texto-base de contrato, anamnese, termo ou orientação. Versionado — alterar o modelo não altera o que já foi assinado. |
+| `modelos_documento` | Texto-base de contrato, termo ou orientação. Cabeçalho: tipo, nome, descrição, se está em uso. |
+| `modelo_documento_versoes` | Versões imutáveis do texto do modelo, com autor, data e motivo. |
 | `documentos` | Documento emitido para uma paciente, com o **texto congelado** no momento da emissão e o hash desse texto. |
-| `documento_assinaturas` | Evidência da assinatura: quem assinou, data e hora, IP, dispositivo, como a identidade foi verificada e o hash do que foi assinado. |
-| `documento_campos` | Respostas de formulário, quando o documento for anamnese. |
+| `documento_assinaturas` | Evidência da assinatura: quem assinou, data e hora, IP, dispositivo, como a identidade foi conferida e o hash do que foi assinado. |
 
-O ponto central é **congelar o texto na emissão**. Se o modelo de contrato mudar
-em março, o contrato assinado em janeiro continua exibindo exatamente o que a
-paciente leu e aceitou.
+### Na tela
+
+- **Modelos** — a administradora cadastra o texto-base e grava novas versões com
+  motivo. A recepção consulta, para saber o que existe. Modelo se aposenta,
+  nunca se apaga: ele explica os documentos que gerou.
+- **Emitir** — escolhe a paciente e o modelo, confere a prévia e emite. O texto
+  é copiado para o documento naquele instante.
+- **Assinar** — a paciente lê na tela da clínica e a recepção registra nome, CPF
+  (opcional) e como conferiu a identidade.
+- **Cancelar** — para documento emitido por engano, com motivo. Assinado não
+  cancela: emite-se um novo corrigindo, e o antigo fica marcado como
+  substituído.
+
+### Congelar o texto é o ponto central
+
+Se o modelo de contrato mudar em março, o contrato assinado em janeiro continua
+exibindo exatamente o que a paciente leu e aceitou. O documento guarda a cópia
+integral do texto e a impressão digital dela (SHA-256).
+
+Duas garantias sustentam isso, e as duas moram no banco, não na tela:
+
+- **O texto que congela é lido do banco na emissão**, não enviado pela tela. Se
+  viesse de fora, quem chamasse a interface de programação escolheria o que o
+  hash iria atestar.
+- **Alterar o corpo de um documento emitido é recusado pelo banco.** Não é uma
+  promessa da aplicação — é um gatilho que levanta erro.
 
 ### Assinatura
 
@@ -697,9 +715,79 @@ está na força da prova, caso alguém conteste.
 | Assinatura dentro do sistema, com trilha de evidências | R$ 0 | Simples. Válida, mas contestável. |
 | Plataforma especializada (ZapSign, Clicksign, Autentique) | R$ 30 a R$ 50/mês | Trilha auditável independente e PDF com log próprio. |
 
-**Decidido:** a assinatura será feita dentro do sistema, com trilha de evidências
-própria, e o passo da assinatura fica isolado atrás de uma interface. Trocar para
-Autentique, ZapSign ou Clicksign depois é implementar um novo conector — não
-redesenhar o módulo. Por isso `documento_assinaturas` já nasce com os campos de
-referência externa (`provedor`, `referencia_externa`, `url_comprovante`), vazios
-enquanto a assinatura for interna.
+**Decidido:** a assinatura é feita dentro do sistema, e o passo da assinatura
+fica isolado atrás de uma interface. Trocar para Autentique, ZapSign ou
+Clicksign depois é implementar um novo conector — não redesenhar o módulo. Por
+isso `documento_assinaturas` já nasce com os campos de referência externa
+(`provedor`, `referencia_externa`, `url_comprovante`), vazios enquanto a
+assinatura for interna.
+
+**Há dois caminhos, e o registro diz qual foi usado**, porque a força da prova
+não é a mesma:
+
+| Caminho | Como a identidade é conferida | Prova |
+|---|---|---|
+| **Link** — a paciente assina de onde estiver | Posse do link + data de nascimento | Mais fraca |
+| **Balcão** — a paciente assina na clínica | Alguém confere documento com foto | Mais forte |
+
+O IP e o dispositivo são capturados da própria requisição, não digitados:
+evidência que o assinante pudesse escrever não serviria de evidência.
+
+### O link de assinatura
+
+A recepção gera um link, escolhe a validade (7, 15 ou 30 dias) e anota por onde
+vai enviá-lo — esse canal entra na evidência da assinatura. A paciente abre,
+**confirma a própria data de nascimento**, lê o documento e assina escrevendo o
+nome completo.
+
+Três cuidados, porque um link de WhatsApp é encaminhado, fotografado e vai parar
+em backup de nuvem:
+
+- **A data de nascimento é um segundo fator.** Sem ela, quem recebesse o link
+  encaminhado por engano leria o contrato e poderia assinar no lugar da
+  paciente.
+- **O link se fecha após dez tentativas erradas.** Data de nascimento tem poucas
+  combinações; sem esse limite, quem tivesse o link poderia varrê-las.
+- **O endereço aparece uma vez só.** O sistema guarda apenas uma impressão
+  digital do link, não o link. Se a clínica perder o endereço, gera outro — e o
+  anterior é cancelado automaticamente. Um link só fica vivo por documento.
+
+A clínica pode cancelar o link a qualquer momento, e vê na ficha do documento
+se já foi aberto e quantas vezes.
+
+### A via da paciente
+
+Assim que assina, a paciente vê o documento assinado por inteiro, com a data, a
+hora e a identificação do texto, e um botão **"Salvar em PDF ou imprimir"**.
+Quem assina um contrato tem direito à via do que assinou.
+
+O link **continua valendo até o prazo dele**, em modo leitura: ela pode voltar
+depois, confirmar a data de nascimento de novo e salvar a via outra vez. É o
+mesmo grau de acesso de antes de assinar — a proteção não mudou.
+
+Se a clínica quiser encurtar essa janela, escolhe 7 dias na emissão, ou cancela
+o link depois que a paciente confirmar que guardou o arquivo.
+
+O arquivo sai pela impressão do navegador, com "Salvar como PDF" — o caminho
+que funciona em qualquer aparelho. O que sai no papel é só o documento e o bloco
+da assinatura; cabeçalho, botões e avisos ficam de fora.
+
+**A paciente não faz login em nada** e não cria conta. A página de assinatura é
+a única do sistema que abre sem senha, e o que ela mostra depende inteiramente
+do link e da data de nascimento.
+
+### Quem pode o quê
+
+| O quê | Quem |
+|---|---|
+| Criar, versionar e aposentar modelos | Só a administradora |
+| Consultar modelos | Todos os perfis |
+| Emitir, assinar e cancelar contrato, termo e orientação | Todos os perfis |
+| Anamnese | Só a administradora, como o prontuário |
+
+### O que ainda não existe
+
+- **Anamnese com campos de formulário.** O tipo já é reconhecido e tratado como
+  conteúdo clínico, mas a tabela de respostas e o construtor de formulário ficam
+  para a próxima leva.
+- **PDF montado pelo sistema.** Hoje o arquivo sai pela impressão do navegador, que basta para a via da paciente. Um PDF com cabeçalho fixo e paginação própria fica para quando houver necessidade.

@@ -2,8 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
 
-/** Rotas que existem sem login. */
-const PUBLICAS = ["/entrar", "/sem-acesso"];
+/**
+ * Rotas que existem sem login.
+ *
+ * `/assinar` é a única que serve conteúdo a quem não tem sessão, e serve
+ * pouco: quem decide o que aparece são as três funções públicas da migração
+ * 0014, que exigem o token do link e a data de nascimento da paciente. O
+ * middleware só deixa a requisição chegar — a guarda é o banco.
+ */
+const PUBLICAS = ["/entrar", "/sem-acesso", "/assinar"];
 
 function ehPublica(caminho: string): boolean {
   return PUBLICAS.some((p) => caminho === p || caminho.startsWith(`${p}/`));

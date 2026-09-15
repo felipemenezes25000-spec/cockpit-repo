@@ -20,6 +20,10 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0010_prontuarios.sql` | Prontuários clínicos versionados, com RLS restrita à administradora e funções transacionais de criação/nova versão. |
 | `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado `prontuario-imagens`, metadados em `prontuario_imagens` e as quatro políticas de `storage.objects` — as primeiras do projeto. Única tabela com política de DELETE, por causa da LGPD. |
 | `0012_eliminacao_de_imagem.sql` | Onde o motivo da eliminação pousa: `prontuario_imagem_eliminacoes` (sem UPDATE, sem DELETE) e a função `prontuario_imagem_eliminar`, que registra e apaga na mesma transação. O arquivo sai antes, pela aplicação. |
+| `0013_documentos.sql` | Documentos e contratos: `modelos_documento` + versões, `documentos` com texto congelado e hash por gatilho, `documento_assinaturas`. Funções `documento_emitir` (lê o corpo do banco, nunca do cliente) e `documento_assinar`. |
+| `0014_assinatura_por_link.sql` | Assinatura à distância. `documento_links` guarda o **hash** do token, nunca o token. Abre a **primeira superfície anônima** do projeto: três funções `security definer` executáveis por `anon` (`documento_link_estado`, `documento_para_assinatura`, `documento_assinar_por_link`) — nenhuma tabela. Segundo fator: data de nascimento, com o link se fechando em 10 erros. |
+| `0015_canal_do_link.sql` | `grant update (canal_envio)` — grant de **coluna**, para a equipe registrar por onde o link foi enviado no clique do envio. `token_hash`, `expira_em` e `revogado_em` seguem sem UPDATE. |
+| `0016_via_da_paciente.sql` | Assinar deixa de revogar o link, e `documento_para_assinatura` passa a devolver o texto e os dados da assinatura quando `ja_assinado`. É por aí que a paciente salva a via dela. |
 
 ## Projeto
 

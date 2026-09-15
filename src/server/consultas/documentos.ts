@@ -1,0 +1,555 @@
+import "server-only";
+
+import { cache } from "react";
+import type {
+  SituacaoDocumento,
+  TipoDocumento,
+} from "@/lib/documento";
+import { nomeExibido } from "@/lib/paciente";
+import { clienteServidor } from "@/lib/supabase/server";
+
+export const POR_PAGINA_DOCUMENTOS = 20;
+
+export class EstruturaDocumentoPendenteError extends Error {
+  constructor() {
+    super("A migração de documentos ainda não foi aplicada.");
+    this.name = "EstruturaDocumentoPendenteError";
+  }
+}
+
+function estruturaPendente(
+  error: { code?: string; message?: string } | null,
+): boolean {
+  if (!error) return false;
+  return Boolean(
+    error.code === "PGRST205" ||
+      error.message?.includes("schema cache") ||
+      error.message?.includes("public.documentos") ||
+      error.message?.includes("public.documento_links") ||
+      error.message?.includes("public.modelos_documento"),
+  );
+}
+
+function aoFalhar(
+  error: { code?: string; message?: string } | null,
+  assunto: string,
+): never {
+  if (estruturaPendente(error)) throw new EstruturaDocumentoPendenteError();
+  throw new Error(`Não foi possível carregar ${assunto}.`);
+}
+
+function termoSeguro(bruto: string): string {
+  return bruto
+    .trim()
+    .slice(0, 80)
+    .replace(/[,()"\\*%]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ---------------------------------------------------------------------
+// Modelos
+// ---------------------------------------------------------------------
+
+export type VersaoDoModelo = {
+  id: number;
+  numero: number;
+  corpo: string;
+  motivo: string;
+  criadoEm: Date;
+  criadoPor: string | null;
+};
+
+export type ModeloDaLista = {
+  id: string;
+  tipo: TipoDocumento;
+  nome: string;
+  descricao: string;
+  ativo: boolean;
+  atualizadoEm: Date;
+  exemplo: boolean;
+  versaoAtual: number;
+  /** Quantos documentos já saíram deste modelo. Zero permite despreocupação. */
+  emitidos: number;
+};
+
+export type ModeloCompleto = {
+  id: string;
+  tipo: TipoDocumento;
+  nome: string;
+  descricao: string;
+  ativo: boolean;
+  criadoEm: Date;
+  atualizadoEm: Date;
+  exemplo: boolean;
+  versoes: VersaoDoModelo[];
+  versaoAtual: VersaoDoModelo | null;
+};
+
+/** Modelos em condição de emitir: ativos e com texto. */
+export type ModeloParaEmissao = {
+  id: string;
+  tipo: TipoDocumento;
+  nome: string;
+  descricao: string;
+  versao: number;
+  corpo: string;
+};
+
+export const listarModelos = cache(
+  async (opcoes: { incluirInativos?: boolean } = {}): Promise<ModeloDaLista[]> => {
+    const supabase = await clienteServidor();
+
+    let consulta = supabase
+      .from("modelos_documento")
+      .select("id, tipo, nome, descricao, ativo, atualizado_em, exemplo");
+
+    if (!opcoes.incluirInativos) consulta = consulta.eq("ativo", true);
+
+    const { data, error } = await consulta
+      .order("tipo", { ascending: true })
+      .order("nome", { ascending: true });
+
+    if (error) aoFalhar(error, "os modelos");
+
+    const modelos = data ?? [];
+    const ids = modelos.map((modelo) => modelo.id);
+    if (ids.length === 0) return [];
+
+    // Versão vigente de cada modelo: uma consulta para todos, ordenada, e a
+    // primeira ocorrência de cada id é a maior versão.
+    const { data: versoes, error: erroVersoes } = await supabase
+      .from("modelo_documento_versoes")
+      .select("modelo_id, versao")
+      .in("modelo_id", ids)
+      .order("versao", { ascending: false });
+
+    if (erroVersoes) aoFalhar(erroVersoes, "as versões dos modelos");
+
+    const vigente = new Map<string, number>();
+    for (const versao of versoes ?? []) {
+      if (!vigente.has(versao.modelo_id)) vigente.set(versao.modelo_id, versao.versao);
+    }
+
+    const { data: emitidos, error: erroEmitidos } = await supabase
+      .from("documentos")
+      .select("modelo_id")
+      .in("modelo_id", ids);
+
+    if (erroEmitidos) aoFalhar(erroEmitidos, "a contagem de documentos");
+
+    const contagem = new Map<string, number>();
+    for (const documento of emitidos ?? []) {
+      if (!documento.modelo_id) continue;
+      contagem.set(documento.modelo_id, (contagem.get(documento.modelo_id) ?? 0) + 1);
+    }
+
+    return modelos.map((modelo) => ({
+      id: modelo.id,
+      tipo: modelo.tipo,
+      nome: modelo.nome,
+      descricao: modelo.descricao,
+      ativo: modelo.ativo,
+      atualizadoEm: new Date(modelo.atualizado_em),
+      exemplo: modelo.exemplo,
+      versaoAtual: vigente.get(modelo.id) ?? 0,
+      emitidos: contagem.get(modelo.id) ?? 0,
+    }));
+  },
+);
+
+export const modeloPorId = cache(
+  async (id: string): Promise<ModeloCompleto | null> => {
+    const supabase = await clienteServidor();
+
+    const { data, error } = await supabase
+      .from("modelos_documento")
+      .select("id, tipo, nome, descricao, ativo, criado_em, atualizado_em, exemplo")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) aoFalhar(error, "o modelo");
+    if (!data) return null;
+
+    const { data: versoes, error: erroVersoes } = await supabase
+      .from("modelo_documento_versoes")
+      .select("id, versao, corpo, motivo, criado_em, perfis ( nome )")
+      .eq("modelo_id", id)
+      .order("versao", { ascending: false });
+
+    if (erroVersoes) aoFalhar(erroVersoes, "as versões do modelo");
+
+    const lista: VersaoDoModelo[] = (versoes ?? []).map((versao) => ({
+      id: versao.id,
+      numero: versao.versao,
+      corpo: versao.corpo,
+      motivo: versao.motivo,
+      criadoEm: new Date(versao.criado_em),
+      criadoPor: versao.perfis?.nome ?? null,
+    }));
+
+    return {
+      id: data.id,
+      tipo: data.tipo,
+      nome: data.nome,
+      descricao: data.descricao,
+      ativo: data.ativo,
+      criadoEm: new Date(data.criado_em),
+      atualizadoEm: new Date(data.atualizado_em),
+      exemplo: data.exemplo,
+      versoes: lista,
+      versaoAtual: lista[0] ?? null,
+    };
+  },
+);
+
+/**
+ * Modelos que a tela de emissão oferece, já com o texto da versão vigente
+ * para a prévia.
+ *
+ * A prévia é só para os olhos de quem emite. O que congela no documento é o
+ * texto que `documento_emitir` lê do banco — nunca este, que veio pela tela.
+ */
+export const modelosParaEmissao = cache(
+  async (): Promise<ModeloParaEmissao[]> => {
+    const supabase = await clienteServidor();
+
+    const { data, error } = await supabase
+      .from("modelos_documento")
+      .select("id, tipo, nome, descricao")
+      .eq("ativo", true)
+      .order("tipo", { ascending: true })
+      .order("nome", { ascending: true });
+
+    if (error) aoFalhar(error, "os modelos");
+
+    const modelos = data ?? [];
+    if (modelos.length === 0) return [];
+
+    const { data: versoes, error: erroVersoes } = await supabase
+      .from("modelo_documento_versoes")
+      .select("modelo_id, versao, corpo")
+      .in(
+        "modelo_id",
+        modelos.map((modelo) => modelo.id),
+      )
+      .order("versao", { ascending: false });
+
+    if (erroVersoes) aoFalhar(erroVersoes, "o texto dos modelos");
+
+    const vigente = new Map<string, { versao: number; corpo: string }>();
+    for (const versao of versoes ?? []) {
+      if (!vigente.has(versao.modelo_id)) {
+        vigente.set(versao.modelo_id, { versao: versao.versao, corpo: versao.corpo });
+      }
+    }
+
+    // Modelo sem nenhuma versão não aparece: emitir a partir dele falharia no
+    // banco, e é melhor não oferecer do que oferecer e recusar.
+    return modelos.flatMap((modelo) => {
+      const atual = vigente.get(modelo.id);
+      if (!atual) return [];
+
+      return [
+        {
+          id: modelo.id,
+          tipo: modelo.tipo,
+          nome: modelo.nome,
+          descricao: modelo.descricao,
+          versao: atual.versao,
+          corpo: atual.corpo,
+        },
+      ];
+    });
+  },
+);
+
+// ---------------------------------------------------------------------
+// Documentos
+// ---------------------------------------------------------------------
+
+export type AssinaturaDoDocumento = {
+  nome: string;
+  cpf: string | null;
+  assinadoEm: Date;
+  hashAssinado: string;
+  ip: string | null;
+  dispositivo: string | null;
+  verificacao: string;
+  operador: string | null;
+  /** `balcao` ou `link` — a força da prova não é a mesma. */
+  canal: string;
+  provedor: string;
+  referenciaExterna: string | null;
+  urlComprovante: string | null;
+};
+
+export type DocumentoDaLista = {
+  id: string;
+  tipo: TipoDocumento;
+  titulo: string;
+  situacao: SituacaoDocumento;
+  pacienteId: string;
+  paciente: string;
+  emitidoEm: Date;
+  emitidoPor: string | null;
+  exemplo: boolean;
+  assinadoEm: Date | null;
+};
+
+export type PaginaDeDocumentos = {
+  itens: DocumentoDaLista[];
+  total: number;
+  pagina: number;
+  paginas: number;
+};
+
+export type DocumentoCompleto = {
+  id: string;
+  tipo: TipoDocumento;
+  titulo: string;
+  situacao: SituacaoDocumento;
+  pacienteId: string;
+  paciente: string;
+  /** Só dígitos, como o cadastro guarda. Vira o número do WhatsApp. */
+  pacienteTelefone: string | null;
+  corpo: string;
+  hash: string;
+  modeloId: string | null;
+  modeloNome: string | null;
+  modeloVersao: number | null;
+  documentoAnteriorId: string | null;
+  motivoCancelamento: string;
+  emitidoEm: Date;
+  emitidoPor: string | null;
+  exemplo: boolean;
+  assinatura: AssinaturaDoDocumento | null;
+};
+
+export const listarDocumentos = cache(
+  async (
+    opcoes: {
+      busca?: string;
+      situacao?: SituacaoDocumento | "todas";
+      tipo?: TipoDocumento | "todos";
+      pagina?: number;
+    } = {},
+  ): Promise<PaginaDeDocumentos> => {
+    const supabase = await clienteServidor();
+    const pagina = Math.max(1, Math.trunc(opcoes.pagina ?? 1));
+    const termo = termoSeguro(opcoes.busca ?? "");
+
+    let pacientesEncontradas: string[] = [];
+
+    if (termo) {
+      const { data, error } = await supabase
+        .from("pacientes")
+        .select("id")
+        .or(
+          [
+            `nome.ilike.%${termo}%`,
+            `nome_social.ilike.%${termo}%`,
+            `email.ilike.%${termo}%`,
+            `telefone.ilike.%${termo}%`,
+          ].join(","),
+        )
+        .limit(50);
+
+      if (error) aoFalhar(error, "as pacientes");
+      pacientesEncontradas = (data ?? []).map((paciente) => paciente.id);
+    }
+
+    let consulta = supabase
+      .from("documentos")
+      .select(
+        `id, tipo, titulo, situacao, paciente_id, emitido_em, exemplo,
+         pacientes ( nome, nome_social ),
+         perfis ( nome ),
+         documento_assinaturas ( assinado_em )`,
+        { count: "exact" },
+      );
+
+    if (opcoes.situacao && opcoes.situacao !== "todas") {
+      consulta = consulta.eq("situacao", opcoes.situacao);
+    }
+
+    if (opcoes.tipo && opcoes.tipo !== "todos") {
+      consulta = consulta.eq("tipo", opcoes.tipo);
+    }
+
+    if (termo) {
+      const alvos = [`titulo.ilike.%${termo}%`];
+      if (pacientesEncontradas.length > 0) {
+        alvos.push(`paciente_id.in.(${pacientesEncontradas.join(",")})`);
+      }
+      consulta = consulta.or(alvos.join(","));
+    }
+
+    const de = (pagina - 1) * POR_PAGINA_DOCUMENTOS;
+    const { data, count, error } = await consulta
+      .order("emitido_em", { ascending: false })
+      .range(de, de + POR_PAGINA_DOCUMENTOS - 1);
+
+    if (error) aoFalhar(error, "os documentos");
+
+    const total = count ?? 0;
+
+    return {
+      itens: (data ?? []).map((linha) => ({
+        id: linha.id,
+        tipo: linha.tipo,
+        titulo: linha.titulo,
+        situacao: linha.situacao,
+        pacienteId: linha.paciente_id,
+        paciente: linha.pacientes ? nomeExibido(linha.pacientes) : "Paciente",
+        emitidoEm: new Date(linha.emitido_em),
+        emitidoPor: linha.perfis?.nome ?? null,
+        exemplo: linha.exemplo,
+        assinadoEm: linha.documento_assinaturas?.assinado_em
+          ? new Date(linha.documento_assinaturas.assinado_em)
+          : null,
+      })),
+      total,
+      pagina,
+      paginas: Math.max(1, Math.ceil(total / POR_PAGINA_DOCUMENTOS)),
+    };
+  },
+);
+
+export const documentoPorId = cache(
+  async (id: string): Promise<DocumentoCompleto | null> => {
+    const supabase = await clienteServidor();
+
+    const { data, error } = await supabase
+      .from("documentos")
+      .select(
+        `id, tipo, titulo, situacao, paciente_id, corpo_congelado, corpo_hash,
+         modelo_id, modelo_versao, documento_anterior_id, motivo_cancelamento,
+         emitido_em, exemplo,
+         pacientes ( nome, nome_social, telefone ),
+         perfis ( nome ),
+         modelos_documento ( nome ),
+         documento_assinaturas (
+           nome_informado, cpf_informado, assinado_em, hash_assinado, ip,
+           dispositivo, verificacao_identidade, canal, provedor,
+           referencia_externa, url_comprovante, perfis ( nome )
+         )`,
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) aoFalhar(error, "o documento");
+    if (!data) return null;
+
+    const assinatura = data.documento_assinaturas;
+
+    return {
+      id: data.id,
+      tipo: data.tipo,
+      titulo: data.titulo,
+      situacao: data.situacao,
+      pacienteId: data.paciente_id,
+      paciente: data.pacientes ? nomeExibido(data.pacientes) : "Paciente",
+      pacienteTelefone: data.pacientes?.telefone ?? null,
+      corpo: data.corpo_congelado,
+      hash: data.corpo_hash,
+      modeloId: data.modelo_id,
+      modeloNome: data.modelos_documento?.nome ?? null,
+      modeloVersao: data.modelo_versao,
+      documentoAnteriorId: data.documento_anterior_id,
+      motivoCancelamento: data.motivo_cancelamento,
+      emitidoEm: new Date(data.emitido_em),
+      emitidoPor: data.perfis?.nome ?? null,
+      exemplo: data.exemplo,
+      assinatura: assinatura
+        ? {
+            nome: assinatura.nome_informado,
+            cpf: assinatura.cpf_informado,
+            assinadoEm: new Date(assinatura.assinado_em),
+            hashAssinado: assinatura.hash_assinado,
+            // O gerador não conhece `inet` e tipa como `unknown`. No JSON do
+            // PostgREST vem string; a guarda registra isso em vez de fingir
+            // com um cast.
+            ip: typeof assinatura.ip === "string" ? assinatura.ip : null,
+            dispositivo: assinatura.dispositivo,
+            verificacao: assinatura.verificacao_identidade,
+            operador: assinatura.perfis?.nome ?? null,
+            canal: assinatura.canal,
+            provedor: assinatura.provedor,
+            referenciaExterna: assinatura.referencia_externa,
+            urlComprovante: assinatura.url_comprovante,
+          }
+        : null,
+    };
+  },
+);
+
+// ---------------------------------------------------------------------
+// Links de assinatura
+// ---------------------------------------------------------------------
+
+export type LinkDeAssinatura = {
+  id: string;
+  criadoEm: Date;
+  criadoPor: string | null;
+  expiraEm: Date;
+  revogadoEm: Date | null;
+  canalEnvio: string;
+  abertoEm: Date | null;
+  aberturas: number;
+  tentativas: number;
+  /** Vivo: não revogado e dentro da validade. */
+  ativo: boolean;
+  /** Fechado por tentativas erradas de data de nascimento. */
+  bloqueado: boolean;
+};
+
+/**
+ * O histórico de links de um documento, do mais novo para o mais velho.
+ *
+ * O token não aparece — o banco guarda só o hash dele. Um link já enviado
+ * não pode ser reexibido: se a clínica perdeu o endereço, gera outro, e o
+ * anterior é revogado na mesma transação.
+ */
+export const linksDoDocumento = cache(
+  async (documentoId: string): Promise<LinkDeAssinatura[]> => {
+    const supabase = await clienteServidor();
+
+    const { data, error } = await supabase
+      .from("documento_links")
+      .select(
+        `id, criado_em, expira_em, revogado_em, canal_envio, aberto_em,
+         aberturas, tentativas, perfis ( nome )`,
+      )
+      .eq("documento_id", documentoId)
+      .order("criado_em", { ascending: false });
+
+    // A 0014 pode não estar aplicada. O documento continua utilizável pelo
+    // balcão; o que falta é o envio à distância.
+    if (error) {
+      if (estruturaPendente(error)) return [];
+      aoFalhar(error, "os links de assinatura");
+    }
+
+    const agora = Date.now();
+
+    return (data ?? []).map((linha) => {
+      const expiraEm = new Date(linha.expira_em);
+      const revogadoEm = linha.revogado_em ? new Date(linha.revogado_em) : null;
+
+      return {
+        id: linha.id,
+        criadoEm: new Date(linha.criado_em),
+        criadoPor: linha.perfis?.nome ?? null,
+        expiraEm,
+        revogadoEm,
+        canalEnvio: linha.canal_envio,
+        abertoEm: linha.aberto_em ? new Date(linha.aberto_em) : null,
+        aberturas: linha.aberturas,
+        tentativas: linha.tentativas,
+        ativo: !revogadoEm && expiraEm.getTime() > agora,
+        bloqueado: linha.tentativas >= 10,
+      };
+    });
+  },
+);

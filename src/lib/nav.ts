@@ -95,12 +95,12 @@ export const MENU: ItemMenu[] = [
     icone: FileSignature,
     finalidade:
       "Contratos de prestação de serviços, anamneses, termos de consentimento e orientações entregues às pacientes.",
+    // O módulo existe e não usa mais `ModuloEmConstrucao`. O que sobrou aqui
+    // é o que ainda falta: anamnese com campos de formulário e PDF próprio.
+    // Ver AGENTS.md §8.7.
     proximosPassos: [
-      "Modelos de contrato, anamnese e termo por procedimento",
-      "Envio para a paciente ler e assinar",
-      "Assinatura com registro de data, hora e autoria",
-      "Arquivo do que foi assinado, sem alteração posterior",
-      "Histórico de versões de cada modelo",
+      "Anamnese com campos de formulário respondidos na emissão",
+      "PDF montado pelo sistema, com paginação própria",
     ],
   },
   {
