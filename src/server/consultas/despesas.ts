@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, diferencaEmDias } from "@/lib/dates";
@@ -75,7 +77,7 @@ export const listarDespesas = cache(async (periodo: Periodo): Promise<Despesa[]>
   ]);
 
   const erro = doMes.error ?? atrasadas.error;
-  if (erro) throw new Error(`Não foi possível carregar as despesas: ${erro.message}`);
+  if (erro) falhaDeConsulta("consulta despesas", erro, "Não foi possível carregar as despesas.");
 
   return [...(atrasadas.data ?? []), ...(doMes.data ?? [])].map(mapear);
 });

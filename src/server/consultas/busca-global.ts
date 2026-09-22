@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { chaveDoDia, dataDoBanco, inicioDoDia, inicioDoDiaSeguinte } from "@/lib/dates";
 import { dataDaBusca } from "@/lib/busca";
@@ -51,7 +53,11 @@ const buscarAtendimentos = cache(async (termo: string): Promise<{ itens: Atendim
       supabase.from("procedimentos").select("id").ilike("nome", `%${termo}%`).limit(101),
     ]);
     if (pacientes.error || procedimentos.error) {
-      throw new Error("Não foi possível buscar os atendimentos.");
+      falhaDeConsulta(
+        "consulta busca-global",
+        pacientes.error ?? procedimentos.error,
+        "Não foi possível buscar os atendimentos.",
+      );
     }
     const parcial = (pacientes.data?.length ?? 0) > 100 || (procedimentos.data?.length ?? 0) > 100;
     const filtros: string[] = [];
@@ -60,12 +66,12 @@ const buscarAtendimentos = cache(async (termo: string): Promise<{ itens: Atendim
     if (filtros.length === 0) return { itens: [], mais: false };
     consulta = consulta.or(filtros.join(","));
     const { data: linhas, error } = await consulta.order("inicio", { ascending: false }).limit(9);
-    if (error) throw new Error("Não foi possível buscar os atendimentos.");
+    if (error) falhaDeConsulta("consulta busca-global", error, "Não foi possível buscar os atendimentos.");
     return apresentarAtendimentos(linhas ?? [], parcial);
   }
 
   const { data: linhas, error } = await consulta.order("inicio", { ascending: false }).limit(9);
-  if (error) throw new Error("Não foi possível buscar os atendimentos.");
+  if (error) falhaDeConsulta("consulta busca-global", error, "Não foi possível buscar os atendimentos.");
   return apresentarAtendimentos(linhas ?? [], false);
 });
 

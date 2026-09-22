@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import type { TipoCartao } from "@/lib/venda";
@@ -31,7 +33,7 @@ export const listarTaxas = cache(async (): Promise<TaxaCartao[]> => {
   ]);
 
   if (taxas.error) {
-    throw new Error(`Não foi possível carregar as taxas: ${taxas.error.message}`);
+    falhaDeConsulta("consulta taxas", taxas.error, "Não foi possível carregar as taxas.");
   }
 
   const usos = new Map<string, number>();

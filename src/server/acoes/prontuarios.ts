@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { usuarioAtual } from "@/lib/auth";
+import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
+import { registrarFalha } from "@/lib/registro";
 import {
   normalizarProntuario,
   validarProntuario,
@@ -45,30 +47,14 @@ function lerValores(dados: FormData): ValoresProntuario {
   });
 }
 
-function erroDoBanco(
-  error: { code?: string; message?: string } | null | undefined,
-  padrao: string,
-): ErrosDoProntuario {
-  if (
-    error?.code === "PGRST202" ||
-    error?.code === "PGRST205" ||
-    error?.message?.includes("schema cache")
-  ) {
-    return {
-      geral:
-        "A migração de prontuários ainda não foi aplicada no banco. Aplique a 0010 antes de salvar.",
-    };
-  }
-
-  if (error?.code === "23503") {
-    return { geral: "Paciente ou atendimento não encontrado." };
-  }
-
-  if (error?.code === "23514") {
-    return { geral: "Revise os campos do prontuário antes de salvar." };
-  }
-
-  return { geral: padrao };
+function erroDoBanco(error: ErroDoBanco, padrao: string, contexto: string): ErrosDoProntuario {
+  if (error) registrarFalha(contexto, error);
+  return {
+    geral: mensagemDoBanco(error, padrao, {
+      "23503": "Paciente ou atendimento não encontrado.",
+      "23514": "Revise os campos do prontuário antes de salvar.",
+    }),
+  };
 }
 
 export async function criarProntuario(
@@ -111,7 +97,7 @@ export async function criarProntuario(
 
   if (error || !data) {
     return {
-      erros: erroDoBanco(error, "Não foi possível salvar o prontuário. Tente de novo."),
+      erros: erroDoBanco(error, "Não foi possível salvar o prontuário. Tente de novo.", "prontuários: registrar"),
       valores: valoresDigitados(dados),
     };
   }
@@ -171,7 +157,7 @@ export async function registrarNovaVersao(
 
   if (error) {
     return {
-      erros: erroDoBanco(error, "Não foi possível salvar a nova versão. Tente de novo."),
+      erros: erroDoBanco(error, "Não foi possível salvar a nova versão. Tente de novo.", "prontuários: nova versão"),
       valores: valoresDigitados(dados),
     };
   }

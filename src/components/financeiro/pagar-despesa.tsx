@@ -1,30 +1,12 @@
 "use client";
 
-import { CircleCheckBig, LoaderCircle } from "lucide-react";
-import { useFormStatus } from "react-dom";
+import { CircleCheckBig } from "lucide-react";
+import { useId } from "react";
 import { ENTRADA } from "@/components/ui/field";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { cn } from "@/lib/cn";
 import { FORMAS_EM_ORDEM, ROTULO_FORMA } from "@/lib/venda";
 import { mudarSituacaoDespesa } from "@/server/acoes/despesas";
-
-function Botao() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius-cartao)] bg-primary-container px-4 text-xs font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {pending ? (
-        <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
-      ) : (
-        <CircleCheckBig aria-hidden="true" size={14} strokeWidth={1.75} />
-      )}
-      Marcar como paga
-    </button>
-  );
-}
 
 /** Pagamento em linha: data, forma e um clique. */
 export function PagarDespesa({
@@ -34,37 +16,48 @@ export function PagarDespesa({
   despesaId: string;
   dataPadrao: string;
 }) {
+  const id = useId();
+
   return (
-    <form
-      action={mudarSituacaoDespesa}
-      className="flex flex-wrap items-end gap-3"
-    >
-      <input type="hidden" name="id" value={despesaId} />
-      <input type="hidden" name="acao" value="pagar" />
+    <FormularioDeAcao acao={mudarSituacaoDespesa} campos={{ id: despesaId, acao: "pagar" }}>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${id}-pago-em`} className="rotulo">
+            Paga em
+          </label>
+          <input
+            id={`${id}-pago-em`}
+            type="date"
+            name="pago_em"
+            defaultValue={dataPadrao}
+            max={dataPadrao}
+            required
+            className={cn(ENTRADA, "h-9 w-auto")}
+          />
+        </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="rotulo">Paga em</span>
-        <input
-          type="date"
-          name="pago_em"
-          defaultValue={dataPadrao}
-          required
-          className={cn(ENTRADA, "h-9 w-auto")}
-        />
-      </label>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${id}-forma`} className="rotulo">
+            Forma
+          </label>
+          <select
+            id={`${id}-forma`}
+            name="forma"
+            defaultValue="pix"
+            className={cn(ENTRADA, "h-9 w-auto")}
+          >
+            {FORMAS_EM_ORDEM.map((f) => (
+              <option key={f} value={f}>
+                {ROTULO_FORMA[f]}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="rotulo">Forma</span>
-        <select name="forma" defaultValue="pix" className={cn(ENTRADA, "h-9 w-auto")}>
-          {FORMAS_EM_ORDEM.map((f) => (
-            <option key={f} value={f}>
-              {ROTULO_FORMA[f]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <Botao />
-    </form>
+        <BotaoDeAcao tom="primario" icone={CircleCheckBig}>
+          Marcar como paga
+        </BotaoDeAcao>
+      </div>
+    </FormularioDeAcao>
   );
 }

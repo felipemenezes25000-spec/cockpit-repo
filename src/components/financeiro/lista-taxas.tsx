@@ -5,6 +5,7 @@ import { EstadoVazio } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
 import { bpDoBanco, formatarPercentual } from "@/lib/moeda";
 import { alternarAtivaTaxa } from "@/server/acoes/taxas-cartao";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import type { TaxaCartao } from "@/server/consultas/taxas";
 
 export function ListaTaxas({
@@ -72,26 +73,20 @@ export function ListaTaxas({
                 Editar
               </Link>
 
-              <form action={alternarAtivaTaxa}>
-                <input type="hidden" name="id" value={taxa.id} />
-                <input type="hidden" name="ativar" value={taxa.ativa ? "nao" : "sim"} />
-                <button
-                  type="submit"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] px-3 text-xs font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+              <FormularioDeAcao
+                acao={alternarAtivaTaxa}
+                campos={{ id: taxa.id, ativar: taxa.ativa ? "nao" : "sim" }}
+                alinhamento="fim"
+              >
+                <BotaoDeAcao
+                  tom="silencioso"
+                  tamanho="xs"
+                  icone={taxa.ativa ? Archive : ArchiveRestore}
+                  rotuloAcessivel={`${taxa.ativa ? "Desativar" : "Reativar"} a taxa ${taxa.operadora}`}
                 >
-                  {taxa.ativa ? (
-                    <>
-                      <Archive aria-hidden="true" size={13} strokeWidth={1.75} />
-                      Desativar
-                    </>
-                  ) : (
-                    <>
-                      <ArchiveRestore aria-hidden="true" size={13} strokeWidth={1.75} />
-                      Reativar
-                    </>
-                  )}
-                </button>
-              </form>
+                  {taxa.ativa ? "Desativar" : "Reativar"}
+                </BotaoDeAcao>
+              </FormularioDeAcao>
             </div>
           ) : null}
         </li>

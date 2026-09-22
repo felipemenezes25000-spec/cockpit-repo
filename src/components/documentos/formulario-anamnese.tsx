@@ -186,31 +186,39 @@ export function FormularioAnamnese({
       }
     }
 
-    if (destino.tipo === "consulta") {
-      const resposta = await responderAnamnese({
-        documentoId: destino.documentoId,
-        respostas,
-      });
-      if (resposta.ok) setSalvo(true);
-      else setErro(resposta.erro);
-    } else {
-      const situacao = await responderPorLink({
-        token: destino.token,
-        nascimento: destino.nascimento,
-        respostas,
-      });
+    try {
+      if (destino.tipo === "consulta") {
+        const resposta = await responderAnamnese({
+          documentoId: destino.documentoId,
+          respostas,
+        });
+        if (resposta.ok) setSalvo(true);
+        else setErro(resposta.erro);
+      } else {
+        const situacao = await responderPorLink({
+          token: destino.token,
+          nascimento: destino.nascimento,
+          respostas,
+        });
 
-      if (situacao === "ok") setSalvo(true);
-      else if (situacao === "data_incorreta")
-        setErro("A data de nascimento não confere. Recarregue a página.");
-      else if (situacao === "expirado" || situacao === "revogado")
-        setErro("Este link não vale mais. Peça um novo à clínica.");
-      else if (situacao === "respostas_invalidas")
-        setErro("Alguma resposta não foi aceita. Revise as alternativas marcadas.");
-      else setErro("Não foi possível salvar. Tente de novo.");
+        if (situacao === "ok") setSalvo(true);
+        else if (situacao === "data_incorreta")
+          setErro("A data de nascimento não confere. Recarregue a página.");
+        else if (situacao === "expirado" || situacao === "revogado" || situacao === "bloqueado")
+          setErro("Este link não vale mais. Peça um novo à clínica.");
+        else if (situacao === "indisponivel")
+          setErro("Este formulário não aceita mais respostas.");
+        else if (situacao === "respostas_invalidas")
+          setErro("Alguma resposta não foi aceita. Confira datas, números e alternativas marcadas.");
+        else setErro("Não foi possível salvar. Tente de novo.");
+      }
+    } catch {
+      setErro(
+        "Não foi possível falar com o servidor. Confira a conexão e tente de novo — o que você preencheu continua na tela.",
+      );
+    } finally {
+      setSalvando(false);
     }
-
-    setSalvando(false);
   }
 
   if (campos.length === 0) {

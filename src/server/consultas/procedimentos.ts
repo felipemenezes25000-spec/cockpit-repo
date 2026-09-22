@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 
@@ -58,7 +60,7 @@ export const listarProcedimentos = cache(async (): Promise<Procedimento[]> => {
   ]);
 
   if (procedimentos.error) {
-    throw new Error(`Não foi possível carregar os procedimentos: ${procedimentos.error.message}`);
+    falhaDeConsulta("consulta procedimentos", procedimentos.error, "Não foi possível carregar os procedimentos.");
   }
 
   const usos = new Map<string, number>();

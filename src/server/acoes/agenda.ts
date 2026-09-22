@@ -2,16 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
-import { chaveDoDia, instanteNaClinica } from "@/lib/dates";
+import { chaveDoDia, dataValida, horaValida, instanteNaClinica } from "@/lib/dates";
+import { mensagemDoBanco } from "@/lib/erros-banco";
 import { formatarHora } from "@/lib/format";
+import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
+import { registrarFalha } from "@/lib/registro";
 import {
   lerDuracao,
   lerValorEmReais,
-  SITUACOES_VALIDAS,
+  situacaoValida,
 } from "@/lib/atendimento";
-import type { SituacaoAtendimento } from "@/lib/dominio";
 
 /**
  * Marcar, remarcar e mudar a situação do atendimento.
@@ -19,6 +22,11 @@ import type { SituacaoAtendimento } from "@/lib/dominio";
  * A RLS já barra quem não tem acesso; as checagens aqui devolvem mensagem em
  * vez de erro cru. A trilha de situações é gravada por gatilho no banco, com
  * autor e hora — a ação só atualiza a coluna.
+ *
+ * O choque de horário é conferido duas vezes, e as duas são necessárias. A
+ * ação confere antes, para dizer COM QUEM choca; o gatilho da 0021 confere de
+ * novo com o profissional travado, e é ele que impede duas marcações no mesmo
+ * segundo de passarem juntas.
  */
 
 export type ErrosAtendimento = Partial<
@@ -40,19 +48,8 @@ export type EstadoAtendimento = {
   valores?: Record<string, string>;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function texto(dados: FormData, campo: string): string {
-  return String(dados.get(campo) ?? "").trim();
-}
-
-function digitados(dados: FormData): Record<string, string> {
-  const valores: Record<string, string> = {};
-  for (const [chave, valor] of dados.entries()) {
-    if (typeof valor === "string") valores[chave] = valor;
-  }
-  return valores;
-}
+const CHOQUE_NO_BANCO =
+  "Este horário acabou de ser ocupado para este profissional. Atualize a agenda e escolha outro horário.";
 
 type Campos = {
   paciente_id: string;
@@ -69,50 +66,41 @@ function validar(
 ): { erros: ErrosAtendimento; valores: Record<string, string> } | { campos: Campos } {
   const erros: ErrosAtendimento = {};
 
-  const pacienteId = texto(dados, "paciente_id");
-  const profissionalId = texto(dados, "profissional_id");
-  const procedimentoId = texto(dados, "procedimento_id");
-  const data = texto(dados, "data");
-  const hora = texto(dados, "hora");
-  const duracao = lerDuracao(texto(dados, "duracao_min"));
-  const valor = lerValorEmReais(texto(dados, "valor"));
-  const observacoes = texto(dados, "observacoes").slice(0, 2000);
+  const pacienteId = campoTexto(dados, "paciente_id", 36);
+  const profissionalId = campoTexto(dados, "profissional_id", 36);
+  const procedimentoId = campoTexto(dados, "procedimento_id", 36);
+  const data = campoTexto(dados, "data", 10);
+  const hora = campoTexto(dados, "hora", 5);
+  const duracao = lerDuracao(campoTexto(dados, "duracao_min", 10));
+  const valor = lerValorEmReais(campoTexto(dados, "valor", 30));
+  const observacoes = campoTexto(dados, "observacoes", 2000);
 
-  if (!UUID.test(pacienteId)) erros.paciente_id = "Escolha a paciente.";
-  if (!UUID.test(profissionalId)) erros.profissional_id = "Escolha quem atende.";
-  if (!UUID.test(procedimentoId)) erros.procedimento_id = "Escolha o procedimento.";
+  if (!uuidValido(pacienteId)) erros.paciente_id = "Escolha a paciente.";
+  if (!uuidValido(profissionalId)) erros.profissional_id = "Escolha quem atende.";
+  if (!uuidValido(procedimentoId)) erros.procedimento_id = "Escolha o procedimento.";
 
-  let inicio: Date | null = null;
-  const dataOk = /^\d{4}-\d{2}-\d{2}$/.test(data);
-  const horaOk = /^([01]\d|2[0-3]):[0-5]\d$/.test(hora);
-
-  if (!dataOk) erros.data = "Informe a data.";
-  if (!horaOk) erros.hora = "Informe a hora.";
-
-  if (dataOk && horaOk) {
-    const [ano, mes, dia] = data.split("-").map(Number);
-    const [h, m] = hora.split(":").map(Number);
-    if (mes < 1 || mes > 12 || dia < 1 || dia > 31) {
-      erros.data = "Data inválida.";
-    } else {
-      // Hora de parede da clínica, não do servidor.
-      inicio = instanteNaClinica(ano, mes, dia, h, m);
-    }
-  }
+  if (!data) erros.data = "Informe a data.";
+  else if (!dataValida(data)) erros.data = "Data inválida.";
+  if (!hora) erros.hora = "Informe a hora.";
+  else if (!horaValida(hora)) erros.hora = "Hora inválida. Use o formato 14:30.";
 
   if (duracao === null) erros.duracao_min = "Duração em minutos, de 5 a 480.";
   if (valor === null) erros.valor = "Valor inválido. Use 150 ou 150,00.";
 
   if (Object.keys(erros).length > 0) {
-    return { erros, valores: digitados(dados) };
+    return { erros, valores: valoresDigitados(dados) };
   }
+
+  const [ano, mes, dia] = data.split("-").map(Number);
+  const [h, m] = hora.split(":").map(Number);
 
   return {
     campos: {
       paciente_id: pacienteId,
       profissional_id: profissionalId,
       procedimento_id: procedimentoId,
-      inicio: inicio!,
+      // Hora de parede da clínica, não do servidor.
+      inicio: instanteNaClinica(ano, mes, dia, h, m),
       duracao_min: duracao!,
       valor: valor!,
       observacoes: observacoes || null,
@@ -121,11 +109,13 @@ function validar(
 }
 
 /**
- * Choque de horário com outro atendimento do mesmo profissional.
+ * Choque de horário com outro atendimento do mesmo profissional, para dizer
+ * com quem choca.
  *
- * Cancelados e ausências liberam o horário. A comparação é feita aqui e não
- * no banco porque o PostgREST não filtra por `inicio + duracao`, e um dia de
- * agenda tem dezenas de linhas, não milhares.
+ * A janela de 8 horas para trás é a duração máxima (`lerDuracao`): um
+ * atendimento que começou antes dela não alcança o novo horário. Não é mais a
+ * garantia — é o gatilho `atendimentos_sem_choque` (0021) —, então aumentar o
+ * teto de duração sem mexer aqui só troca a mensagem, não cria overbooking.
  */
 async function conflitoDeHorario(
   campos: Campos,
@@ -134,14 +124,19 @@ async function conflitoDeHorario(
   const supabase = await clienteServidor();
 
   const fim = new Date(campos.inicio.getTime() + campos.duracao_min * 60_000);
-  // Só o dia do novo horário: atendimento não atravessa a madrugada.
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("atendimentos")
     .select("id, inicio, duracao_min, pacientes ( nome, nome_social )")
     .eq("profissional_id", campos.profissional_id)
     .not("situacao", "in", "(cancelado,ausente)")
     .gte("inicio", new Date(campos.inicio.getTime() - 8 * 3_600_000).toISOString())
     .lt("inicio", fim.toISOString());
+
+  // Sem conseguir ler a agenda, não dá para prometer que o horário está livre.
+  if (error) {
+    registrarFalha("agenda: conferir choque de horário", error);
+    return "Não foi possível conferir a agenda agora. Tente de novo.";
+  }
 
   for (const outro of data ?? []) {
     if (outro.id === ignorarId) continue;
@@ -156,10 +151,11 @@ async function conflitoDeHorario(
   return null;
 }
 
-function paraAgendaDoDia(inicio: Date): never {
+function revalidarAgenda(id?: string) {
   revalidatePath("/agenda");
+  revalidatePath("/relacionamento");
   revalidatePath("/");
-  redirect(`/agenda?dia=${chaveDoDia(inicio)}`);
+  if (id) revalidatePath(`/agenda/${id}/editar`);
 }
 
 export async function marcarAtendimento(
@@ -173,7 +169,7 @@ export async function marcarAtendimento(
   if ("erros" in resultado) return resultado;
 
   const choque = await conflitoDeHorario(resultado.campos, null);
-  if (choque) return { erros: { hora: choque }, valores: digitados(dados) };
+  if (choque) return { erros: { hora: choque }, valores: valoresDigitados(dados) };
 
   const supabase = await clienteServidor();
   const { error } = await supabase.from("atendimentos").insert({
@@ -183,13 +179,19 @@ export async function marcarAtendimento(
   });
 
   if (error) {
+    registrarFalha("agenda: marcar atendimento", error);
+    const mensagem = mensagemDoBanco(error, "Não foi possível marcar o atendimento. Tente de novo.", {
+      "23P01": CHOQUE_NO_BANCO,
+      "23503": "Paciente, profissional ou procedimento não existe mais. Recarregue a página.",
+    });
     return {
-      erros: { geral: `Não foi possível marcar: ${error.message}` },
-      valores: digitados(dados),
+      erros: error.code === "23P01" ? { hora: mensagem } : { geral: mensagem },
+      valores: valoresDigitados(dados),
     };
   }
 
-  paraAgendaDoDia(resultado.campos.inicio);
+  revalidarAgenda();
+  redirect(`/agenda?dia=${chaveDoDia(resultado.campos.inicio)}`);
 }
 
 export async function atualizarAtendimento(
@@ -199,33 +201,44 @@ export async function atualizarAtendimento(
   const usuario = await usuarioAtual();
   if (!usuario) return { erros: { geral: "Sessão expirada. Entre novamente." } };
 
-  const id = texto(dados, "id");
-  if (!UUID.test(id)) return { erros: { geral: "Atendimento não identificado." } };
+  const id = campoTexto(dados, "id", 36);
+  if (!uuidValido(id)) return { erros: { geral: "Atendimento não identificado." } };
 
   const resultado = validar(dados);
   if ("erros" in resultado) return resultado;
 
   const choque = await conflitoDeHorario(resultado.campos, id);
-  if (choque) return { erros: { hora: choque }, valores: digitados(dados) };
+  if (choque) return { erros: { hora: choque }, valores: valoresDigitados(dados) };
 
   const supabase = await clienteServidor();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("atendimentos")
     .update({
       ...resultado.campos,
       inicio: resultado.campos.inicio.toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
+    registrarFalha("agenda: remarcar atendimento", error);
+    const mensagem = mensagemDoBanco(error, "Não foi possível salvar as alterações. Tente de novo.", {
+      "23P01": CHOQUE_NO_BANCO,
+    });
     return {
-      erros: { geral: `Não foi possível salvar: ${error.message}` },
-      valores: digitados(dados),
+      erros: error.code === "23P01" ? { hora: mensagem } : { geral: mensagem },
+      valores: valoresDigitados(dados),
     };
   }
 
-  revalidatePath(`/agenda/${id}/editar`);
-  paraAgendaDoDia(resultado.campos.inicio);
+  // Sem linha devolvida: o atendimento não existe, ou a RLS não deixou ver.
+  if (!data) {
+    return { erros: { geral: "Atendimento não encontrado." }, valores: valoresDigitados(dados) };
+  }
+
+  revalidarAgenda(id);
+  redirect(`/agenda?dia=${chaveDoDia(resultado.campos.inicio)}`);
 }
 
 export type PacienteParaSelecao = { id: string; nome: string; detalhe: string; telefone?: string | null };
@@ -244,7 +257,7 @@ export async function buscarPacientesParaSelecao(
   if (!usuario) return [];
 
   const { listarPacientes } = await import("@/server/consultas/pacientes");
-  const resultado = await listarPacientes({ busca: termo.slice(0, 80) });
+  const resultado = await listarPacientes({ busca: String(termo ?? "").slice(0, 80) });
 
   return resultado.itens.slice(0, 8).map((p) => ({
     id: p.id,
@@ -259,22 +272,46 @@ export async function buscarPacientesParaSelecao(
  * Muda a situação. Aceita qualquer situação válida e diferente da atual —
  * engano precisa ter volta — e a interface é quem oferece só os caminhos que
  * fazem sentido. O gatilho no banco grava quem mudou e quando.
+ *
+ * Reabrir um cancelado passa pela conferência de choque (0021): se o horário
+ * foi ocupado nesse meio-tempo, a pessoa é avisada e remarca.
  */
-export async function mudarSituacao(dados: FormData): Promise<void> {
+export async function mudarSituacao(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
   const usuario = await usuarioAtual();
-  if (!usuario) redirect("/entrar");
+  if (!usuario) return falha("Sessão expirada. Entre novamente.");
 
-  const id = texto(dados, "id");
-  const para = texto(dados, "para") as SituacaoAtendimento;
-  if (!UUID.test(id) || !SITUACOES_VALIDAS.includes(para)) return;
+  const id = campoTexto(dados, "id", 36);
+  const para = campoTexto(dados, "para", 40);
+  if (!uuidValido(id) || !situacaoValida(para)) {
+    return falha("Atendimento ou situação inválida.");
+  }
 
   const supabase = await clienteServidor();
-  await supabase
+  const { data, error } = await supabase
     .from("atendimentos")
     .update({ situacao: para })
     .eq("id", id)
-    .neq("situacao", para);
+    .neq("situacao", para)
+    .select("id")
+    .maybeSingle();
 
-  revalidatePath("/agenda");
-  revalidatePath("/");
+  if (error) {
+    registrarFalha("agenda: mudar situação", error);
+    return falha(
+      mensagemDoBanco(error, "Não foi possível mudar a situação. Tente de novo.", {
+        "23P01":
+          "O horário deste atendimento já foi ocupado por outro. Para reabrir, remarque para um horário livre.",
+      }),
+    );
+  }
+
+  if (!data) {
+    return falha("A situação já tinha mudado. A agenda foi atualizada.");
+  }
+
+  revalidarAgenda();
+  return sucesso();
 }

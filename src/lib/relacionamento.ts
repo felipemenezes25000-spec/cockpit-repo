@@ -1,5 +1,7 @@
-import { chaveDoDia, dataDoBanco } from "@/lib/dates";
+import { dataValida } from "@/lib/dates";
 import type { Prioridade, SituacaoAcompanhamento, TipoPendencia } from "@/lib/dominio";
+
+export { dataValida };
 
 export const TIPOS_TAREFA = ["confirmacao", "retorno", "pesquisa", "outro"] as const satisfies readonly TipoPendencia[];
 export type TipoTarefa = (typeof TIPOS_TAREFA)[number];
@@ -24,14 +26,6 @@ export const UUID_RELACIONAMENTO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 
 /** Link direto informado pela clínica para receber avaliações no Google. */
 export const LINK_AVALIACAO_GOOGLE = "https://g.page/r/CYXDzsOMXUv5ECE/review";
-
-/** Uma data de calendário válida, sem aceitar a normalização de 31/02. */
-export function dataValida(valor: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
-  const [, mes, dia] = valor.split("-").map(Number);
-  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return false;
-  return chaveDoDia(dataDoBanco(valor)) === valor;
-}
 
 export function telefoneParaWhatsApp(telefone: string | null): string | null {
   if (!telefone) return null;

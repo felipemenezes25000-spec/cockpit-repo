@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { dataDoBanco } from "@/lib/dates";
 import { BUCKET_IMAGENS } from "@/lib/prontuario-imagens";
@@ -85,7 +87,7 @@ export const fotosDoProntuario = cache(
 
     if (error) {
       if (estruturaPendente(error)) throw new EstruturaProntuarioPendenteError();
-      throw new Error(`Não foi possível carregar as fotos: ${error.message}`);
+      falhaDeConsulta("consulta prontuario-imagens", error, "Não foi possível carregar as fotos.");
     }
 
     const linhas = data ?? [];
@@ -95,12 +97,18 @@ export const fotosDoProntuario = cache(
     const assinadas = new Map<string, string>();
 
     if (linhas.length > 0) {
-      const { data: urls } = await supabase.storage
+      const { data: urls, error: erroUrls } = await supabase.storage
         .from(BUCKET_IMAGENS)
         .createSignedUrls(
           linhas.map((linha) => linha.caminho),
           VALIDADE_URL,
         );
+
+      // Falha do Storage não é "arquivo perdido": com ela, cada foto
+      // apareceria com o aviso de arquivo ausente sem estar.
+      if (erroUrls) {
+        falhaDeConsulta("consulta fotos: URLs assinadas", erroUrls, "Não foi possível carregar as fotos.");
+      }
 
       for (const assinada of urls ?? []) {
         // `path` volta nulo quando o objeto não existe mais no bucket. A linha
@@ -140,9 +148,7 @@ export const fotosDoProntuario = cache(
     // A 0012 pode não ter sido aplicada ainda. A galeria funciona sem ela; o
     // que falta é o histórico de eliminações, e a ação de eliminar avisa.
     if (erroEliminacoes && !estruturaPendente(erroEliminacoes)) {
-      throw new Error(
-        `Não foi possível carregar as eliminações: ${erroEliminacoes.message}`,
-      );
+      falhaDeConsulta("consulta prontuario-imagens", erroEliminacoes, "Não foi possível carregar as eliminações.");
     }
 
     return {

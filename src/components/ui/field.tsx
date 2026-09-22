@@ -1,4 +1,10 @@
-import type { ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -6,8 +12,38 @@ import { cn } from "@/lib/cn";
  *
  * O erro é ligado ao controle por `aria-describedby` e marcado com
  * `aria-invalid` — quem usa leitor de tela ouve o problema junto do campo, não
- * como um aviso solto no fim da página.
+ * como um aviso solto no fim da página. O obrigatório vira `aria-required`,
+ * porque o asterisco visível é escondido do leitor de tela.
+ *
+ * A ligação é feita aqui, uma vez, quando o filho é o próprio controle
+ * (`input`, `select`, `textarea`). Antes cada formulário precisava lembrar de
+ * fazer — e dois de quase cem lembravam.
  */
+
+const CONTROLES = new Set(["input", "select", "textarea"]);
+
+function ligarAoControle(
+  filhos: ReactNode,
+  descricaoId: string | null,
+  invalido: boolean,
+  obrigatorio: boolean,
+): ReactNode {
+  if (Children.count(filhos) !== 1) return filhos;
+  const unico = Children.toArray(filhos)[0];
+  if (!isValidElement(unico) || typeof unico.type !== "string" || !CONTROLES.has(unico.type)) {
+    return filhos;
+  }
+
+  const props = unico.props as Record<string, unknown>;
+  const ja = typeof props["aria-describedby"] === "string" ? props["aria-describedby"] : "";
+  const descritos = [...new Set([...ja.split(" "), descricaoId ?? ""].filter(Boolean))].join(" ");
+
+  return cloneElement(unico as ReactElement<Record<string, unknown>>, {
+    "aria-describedby": descritos || undefined,
+    "aria-invalid": invalido ? true : props["aria-invalid"],
+    "aria-required": obrigatorio && !props.required ? true : props["aria-required"],
+  });
+}
 
 export const ENTRADA =
   "h-11 w-full rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3.5 text-sm text-on-surface outline-none transition-colors placeholder:text-outline focus-visible:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline";
@@ -52,7 +88,7 @@ export function Campo({
         ) : null}
       </label>
 
-      {children}
+      {ligarAoControle(children, erro ? `${id}-erro` : dica ? `${id}-dica` : null, Boolean(erro), obrigatorio)}
 
       {erro ? (
         <p id={`${id}-erro`} role="alert" className="text-xs text-error">

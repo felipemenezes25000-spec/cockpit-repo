@@ -1,4 +1,4 @@
-import { lerValorEmReais } from "./atendimento";
+import { lerCentavos } from "./atendimento";
 
 /**
  * Dinheiro em centavos inteiros.
@@ -15,9 +15,7 @@ import { lerValorEmReais } from "./atendimento";
 
 /** "1.250,50" → 125050. `null` quando não dá para entender. */
 export function paraCentavos(texto: string): number | null {
-  const reais = lerValorEmReais(texto);
-  if (reais === null) return null;
-  return Math.round(reais * 100);
+  return lerCentavos(texto);
 }
 
 /** Valor `numeric` vindo do banco → centavos. */

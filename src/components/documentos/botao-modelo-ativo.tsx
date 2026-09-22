@@ -1,28 +1,6 @@
-"use client";
-
-import { Archive, ArchiveRestore, LoaderCircle } from "lucide-react";
-import { useFormStatus } from "react-dom";
+import { Archive, ArchiveRestore } from "lucide-react";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { alternarModeloAtivo } from "@/server/acoes/documentos";
-
-function Botao({ ativo }: { ativo: boolean }) {
-  const { pending } = useFormStatus();
-  const Icone = ativo ? Archive : ArchiveRestore;
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-tag)] px-2.5 text-xs font-medium text-outline transition-colors hover:bg-surface-container-low hover:text-primary disabled:opacity-55"
-    >
-      {pending ? (
-        <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
-      ) : (
-        <Icone aria-hidden="true" size={14} strokeWidth={1.75} />
-      )}
-      {ativo ? "Aposentar" : "Reativar"}
-    </button>
-  );
-}
 
 /**
  * Aposentar tira o modelo da tela de emissão sem apagar nada. Ele continua
@@ -39,19 +17,24 @@ export function BotaoModeloAtivo({
   nome: string;
 }) {
   return (
-    <form
-      action={alternarModeloAtivo}
-      onSubmit={(evento) => {
-        const mensagem = ativo
+    <FormularioDeAcao
+      acao={alternarModeloAtivo}
+      campos={{ id: modeloId, ativar: ativo ? "nao" : "sim" }}
+      confirmacao={
+        ativo
           ? `Aposentar "${nome}"? Ele sai da lista de emissão. Os documentos já emitidos continuam intactos.`
-          : `Reativar "${nome}"? Ele volta a aparecer na tela de emissão.`;
-
-        if (!window.confirm(mensagem)) evento.preventDefault();
-      }}
+          : `Reativar "${nome}"? Ele volta a aparecer na tela de emissão.`
+      }
+      alinhamento="fim"
     >
-      <input type="hidden" name="id" value={modeloId} />
-      <input type="hidden" name="ativar" value={ativo ? "nao" : "sim"} />
-      <Botao ativo={ativo} />
-    </form>
+      <BotaoDeAcao
+        tom="silencioso"
+        tamanho="xs"
+        icone={ativo ? Archive : ArchiveRestore}
+        rotuloAcessivel={`${ativo ? "Aposentar" : "Reativar"} o modelo ${nome}`}
+      >
+        {ativo ? "Aposentar" : "Reativar"}
+      </BotaoDeAcao>
+    </FormularioDeAcao>
   );
 }

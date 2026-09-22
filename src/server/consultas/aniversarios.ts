@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { aniversarioNesteAno, dataDoBanco, diferencaEmDias, partesDoDia } from "@/lib/dates";
@@ -31,7 +33,7 @@ export const aniversariantesDoMes = cache(async (): Promise<Aniversariante[]> =>
     .not("data_nascimento", "is", null);
 
   if (error) {
-    throw new Error(`Não foi possível carregar os aniversariantes: ${error.message}`);
+    falhaDeConsulta("consulta aniversarios", error, "Não foi possível carregar os aniversariantes.");
   }
 
   const doMes = (data ?? []).filter((p) => {
@@ -42,7 +44,7 @@ export const aniversariantesDoMes = cache(async (): Promise<Aniversariante[]> =>
   if (doMes.length === 0) return [];
 
   // Último atendimento de cada aniversariante, em uma consulta só.
-  const { data: atendimentos } = await supabase
+  const { data: atendimentos, error: erroAtendimentos } = await supabase
     .from("atendimentos")
     .select("paciente_id, inicio")
     .in(
@@ -51,6 +53,14 @@ export const aniversariantesDoMes = cache(async (): Promise<Aniversariante[]> =>
     )
     .eq("situacao", "concluido")
     .order("inicio", { ascending: false });
+
+  if (erroAtendimentos) {
+    falhaDeConsulta(
+      "consulta aniversarios: último atendimento",
+      erroAtendimentos,
+      "Não foi possível carregar os aniversariantes.",
+    );
+  }
 
   const ultimoPorPaciente = new Map<string, Date>();
   for (const a of atendimentos ?? []) {

@@ -185,6 +185,20 @@
     color: var(--color-on-surface-variant);
   }
 
+  /* Esqueleto de carregamento: a forma do que vai chegar, sem saltos.
+     A animação some com `prefers-reduced-motion` (regra no fim do arquivo). */
+  .esqueleto {
+    border-radius: var(--radius-tag);
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-container) 0%,
+      var(--color-surface-container-low) 50%,
+      var(--color-surface-container) 100%
+    );
+    background-size: 200% 100%;
+    animation: esqueleto-brilho 1.4s ease-in-out infinite;
+  }
+
   .rolagem-discreta {
     scrollbar-width: thin;
     scrollbar-color: var(--color-surface-variant) transparent;
@@ -202,6 +216,15 @@
   }
   .rolagem-discreta::-webkit-scrollbar-track {
     background: transparent;
+  }
+}
+
+@keyframes esqueleto-brilho {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
   }
 }
 

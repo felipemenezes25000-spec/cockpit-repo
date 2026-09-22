@@ -2,14 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehAdministradora, usuarioAtual } from "@/lib/auth";
-import { clienteServidor } from "@/lib/supabase/server";
+import { mensagemDoBanco } from "@/lib/erros-banco";
+import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
 import { bpParaBanco, lerPercentual } from "@/lib/moeda";
+import { registrarFalha } from "@/lib/registro";
+import { clienteServidor } from "@/lib/supabase/server";
 import type { TipoCartao } from "@/lib/venda";
 
 /**
  * Tabela padrão de taxas de cartão. Só a administradora mexe — na
- * aplicação e na RLS (`taxas_escrita`).
+ * aplicação e na RLS.
  *
  * Alterar uma linha daqui NUNCA alcança venda antiga: a venda guarda a
  * própria cópia do percentual. O que muda é o padrão das próximas.
@@ -24,26 +28,12 @@ export type EstadoTaxa = {
   valores?: Record<string, string>;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const TAXA_REPETIDA = "Já existe uma taxa ativa para esta operadora, tipo e parcelas.";
 
-function texto(dados: FormData, campo: string): string {
-  return String(dados.get(campo) ?? "").trim();
-}
-
-function digitados(dados: FormData): Record<string, string> {
-  const valores: Record<string, string> = {};
-  for (const [chave, valor] of dados.entries()) {
-    if (typeof valor === "string") valores[chave] = valor;
-  }
-  return valores;
-}
-
-async function exigirAdministradora(): Promise<EstadoTaxa | null> {
+async function exigirAdministradora(): Promise<string | null> {
   const usuario = await usuarioAtual();
-  if (!usuario) return { erros: { geral: "Sessão expirada. Entre novamente." } };
-  if (!(await ehAdministradora())) {
-    return { erros: { geral: "Só a administradora configura a tabela de taxas." } };
-  }
+  if (!usuario) return "Sessão expirada. Entre novamente.";
+  if (!(await ehAdministradora())) return "Só a administradora configura a tabela de taxas.";
   return null;
 }
 
@@ -52,10 +42,10 @@ function validar(dados: FormData):
   | { campos: { operadora: string; tipo: TipoCartao; parcelas: number; percentual: number } } {
   const erros: ErrosTaxa = {};
 
-  const operadora = texto(dados, "operadora").slice(0, 60);
-  const tipo = texto(dados, "tipo");
-  const bp = lerPercentual(texto(dados, "percentual"));
-  const parcelas = tipo === "debito" ? 1 : Number(texto(dados, "parcelas") || "1");
+  const operadora = campoTexto(dados, "operadora", 60);
+  const tipo = campoTexto(dados, "tipo", 10);
+  const bp = lerPercentual(campoTexto(dados, "percentual", 10));
+  const parcelas = tipo === "debito" ? 1 : Number(campoTexto(dados, "parcelas", 3) || "1");
 
   if (operadora.length < 2) erros.operadora = "Informe a operadora ou maquininha.";
   if (tipo !== "debito" && tipo !== "credito") erros.tipo = "Débito ou crédito.";
@@ -76,14 +66,6 @@ function validar(dados: FormData):
   };
 }
 
-/** 23505 é o índice único: a mesma combinação já está ativa. */
-function mensagemDoBanco(codigo: string | undefined, padrao: string): ErrosTaxa {
-  if (codigo === "23505") {
-    return { geral: "Já existe uma taxa ativa para esta operadora, tipo e parcelas." };
-  }
-  return { geral: padrao };
-}
-
 function revalidar() {
   revalidatePath("/financeiro/taxas");
   revalidatePath("/financeiro/vendas/nova");
@@ -94,18 +76,23 @@ export async function criarTaxa(
   dados: FormData,
 ): Promise<EstadoTaxa> {
   const barrada = await exigirAdministradora();
-  if (barrada) return barrada;
+  if (barrada) return { erros: { geral: barrada } };
 
   const resultado = validar(dados);
-  if ("erros" in resultado) return { erros: resultado.erros, valores: digitados(dados) };
+  if ("erros" in resultado) return { erros: resultado.erros, valores: valoresDigitados(dados) };
 
   const supabase = await clienteServidor();
   const { error } = await supabase.from("taxas_cartao").insert(resultado.campos);
 
   if (error) {
+    if (error.code !== "23505") registrarFalha("taxas: criar", error);
     return {
-      erros: mensagemDoBanco(error.code, `Não foi possível salvar: ${error.message}`),
-      valores: digitados(dados),
+      erros: {
+        geral: mensagemDoBanco(error, "Não foi possível salvar a taxa. Tente de novo.", {
+          "23505": TAXA_REPETIDA,
+        }),
+      },
+      valores: valoresDigitados(dados),
     };
   }
 
@@ -118,42 +105,73 @@ export async function atualizarTaxa(
   dados: FormData,
 ): Promise<EstadoTaxa> {
   const barrada = await exigirAdministradora();
-  if (barrada) return barrada;
+  if (barrada) return { erros: { geral: barrada } };
 
-  const id = texto(dados, "id");
-  if (!UUID.test(id)) return { erros: { geral: "Taxa não identificada." } };
+  const id = campoTexto(dados, "id", 36);
+  if (!uuidValido(id)) return { erros: { geral: "Taxa não identificada." } };
 
   const resultado = validar(dados);
-  if ("erros" in resultado) return { erros: resultado.erros, valores: digitados(dados) };
+  if ("erros" in resultado) return { erros: resultado.erros, valores: valoresDigitados(dados) };
 
   const supabase = await clienteServidor();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("taxas_cartao")
     .update(resultado.campos)
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
+    if (error.code !== "23505") registrarFalha("taxas: atualizar", error);
     return {
-      erros: mensagemDoBanco(error.code, `Não foi possível salvar: ${error.message}`),
-      valores: digitados(dados),
+      erros: {
+        geral: mensagemDoBanco(error, "Não foi possível salvar a taxa. Tente de novo.", {
+          "23505": TAXA_REPETIDA,
+        }),
+      },
+      valores: valoresDigitados(dados),
     };
   }
+  if (!data) return { erros: { geral: "Taxa não encontrada." }, valores: valoresDigitados(dados) };
 
   revalidar();
   redirect("/financeiro/taxas");
 }
 
-export async function alternarAtivaTaxa(dados: FormData): Promise<void> {
-  const usuario = await usuarioAtual();
-  if (!usuario) redirect("/entrar");
-  if (!(await ehAdministradora())) return;
+/**
+ * Ativa ou desativa. Reativar pode esbarrar no índice único — outra linha
+ * ativa para a mesma combinação —, e isso agora aparece na tela: era a falha
+ * silenciosa citada no AGENTS.md §13 (bug 2).
+ */
+export async function alternarAtivaTaxa(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
+  const barrada = await exigirAdministradora();
+  if (barrada) return falha(barrada);
 
-  const id = texto(dados, "id");
+  const id = campoTexto(dados, "id", 36);
   const ativar = dados.get("ativar") === "sim";
-  if (!UUID.test(id)) return;
+  if (!uuidValido(id)) return falha("Taxa não identificada.");
 
   const supabase = await clienteServidor();
-  await supabase.from("taxas_cartao").update({ ativa: ativar }).eq("id", id);
+  const { data, error } = await supabase
+    .from("taxas_cartao")
+    .update({ ativa: ativar })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    if (error.code !== "23505") registrarFalha("taxas: ativar/desativar", error);
+    return falha(
+      mensagemDoBanco(error, "Não foi possível alterar a taxa. Tente de novo.", {
+        "23505": "Já existe outra taxa ativa para esta operadora, tipo e parcelas. Desative-a antes.",
+      }),
+    );
+  }
+  if (!data) return falha("Taxa não encontrada.");
 
   revalidar();
+  return sucesso(ativar ? "Taxa reativada." : "Taxa desativada.");
 }

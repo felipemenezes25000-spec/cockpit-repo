@@ -3,8 +3,11 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
-import { dataValida } from "@/lib/prontuario";
+import { dataValida } from "@/lib/dates";
+import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
+import { registrarFalha } from "@/lib/registro";
 import {
   normalizarAssinatura,
   uuidValido,
@@ -62,26 +65,18 @@ async function origemDaRequisicao(): Promise<string> {
   return `${protocolo}://${host}`;
 }
 
-function erroDoBanco(
-  error: { code?: string; message?: string } | null | undefined,
-  padrao: string,
-): string {
-  if (!error) return padrao;
+/**
+ * Frases de `raise exception` das funções da 0014/0022 passam (são nossas, em
+ * português); o resto vira frase segura. Ver `lib/erros-banco.ts`.
+ */
+function erroDoBanco(error: ErroDoBanco, padrao: string, contexto: string): string {
+  if (error) registrarFalha(contexto, error);
+  return mensagemDoBanco(error, padrao);
+}
 
-  if (
-    error.code === "PGRST202" ||
-    error.code === "PGRST205" ||
-    error.message?.includes("schema cache")
-  ) {
-    return "A migração da assinatura por link ainda não foi aplicada. Aplique a 0014 antes.";
-  }
-
-  // `P0001` é o `raise exception` das funções da 0014 — frases escritas por
-  // nós, em português, para serem lidas. Ver a nota em `acoes/documentos.ts`.
-  if (error.code === "P0001" && error.message) return error.message;
-  if (error.code === "42501") return "Seu perfil não tem permissão para esta ação.";
-
-  return padrao;
+/** Token no formato de `gerarToken`, e nada maior do que isso chega ao banco. */
+function tokenPlausivel(token: unknown): token is string {
+  return typeof token === "string" && /^[A-Za-z0-9_-]{32,128}$/.test(token);
 }
 
 export type ResultadoDaCriacao =
@@ -115,7 +110,7 @@ export async function criarLinkAssinatura(entrada: {
   if (error || !data) {
     return {
       ok: false,
-      erro: erroDoBanco(error, "Não foi possível gerar o link."),
+      erro: erroDoBanco(error, "Não foi possível gerar o link.", "assinatura: criar link"),
     };
   }
 
@@ -156,18 +151,26 @@ export async function registrarCanalDoLink(entrada: {
   }
 }
 
-export async function revogarLinkAssinatura(dados: FormData): Promise<void> {
+export async function revogarLinkAssinatura(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
   const usuario = await usuarioAtual();
-  if (!usuario) return;
+  if (!usuario) return falha("Sessão expirada. Entre novamente.");
 
   const linkId = String(dados.get("link_id") ?? "").slice(0, 36);
   const documentoId = String(dados.get("documento_id") ?? "").slice(0, 36);
-  if (!uuidValido(linkId)) return;
+  if (!uuidValido(linkId)) return falha("Link não identificado.");
 
   const supabase = await clienteServidor();
-  await supabase.rpc("documento_link_revogar", { p_link_id: linkId });
+  const { error } = await supabase.rpc("documento_link_revogar", { p_link_id: linkId });
+
+  if (error) {
+    return falha(erroDoBanco(error, "Não foi possível revogar o link. Tente de novo.", "assinatura: revogar link"));
+  }
 
   if (uuidValido(documentoId)) revalidatePath(`/formularios/${documentoId}`);
+  return sucesso("Link revogado. Quem o tiver não consegue mais abrir o documento.");
 }
 
 // ---------------------------------------------------------------------
@@ -245,7 +248,8 @@ export async function abrirDocumentoParaAssinatura(
     campos: [],
   };
 
-  if (!token || !dataValida(nascimento)) return { ...vazio, situacao: "data_incorreta" };
+  if (!tokenPlausivel(token)) return vazio;
+  if (!dataValida(nascimento)) return { ...vazio, situacao: "data_incorreta" };
 
   const supabase = await clienteServidor();
   const { data, error } = await supabase.rpc("documento_para_assinatura", {
@@ -253,8 +257,15 @@ export async function abrirDocumentoParaAssinatura(
     p_nascimento: nascimento,
   });
 
+  // Falha de infraestrutura não é "link inexistente": a paciente precisa
+  // saber que pode tentar de novo, e não que o link é inválido.
+  if (error) {
+    registrarFalha("assinatura: abrir pelo link", error);
+    return { ...vazio, situacao: "falhou" };
+  }
+
   const linha = Array.isArray(data) ? data[0] : null;
-  if (error || !linha) return vazio;
+  if (!linha) return vazio;
 
   return {
     situacao: linha.situacao ?? "nao_encontrado",
@@ -282,6 +293,10 @@ export async function assinarPorLink(entrada: {
   cpf: string;
   confirmou: boolean;
 }): Promise<EstadoAssinaturaLink> {
+  if (!tokenPlausivel(entrada.token) || !dataValida(String(entrada.nascimento ?? ""))) {
+    return { situacao: "nao_encontrado", erros: {} };
+  }
+
   if (!entrada.confirmou) {
     return {
       situacao: null,
@@ -317,7 +332,9 @@ export async function assinarPorLink(entrada: {
   if (error) {
     return {
       situacao: null,
-      erros: { geral: erroDoBanco(error, "Não foi possível registrar a assinatura.") },
+      erros: {
+        geral: erroDoBanco(error, "Não foi possível registrar a assinatura. Tente de novo.", "assinatura: assinar pelo link"),
+      },
     };
   }
 
@@ -337,15 +354,30 @@ export async function responderPorLink(entrada: {
   nascimento: string;
   respostas: Record<string, string | string[] | null>;
 }): Promise<string> {
-  if (!entrada.token || !dataValida(entrada.nascimento)) return "data_incorreta";
+  if (!tokenPlausivel(entrada.token)) return "nao_encontrado";
+  if (!dataValida(String(entrada.nascimento ?? ""))) return "data_incorreta";
+
+  const respostas = entrada.respostas;
+  if (
+    !respostas ||
+    typeof respostas !== "object" ||
+    Array.isArray(respostas) ||
+    Object.keys(respostas).length > 200 ||
+    JSON.stringify(respostas).length > 200_000
+  ) {
+    return "respostas_invalidas";
+  }
 
   const supabase = await clienteServidor();
   const { data, error } = await supabase.rpc("documento_responder_por_link", {
     p_token: entrada.token,
     p_nascimento: entrada.nascimento,
-    p_respostas: entrada.respostas,
+    p_respostas: respostas,
   });
 
-  if (error) return "falhou";
+  if (error) {
+    registrarFalha("assinatura: responder pelo link", error);
+    return "falhou";
+  }
   return String(data ?? "nao_encontrado");
 }

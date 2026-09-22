@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
+import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
+import { registrarFalha } from "@/lib/registro";
 import {
   normalizarAssinatura,
   normalizarCampos,
@@ -43,38 +46,19 @@ function valoresDigitados(dados: FormData): Record<string, string> {
 }
 
 /**
- * Erro de banco vira frase em português (invariante §9).
+ * Erro de banco vira frase em português, por `lib/erros-banco.ts`.
  *
- * O caso `P0001` é o `raise exception` das funções da 0013 — "Modelo fora de
- * uso", "Só documento emitido pode ser assinado". Essas mensagens foram
- * escritas por nós, em português, para serem lidas por gente: repassá-las é o
- * contrário de vazar detalhe interno. Qualquer outro código vira frase
- * genérica, porque aí a mensagem é do Postgres, não nossa.
+ * As frases de `raise exception` das funções da 0013–0022 ("Modelo fora de
+ * uso", "Só documento emitido pode ser assinado") foram escritas por nós, em
+ * português, e passam. O resto vira frase do domínio ou a padrão.
  */
-function erroDoBanco(
-  error: { code?: string; message?: string } | null | undefined,
-  padrao: string,
-): string {
-  if (!error) return padrao;
-
-  if (
-    error.code === "PGRST202" ||
-    error.code === "PGRST205" ||
-    error.message?.includes("schema cache")
-  ) {
-    return "A migração de documentos ainda não foi aplicada no banco. Aplique a 0013 antes.";
-  }
-
-  if (error.code === "P0001" && error.message) return error.message;
-
-  if (error.code === "42501") {
-    return "Seu perfil não tem permissão para esta ação.";
-  }
-  if (error.code === "23503") return "Paciente ou modelo não encontrado.";
-  if (error.code === "23505") return "Este documento já foi assinado.";
-  if (error.code === "23514") return "O banco recusou os dados. Revise os campos.";
-
-  return padrao;
+function erroDoBanco(error: ErroDoBanco, padrao: string, contexto = "documentos"): string {
+  if (error) registrarFalha(contexto, error);
+  return mensagemDoBanco(error, padrao, {
+    "23503": "Paciente ou modelo não encontrado.",
+    "23505": "Este documento já foi assinado.",
+    "23514": "O banco recusou os dados. Revise os campos.",
+  });
 }
 
 async function exigirAcesso(): Promise<{ id: string; administradora: boolean } | string> {
@@ -212,22 +196,32 @@ export async function salvarNovaVersaoModelo(
  * Aposenta o modelo sem apagar. Ele some da tela de emissão e continua
  * explicando os documentos que já gerou.
  */
-export async function alternarModeloAtivo(dados: FormData): Promise<void> {
+export async function alternarModeloAtivo(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
   const usuario = await usuarioAtual();
-  if (!usuario) redirect("/entrar");
-  if (usuario.papel !== "administradora") return;
+  if (!usuario) return falha("Sessão expirada. Entre novamente.");
+  if (usuario.papel !== "administradora") return falha("Apenas a administradora gerencia modelos.");
 
   const id = texto(dados, "id").slice(0, 36);
-  if (!uuidValido(id)) return;
+  if (!uuidValido(id)) return falha("Modelo não identificado.");
 
+  const ativar = dados.get("ativar") === "sim";
   const supabase = await clienteServidor();
-  await supabase
+  const { data, error } = await supabase
     .from("modelos_documento")
-    .update({ ativo: dados.get("ativar") === "sim" })
-    .eq("id", id);
+    .update({ ativo: ativar })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) return falha(erroDoBanco(error, "Não foi possível alterar o modelo.", "documentos: ativar modelo"));
+  if (!data) return falha("Modelo não encontrado.");
 
   revalidatePath("/formularios/modelos");
   revalidatePath("/formularios/novo");
+  return sucesso(ativar ? "Modelo reativado." : "Modelo aposentado.");
 }
 
 // ---------------------------------------------------------------------
@@ -395,13 +389,21 @@ export async function cancelarDocumento(
     return { erro: "Este documento já está cancelado." };
   }
 
-  const { error } = await supabase
+  // A situação vai na condição: se alguém assinou entre a leitura e o
+  // clique, o cancelamento não passa por cima.
+  const { data: cancelado, error } = await supabase
     .from("documentos")
     .update({ situacao: "cancelado", motivo_cancelamento: motivo })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("situacao", "emitido")
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     return { erro: erroDoBanco(error, "Não foi possível cancelar o documento.") };
+  }
+  if (!cancelado) {
+    return { erro: "O documento mudou de situação enquanto a tela estava aberta. Recarregue a página." };
   }
 
   revalidatePath("/formularios");
@@ -438,10 +440,23 @@ export async function responderAnamnese(entrada: {
     return { ok: false, erro: "Documento não identificado." };
   }
 
+  // Chega por chamada direta da ação, não por formulário: o tamanho é
+  // conferido aqui antes de ir ao banco, que confere de novo.
+  const respostas = entrada.respostas;
+  if (
+    !respostas ||
+    typeof respostas !== "object" ||
+    Array.isArray(respostas) ||
+    Object.keys(respostas).length > 200 ||
+    JSON.stringify(respostas).length > 200_000
+  ) {
+    return { ok: false, erro: "Respostas inválidas." };
+  }
+
   const supabase = await clienteServidor();
   const { error } = await supabase.rpc("documento_campos_responder", {
     p_documento_id: documentoId,
-    p_respostas: entrada.respostas,
+    p_respostas: respostas,
   });
 
   if (error) {

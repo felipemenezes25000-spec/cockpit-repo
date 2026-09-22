@@ -4,6 +4,8 @@ import { CircleAlert, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
+import { cn } from "@/lib/cn";
 import { entrar, type EstadoLogin } from "./actions";
 
 const INICIAL: EstadoLogin = { erro: null };
@@ -15,7 +17,8 @@ function BotaoEntrar() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+      aria-busy={pending || undefined}
+      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-60"
     >
       {pending ? (
         <>
@@ -31,9 +34,10 @@ function BotaoEntrar() {
 
 export function FormularioLogin({ proximo }: { proximo: string }) {
   const [estado, acao] = useActionState(entrar, INICIAL);
+  const comErro = Boolean(estado.erro);
 
   return (
-    <form action={acao} className="flex flex-col gap-4">
+    <form action={acao} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="proximo" value={proximo} />
 
       <div className="flex flex-col gap-1.5">
@@ -41,12 +45,22 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           E-mail
         </label>
         <input
+          // A chave remonta o campo com o e-mail devolvido pela ação: o React
+          // limpa o formulário depois de cada envio, e errar a senha não pode
+          // obrigar a digitar o e-mail de novo.
+          key={estado.email ?? ""}
           id="email"
           name="email"
           type="email"
-          autoComplete="email"
+          inputMode="email"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           required
-          className="h-11 rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3.5 text-sm text-on-surface outline-none placeholder:text-outline focus-visible:border-primary"
+          defaultValue={estado.email ?? ""}
+          aria-invalid={comErro || undefined}
+          aria-describedby={comErro ? "erro-login" : undefined}
+          className={cn(ENTRADA, comErro && ENTRADA_ERRO)}
           placeholder="voce@clinica.com.br"
         />
       </div>
@@ -61,11 +75,13 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className="h-11 rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3.5 text-sm text-on-surface outline-none focus-visible:border-primary"
+          aria-invalid={comErro || undefined}
+          aria-describedby={comErro ? "erro-login" : undefined}
+          className={cn(ENTRADA, comErro && ENTRADA_ERRO)}
         />
         <Link
           href="/recuperar-senha"
-          className="self-end text-sm font-medium text-primary hover:underline"
+          className="self-end py-1 text-sm font-medium text-primary hover:underline"
         >
           Esqueci minha senha
         </Link>
@@ -73,8 +89,9 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
 
       {estado.erro ? (
         <p
+          id="erro-login"
           role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
+          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-sm text-on-error-container"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {estado.erro}

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { ehFinanceira } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
@@ -94,7 +96,7 @@ export const indicadoresDoPeriodo = cache(
     const erro =
       vendas.error ?? confirmados.error ?? emAberto.error ?? ajustes.error ??
       despesas?.[0].error ?? despesas?.[1].error;
-    if (erro) throw new Error(`Não foi possível carregar os indicadores: ${erro.message}`);
+    if (erro) falhaDeConsulta("consulta painel-financeiro", erro, "Não foi possível carregar os indicadores.");
 
     const soma = (linhas: Record<string, unknown>[] | null, campo: string) =>
       (linhas ?? []).reduce((total, l) => total + Number(l[campo] ?? 0), 0);
@@ -181,7 +183,7 @@ export const fluxoMensal = cache(async (): Promise<MesDoFluxo[]> => {
   ]);
 
   const erro = recebimentos.error ?? ajustes.error ?? despesas.error;
-  if (erro) throw new Error(`Não foi possível montar o fluxo de caixa: ${erro.message}`);
+  if (erro) falhaDeConsulta("consulta painel-financeiro", erro, "Não foi possível montar o fluxo de caixa.");
 
   const baldes: MesDoFluxo[] = [];
   const indicePorChave = new Map<string, number>();
@@ -270,7 +272,7 @@ export const movimentacoes = cache(async (periodo: Periodo): Promise<Movimentaca
   ]);
 
   const erro = vendas.error ?? recebidos.error ?? despesas.error ?? ajustes.error;
-  if (erro) throw new Error(`Não foi possível carregar as movimentações: ${erro.message}`);
+  if (erro) falhaDeConsulta("consulta painel-financeiro", erro, "Não foi possível carregar as movimentações.");
 
   const nome = (p: { nome: string; nome_social: string | null } | null) =>
     p?.nome_social || p?.nome || "Paciente";

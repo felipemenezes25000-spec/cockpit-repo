@@ -5,6 +5,7 @@ import { EstadoVazio } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 import { alternarAtivoProcedimento } from "@/server/acoes/procedimentos";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import type { Procedimento } from "@/server/consultas/procedimentos";
 
 /**
@@ -84,26 +85,20 @@ export function ListaProcedimentos({
                 Editar
               </Link>
 
-              <form action={alternarAtivoProcedimento}>
-                <input type="hidden" name="id" value={p.id} />
-                <input type="hidden" name="ativar" value={p.ativo ? "nao" : "sim"} />
-                <button
-                  type="submit"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] px-3 text-xs font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+              <FormularioDeAcao
+                acao={alternarAtivoProcedimento}
+                campos={{ id: p.id, ativar: p.ativo ? "nao" : "sim" }}
+                alinhamento="fim"
+              >
+                <BotaoDeAcao
+                  tom="silencioso"
+                  tamanho="xs"
+                  icone={p.ativo ? Archive : ArchiveRestore}
+                  rotuloAcessivel={`${p.ativo ? "Tirar da agenda" : "Devolver à agenda"}: ${p.nome}`}
                 >
-                  {p.ativo ? (
-                    <>
-                      <Archive aria-hidden="true" size={13} strokeWidth={1.75} />
-                      Tirar da agenda
-                    </>
-                  ) : (
-                    <>
-                      <ArchiveRestore aria-hidden="true" size={13} strokeWidth={1.75} />
-                      Devolver à agenda
-                    </>
-                  )}
-                </button>
-              </form>
+                  {p.ativo ? "Tirar da agenda" : "Devolver à agenda"}
+                </BotaoDeAcao>
+              </FormularioDeAcao>
             </div>
           ) : null}
         </li>

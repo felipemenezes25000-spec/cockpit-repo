@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
+import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
+import { registrarFalha } from "@/lib/registro";
 import { chaveDoDia } from "@/lib/dates";
 import { uuidValido } from "@/lib/prontuario";
 import {
@@ -57,25 +59,14 @@ function texto(dados: FormData, campo: string): string {
   return String(dados.get(campo) ?? "").trim();
 }
 
-function erroDoBanco(
-  error: { code?: string; message?: string } | null | undefined,
-  padrao: string,
-): string {
-  if (
-    error?.code === "PGRST202" ||
-    error?.code === "PGRST205" ||
-    error?.message?.includes("schema cache")
-  ) {
-    return "A migração das fotos ainda não foi aplicada no banco. Aplique a 0011 e a 0012 antes.";
-  }
-
-  if (error?.code === "23503") return "Prontuário não encontrado.";
-  if (error?.code === "23505") return "Este arquivo já está registrado.";
-  if (error?.code === "23514") return "O banco recusou os dados da foto.";
-  if (error?.code === "42501") return "Seu perfil não tem permissão para isto.";
-
-  // O texto do Postgres não sobe para a tela (invariante §9, regra 11).
-  return padrao;
+function erroDoBanco(error: ErroDoBanco, padrao: string, contexto = "fotos"): string {
+  if (error) registrarFalha(contexto, error);
+  // O texto do Postgres não sobe para a tela (AGENTS.md §6, regra 11).
+  return mensagemDoBanco(error, padrao, {
+    "23503": "Prontuário não encontrado.",
+    "23505": "Este arquivo já está registrado.",
+    "23514": "O banco recusou os dados da foto.",
+  });
 }
 
 /** Só a administradora mexe em foto de prontuário — na tela, aqui e na RLS. */
@@ -160,13 +151,21 @@ export async function registrarImagem(
 
   // A `ordem` só desempata fotos do mesmo dia; o eixo continua sendo a data de
   // captura. Quem chega depois entra depois.
-  const { data: ultima } = await supabase
+  const { data: ultima, error: erroOrdem } = await supabase
     .from("prontuario_imagens")
     .select("ordem")
     .eq("prontuario_id", prontuarioId)
     .order("ordem", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  if (erroOrdem) {
+    await supabase.storage.from(BUCKET_IMAGENS).remove([caminho]);
+    return {
+      ok: false,
+      erro: erroDoBanco(erroOrdem, "Não foi possível registrar a foto. O arquivo foi removido."),
+    };
+  }
 
   const dimensoes = dimensoesSanas(entrada.largura, entrada.altura);
 
@@ -239,22 +238,32 @@ export async function atualizarImagem(
  * Arquivar tira da ficha e preserva: foto tremida, duplicada, enquadramento
  * errado. Não é eliminação — o arquivo continua no bucket e a linha, no banco.
  */
-export async function alternarArquivamentoImagem(dados: FormData): Promise<void> {
-  const usuario = await usuarioAtual();
-  if (!usuario) redirect("/entrar");
-  if (usuario.papel !== "administradora") return;
+export async function alternarArquivamentoImagem(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
+  const quem = await administradoraOuErro();
+  if (typeof quem === "string") return falha(quem);
 
   const id = texto(dados, "id").slice(0, 36);
   const prontuarioId = texto(dados, "prontuario_id").slice(0, 36);
-  if (!uuidValido(id) || !uuidValido(prontuarioId)) return;
+  if (!uuidValido(id) || !uuidValido(prontuarioId)) return falha("Foto não identificada.");
 
+  const arquivar = dados.get("arquivar") === "sim";
   const supabase = await clienteServidor();
-  await supabase
+  const { data, error } = await supabase
     .from("prontuario_imagens")
-    .update({ arquivada: dados.get("arquivar") === "sim" })
-    .eq("id", id);
+    .update({ arquivada: arquivar })
+    .eq("id", id)
+    .eq("prontuario_id", prontuarioId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) return falha(erroDoBanco(error, "Não foi possível alterar a foto.", "fotos: arquivar"));
+  if (!data) return falha("Foto não encontrada neste prontuário.");
 
   revalidatePath(`/prontuarios/${prontuarioId}`);
+  return sucesso(arquivar ? "Foto arquivada." : "Foto de volta à galeria.");
 }
 
 /**

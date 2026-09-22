@@ -1,5 +1,8 @@
 "use server";
 
+import { mensagemDoBanco } from "@/lib/erros-banco";
+import { registrarFalha } from "@/lib/registro";
+
 import { revalidatePath } from "next/cache";
 import { ehAdministradora, usuarioAtual } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
@@ -103,10 +106,20 @@ async function analisar(arquivo: File): Promise<EstadoImportacao> {
   const existentes = new Map<string, { id: string; nome: string }>();
 
   for (let i = 0; i < cpfs.length; i += LOTE) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("pacientes")
       .select("id, nome, nome_social, cpf")
       .in("cpf", cpfs.slice(i, i + LOTE));
+
+    // Sem conferir o que já existe, a prévia marcaria duplicata como
+    // "pronta" — e ela mentiria sobre o que vai acontecer na gravação.
+    if (error) {
+      registrarFalha("importação: conferir CPFs existentes", error);
+      return comFalha(
+        mensagemDoBanco(error, "Não foi possível conferir os CPFs já cadastrados. Tente de novo."),
+        arquivo.name,
+      );
+    }
 
     for (const p of data ?? []) {
       if (p.cpf) existentes.set(p.cpf, { id: p.id, nome: p.nome_social?.trim() || p.nome });

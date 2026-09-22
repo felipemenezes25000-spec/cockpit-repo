@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, diferencaEmDias } from "@/lib/dates";
@@ -54,7 +56,7 @@ export const pendenciasAbertas = cache(async (): Promise<PendenciaAberta[]> => {
     .eq("situacao", "aberta")
     .order("prazo", { ascending: true, nullsFirst: false });
 
-  if (error) throw new Error(`Não foi possível carregar as pendências: ${error.message}`);
+  if (error) falhaDeConsulta("consulta pendencias", error, "Não foi possível carregar as pendências.");
 
   return (data ?? [])
     .map((linha) => {

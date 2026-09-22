@@ -1,9 +1,17 @@
 import "server-only";
 
 import { cache } from "react";
+import { falhaDeConsulta } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, diferencaEmDias } from "@/lib/dates";
-import { apenasDigitos, lerEndereco, type Endereco } from "@/lib/paciente";
+import {
+  apenasDigitos,
+  formatarTelefone,
+  lerEndereco,
+  nomeExibido,
+  type Endereco,
+} from "@/lib/paciente";
+import { uuidValido } from "@/lib/formulario";
 import type {
   Prioridade,
   SituacaoAcompanhamento,
@@ -125,7 +133,7 @@ export const listarPacientes = cache(
       .range(de, de + POR_PAGINA - 1);
 
     if (error) {
-      throw new Error(`Não foi possível carregar os pacientes: ${error.message}`);
+      falhaDeConsulta("consulta pacientes", error, "Não foi possível carregar os pacientes.");
     }
 
     const total = count ?? 0;
@@ -272,9 +280,7 @@ export const historicoDoPaciente = cache(
     ]);
 
     if (atendimentos.error) {
-      throw new Error(
-        `Não foi possível carregar o histórico: ${atendimentos.error.message}`,
-      );
+      falhaDeConsulta("consulta pacientes", atendimentos.error, "Não foi possível carregar o histórico.");
     }
 
     const lista = (atendimentos.data ?? []).map((a) => ({
@@ -326,6 +332,39 @@ export const historicoDoPaciente = cache(
         };
       }),
       financeiro,
+    };
+  },
+);
+
+/**
+ * A paciente escolhida de antemão num seletor — quando a emissão, a venda ou a
+ * marcação começa pela ficha dela (`?paciente=`).
+ *
+ * Ficha inexistente e sem permissão dão `null`, como na ficha (§8.1). Falha do
+ * banco não: ela sobe para a tela de erro, em vez de parecer "nenhuma paciente".
+ */
+export const pacienteParaSelecao = cache(
+  async (
+    id: string,
+  ): Promise<{ id: string; nome: string; detalhe: string; telefone: string | null } | null> => {
+    if (!uuidValido(id)) return null;
+
+    const supabase = await clienteServidor();
+    const { data, error } = await supabase
+      .from("pacientes")
+      .select("id, nome, nome_social, telefone, email")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) falhaDeConsulta("consulta pacientes: seleção", error, "Não foi possível carregar a paciente.");
+    if (!data) return null;
+
+    const telefone = data.telefone ? formatarTelefone(data.telefone) : null;
+    return {
+      id: data.id,
+      nome: nomeExibido(data),
+      detalhe: [telefone, data.email].filter(Boolean).join(" · ") || "sem contato cadastrado",
+      telefone: data.telefone,
     };
   },
 );

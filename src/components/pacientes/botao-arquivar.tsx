@@ -1,28 +1,6 @@
-"use client";
-
-import { Archive, ArchiveRestore, LoaderCircle } from "lucide-react";
-import { useFormStatus } from "react-dom";
+import { Archive, ArchiveRestore } from "lucide-react";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { alternarArquivamento } from "@/server/acoes/pacientes";
-
-function Botao({ arquivada }: { arquivada: boolean }) {
-  const { pending } = useFormStatus();
-  const Icone = arquivada ? ArchiveRestore : Archive;
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius-cartao)] border border-card-border bg-surface px-4 text-sm font-medium text-on-surface-variant transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {pending ? (
-        <LoaderCircle aria-hidden="true" size={16} className="animate-spin" />
-      ) : (
-        <Icone aria-hidden="true" size={16} strokeWidth={1.75} />
-      )}
-      {arquivada ? "Reativar paciente" : "Arquivar paciente"}
-    </button>
-  );
-}
 
 /**
  * Arquivar tira a paciente da lista sem apagar nada — o histórico continua.
@@ -41,19 +19,18 @@ export function BotaoArquivar({
   nome: string;
 }) {
   return (
-    <form
-      action={alternarArquivamento}
-      onSubmit={(evento) => {
-        const mensagem = arquivada
+    <FormularioDeAcao
+      acao={alternarArquivamento}
+      campos={{ id: pacienteId, arquivar: arquivada ? "nao" : "sim" }}
+      confirmacao={
+        arquivada
           ? `Reativar ${nome}? Ela volta a aparecer na lista de pacientes ativas.`
-          : `Arquivar ${nome}? O histórico é mantido e ela sai da lista de ativas. Dá para reativar depois.`;
-
-        if (!window.confirm(mensagem)) evento.preventDefault();
-      }}
+          : `Arquivar ${nome}? O histórico é mantido e ela sai da lista de ativas. Dá para reativar depois.`
+      }
     >
-      <input type="hidden" name="id" value={pacienteId} />
-      <input type="hidden" name="arquivar" value={arquivada ? "nao" : "sim"} />
-      <Botao arquivada={arquivada} />
-    </form>
+      <BotaoDeAcao icone={arquivada ? ArchiveRestore : Archive}>
+        {arquivada ? "Reativar paciente" : "Arquivar paciente"}
+      </BotaoDeAcao>
+    </FormularioDeAcao>
   );
 }

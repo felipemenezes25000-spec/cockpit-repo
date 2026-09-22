@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, diferencaEmDias, somarDias } from "@/lib/dates";
@@ -66,7 +68,7 @@ export const retornosEmAberto = cache(async (): Promise<RetornoEmAberto[]> => {
     .not("situacao", "in", "(agendado,recusado)")
     .order("sugerido_para", { ascending: true });
 
-  if (error) throw new Error(`Não foi possível carregar os retornos: ${error.message}`);
+  if (error) falhaDeConsulta("consulta retornos", error, "Não foi possível carregar os retornos.");
 
   return (data ?? [])
     .map((linha) => {
@@ -95,6 +97,6 @@ export const totalAguardandoRetorno = cache(async (): Promise<number> => {
     .select("id", { count: "exact", head: true })
     .not("situacao", "in", "(agendado,recusado)");
 
-  if (error) throw new Error(`Não foi possível contar os retornos: ${error.message}`);
+  if (error) falhaDeConsulta("consulta retornos", error, "Não foi possível contar os retornos.");
   return count ?? 0;
 });

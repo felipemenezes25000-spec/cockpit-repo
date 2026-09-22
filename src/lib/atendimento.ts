@@ -37,47 +37,80 @@ export const VERBO_SITUACAO: Record<SituacaoAtendimento, string> = {
   ausente: "Não compareceu",
 };
 
-export const SITUACOES_VALIDAS: SituacaoAtendimento[] = [
-  "agendado",
-  "aguardando_confirmacao",
-  "confirmado",
-  "em_atendimento",
-  "concluido",
-  "cancelado",
-  "ausente",
-];
+/**
+ * Todas as situações, derivadas do `Record` acima.
+ *
+ * Era uma lista escrita à mão: acrescentar um valor ao enum do banco
+ * compilava sem erro e a agenda passava a recusar a situação nova em silêncio
+ * (AGENTS.md §13). Derivada de um `Record<SituacaoAtendimento, …>`, o
+ * typecheck cobra a situação nova em `PROXIMAS_SITUACOES` e ela entra aqui
+ * sozinha.
+ */
+export const SITUACOES_VALIDAS = Object.keys(PROXIMAS_SITUACOES) as SituacaoAtendimento[];
+
+export function situacaoValida(valor: string): valor is SituacaoAtendimento {
+  return (SITUACOES_VALIDAS as string[]).includes(valor);
+}
 
 // ---------------------------------------------------------------------
 // Valor em reais
 // ---------------------------------------------------------------------
 
+/** Maior valor aceito num campo de dinheiro: R$ 1.000.000,00. */
+export const VALOR_MAXIMO_CENTAVOS = 100_000_000;
+
 /**
- * Lê o que a recepção digita: "150", "150,50", "1.250,00" ou "150.50".
+ * Lê o que a recepção digita e devolve CENTAVOS inteiros.
+ *
+ * Aceita "150", "150,5", "150,50", "1.250,00", "1250,00", ",50", "R$ 150" e o
+ * ponto decimal de quem digita no teclado americano, "150.50". Um ponto
+ * seguido de exatamente três dígitos é milhar ("1.250" = mil duzentos e
+ * cinquenta), como em qualquer planilha brasileira.
+ *
+ * Recusa o que não tem leitura única: "1.2.3", "1.250.5", "150,555",
+ * "1,250.00". Antes, "1.2.3" virava 123 e "150,555" virava 150,56 sem
+ * ninguém perceber — em dinheiro, adivinhar é pior do que perguntar.
+ *
+ * A conversão é feita nos dígitos, sem multiplicar ponto flutuante:
+ * "0,29" é 29 centavos, não 28,999…
+ */
+export function lerCentavos(bruto: string): number | null {
+  const texto = bruto
+    .trim()
+    .replace(/^R\$/i, "")
+    .replace(/\s+/g, "");
+  if (!texto) return 0;
+
+  let inteiro: string;
+  let fracao = "";
+
+  let m = /^(\d{1,3}(?:\.\d{3})+)(?:,(\d{1,2}))?$/.exec(texto);
+  if (m) {
+    inteiro = m[1].replace(/\./g, "");
+    fracao = m[2] ?? "";
+  } else if ((m = /^(\d*),(\d{1,2})$/.exec(texto)) || (m = /^(\d+)$/.exec(texto))) {
+    inteiro = m[1] || "0";
+    fracao = m[2] ?? "";
+  } else if ((m = /^(\d+)\.(\d{1,2})$/.exec(texto))) {
+    inteiro = m[1];
+    fracao = m[2];
+  } else {
+    return null;
+  }
+
+  if (inteiro.length > 9) return null;
+  const centavos = Number(inteiro) * 100 + Number(fracao.padEnd(2, "0"));
+  if (!Number.isSafeInteger(centavos) || centavos > VALOR_MAXIMO_CENTAVOS) return null;
+  return centavos;
+}
+
+/**
+ * O mesmo, em reais — para as colunas `numeric(10,2)` que recebem reais.
  * `null` quando não dá para entender.
  */
 export function lerValorEmReais(bruto: string): number | null {
-  const texto = bruto.trim().replace(/^R\$\s*/i, "");
-  if (!texto) return 0;
-  if (!/^[\d.,\s]+$/.test(texto)) return null;
-
-  const semEspacos = texto.replace(/\s/g, "");
-  let normalizado = semEspacos;
-
-  if (semEspacos.includes(",")) {
-    // Vírgula é o decimal; pontos são milhar.
-    normalizado = semEspacos.replace(/\./g, "").replace(",", ".");
-  } else {
-    const pontos = semEspacos.match(/\./g)?.length ?? 0;
-    // Mais de um ponto, ou um ponto seguido de 3 dígitos no fim ("1.250"),
-    // é separador de milhar à brasileira.
-    if (pontos > 1 || /\.\d{3}$/.test(semEspacos)) {
-      normalizado = semEspacos.replace(/\./g, "");
-    }
-  }
-
-  const valor = Number(normalizado);
-  if (!Number.isFinite(valor) || valor < 0 || valor > 1_000_000) return null;
-  return Math.round(valor * 100) / 100;
+  const centavos = lerCentavos(bruto);
+  return centavos === null ? null : centavos / 100;
 }
 
 /** Duração em minutos: inteiro entre 5 minutos e 8 horas. */

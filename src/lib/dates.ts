@@ -140,6 +140,27 @@ export function dataDoBanco(texto: string): Date {
   return instanteNaClinica(ano, mes, dia);
 }
 
+/**
+ * "AAAA-MM-DD" que existe no calendário.
+ *
+ * `instanteNaClinica` normaliza de propósito — é o que faz `somarDias` e a
+ * virada de mês funcionarem —, e por isso não serve de validação: 31/02
+ * virava 03/03 em silêncio (AGENTS.md §13, bug 3). Toda data que chega de
+ * formulário passa por aqui antes.
+ */
+export function dataValida(texto: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) return false;
+  const [ano, mes, dia] = texto.split("-").map(Number);
+  if (ano < 1900 || ano > 2200 || mes < 1 || mes > 12 || dia < 1) return false;
+  // Dia 0 do mês seguinte é o último dia deste — em UTC, sem fuso nenhum.
+  return dia <= new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+}
+
+/** Hora de parede "HH:MM", de 00:00 a 23:59. */
+export function horaValida(texto: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(texto);
+}
+
 /** Aniversário no ano corrente, a partir da data de nascimento. */
 export function aniversarioNesteAno(nascimento: Date): Date {
   const nasc = partesDoDia(nascimento);

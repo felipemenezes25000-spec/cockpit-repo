@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { ehFinanceira } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
@@ -63,7 +65,7 @@ export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
   ]);
 
   const erro = quitados.error ?? emAberto.error ?? despesas?.error;
-  if (erro) throw new Error(`Não foi possível carregar o financeiro: ${erro.message}`);
+  if (erro) falhaDeConsulta("consulta financeiro", erro, "Não foi possível carregar o financeiro.");
 
   const vencido = (emAberto.data ?? [])
     .filter((l) => dataDoBanco(l.vencimento).getTime() < hoje.getTime())
@@ -100,7 +102,7 @@ export const serieMensalRecebimentos = cache(async (): Promise<PontoMensal[]> =>
     .lt("recebido_em", dataParaColuna(fim));
 
   if (error) {
-    throw new Error(`Não foi possível carregar a evolução mensal: ${error.message}`);
+    falhaDeConsulta("consulta financeiro", error, "Não foi possível carregar a evolução mensal.");
   }
 
   // Um balde por mês, na ordem, para meses sem movimento aparecerem zerados.

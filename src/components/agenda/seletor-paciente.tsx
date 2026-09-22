@@ -34,6 +34,7 @@ export function SeletorPaciente({
   const [termo, setTermo] = useState("");
   const [opcoes, setOpcoes] = useState<PacienteParaSelecao[]>([]);
   const [buscando, setBuscando] = useState(false);
+  const [falhouBusca, setFalhouBusca] = useState(false);
   const idLista = useId();
   const ultimaBusca = useRef(0);
 
@@ -41,6 +42,7 @@ export function SeletorPaciente({
     if (escolhida || termo.trim().length < 2) {
       setOpcoes([]);
       setBuscando(false);
+      setFalhouBusca(false);
       return;
     }
 
@@ -50,7 +52,17 @@ export function SeletorPaciente({
       try {
         const achadas = await buscarPacientesParaSelecao(termo);
         // Resposta antiga chegando depois da nova não pode sobrescrever.
-        if (numero === ultimaBusca.current) setOpcoes(achadas);
+        if (numero === ultimaBusca.current) {
+          setOpcoes(achadas);
+          setFalhouBusca(false);
+        }
+      } catch {
+        // Sem conexão com o servidor: a lista esvazia e a tela diz por quê,
+        // em vez de parecer que ninguém foi encontrada.
+        if (numero === ultimaBusca.current) {
+          setOpcoes([]);
+          setFalhouBusca(true);
+        }
       } finally {
         if (numero === ultimaBusca.current) setBuscando(false);
       }
@@ -145,7 +157,13 @@ export function SeletorPaciente({
             </ul>
           ) : null}
 
-          {!buscando && termo.trim().length >= 2 && opcoes.length === 0 ? (
+          {!buscando && falhouBusca ? (
+            <p role="alert" className="mt-1.5 text-xs text-negativo">
+              Não foi possível buscar agora. Confira a conexão e digite de novo.
+            </p>
+          ) : null}
+
+          {!buscando && !falhouBusca && termo.trim().length >= 2 && opcoes.length === 0 ? (
             <p className="mt-1.5 text-xs text-outline">
               Nenhuma paciente encontrada. Confira a escrita ou{" "}
               <Link href="/pacientes/novo" className="text-primary underline">

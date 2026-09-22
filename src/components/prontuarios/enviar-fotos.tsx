@@ -166,38 +166,47 @@ export function EnviarFotos({
 
       marcar(indice, { estado: "enviando" });
 
-      const caminho = caminhoDaImagem(prontuarioId, arquivo.type);
-      const dimensoes = await dimensoesDoArquivo(arquivo);
+      // Uma foto que falha por rede não pode parar a fila nem prender a tela
+      // em "enviando": ela é marcada com erro e a próxima segue.
+      try {
+        const caminho = caminhoDaImagem(prontuarioId, arquivo.type);
+        const dimensoes = await dimensoesDoArquivo(arquivo);
 
-      const { error: erroEnvio } = await supabase.storage
-        .from(BUCKET_IMAGENS)
-        .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
+        const { error: erroEnvio } = await supabase.storage
+          .from(BUCKET_IMAGENS)
+          .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
 
-      if (erroEnvio) {
-        // Mesma tradução que o servidor usa: o Storage fala inglês, a tela não.
+        if (erroEnvio) {
+          // Mesma tradução que o servidor usa: o Storage fala inglês, a tela não.
+          marcar(indice, {
+            estado: "erro",
+            erro: mensagemDoStorage(erroEnvio, "Não foi possível enviar o arquivo."),
+          });
+          continue;
+        }
+
+        const resposta = await registrarImagem({
+          prontuarioId,
+          caminho,
+          nomeOriginal: arquivo.name,
+          dataCaptura,
+          legenda,
+          largura: dimensoes?.largura ?? null,
+          altura: dimensoes?.altura ?? null,
+        });
+
+        // Quando a linha falha, a ação já removeu o arquivo do bucket. Não sobra
+        // nada para limpar aqui.
+        marcar(
+          indice,
+          resposta.ok ? { estado: "ok" } : { estado: "erro", erro: resposta.erro },
+        );
+      } catch {
         marcar(indice, {
           estado: "erro",
-          erro: mensagemDoStorage(erroEnvio, "Não foi possível enviar o arquivo."),
+          erro: "A conexão caiu durante o envio. Confira a galeria e envie de novo se a foto não aparecer.",
         });
-        continue;
       }
-
-      const resposta = await registrarImagem({
-        prontuarioId,
-        caminho,
-        nomeOriginal: arquivo.name,
-        dataCaptura,
-        legenda,
-        largura: dimensoes?.largura ?? null,
-        altura: dimensoes?.altura ?? null,
-      });
-
-      // Quando a linha falha, a ação já removeu o arquivo do bucket. Não sobra
-      // nada para limpar aqui.
-      marcar(
-        indice,
-        resposta.ok ? { estado: "ok" } : { estado: "erro", erro: resposta.erro },
-      );
     }
 
     setEnviando(false);

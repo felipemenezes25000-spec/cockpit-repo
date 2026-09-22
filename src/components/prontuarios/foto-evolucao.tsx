@@ -12,6 +12,7 @@ import {
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { AREA_TEXTO, Campo, ENTRADA } from "@/components/ui/field";
+import { FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { cn } from "@/lib/cn";
 import { formatarData } from "@/lib/format";
 import { formatarTamanho, LIMITE_LEGENDA } from "@/lib/prontuario-imagens";
@@ -211,16 +212,16 @@ export function FotoDaEvolucao({
             Editar
           </BotaoDeAcao>
 
-          <form action={alternarArquivamentoImagem}>
-            <input type="hidden" name="id" value={imagem.id} />
-            <input type="hidden" name="prontuario_id" value={prontuarioId} />
-            <input
-              type="hidden"
-              name="arquivar"
-              value={imagem.arquivada ? "nao" : "sim"}
-            />
+          <FormularioDeAcao
+            acao={alternarArquivamentoImagem}
+            campos={{
+              id: imagem.id,
+              prontuario_id: prontuarioId,
+              arquivar: imagem.arquivada ? "nao" : "sim",
+            }}
+          >
             <BotaoArquivar arquivada={imagem.arquivada} />
-          </form>
+          </FormularioDeAcao>
 
           <BotaoDeAcao
             onClick={() => setPainel(painel === "eliminar" ? "nenhum" : "eliminar")}

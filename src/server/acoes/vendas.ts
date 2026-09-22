@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehFinanceira, usuarioAtual } from "@/lib/auth";
+import { chaveDoDia, dataValida } from "@/lib/dates";
+import { mensagemDoBanco } from "@/lib/erros-banco";
+import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
+import { registrarFalha } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import {
   bpDoBanco,
@@ -25,8 +30,9 @@ import {
  *
  * Toda gravação composta passa pelas funções do banco (`venda_registrar`,
  * `venda_alterar_pagamento`): tudo ou nada, com a RLS de quem chama. O
- * dinheiro é calculado em centavos inteiros e as CHECK constraints conferem
- * a conta de novo na chegada.
+ * dinheiro é calculado em centavos inteiros e o gatilho da 0020 confere a
+ * origem da taxa na chegada — se a tela e o banco divergirem, a gravação
+ * falha em vez de guardar um número que ninguém viu.
  */
 
 export type ErrosVenda = Partial<
@@ -41,6 +47,7 @@ export type ErrosVenda = Partial<
     | "taxa"
     | "vencimento"
     | "recebido_em"
+    | "valor_recebido"
     | "motivo"
     | "geral",
     string
@@ -52,19 +59,8 @@ export type EstadoVenda = {
   valores?: Record<string, string>;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DATA = /^\d{4}-\d{2}-\d{2}$/;
-
-function texto(dados: FormData, campo: string): string {
-  return String(dados.get(campo) ?? "").trim();
-}
-
-function digitados(dados: FormData): Record<string, string> {
-  const valores: Record<string, string> = {};
-  for (const [chave, valor] of dados.entries()) {
-    if (typeof valor === "string") valores[chave] = valor;
-  }
-  return valores;
+function lerForma(valor: string): FormaPagamento | null {
+  return (FORMAS_EM_ORDEM as string[]).includes(valor) ? (valor as FormaPagamento) : null;
 }
 
 /**
@@ -87,10 +83,10 @@ async function resolverTaxa(
     return { taxaBp: 0, taxaCartaoId: null, manual: false, justificativa: null };
   }
 
-  const taxaCartaoId = texto(dados, "taxa_cartao_id");
+  const taxaCartaoId = campoTexto(dados, "taxa_cartao_id", 36);
   const querManual = dados.get("taxa_manual") === "sim";
 
-  if (!UUID.test(taxaCartaoId)) {
+  if (!uuidValido(taxaCartaoId)) {
     return {
       erroTaxa:
         "Escolha a operadora e o parcelamento. Se a combinação não existir, a administradora cadastra em Financeiro → Taxas de cartão.",
@@ -98,12 +94,18 @@ async function resolverTaxa(
   }
 
   const supabase = await clienteServidor();
-  const { data: taxa } = await supabase
+  const { data: taxa, error } = await supabase
     .from("taxas_cartao")
     .select("id, tipo, parcelas, percentual, ativa")
     .eq("id", taxaCartaoId)
     .maybeSingle();
 
+  // Falha de leitura não é "taxa inativa": dizer isso mandaria a pessoa
+  // escolher outra taxa por um problema que não é dela.
+  if (error) {
+    registrarFalha("vendas: ler taxa de cartão", error);
+    return { erroTaxa: mensagemDoBanco(error, "Não foi possível conferir a taxa agora. Tente de novo.") };
+  }
   if (!taxa || !taxa.ativa) {
     return { erroTaxa: "Esta taxa não está mais ativa. Escolha outra." };
   }
@@ -128,17 +130,26 @@ async function resolverTaxa(
     return { erroTaxa: "Alterar a taxa é restrito ao financeiro e à administradora." };
   }
 
-  const bp = lerPercentual(texto(dados, "taxa_percentual"));
+  const bp = lerPercentual(campoTexto(dados, "taxa_percentual", 10));
   if (bp === null) {
     return { erroTaxa: "Percentual inválido. Use 6 ou 6,5." };
   }
 
-  const justificativa = texto(dados, "taxa_justificativa").slice(0, 500);
+  const justificativa = campoTexto(dados, "taxa_justificativa", 500);
   if (justificativa.length < 5) {
     return { erroTaxa: "A taxa manual exige uma justificativa." };
   }
 
   return { taxaBp: bp, taxaCartaoId, manual: true, justificativa };
+}
+
+function revalidarVenda(vendaId?: string) {
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/vendas");
+  revalidatePath("/financeiro/movimentacoes");
+  revalidatePath("/financeiro/fluxo");
+  if (vendaId) revalidatePath(`/financeiro/vendas/${vendaId}`);
+  revalidatePath("/");
 }
 
 export async function registrarVenda(
@@ -150,43 +161,51 @@ export async function registrarVenda(
 
   const erros: ErrosVenda = {};
 
-  const pacienteId = texto(dados, "paciente_id");
-  const procedimentoId = texto(dados, "procedimento_id");
-  const dataVenda = texto(dados, "data_venda");
-  const forma = texto(dados, "forma") as FormaPagamento;
-  const parcelas = Number(texto(dados, "parcelas") || "1");
-  const originalCent = paraCentavos(texto(dados, "valor_original"));
-  const descontoCent = paraCentavos(texto(dados, "desconto") || "0");
-  const situacaoInicial = texto(dados, "situacao_inicial");
-  const vencimento = texto(dados, "vencimento");
-  const recebidoEm = texto(dados, "recebido_em");
-  const observacoes = texto(dados, "observacoes").slice(0, 2000);
+  const pacienteId = campoTexto(dados, "paciente_id", 36);
+  const procedimentoId = campoTexto(dados, "procedimento_id", 36);
+  const dataVenda = campoTexto(dados, "data_venda", 10);
+  const forma = lerForma(campoTexto(dados, "forma", 20));
+  const parcelas = Number(campoTexto(dados, "parcelas", 3) || "1");
+  const originalCent = paraCentavos(campoTexto(dados, "valor_original", 30));
+  const descontoCent = paraCentavos(campoTexto(dados, "desconto", 30) || "0");
+  const situacaoInicial = campoTexto(dados, "situacao_inicial", 20);
+  const vencimento = campoTexto(dados, "vencimento", 10);
+  const recebidoEm = campoTexto(dados, "recebido_em", 10);
+  const observacoes = campoTexto(dados, "observacoes", 2000);
 
-  if (!UUID.test(pacienteId)) erros.paciente_id = "Escolha a paciente.";
-  if (!UUID.test(procedimentoId)) erros.procedimento_id = "Escolha o procedimento.";
-  if (!DATA.test(dataVenda)) erros.data_venda = "Informe a data da venda.";
-  if (!FORMAS_EM_ORDEM.includes(forma)) erros.forma = "Escolha a forma de pagamento.";
-  if (originalCent === null) erros.valor_original = "Valor inválido. Use 150 ou 150,00.";
+  if (!uuidValido(pacienteId)) erros.paciente_id = "Escolha a paciente.";
+  if (!uuidValido(procedimentoId)) erros.procedimento_id = "Escolha o procedimento.";
+  if (!dataValida(dataVenda)) erros.data_venda = "Informe uma data de venda válida.";
+  if (!forma) erros.forma = "Escolha a forma de pagamento.";
+  if (originalCent === null) {
+    erros.valor_original = "Valor inválido. Use 150 ou 150,00.";
+  }
   if (descontoCent === null) erros.desconto = "Desconto inválido.";
-  if (FORMAS_EM_ORDEM.includes(forma) && !parcelasValidas(forma, parcelas)) {
+  if (forma && !parcelasValidas(forma, parcelas)) {
     erros.parcelas = "Parcelamento inválido para esta forma.";
   }
 
   if (situacaoInicial !== "previsto" && situacaoInicial !== "recebido") {
-    erros.geral = "Situação inicial inválida.";
+    erros.geral = "Escolha se o valor ainda vai entrar ou se já entrou.";
   }
-  if (situacaoInicial === "previsto" && !DATA.test(vencimento)) {
+  if (situacaoInicial === "previsto" && !dataValida(vencimento)) {
     erros.vencimento = "Informe a data prevista do recebimento.";
   }
-  if (situacaoInicial === "recebido" && !DATA.test(recebidoEm)) {
-    erros.recebido_em = "Informe quando o valor entrou.";
+  if (situacaoInicial === "recebido") {
+    if (!dataValida(recebidoEm)) {
+      erros.recebido_em = "Informe quando o valor entrou.";
+    } else if (recebidoEm > chaveDoDia()) {
+      erros.recebido_em = "O recebimento não pode estar no futuro. Use “A receber”.";
+    }
   }
 
-  if (Object.keys(erros).length > 0) return { erros, valores: digitados(dados) };
+  if (Object.keys(erros).length > 0 || !forma) {
+    return { erros, valores: valoresDigitados(dados) };
+  }
 
   const taxa = await resolverTaxa(dados, forma, parcelas, await ehFinanceira());
   if ("erroTaxa" in taxa) {
-    return { erros: { taxa: taxa.erroTaxa }, valores: digitados(dados) };
+    return { erros: { taxa: taxa.erroTaxa }, valores: valoresDigitados(dados) };
   }
 
   const conta = calcularVenda({
@@ -195,17 +214,28 @@ export async function registrarVenda(
     taxaBp: taxa.taxaBp,
   });
   if ("erro" in conta) {
-    return { erros: { desconto: conta.erro }, valores: digitados(dados) };
+    return { erros: { desconto: conta.erro }, valores: valoresDigitados(dados) };
   }
 
   const supabase = await clienteServidor();
 
   // Nome do procedimento vira a descrição do recebimento.
-  const { data: procedimento } = await supabase
+  const { data: procedimento, error: erroProcedimento } = await supabase
     .from("procedimentos")
     .select("nome")
     .eq("id", procedimentoId)
     .maybeSingle();
+
+  if (erroProcedimento) {
+    registrarFalha("vendas: ler procedimento", erroProcedimento);
+    return {
+      erros: { geral: mensagemDoBanco(erroProcedimento, "Não foi possível conferir o procedimento.") },
+      valores: valoresDigitados(dados),
+    };
+  }
+  if (!procedimento) {
+    return { erros: { procedimento_id: "Procedimento não encontrado." }, valores: valoresDigitados(dados) };
+  }
 
   const { data: vendaId, error } = await supabase.rpc("venda_registrar", {
     p_paciente_id: pacienteId,
@@ -223,23 +253,24 @@ export async function registrarVenda(
     p_taxa_justificativa: taxa.justificativa as unknown as string,
     p_observacoes: (observacoes || null) as unknown as string,
     p_situacao_inicial: situacaoInicial as "previsto" | "recebido",
-    p_vencimento: (situacaoInicial === "previsto" ? vencimento : dataVenda) as string,
-    p_recebido_em: (situacaoInicial === "recebido"
-      ? recebidoEm
-      : null) as unknown as string,
-    p_descricao: (procedimento?.nome ?? null) as unknown as string,
+    p_vencimento: situacaoInicial === "previsto" ? vencimento : dataVenda,
+    p_recebido_em: (situacaoInicial === "recebido" ? recebidoEm : null) as unknown as string,
+    p_descricao: procedimento.nome,
   });
 
   if (error || !vendaId) {
+    registrarFalha("vendas: registrar", error);
     return {
-      erros: { geral: `Não foi possível registrar a venda: ${error?.message}` },
-      valores: digitados(dados),
+      erros: {
+        geral: mensagemDoBanco(error, "Não foi possível registrar a venda. Tente de novo.", {
+          "23503": "Paciente ou procedimento não existe mais. Recarregue a página.",
+        }),
+      },
+      valores: valoresDigitados(dados),
     };
   }
 
-  revalidatePath("/financeiro");
-  revalidatePath("/financeiro/vendas");
-  revalidatePath("/");
+  revalidarVenda(vendaId);
   redirect(`/financeiro/vendas/${vendaId}`);
 }
 
@@ -260,21 +291,25 @@ async function executarAlteracao(
     };
   }
 
-  const vendaId = texto(dados, "venda_id");
-  if (!UUID.test(vendaId)) return { erros: { geral: "Venda não identificada." } };
+  const vendaId = campoTexto(dados, "venda_id", 36);
+  if (!uuidValido(vendaId)) return { erros: { geral: "Venda não identificada." } };
 
-  const motivo = texto(dados, "motivo").slice(0, 500);
+  const motivo = campoTexto(dados, "motivo", 500);
   if (motivo.length < 5) {
-    return { erros: { motivo: "Explique o motivo da alteração." }, valores: digitados(dados) };
+    return { erros: { motivo: "Explique o motivo da alteração." }, valores: valoresDigitados(dados) };
   }
 
   const supabase = await clienteServidor();
-  const { data: venda } = await supabase
+  const { data: venda, error: erroVenda } = await supabase
     .from("vendas")
     .select("valor_original, desconto, valor_final, forma, parcelas, taxa_cartao_id")
     .eq("id", vendaId)
     .maybeSingle();
 
+  if (erroVenda) {
+    registrarFalha("vendas: ler venda para alterar", erroVenda);
+    return { erros: { geral: mensagemDoBanco(erroVenda, "Não foi possível ler a venda.") } };
+  }
   if (!venda) return { erros: { geral: "Venda não encontrada." } };
 
   let forma: FormaPagamento;
@@ -284,33 +319,40 @@ async function executarAlteracao(
   let manual: boolean;
 
   if (tipo === "forma_pagamento") {
-    forma = texto(dados, "forma") as FormaPagamento;
-    parcelas = Number(texto(dados, "parcelas") || "1");
+    const escolhida = lerForma(campoTexto(dados, "forma", 20));
+    parcelas = Number(campoTexto(dados, "parcelas", 3) || "1");
 
-    if (!FORMAS_EM_ORDEM.includes(forma)) {
-      return { erros: { forma: "Escolha a forma de pagamento." }, valores: digitados(dados) };
+    if (!escolhida) {
+      return { erros: { forma: "Escolha a forma de pagamento." }, valores: valoresDigitados(dados) };
     }
+    forma = escolhida;
     if (!parcelasValidas(forma, parcelas)) {
-      return { erros: { parcelas: "Parcelamento inválido." }, valores: digitados(dados) };
+      return { erros: { parcelas: "Parcelamento inválido." }, valores: valoresDigitados(dados) };
     }
 
     const taxa = await resolverTaxa(dados, forma, parcelas, true);
     if ("erroTaxa" in taxa) {
-      return { erros: { taxa: taxa.erroTaxa }, valores: digitados(dados) };
+      return { erros: { taxa: taxa.erroTaxa }, valores: valoresDigitados(dados) };
     }
     taxaBp = taxa.taxaBp;
     taxaCartaoId = taxa.taxaCartaoId;
     manual = taxa.manual;
   } else {
-    // Só a taxa muda; forma e parcelas ficam como estão.
+    // Só a taxa muda; forma e parcelas ficam como estão. E só existe taxa
+    // para alterar em venda no cartão (AGENTS.md §13, bug 1): PIX, dinheiro
+    // e as demais formas não passam pela operadora.
+    if (!formaUsaCartao(venda.forma)) {
+      return { erros: { taxa: "Esta venda não é no cartão: não há taxa para alterar." } };
+    }
+
     forma = venda.forma;
     parcelas = venda.parcelas;
     taxaCartaoId = venda.taxa_cartao_id;
     manual = true;
 
-    const bp = lerPercentual(texto(dados, "taxa_percentual"));
+    const bp = lerPercentual(campoTexto(dados, "taxa_percentual", 10));
     if (bp === null) {
-      return { erros: { taxa: "Percentual inválido. Use 6 ou 6,5." }, valores: digitados(dados) };
+      return { erros: { taxa: "Percentual inválido. Use 6 ou 6,5." }, valores: valoresDigitados(dados) };
     }
     taxaBp = bp;
   }
@@ -321,7 +363,7 @@ async function executarAlteracao(
     taxaBp,
   });
   if ("erro" in conta) {
-    return { erros: { taxa: conta.erro }, valores: digitados(dados) };
+    return { erros: { taxa: conta.erro }, valores: valoresDigitados(dados) };
   }
 
   const { error } = await supabase.rpc("venda_alterar_pagamento", {
@@ -337,16 +379,14 @@ async function executarAlteracao(
   });
 
   if (error) {
+    registrarFalha("vendas: alterar pagamento", error);
     return {
-      erros: { geral: `Não foi possível alterar: ${error.message}` },
-      valores: digitados(dados),
+      erros: { geral: mensagemDoBanco(error, "Não foi possível alterar a venda. Tente de novo.") },
+      valores: valoresDigitados(dados),
     };
   }
 
-  revalidatePath("/financeiro");
-  revalidatePath("/financeiro/vendas");
-  revalidatePath(`/financeiro/vendas/${vendaId}`);
-  revalidatePath("/");
+  revalidarVenda(vendaId);
   redirect(`/financeiro/vendas/${vendaId}`);
 }
 
@@ -379,28 +419,39 @@ export async function confirmarRecebimento(
     return { erros: { geral: "Confirmar recebimento é do financeiro e da administradora." } };
   }
 
-  const id = texto(dados, "recebimento_id");
-  const vendaId = texto(dados, "venda_id");
-  const recebidoEm = texto(dados, "recebido_em");
-  const valorCent = paraCentavos(texto(dados, "valor_recebido"));
+  const id = campoTexto(dados, "recebimento_id", 36);
+  const vendaId = campoTexto(dados, "venda_id", 36);
+  const recebidoEm = campoTexto(dados, "recebido_em", 10);
+  const valorCent = paraCentavos(campoTexto(dados, "valor_recebido", 30));
 
-  if (!UUID.test(id) || !UUID.test(vendaId)) {
+  if (!uuidValido(id) || !uuidValido(vendaId)) {
     return { erros: { geral: "Recebimento não identificado." } };
   }
-  if (!DATA.test(recebidoEm)) {
-    return { erros: { recebido_em: "Informe a data em que o valor entrou." }, valores: digitados(dados) };
+  if (!dataValida(recebidoEm)) {
+    return { erros: { recebido_em: "Informe a data em que o valor entrou." }, valores: valoresDigitados(dados) };
   }
-  if (valorCent === null || valorCent < 0) {
-    return { erros: { geral: "Valor recebido inválido." }, valores: digitados(dados) };
+  if (recebidoEm > chaveDoDia()) {
+    return {
+      erros: { recebido_em: "A data do recebimento não pode estar no futuro." },
+      valores: valoresDigitados(dados),
+    };
+  }
+  if (valorCent === null) {
+    return { erros: { valor_recebido: "Valor recebido inválido. Use 150 ou 150,00." }, valores: valoresDigitados(dados) };
   }
 
   const supabase = await clienteServidor();
-  const { data: recebimento } = await supabase
+  const { data: recebimento, error: erroLeitura } = await supabase
     .from("recebimentos")
     .select("situacao, valor, taxa_valor")
     .eq("id", id)
+    .eq("venda_id", vendaId)
     .maybeSingle();
 
+  if (erroLeitura) {
+    registrarFalha("vendas: ler recebimento", erroLeitura);
+    return { erros: { geral: mensagemDoBanco(erroLeitura, "Não foi possível ler o recebimento.") } };
+  }
   if (!recebimento) return { erros: { geral: "Recebimento não encontrado." } };
   if (recebimento.situacao !== "previsto" && recebimento.situacao !== "pendente") {
     return { erros: { geral: "Este recebimento já foi confirmado ou cancelado." } };
@@ -412,45 +463,76 @@ export async function confirmarRecebimento(
     centavosDoBanco(Number(recebimento.taxa_valor));
   const situacao = valorCent === liquidoCent ? "recebido" : "recebido_divergencia";
 
-  const { error } = await supabase
+  // A condição de situação vai no UPDATE: duas pessoas confirmando ao mesmo
+  // tempo não gravam duas vezes — a segunda não encontra mais a linha aberta.
+  const { data: confirmado, error } = await supabase
     .from("recebimentos")
     .update({
       situacao,
       recebido_em: recebidoEm,
       valor_recebido: centavosParaBanco(valorCent),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .in("situacao", ["previsto", "pendente"])
+    .select("id")
+    .maybeSingle();
 
   if (error) {
-    return { erros: { geral: `Não foi possível confirmar: ${error.message}` } };
+    registrarFalha("vendas: confirmar recebimento", error);
+    return {
+      erros: { geral: mensagemDoBanco(error, "Não foi possível confirmar o recebimento. Tente de novo.") },
+      valores: valoresDigitados(dados),
+    };
+  }
+  if (!confirmado) {
+    return { erros: { geral: "Este recebimento acabou de ser confirmado ou cancelado por outra pessoa." } };
   }
 
-  revalidatePath("/financeiro");
-  revalidatePath(`/financeiro/vendas/${vendaId}`);
-  revalidatePath("/");
+  revalidarVenda(vendaId);
   redirect(`/financeiro/vendas/${vendaId}`);
 }
 
+const TRANSICOES_RECEBIMENTO = ["previsto", "pendente", "cancelado"] as const;
+type TransicaoRecebimento = (typeof TRANSICOES_RECEBIMENTO)[number];
+
 /** Previsto ↔ pendente e cancelamento. Nada aqui apaga linha nenhuma. */
-export async function mudarSituacaoRecebimento(dados: FormData): Promise<void> {
+export async function mudarSituacaoRecebimento(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
   const usuario = await usuarioAtual();
-  if (!usuario) redirect("/entrar");
+  if (!usuario) return falha("Sessão expirada. Entre novamente.");
 
-  if (!(await ehFinanceira())) return;
+  if (!(await ehFinanceira())) {
+    return falha("Mudar a situação do recebimento é do financeiro e da administradora.");
+  }
 
-  const id = texto(dados, "recebimento_id");
-  const vendaId = texto(dados, "venda_id");
-  const para = texto(dados, "para");
+  const id = campoTexto(dados, "recebimento_id", 36);
+  const vendaId = campoTexto(dados, "venda_id", 36);
+  const para = campoTexto(dados, "para", 20);
 
-  if (!UUID.test(id) || !["previsto", "pendente", "cancelado"].includes(para)) return;
+  if (!uuidValido(id) || !(TRANSICOES_RECEBIMENTO as readonly string[]).includes(para)) {
+    return falha("Recebimento ou situação inválida.");
+  }
 
   const supabase = await clienteServidor();
-  await supabase
+  const { data, error } = await supabase
     .from("recebimentos")
-    .update({ situacao: para as "previsto" | "pendente" | "cancelado" })
+    .update({ situacao: para as TransicaoRecebimento })
     .eq("id", id)
-    .in("situacao", ["previsto", "pendente"]);
+    .in("situacao", ["previsto", "pendente"])
+    .neq("situacao", para as TransicaoRecebimento)
+    .select("id")
+    .maybeSingle();
 
-  revalidatePath("/financeiro");
-  if (UUID.test(vendaId)) revalidatePath(`/financeiro/vendas/${vendaId}`);
+  if (error) {
+    registrarFalha("vendas: mudar situação do recebimento", error);
+    return falha(mensagemDoBanco(error, "Não foi possível mudar a situação. Tente de novo."));
+  }
+  if (!data) {
+    return falha("O recebimento já estava nessa situação ou foi confirmado. A tela foi atualizada.");
+  }
+
+  revalidarVenda(uuidValido(vendaId) ? vendaId : undefined);
+  return sucesso();
 }

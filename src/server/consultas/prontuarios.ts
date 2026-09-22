@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { chaveDoDia, dataDoBanco } from "@/lib/dates";
 import { formatarData, formatarHora } from "@/lib/format";
@@ -210,7 +212,7 @@ export const listarProntuarios = cache(
         .limit(50);
 
       if (error) {
-        throw new Error(`Não foi possível buscar as pacientes: ${error.message}`);
+        falhaDeConsulta("consulta prontuarios", error, "Não foi possível buscar as pacientes.");
       }
 
       pacientesEncontradas = (data ?? []).map((paciente) => paciente.id);
@@ -241,7 +243,7 @@ export const listarProntuarios = cache(
 
     if (error) {
       if (estruturaPendente(error)) throw new EstruturaProntuarioPendenteError();
-      throw new Error(`Não foi possível carregar os prontuários: ${error.message}`);
+      falhaDeConsulta("consulta prontuarios", error, "Não foi possível carregar os prontuários.");
     }
 
     const ids = (data ?? []).map((linha) => linha.id);
@@ -258,9 +260,7 @@ export const listarProntuarios = cache(
         if (estruturaPendente(erroVersoes)) {
           throw new EstruturaProntuarioPendenteError();
         }
-        throw new Error(
-          `Não foi possível carregar as versões: ${erroVersoes.message}`,
-        );
+        falhaDeConsulta("consulta prontuarios", erroVersoes, "Não foi possível carregar as versões.");
       }
 
       for (const versao of versoes ?? []) {
@@ -336,9 +336,7 @@ export const prontuarioPorId = cache(
       if (estruturaPendente(erroVersoes)) {
         throw new EstruturaProntuarioPendenteError();
       }
-      throw new Error(
-        `Não foi possível carregar as versões do prontuário: ${erroVersoes.message}`,
-      );
+      falhaDeConsulta("consulta prontuarios", erroVersoes, "Não foi possível carregar as versões do prontuário.");
     }
 
     const listaVersoes: VersaoDoProntuario[] = (versoes ?? []).map((versao) => ({

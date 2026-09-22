@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, inicioDoDia, partesDoDia, somarDias } from "@/lib/dates";
@@ -67,7 +69,7 @@ export const pacientesParaRelacionamento = cache(async (): Promise<PacienteConta
       .eq("ativo", true)
       .order("id")
       .range(inicio, inicio + tamanho - 1);
-    if (error) throw new Error("Não foi possível carregar as pacientes.");
+    if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar as pacientes.");
     pacientes.push(...(data ?? []).map((p) => ({
       id: p.id,
       nome: p.nome_social || p.nome,
@@ -91,7 +93,7 @@ export const confirmacoesParaContato = cache(async (): Promise<Confirmacao[]> =>
     .gte("inicio", inicio.toISOString())
     .lt("inicio", fim.toISOString())
     .order("inicio");
-  if (error) throw new Error("Não foi possível carregar as confirmações.");
+  if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar as confirmações.");
   return (data ?? []).map((a) => ({
     id: a.id,
     pacienteId: a.paciente_id,
@@ -114,7 +116,7 @@ export const retornosParaContato = cache(async (): Promise<RetornoRelacionamento
       .select("id, paciente_id, sugerido_para, situacao, observacoes, pacientes(nome, nome_social, telefone), procedimentos(nome)")
       .order("sugerido_para").order("id")
       .range(inicio, inicio + tamanho - 1);
-    if (error) throw new Error("Não foi possível carregar os retornos.");
+    if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar os retornos.");
     retornos.push(...(data ?? []).map((r) => ({
       id: r.id,
       pacienteId: r.paciente_id,
@@ -141,7 +143,7 @@ export const tarefasDeContato = cache(async (): Promise<TarefaRelacionamento[]> 
       .in("tipo", ["confirmacao", "retorno", "pesquisa", "outro"])
       .order("prazo", { ascending: true, nullsFirst: false }).order("id")
       .range(inicio, inicio + tamanho - 1);
-    if (error) throw new Error("Não foi possível carregar as tarefas de contato.");
+    if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar as tarefas de contato.");
     tarefas.push(...(data ?? []).map((t) => ({
       id: t.id,
       pacienteId: t.paciente_id,
@@ -172,7 +174,7 @@ export const candidatasAAvaliacao = cache(async (): Promise<AvaliacaoCandidata[]
     .eq("situacao", "concluido")
     .order("inicio", { ascending: false })
     .limit(100);
-  if (error) throw new Error("Não foi possível carregar as pacientes para avaliação.");
+  if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar as pacientes para avaliação.");
 
   const vistas = new Set<string>();
   return (data ?? []).flatMap((a) => {
@@ -199,7 +201,7 @@ export const contatosRegistrados = cache(async (): Promise<ContatoRegistrado[]> 
     .not("resolvida_em", "is", null)
     .order("resolvida_em", { ascending: false })
     .limit(200);
-  if (error) throw new Error("Não foi possível carregar os contatos registrados.");
+  if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar os contatos registrados.");
 
   return (data ?? [])
     .filter((t) => t.paciente_id && t.resolvida_em && /^(Convite para avaliação no Google enviado|Mensagem de aniversário enviada)/.test(t.descricao))

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { hoje, inicioDoDia, inicioDoDiaSeguinte } from "@/lib/dates";
@@ -43,7 +45,7 @@ export const atendimentosDoDia = cache(
       .lt("inicio", inicioDoDiaSeguinte(dia).toISOString())
       .order("inicio", { ascending: true });
 
-    if (error) throw new Error(`Não foi possível carregar a agenda: ${error.message}`);
+    if (error) falhaDeConsulta("consulta agenda", error, "Não foi possível carregar a agenda.");
 
     return (data ?? []).map((linha) => ({
       id: linha.id,
@@ -171,8 +173,11 @@ export const catalogoAgenda = cache(async (): Promise<CatalogoAgenda> => {
   ]);
 
   if (profissionais.error || procedimentos.error) {
-    const motivo = profissionais.error?.message ?? procedimentos.error?.message;
-    throw new Error(`Não foi possível carregar o catálogo da agenda: ${motivo}`);
+    falhaDeConsulta(
+      "consulta agenda: catálogo",
+      profissionais.error ?? procedimentos.error,
+      "Não foi possível carregar o catálogo da agenda.",
+    );
   }
 
   return {

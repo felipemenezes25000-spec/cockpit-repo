@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { AssinarPorLink } from "@/components/documentos/assinar-por-link";
 import type { TipoDocumento } from "@/lib/documento";
 import { CLINICA } from "@/lib/nav";
-import { clienteServidor } from "@/lib/supabase/server";
+import { estadoDoLinkPublico } from "@/server/consultas/documentos";
 
 /**
  * A única página do sistema que abre sem sessão.
@@ -34,13 +34,10 @@ export default async function PaginaAssinar({
   // Só a situação, sem revelar conteúdo: a função devolve o tipo para a tela
   // saber dizer "contrato" ou "termo", e mais nada antes da data de
   // nascimento.
-  const supabase = await clienteServidor();
-  const { data } = await supabase.rpc("documento_link_estado", { p_token: limpo });
-
-  const linha = Array.isArray(data) ? data[0] : null;
-  const situacao = linha?.situacao ?? "nao_encontrado";
+  const estado = await estadoDoLinkPublico(limpo);
+  const situacao = estado.situacao;
   const tipo =
-    linha?.tipo && TIPOS.includes(linha.tipo) ? (linha.tipo as TipoDocumento) : null;
+    estado.tipo && TIPOS.includes(estado.tipo) ? (estado.tipo as TipoDocumento) : null;
 
   return (
     <main className="min-h-dvh bg-surface-container-low px-4 py-8 sm:px-6 sm:py-12">

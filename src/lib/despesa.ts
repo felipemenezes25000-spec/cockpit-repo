@@ -1,3 +1,4 @@
+import { dataValida } from "./dates";
 import { paraCentavos } from "./moeda";
 import type { Database } from "./supabase/tipos-banco";
 
@@ -71,8 +72,10 @@ export function validarDespesa(
   if (valorCent === null || valorCent <= 0) {
     erros.valor = "Valor inválido. Use 150 ou 150,00.";
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(v.vencimento)) {
+  if (!v.vencimento) {
     erros.vencimento = "Informe o vencimento.";
+  } else if (!dataValida(v.vencimento)) {
+    erros.vencimento = "Data de vencimento inválida.";
   }
 
   if (Object.keys(erros).length > 0) return { erros };

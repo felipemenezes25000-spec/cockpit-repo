@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { FormularioEmissao } from "@/components/documentos/formulario-emissao";
 import { FaixaDemonstracao } from "@/components/layout/demo-badge";
-import { uuidValido } from "@/lib/documento";
-import { formatarTelefone, nomeExibido } from "@/lib/paciente";
-import { clienteServidor } from "@/lib/supabase/server";
-import type { PacienteParaSelecao } from "@/server/acoes/agenda";
+import { uuidValido } from "@/lib/formulario";
+import { pacienteParaSelecao } from "@/server/consultas/pacientes";
 import {
   EstruturaDocumentoPendenteError,
   modelosParaEmissao,
@@ -19,34 +17,6 @@ export const metadata: Metadata = {
 function lerTexto(valor: string | string[] | undefined): string {
   const texto = Array.isArray(valor) ? valor[0] : valor;
   return (texto ?? "").slice(0, 36);
-}
-
-/**
- * Paciente vinda pela URL, quando a emissão começa pela ficha dela.
- *
- * A consulta é aqui e não em `consultas/` porque é uma linha só, para
- * preencher um campo — e não um assunto do domínio que outra tela vá reusar.
- */
-async function pacienteInicial(id: string): Promise<PacienteParaSelecao | null> {
-  if (!uuidValido(id)) return null;
-
-  const supabase = await clienteServidor();
-  const { data } = await supabase
-    .from("pacientes")
-    .select("id, nome, nome_social, telefone, email")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (!data) return null;
-
-  const telefone = data.telefone ? formatarTelefone(data.telefone) : null;
-
-  return {
-    id: data.id,
-    nome: nomeExibido(data),
-    detalhe:
-      [telefone, data.email].filter(Boolean).join(" · ") || "sem contato cadastrado",
-  };
 }
 
 export default async function PaginaEmitirDocumento({
@@ -71,7 +41,7 @@ export default async function PaginaEmitirDocumento({
     );
   }
 
-  const paciente = await pacienteInicial(lerTexto(parametros.paciente));
+  const paciente = await pacienteParaSelecao(lerTexto(parametros.paciente));
 
   return (
     <div className="mx-auto max-w-4xl">

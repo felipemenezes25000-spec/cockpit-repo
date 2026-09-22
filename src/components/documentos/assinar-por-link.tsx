@@ -31,6 +31,13 @@ import {
 const ABERTAS = ["ok", "ja_assinado"];
 
 /**
+ * Falha de rede ou do servidor. Não é recusa do link — a pessoa pode tentar
+ * de novo, e a tela diz isso em vez de afirmar que o link é inválido.
+ */
+const FALHA_DE_CONEXAO =
+  "Não foi possível falar com a clínica agora. Confira sua internet e tente de novo.";
+
+/**
  * Explica cada recusa sem ensinar nada a quem não deveria estar ali.
  *
  * "Data incorreta" é a única que diz o que houve, porque quem errou a própria
@@ -60,6 +67,11 @@ const RECUSA: Record<string, { titulo: string; texto: string }> = {
   indisponivel: {
     titulo: "Documento indisponível",
     texto: "Este documento não está mais disponível.",
+  },
+  falhou: {
+    titulo: "Não foi possível abrir agora",
+    texto:
+      "A página não conseguiu falar com a clínica. Confira sua internet e recarregue em instantes — o link continua valendo.",
   },
 };
 
@@ -235,17 +247,23 @@ export function AssinarPorLink({
     setAbrindo(true);
     setErroPorta(null);
 
-    const resposta = await abrirDocumentoParaAssinatura(token, nascimento);
+    try {
+      const resposta = await abrirDocumentoParaAssinatura(token, nascimento);
 
-    if (resposta.situacao === "data_incorreta") {
-      setErroPorta(
-        "A data não confere com o cadastro. Confira e tente de novo — depois de dez erros o link se fecha.",
-      );
-    } else {
-      setDocumento(resposta);
+      if (resposta.situacao === "data_incorreta") {
+        setErroPorta(
+          "A data não confere com o cadastro. Confira e tente de novo — depois de dez erros o link se fecha.",
+        );
+      } else if (resposta.situacao === "falhou") {
+        setErroPorta(FALHA_DE_CONEXAO);
+      } else {
+        setDocumento(resposta);
+      }
+    } catch {
+      setErroPorta(FALHA_DE_CONEXAO);
+    } finally {
+      setAbrindo(false);
     }
-
-    setAbrindo(false);
   }
 
   async function assinar(evento: React.FormEvent) {
@@ -253,24 +271,40 @@ export function AssinarPorLink({
     if (assinando) return;
 
     setAssinando(true);
-    const resposta = await assinarPorLink({
-      token,
-      nascimento,
-      nome,
-      cpf,
-      confirmou,
-    });
-    setEstado(resposta);
 
-    if (resposta.situacao === "ok") {
-      // Recarrega do banco em vez de montar a via com o que está na tela: o
-      // que ela vai guardar precisa ser o que ficou gravado, não o que foi
-      // digitado aqui.
-      setRecemAssinado(true);
-      setDocumento(await abrirDocumentoParaAssinatura(token, nascimento));
+    try {
+      const resposta = await assinarPorLink({
+        token,
+        nascimento,
+        nome,
+        cpf,
+        confirmou,
+      });
+      setEstado(resposta);
+
+      if (resposta.situacao === "ok") {
+        // Recarrega do banco em vez de montar a via com o que está na tela: o
+        // que ela vai guardar precisa ser o que ficou gravado, não o que foi
+        // digitado aqui.
+        setRecemAssinado(true);
+        const via = await abrirDocumentoParaAssinatura(token, nascimento);
+        if (via.situacao === "falhou") {
+          setEstado({
+            situacao: null,
+            erros: {
+              geral:
+                "Sua assinatura foi registrada. Não conseguimos carregar a via agora — recarregue a página para salvá-la.",
+            },
+          });
+        } else {
+          setDocumento(via);
+        }
+      }
+    } catch {
+      setEstado({ situacao: null, erros: { geral: FALHA_DE_CONEXAO } });
+    } finally {
+      setAssinando(false);
     }
-
-    setAssinando(false);
   }
 
   // Link morto já no carregamento: não faz sentido pedir data de nascimento

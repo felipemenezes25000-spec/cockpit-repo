@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta, registrarFalha } from "@/lib/registro";
+
 import { cache } from "react";
 import type {
   CampoDoModelo,
@@ -38,7 +40,7 @@ function aoFalhar(
   assunto: string,
 ): never {
   if (estruturaPendente(error)) throw new EstruturaDocumentoPendenteError();
-  throw new Error(`Não foi possível carregar ${assunto}.`);
+  falhaDeConsulta(`consulta documentos: ${assunto}`, error, `Não foi possível carregar ${assunto}.`);
 }
 
 /**
@@ -621,3 +623,27 @@ export const linksDoDocumento = cache(
     });
   },
 );
+
+/**
+ * O link público serve? Só a situação e o tipo — nada do conteúdo antes da
+ * data de nascimento (0014).
+ *
+ * Falha de infraestrutura volta como `falhou`, e não como "link inválido": a
+ * paciente precisa saber que pode tentar de novo.
+ */
+export async function estadoDoLinkPublico(
+  token: string,
+): Promise<{ situacao: string; tipo: string | null }> {
+  if (!/^[A-Za-z0-9_-]{32,128}$/.test(token)) return { situacao: "nao_encontrado", tipo: null };
+
+  const supabase = await clienteServidor();
+  const { data, error } = await supabase.rpc("documento_link_estado", { p_token: token });
+
+  if (error) {
+    registrarFalha("consulta documentos: estado do link", error);
+    return { situacao: "falhou", tipo: null };
+  }
+
+  const linha = Array.isArray(data) ? data[0] : null;
+  return { situacao: linha?.situacao ?? "nao_encontrado", tipo: linha?.tipo ?? null };
+}

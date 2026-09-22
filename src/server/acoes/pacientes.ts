@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
+import { mensagemDoBanco } from "@/lib/erros-banco";
+import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
+import { registrarFalha } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import {
   normalizarPaciente,
@@ -33,13 +37,6 @@ export type EstadoPaciente = {
   valores?: Record<string, string>;
 };
 
-// Um arquivo "use server" só pode exportar função assíncrona — por isso o
-// estado inicial fica no formulário, como em `app/entrar/actions.ts`.
-
-function texto(dados: FormData, campo: string): string {
-  return String(dados.get(campo) ?? "").trim();
-}
-
 /** Valida e normaliza. Devolve os erros ou os campos prontos para o banco. */
 function validar(
   dados: FormData,
@@ -47,43 +44,41 @@ function validar(
   | { erros: ErrosDoFormulario; valores: Record<string, string> }
   | { campos: CamposDoBanco } {
   const valores = normalizarPaciente({
-    nome: texto(dados, "nome"),
-    nome_social: texto(dados, "nome_social"),
-    cpf: texto(dados, "cpf"),
-    data_nascimento: texto(dados, "data_nascimento"),
-    telefone: texto(dados, "telefone"),
-    email: texto(dados, "email"),
-    origem: texto(dados, "origem"),
-    observacoes: texto(dados, "observacoes"),
-    cep: texto(dados, "cep"),
-    logradouro: texto(dados, "logradouro"),
-    numero: texto(dados, "numero"),
-    complemento: texto(dados, "complemento"),
-    bairro: texto(dados, "bairro"),
-    cidade: texto(dados, "cidade"),
-    uf: texto(dados, "uf"),
+    nome: campoTexto(dados, "nome"),
+    nome_social: campoTexto(dados, "nome_social"),
+    cpf: campoTexto(dados, "cpf"),
+    data_nascimento: campoTexto(dados, "data_nascimento"),
+    telefone: campoTexto(dados, "telefone"),
+    email: campoTexto(dados, "email"),
+    origem: campoTexto(dados, "origem"),
+    observacoes: campoTexto(dados, "observacoes"),
+    cep: campoTexto(dados, "cep"),
+    logradouro: campoTexto(dados, "logradouro"),
+    numero: campoTexto(dados, "numero"),
+    complemento: campoTexto(dados, "complemento"),
+    bairro: campoTexto(dados, "bairro"),
+    cidade: campoTexto(dados, "cidade"),
+    uf: campoTexto(dados, "uf"),
   });
 
   const erros = validarPaciente(valores);
 
   if (Object.keys(erros).length > 0) {
-    // Devolve o que veio para o formulário reaparecer preenchido.
-    const digitados: Record<string, string> = {};
-    for (const [chave, valor] of dados.entries()) {
-      if (typeof valor === "string") digitados[chave] = valor;
-    }
-    return { erros, valores: digitados };
+    return { erros, valores: valoresDigitados(dados) };
   }
 
   return { campos: paraOBanco(valores) };
 }
 
-/** 23505 é a violação do índice único de CPF. */
-function mensagemDoBanco(codigo: string | undefined, padrao: string): ErrosDoFormulario {
-  if (codigo === "23505") {
+/** O índice único de CPF (`pacientes_cpf_unico`) é o único 23505 da tabela. */
+function errosDoBanco(
+  erro: Parameters<typeof mensagemDoBanco>[0],
+  padrao: string,
+): ErrosDoFormulario {
+  if (erro?.code === "23505") {
     return { cpf: "Já existe uma paciente cadastrada com este CPF." };
   }
-  return { geral: padrao };
+  return { geral: mensagemDoBanco(erro, padrao) };
 }
 
 export async function cadastrarPaciente(
@@ -104,14 +99,10 @@ export async function cadastrarPaciente(
     .single();
 
   if (error || !data) {
+    if (error && error.code !== "23505") registrarFalha("pacientes: cadastrar", error);
     return {
-      erros: mensagemDoBanco(
-        error?.code,
-        "Não foi possível salvar o cadastro. Tente de novo.",
-      ),
-      valores: Object.fromEntries(
-        [...dados.entries()].filter(([, v]) => typeof v === "string"),
-      ) as Record<string, string>,
+      erros: errosDoBanco(error, "Não foi possível salvar o cadastro. Tente de novo."),
+      valores: valoresDigitados(dados),
     };
   }
 
@@ -127,28 +118,31 @@ export async function atualizarPaciente(
   const usuario = await usuarioAtual();
   if (!usuario) return { erros: { geral: "Sessão expirada. Entre novamente." } };
 
-  const id = texto(dados, "id").slice(0, 36);
-  if (!id) return { erros: { geral: "Paciente não identificada." } };
+  const id = campoTexto(dados, "id", 36);
+  if (!uuidValido(id)) return { erros: { geral: "Paciente não identificada." } };
 
   const resultado = validar(dados);
   if ("erros" in resultado) return resultado;
 
   const supabase = await clienteServidor();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("pacientes")
     .update(resultado.campos)
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
+    if (error.code !== "23505") registrarFalha("pacientes: atualizar", error);
     return {
-      erros: mensagemDoBanco(
-        error.code,
-        "Não foi possível salvar as alterações. Tente de novo.",
-      ),
-      valores: Object.fromEntries(
-        [...dados.entries()].filter(([, v]) => typeof v === "string"),
-      ) as Record<string, string>,
+      erros: errosDoBanco(error, "Não foi possível salvar as alterações. Tente de novo."),
+      valores: valoresDigitados(dados),
     };
+  }
+
+  // Ficha inexistente e ficha sem permissão dão a mesma resposta (§8.1).
+  if (!data) {
+    return { erros: { geral: "Paciente não encontrada." }, valores: valoresDigitados(dados) };
   }
 
   revalidatePath("/pacientes");
@@ -160,23 +154,38 @@ export async function atualizarPaciente(
 /**
  * Arquiva ou reativa.
  *
- * Não existe apagar: a paciente tem atendimento, recebimento e — mais adiante —
- * documento assinado apontando para ela. O banco recusaria a exclusão
- * (`on delete restrict`), e apagar histórico clínico não é o que a clínica
- * quer. Arquivar tira da lista e preserva tudo.
+ * Não existe apagar: a paciente tem atendimento, recebimento e documento
+ * assinado apontando para ela, e a 0019 tirou o DELETE do banco. Arquivar tira
+ * da lista e preserva tudo.
  */
-export async function alternarArquivamento(dados: FormData): Promise<void> {
+export async function alternarArquivamento(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
   const usuario = await usuarioAtual();
-  if (!usuario) redirect("/entrar");
+  if (!usuario) return falha("Sessão expirada. Entre novamente.");
 
-  const id = texto(dados, "id").slice(0, 36);
+  const id = campoTexto(dados, "id", 36);
   const arquivar = dados.get("arquivar") === "sim";
-  if (!id) return;
+  if (!uuidValido(id)) return falha("Paciente não identificada.");
 
   const supabase = await clienteServidor();
-  await supabase.from("pacientes").update({ ativo: !arquivar }).eq("id", id);
+  const { data, error } = await supabase
+    .from("pacientes")
+    .update({ ativo: !arquivar })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    registrarFalha("pacientes: arquivar", error);
+    return falha(mensagemDoBanco(error, "Não foi possível alterar o cadastro. Tente de novo."));
+  }
+  if (!data) return falha("Paciente não encontrada.");
 
   revalidatePath("/pacientes");
   revalidatePath(`/pacientes/${id}`);
+  revalidatePath("/relacionamento");
   revalidatePath("/");
+  return sucesso(arquivar ? "Paciente arquivada." : "Paciente reativada.");
 }

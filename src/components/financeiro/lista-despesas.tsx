@@ -9,6 +9,7 @@ import { ROTULO_CATEGORIA } from "@/lib/despesa";
 import { descreverPrazo, formatarData, formatarMoeda } from "@/lib/format";
 import { ROTULO_FORMA } from "@/lib/venda";
 import { mudarSituacaoDespesa } from "@/server/acoes/despesas";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import type { Despesa } from "@/server/consultas/despesas";
 
 export function ListaDespesas({
@@ -89,29 +90,36 @@ export function ListaDespesas({
               </Link>
 
               {despesa.situacao === "pendente" ? (
-                <form action={mudarSituacaoDespesa}>
-                  <input type="hidden" name="id" value={despesa.id} />
-                  <input type="hidden" name="acao" value="cancelar" />
-                  <button
-                    type="submit"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] px-3 text-xs font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-negativo"
+                <FormularioDeAcao
+                  acao={mudarSituacaoDespesa}
+                  campos={{ id: despesa.id, acao: "cancelar" }}
+                  confirmacao={`Cancelar a despesa "${despesa.descricao}"? Ela sai do que falta pagar e pode ser reaberta depois.`}
+                  alinhamento="fim"
+                >
+                  <BotaoDeAcao
+                    tom="silencioso"
+                    tamanho="xs"
+                    icone={Ban}
+                    rotuloAcessivel={`Cancelar a despesa ${despesa.descricao}`}
                   >
-                    <Ban aria-hidden="true" size={13} strokeWidth={1.75} />
                     Cancelar
-                  </button>
-                </form>
+                  </BotaoDeAcao>
+                </FormularioDeAcao>
               ) : (
-                <form action={mudarSituacaoDespesa}>
-                  <input type="hidden" name="id" value={despesa.id} />
-                  <input type="hidden" name="acao" value="reabrir" />
-                  <button
-                    type="submit"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] px-3 text-xs font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+                <FormularioDeAcao
+                  acao={mudarSituacaoDespesa}
+                  campos={{ id: despesa.id, acao: "reabrir" }}
+                  alinhamento="fim"
+                >
+                  <BotaoDeAcao
+                    tom="silencioso"
+                    tamanho="xs"
+                    icone={RotateCcw}
+                    rotuloAcessivel={`Reabrir a despesa ${despesa.descricao}`}
                   >
-                    <RotateCcw aria-hidden="true" size={13} strokeWidth={1.75} />
                     Reabrir
-                  </button>
-                </form>
+                  </BotaoDeAcao>
+                </FormularioDeAcao>
               )}
             </div>
           </div>

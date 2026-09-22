@@ -6,6 +6,7 @@ import { ChipRecebimento, MarcaTaxaManual } from "@/components/financeiro/chips"
 import { ConfirmarRecebimento } from "@/components/financeiro/confirmar-recebimento";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { ehFinanceira } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { chaveDoDia, hoje } from "@/lib/dates";
@@ -209,38 +210,31 @@ export default async function PaginaVenda({ params }: Props) {
                       dataPadrao={chaveDoDia(hoje())}
                     />
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <form action={mudarSituacaoRecebimento}>
-                        <input type="hidden" name="recebimento_id" value={recebimento.id} />
-                        <input type="hidden" name="venda_id" value={venda.id} />
-                        <input
-                          type="hidden"
-                          name="para"
-                          value={recebimento.situacao === "previsto" ? "pendente" : "previsto"}
-                        />
-                        <button
-                          type="submit"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] border border-card-border px-3 text-xs font-medium text-on-surface-variant transition-colors hover:border-primary hover:text-primary"
-                        >
-                          <TriangleAlert aria-hidden="true" size={13} strokeWidth={1.75} />
+                    <div className="mt-4 flex flex-wrap items-start gap-2">
+                      <FormularioDeAcao
+                        acao={mudarSituacaoRecebimento}
+                        campos={{
+                          recebimento_id: recebimento.id,
+                          venda_id: venda.id,
+                          para: recebimento.situacao === "previsto" ? "pendente" : "previsto",
+                        }}
+                      >
+                        <BotaoDeAcao tamanho="xs" icone={TriangleAlert}>
                           {recebimento.situacao === "previsto"
                             ? "Marcar como pendente"
                             : "Voltar para previsto"}
-                        </button>
-                      </form>
+                        </BotaoDeAcao>
+                      </FormularioDeAcao>
 
-                      <form action={mudarSituacaoRecebimento}>
-                        <input type="hidden" name="recebimento_id" value={recebimento.id} />
-                        <input type="hidden" name="venda_id" value={venda.id} />
-                        <input type="hidden" name="para" value="cancelado" />
-                        <button
-                          type="submit"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] px-3 text-xs font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-negativo"
-                        >
-                          <Ban aria-hidden="true" size={13} strokeWidth={1.75} />
+                      <FormularioDeAcao
+                        acao={mudarSituacaoRecebimento}
+                        campos={{ recebimento_id: recebimento.id, venda_id: venda.id, para: "cancelado" }}
+                        confirmacao="Cancelar este recebimento? Ele deixa de contar como dinheiro a entrar. A venda continua registrada."
+                      >
+                        <BotaoDeAcao tamanho="xs" tom="silencioso" icone={Ban}>
                           Cancelar recebimento
-                        </button>
-                      </form>
+                        </BotaoDeAcao>
+                      </FormularioDeAcao>
                     </div>
                   </div>
                 ) : null}

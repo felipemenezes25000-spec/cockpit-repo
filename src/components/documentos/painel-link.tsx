@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { CardCorpo } from "@/components/ui/card";
+import { FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { Campo, ENTRADA } from "@/components/ui/field";
 import {
   enderecoWhatsapp,
@@ -113,16 +114,20 @@ export function PainelLink({
     setEndereco(null);
     setLinkId(null);
 
-    const resposta = await criarLinkAssinatura({ documentoId, dias });
+    try {
+      const resposta = await criarLinkAssinatura({ documentoId, dias });
 
-    if (resposta.ok) {
-      setEndereco(resposta.endereco);
-      setLinkId(resposta.linkId);
-    } else {
-      setErro(resposta.erro);
+      if (resposta.ok) {
+        setEndereco(resposta.endereco);
+        setLinkId(resposta.linkId);
+      } else {
+        setErro(resposta.erro);
+      }
+    } catch {
+      setErro("Não foi possível falar com o servidor. Confira a conexão e tente de novo.");
+    } finally {
+      setGerando(false);
     }
-
-    setGerando(false);
   }
 
   async function copiar() {
@@ -145,10 +150,14 @@ export function PainelLink({
    */
   function marcarEnvioWhatsapp() {
     if (!linkId || !numero) return;
-    void registrarCanalDoLink({
+    registrarCanalDoLink({
       linkId,
       documentoId,
       canal: `WhatsApp ${formatarTelefone(pacienteTelefone ?? "")}`,
+    }).catch(() => {
+      // De propósito: perder o rótulo do canal é menos ruim do que atrapalhar
+      // um envio que já começou em outra aba. O link continua valendo.
+      return undefined;
     });
   }
 
@@ -254,11 +263,13 @@ export function PainelLink({
           ) : null}
 
           <div className="mt-3 flex items-center gap-2 border-t border-card-border pt-3">
-            <form action={revogarLinkAssinatura}>
-              <input type="hidden" name="link_id" value={ativo.id} />
-              <input type="hidden" name="documento_id" value={documentoId} />
+            <FormularioDeAcao
+              acao={revogarLinkAssinatura}
+              campos={{ link_id: ativo.id, documento_id: documentoId }}
+              confirmacao="Revogar este link? Quem o tiver não consegue mais abrir o documento. Dá para gerar outro depois."
+            >
               <Revogar />
-            </form>
+            </FormularioDeAcao>
             <span className="text-xs text-outline-variant">
               O endereço não pode ser mostrado de novo — só substituído.
             </span>

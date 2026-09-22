@@ -1,5 +1,7 @@
 import "server-only";
 
+import { falhaDeConsulta } from "@/lib/registro";
+
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco } from "@/lib/dates";
@@ -44,7 +46,7 @@ export const listarVendas = cache(
       .order("data_venda", { ascending: false })
       .order("criado_em", { ascending: false });
 
-    if (error) throw new Error(`Não foi possível carregar as vendas: ${error.message}`);
+    if (error) falhaDeConsulta("consulta vendas", error, "Não foi possível carregar as vendas.");
 
     return (data ?? []).map((v) => {
       // O recebimento vivo da venda: o primeiro não cancelado.
@@ -246,7 +248,7 @@ export const taxasParaVenda = cache(async (): Promise<TaxaParaVenda[]> => {
     .order("tipo")
     .order("parcelas");
 
-  if (error) throw new Error(`Não foi possível carregar as taxas: ${error.message}`);
+  if (error) falhaDeConsulta("consulta vendas", error, "Não foi possível carregar as taxas.");
 
   return (data ?? []).map((t) => ({
     id: t.id,

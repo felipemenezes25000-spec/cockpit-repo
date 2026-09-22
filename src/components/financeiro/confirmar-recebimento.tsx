@@ -81,6 +81,7 @@ export function ConfirmarRecebimento({
           id="valor_recebido"
           rotulo="Valor que entrou (R$)"
           obrigatorio
+          erro={erros.valor_recebido}
           dica={`Previsto: ${formatarMoeda(liquidoPrevisto)}.`}
         >
           <input
@@ -88,9 +89,10 @@ export function ConfirmarRecebimento({
             name="valor_recebido"
             type="text"
             inputMode="decimal"
+            autoComplete="off"
             value={valor}
             onChange={(e) => setValor(e.target.value)}
-            className={cn(ENTRADA, "tabular")}
+            className={cn(ENTRADA, "tabular", erros.valor_recebido && ENTRADA_ERRO)}
           />
         </Campo>
       </div>

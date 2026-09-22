@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { falhaDeConsulta } from "./registro";
 import { clienteServidor } from "./supabase/server";
 import type { UsuarioAtual } from "./perfil";
 
@@ -27,11 +28,15 @@ export const usuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
 
   if (!user) return null;
 
-  const { data: perfil } = await supabase
+  const { data: perfil, error } = await supabase
     .from("perfis")
     .select("nome, papel, ativo")
     .eq("id", user.id)
     .maybeSingle();
+
+  // Falha do banco não é "conta não liberada": mandar para /sem-acesso diria
+  // à pessoa que ela perdeu o acesso por um problema que não é dela.
+  if (error) falhaDeConsulta("auth: perfil", error, "Não foi possível carregar o seu perfil.");
 
   if (!perfil || !perfil.ativo) return null;
 
