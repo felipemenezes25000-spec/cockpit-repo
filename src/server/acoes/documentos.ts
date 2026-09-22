@@ -6,10 +6,13 @@ import { redirect } from "next/navigation";
 import { usuarioAtual } from "@/lib/auth";
 import {
   normalizarAssinatura,
+  normalizarCampos,
   normalizarModelo,
   uuidValido,
   validarAssinatura,
+  validarCampos,
   validarModelo,
+  type CampoDoModelo,
   type ErrosAssinatura,
   type ErrosModelo,
   type TipoDocumento,
@@ -84,6 +87,23 @@ async function exigirAcesso(): Promise<{ id: string; administradora: boolean } |
 // Modelos — só a administradora
 // ---------------------------------------------------------------------
 
+/**
+ * As perguntas chegam como JSON num campo escondido: elas são uma lista que o
+ * editor monta no navegador, e `FormData` não tem forma para isso.
+ *
+ * JSON quebrado vira lista vazia em vez de exceção — e aí a validação recusa
+ * com mensagem, que é o que a pessoa consegue entender.
+ */
+function lerCampos(dados: FormData): CampoDoModelo[] {
+  try {
+    const bruto = JSON.parse(String(dados.get("campos") ?? "[]"));
+    if (!Array.isArray(bruto)) return [];
+    return normalizarCampos(bruto as CampoDoModelo[]);
+  } catch {
+    return [];
+  }
+}
+
 function lerModelo(dados: FormData): ValoresModelo {
   return normalizarModelo({
     tipo: texto(dados, "tipo"),
@@ -106,7 +126,15 @@ export async function criarModelo(
   }
 
   const valores = lerModelo(dados);
+  const campos = lerCampos(dados);
   const erros = validarModelo(valores);
+
+  const erroCampos = validarCampos(campos);
+  if (erroCampos) erros.geral = erroCampos;
+  if (valores.tipo === "anamnese" && campos.length === 0) {
+    erros.geral = "Anamnese precisa de pelo menos uma pergunta.";
+  }
+
   if (Object.keys(erros).length > 0) {
     return { erros, valores: valoresDigitados(dados) };
   }
@@ -117,6 +145,7 @@ export async function criarModelo(
     p_nome: valores.nome,
     p_descricao: valores.descricao,
     p_corpo: valores.corpo,
+    p_campos: campos,
   });
 
   if (error || !data) {
@@ -147,7 +176,12 @@ export async function salvarNovaVersaoModelo(
   }
 
   const valores = lerModelo(dados);
+  const campos = lerCampos(dados);
   const erros = validarModelo(valores, { exigirMotivo: true });
+
+  const erroCampos = validarCampos(campos);
+  if (erroCampos) erros.geral = erroCampos;
+
   if (Object.keys(erros).length > 0) {
     return { erros, valores: valoresDigitados(dados) };
   }
@@ -158,6 +192,7 @@ export async function salvarNovaVersaoModelo(
     p_nome: valores.nome,
     p_descricao: valores.descricao,
     p_corpo: valores.corpo,
+    p_campos: campos,
     p_motivo: valores.motivo,
   });
 
@@ -372,4 +407,50 @@ export async function cancelarDocumento(
   revalidatePath("/formularios");
   revalidatePath(`/formularios/${id}`);
   return { erro: null };
+}
+
+// ---------------------------------------------------------------------
+// Anamnese
+// ---------------------------------------------------------------------
+
+export type ResultadoDasRespostas = { ok: boolean; erro: string | null };
+
+/**
+ * Grava as respostas preenchidas na consulta.
+ *
+ * Anamnese não tem passo de confirmação e a resposta pode ser corrigida
+ * quando for preciso — é conteúdo que evolui, ao contrário do contrato. Quem
+ * guarda o histórico de cada mudança é o gatilho de auditoria de
+ * `documento_campos`, não uma trava.
+ */
+export async function responderAnamnese(entrada: {
+  documentoId: string;
+  respostas: Record<string, string | string[] | null>;
+}): Promise<ResultadoDasRespostas> {
+  const quem = await exigirAcesso();
+  if (typeof quem === "string") return { ok: false, erro: quem };
+  if (!quem.administradora) {
+    return { ok: false, erro: "Apenas a administradora preenche anamnese." };
+  }
+
+  const documentoId = String(entrada.documentoId ?? "").slice(0, 36);
+  if (!uuidValido(documentoId)) {
+    return { ok: false, erro: "Documento não identificado." };
+  }
+
+  const supabase = await clienteServidor();
+  const { error } = await supabase.rpc("documento_campos_responder", {
+    p_documento_id: documentoId,
+    p_respostas: entrada.respostas,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      erro: erroDoBanco(error, "Não foi possível salvar as respostas."),
+    };
+  }
+
+  revalidatePath(`/formularios/${documentoId}`);
+  return { ok: true, erro: null };
 }

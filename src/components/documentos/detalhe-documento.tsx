@@ -11,12 +11,13 @@ import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { formatarData, formatarHora } from "@/lib/format";
 import { formatarCpf } from "@/lib/paciente";
-import { hashCurto } from "@/lib/documento";
+import { hashCurto, seAssina, situacaoDaAnamnese, ROTULO_ANAMNESE } from "@/lib/documento";
 import type {
   DocumentoCompleto,
   LinkDeAssinatura,
 } from "@/server/consultas/documentos";
 import { CancelarDocumento } from "./cancelar-documento";
+import { FormularioAnamnese } from "./formulario-anamnese";
 import { MarcaSituacao, MarcaTipo } from "./marca-situacao";
 import { PainelAssinatura } from "./painel-assinatura";
 import { PainelLink } from "./painel-link";
@@ -65,6 +66,8 @@ export function DetalheDocumento({
   links: LinkDeAssinatura[];
 }) {
   const assinatura = documento.assinatura;
+  const anamnese = !seAssina(documento.tipo);
+  const preenchimento = situacaoDaAnamnese(documento.campos);
 
   return (
     <div className="flex flex-col gap-6">
@@ -95,7 +98,7 @@ export function DetalheDocumento({
               descricao={
                 <span className="flex flex-wrap items-center gap-2 pt-1">
                   <MarcaTipo tipo={documento.tipo} />
-                  <MarcaSituacao situacao={documento.situacao} />
+                  <MarcaSituacao situacao={documento.situacao} tipo={documento.tipo} />
                   {documento.exemplo ? (
                     <span className="text-xs text-outline-variant">exemplo</span>
                   ) : null}
@@ -136,13 +139,34 @@ export function DetalheDocumento({
             </CardRodape>
           </Card>
 
+          {/* Anamnese não se assina: ela se preenche, e a resposta pode ser
+              corrigida depois. Conteúdo que evolui, ao contrário do contrato. */}
+          {anamnese ? (
+            <Card>
+              <CardCabecalho
+                titulo="Preencher na consulta"
+                descricao={`${ROTULO_ANAMNESE[preenchimento]} · as respostas podem ser corrigidas quando for preciso.`}
+              />
+              <CardCorpo>
+                <FormularioAnamnese
+                  campos={documento.campos}
+                  destino={{ tipo: "consulta", documentoId: documento.id }}
+                />
+              </CardCorpo>
+            </Card>
+          ) : null}
+
           {/* Dois caminhos, e a ordem na tela diz qual é o principal: o link
               é o fluxo esperado; o balcão serve quando a paciente já está na
               clínica. A prova de cada um é diferente, e cada painel diz a sua. */}
           {documento.situacao === "emitido" ? (
             <Card>
               <CardCabecalho
-                titulo="Enviar para a paciente assinar"
+                titulo={
+                  anamnese
+                    ? "Ou enviar para a paciente preencher"
+                    : "Enviar para a paciente assinar"
+                }
                 descricao="Link com validade, protegido pela data de nascimento dela."
               />
               <PainelLink
@@ -155,7 +179,7 @@ export function DetalheDocumento({
             </Card>
           ) : null}
 
-          {documento.situacao === "emitido" ? (
+          {documento.situacao === "emitido" && !anamnese ? (
             <Card>
               <CardCabecalho
                 titulo="Ou assinar aqui, no balcão"
@@ -290,9 +314,9 @@ export function DetalheDocumento({
                   strokeWidth={1.75}
                   className="mt-0.5 shrink-0 text-primary"
                 />
-                O texto acima é a cópia congelada do que a paciente leu. Alterar o
-                modelo depois não altera este documento — o banco recusa qualquer
-                mudança no corpo.
+                {anamnese
+                  ? "O enunciado e as perguntas são a cópia congelada do que foi perguntado. Corrigir o modelo depois não reescreve esta anamnese — só as respostas mudam."
+                  : "O texto acima é a cópia congelada do que a paciente leu. Alterar o modelo depois não altera este documento — o banco recusa qualquer mudança no corpo."}
               </p>
 
               {documento.situacao === "emitido" ? (

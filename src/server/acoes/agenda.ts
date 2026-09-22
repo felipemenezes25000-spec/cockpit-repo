@@ -228,7 +228,7 @@ export async function atualizarAtendimento(
   paraAgendaDoDia(resultado.campos.inicio);
 }
 
-export type PacienteParaSelecao = { id: string; nome: string; detalhe: string };
+export type PacienteParaSelecao = { id: string; nome: string; detalhe: string; telefone?: string | null };
 
 /**
  * Busca de paciente para o seletor do formulário.
@@ -251,6 +251,7 @@ export async function buscarPacientesParaSelecao(
     nome: p.exibicao,
     detalhe:
       [p.telefone, p.email].filter(Boolean).join(" · ") || "sem contato cadastrado",
+    telefone: p.telefone,
   }));
 }
 

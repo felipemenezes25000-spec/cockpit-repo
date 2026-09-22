@@ -4,8 +4,9 @@ Sistema de gestão da clínica: agenda, pacientes, prontuários, documentos,
 financeiro, relacionamento e indicadores em um só lugar.
 
 Next.js 15 na Vercel, Postgres no Supabase (São Paulo), com autenticação real e
-permissões na RLS do banco. Visão Geral, Pacientes, Agenda e Financeiro estão
-prontos; os demais módulos têm página provisória. O conteúdo em tela vem de
+permissões na RLS do banco. Visão Geral, Pacientes, Agenda, Financeiro,
+Prontuários, Documentos e Relacionamento têm fluxos próprios; Relatórios ainda
+têm página provisória e Configurações é parcial. O conteúdo em tela vem de
 dados de demonstração, marcados como tais no banco.
 
 ## Executar
@@ -39,3 +40,8 @@ Supabase.
 | [`docs/overview-sistema.md`](docs/overview-sistema.md) | Produto: cada módulo em detalhe, decisões de design, o que ainda é provisório |
 | [`supabase/README.md`](supabase/README.md) | Banco: migrações, como aplicar, como criar usuário |
 | [`docs/prompt-onboarding-codex.md`](docs/prompt-onboarding-codex.md) | Prompt pronto para dar a um agente de IA novo antes de ele mexer no projeto |
+
+O funcionamento de **Relacionamento, busca global, recuperação de senha e a
+correção do aviso de hidratação** está nas seções 16 a 19 do
+[`overview-sistema.md`](docs/overview-sistema.md). A configuração do e-mail de
+recuperação no Supabase está em [`supabase/README.md`](supabase/README.md#recuperação-de-senha).

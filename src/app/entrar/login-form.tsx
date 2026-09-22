@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleAlert, LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { entrar, type EstadoLogin } from "./actions";
@@ -62,6 +63,12 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           required
           className="h-11 rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3.5 text-sm text-on-surface outline-none focus-visible:border-primary"
         />
+        <Link
+          href="/recuperar-senha"
+          className="self-end text-sm font-medium text-primary hover:underline"
+        >
+          Esqueci minha senha
+        </Link>
       </div>
 
       {estado.erro ? (

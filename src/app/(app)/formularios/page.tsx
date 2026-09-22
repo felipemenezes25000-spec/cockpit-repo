@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const SITUACOES = ["emitido", "assinado", "cancelado", "substituido"] as const;
-const TIPOS = ["contrato", "termo", "orientacao"] as const;
+const TIPOS = ["contrato", "termo", "orientacao", "anamnese"] as const;
 
 function lerTexto(valor: string | string[] | undefined): string {
   const texto = Array.isArray(valor) ? valor[0] : valor;

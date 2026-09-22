@@ -2,7 +2,10 @@ import "server-only";
 
 import { cache } from "react";
 import type {
+  CampoDoModelo,
+  CampoRespondido,
   SituacaoDocumento,
+  TipoCampo,
   TipoDocumento,
 } from "@/lib/documento";
 import { nomeExibido } from "@/lib/paciente";
@@ -38,6 +41,37 @@ function aoFalhar(
   throw new Error(`Não foi possível carregar ${assunto}.`);
 }
 
+/**
+ * O `jsonb` do banco chega como `Json`, que é "qualquer coisa". Estas duas
+ * funções são a fronteira: depois delas o resto do código trabalha com tipos
+ * do domínio, e nada de `as` espalhado por aí.
+ */
+function listaDeTextos(valor: unknown): string[] {
+  if (!Array.isArray(valor)) return [];
+  return valor.filter((item): item is string => typeof item === "string");
+}
+
+function camposDoModelo(valor: unknown): CampoDoModelo[] {
+  if (!Array.isArray(valor)) return [];
+
+  return valor.flatMap((bruto) => {
+    if (!bruto || typeof bruto !== "object") return [];
+    const campo = bruto as Record<string, unknown>;
+    if (typeof campo.chave !== "string" || typeof campo.rotulo !== "string") return [];
+
+    return [
+      {
+        chave: campo.chave,
+        rotulo: campo.rotulo,
+        tipo: String(campo.tipo ?? "texto") as TipoCampo,
+        obrigatorio: campo.obrigatorio === true,
+        ajuda: typeof campo.ajuda === "string" ? campo.ajuda : "",
+        opcoes: listaDeTextos(campo.opcoes),
+      },
+    ];
+  });
+}
+
 function termoSeguro(bruto: string): string {
   return bruto
     .trim()
@@ -55,6 +89,7 @@ export type VersaoDoModelo = {
   id: number;
   numero: number;
   corpo: string;
+  campos: CampoDoModelo[];
   motivo: string;
   criadoEm: Date;
   criadoPor: string | null;
@@ -94,6 +129,7 @@ export type ModeloParaEmissao = {
   descricao: string;
   versao: number;
   corpo: string;
+  campos: CampoDoModelo[];
 };
 
 export const listarModelos = cache(
@@ -173,7 +209,7 @@ export const modeloPorId = cache(
 
     const { data: versoes, error: erroVersoes } = await supabase
       .from("modelo_documento_versoes")
-      .select("id, versao, corpo, motivo, criado_em, perfis ( nome )")
+      .select("id, versao, corpo, campos, motivo, criado_em, perfis ( nome )")
       .eq("modelo_id", id)
       .order("versao", { ascending: false });
 
@@ -183,6 +219,7 @@ export const modeloPorId = cache(
       id: versao.id,
       numero: versao.versao,
       corpo: versao.corpo,
+      campos: camposDoModelo(versao.campos),
       motivo: versao.motivo,
       criadoEm: new Date(versao.criado_em),
       criadoPor: versao.perfis?.nome ?? null,
@@ -228,7 +265,7 @@ export const modelosParaEmissao = cache(
 
     const { data: versoes, error: erroVersoes } = await supabase
       .from("modelo_documento_versoes")
-      .select("modelo_id, versao, corpo")
+      .select("modelo_id, versao, corpo, campos")
       .in(
         "modelo_id",
         modelos.map((modelo) => modelo.id),
@@ -237,10 +274,17 @@ export const modelosParaEmissao = cache(
 
     if (erroVersoes) aoFalhar(erroVersoes, "o texto dos modelos");
 
-    const vigente = new Map<string, { versao: number; corpo: string }>();
+    const vigente = new Map<
+      string,
+      { versao: number; corpo: string; campos: CampoDoModelo[] }
+    >();
     for (const versao of versoes ?? []) {
       if (!vigente.has(versao.modelo_id)) {
-        vigente.set(versao.modelo_id, { versao: versao.versao, corpo: versao.corpo });
+        vigente.set(versao.modelo_id, {
+          versao: versao.versao,
+          corpo: versao.corpo,
+          campos: camposDoModelo(versao.campos),
+        });
       }
     }
 
@@ -258,6 +302,7 @@ export const modelosParaEmissao = cache(
           descricao: modelo.descricao,
           versao: atual.versao,
           corpo: atual.corpo,
+          campos: atual.campos,
         },
       ];
     });
@@ -324,6 +369,8 @@ export type DocumentoCompleto = {
   emitidoPor: string | null;
   exemplo: boolean;
   assinatura: AssinaturaDoDocumento | null;
+  /** Vazio em tudo que não é anamnese. */
+  campos: CampoRespondido[];
 };
 
 export const listarDocumentos = cache(
@@ -443,6 +490,17 @@ export const documentoPorId = cache(
 
     const assinatura = data.documento_assinaturas;
 
+    // As respostas vêm em consulta separada: `documento_campos` pode ter
+    // dezenas de linhas e embutir isso na consulta principal faria o
+    // PostgREST montar o documento inteiro de novo para cada pergunta.
+    const { data: campos, error: erroCampos } = await supabase
+      .from("documento_campos")
+      .select("chave, rotulo, tipo, obrigatorio, ajuda, opcoes, resposta, respostas")
+      .eq("documento_id", id)
+      .order("ordem", { ascending: true });
+
+    if (erroCampos) aoFalhar(erroCampos, "as perguntas do documento");
+
     return {
       id: data.id,
       tipo: data.tipo,
@@ -480,6 +538,16 @@ export const documentoPorId = cache(
             urlComprovante: assinatura.url_comprovante,
           }
         : null,
+      campos: (campos ?? []).map((campo) => ({
+        chave: campo.chave,
+        rotulo: campo.rotulo,
+        tipo: campo.tipo as TipoCampo,
+        obrigatorio: campo.obrigatorio,
+        ajuda: campo.ajuda,
+        opcoes: listaDeTextos(campo.opcoes),
+        resposta: campo.resposta,
+        respostas: campo.respostas,
+      })),
     };
   },
 );

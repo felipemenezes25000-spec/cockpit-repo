@@ -1,12 +1,18 @@
 "use client";
 
 import { CircleAlert, LoaderCircle, Save } from "lucide-react";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
-import { LIMITE, ROTULO_TIPO, TIPOS_EM_USO } from "@/lib/documento";
+import {
+  LIMITE,
+  ROTULO_TIPO,
+  TIPOS_EM_USO,
+  type TipoDocumento,
+} from "@/lib/documento";
+import { EditorDeCampos } from "./editor-campos";
 import { formatarData, formatarHora } from "@/lib/format";
 import {
   criarModelo,
@@ -58,6 +64,12 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
   const valor = (campo: string, padrao: string) =>
     estado.valores?.[campo] ?? padrao;
 
+  // O tipo escolhido decide se as perguntas são obrigatórias. Na edição ele
+  // não muda, então vem direto do modelo.
+  const [tipo, setTipo] = useState<TipoDocumento>(
+    modelo?.tipo ?? ((valor("tipo", "contrato") as TipoDocumento) || "contrato"),
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <form action={enviar} className="flex flex-col gap-6">
@@ -69,7 +81,7 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
             descricao={
               edicao
                 ? "A versão anterior fica guardada. Documentos já emitidos não mudam."
-                : "O texto-base que cada documento vai congelar na emissão."
+                : "O texto-base e as perguntas que cada documento vai congelar na emissão."
             }
           />
 
@@ -90,7 +102,10 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
                 <select
                   id="tipo"
                   name="tipo"
-                  defaultValue={valor("tipo", "contrato")}
+                  value={tipo}
+                  onChange={(evento) =>
+                    setTipo(evento.target.value as TipoDocumento)
+                  }
                   required
                   className={cn(ENTRADA, estado.erros.tipo && ENTRADA_ERRO)}
                 >
@@ -153,6 +168,20 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
                 )}
               />
             </Campo>
+
+            <div className="border-t border-card-border pt-5">
+              {/* As perguntas versionam junto com o texto: uma versão do
+                  modelo é enunciado e perguntas, e separá-los permitiria as
+                  duas coisas divergirem entre si. */}
+              <EditorDeCampos
+                // A `key` força o editor a renascer quando o tipo muda na
+                // criação — senão ele manteria perguntas de um contrato ao
+                // virar anamnese, e vice-versa.
+                key={modelo?.id ?? tipo}
+                iniciais={modelo?.versaoAtual?.campos ?? []}
+                obrigatorio={tipo === "anamnese"}
+              />
+            </div>
 
             {edicao ? (
               <Campo

@@ -1,7 +1,7 @@
 # Cockpit — Consultório Dra. Érika Passos
 
 Documento de referência do sistema. Registra o propósito, o que já existe e o que
-ainda é provisório. Atualizado em **agosto de 2026**.
+ainda é provisório. Atualizado em **setembro de 2026**.
 
 > O conteúdo exibido hoje vem de dados de demonstração, marcados como tais no
 > banco. Nenhum dado real da clínica foi utilizado.
@@ -55,7 +55,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 | Prontuários | `/prontuarios` | Registro clínico versionado e fotos de evolução, restritos à administradora |
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
 | Documentos e Contratos | `/formularios` | Contratos, termos e orientações emitidos e assinados pelas pacientes |
-| Relacionamento | `/relacionamento` | Confirmações, retornos, aniversários e pesquisas |
+| Relacionamento | `/relacionamento` | Confirmações, retornos, tarefas, aniversários e convites para avaliação no Google |
 | Relatórios | `/relatorios` | Indicadores de atendimento e faturamento |
 | Configurações | `/configuracoes` | Clínica, equipe, procedimentos e preferências |
 
@@ -69,9 +69,9 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 - Menu lateral com os nove módulos, indicação da página atual (cor de fundo, cor do
   texto, barra à esquerda e `aria-current`), recolhimento para faixa de ícones no
   computador e gaveta sobreposta no celular e no tablet.
-- Cabeçalho com título da página, data de hoje por extenso, campo de busca apenas
-  visual, ícone de notificações com a contagem de pendências de prioridade alta e
-  menu de perfil do usuário demonstrativo.
+- Cabeçalho com título da página, data de hoje por extenso, busca global para
+  pacientes, atendimentos, documentos e prontuários conforme o perfil, ícone de
+  notificações com a contagem de pendências de prioridade alta e menu do usuário.
 - Faixa de contexto no topo de cada tela, com o aviso permanente **"Ambiente de
   demonstração — dados fictícios"** à esquerda e a etapa atual à direita.
 - Atalho "Ir para o conteúdo" para navegação por teclado e página de rota inexistente.
@@ -110,15 +110,13 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 
 ### Páginas provisórias
 
-As rotas de módulo ainda sem implementação existem e são acessíveis. Cada uma
-mostra o nome do módulo, sua finalidade, a lista do que vai trazer nas próximas
-etapas, o aviso de que está em construção e um botão de volta para a Visão Geral.
+Relatórios ainda têm uma rota acessível que descreve o planejado, avisa que
+está em construção e oferece um botão de volta para a Visão Geral.
 
 ### Base técnica
 
 - Next.js 15 com App Router, TypeScript em modo estrito e Tailwind CSS v4.
-- `lucide-react` como única dependência além do próprio framework, para manter os
-  ícones consistentes.
+- `lucide-react` para manter os ícones consistentes.
 - Tipografia Hanken Grotesk, carregada por `next/font` — sem requisição a serviço
   externo em tempo de execução.
 - Cores, raios e sombras definidos como tokens em `src/app/globals.css`.
@@ -209,13 +207,10 @@ próprio e preenchimento.
 | Item | Situação |
 |---|---|
 | Dados de demonstração | Marcados com a coluna `exemplo` no banco. `npm run dados:limpar` remove, e o aviso na tela some junto. |
-| Busca global no cabeçalho | Apenas visual, marcada como indisponível. A busca dos módulos Pacientes e Prontuários funciona. |
 | Ícone de notificações | Mostra a contagem de pendências altas, mas não abre nada. |
 | Menu de perfil | Opções visíveis e desabilitadas, com a razão no `title`. |
 | Botões "Resolver" das pendências | Navegam para o módulo correspondente; não resolvem nada. |
-| Botão "Enviar mensagem" dos aniversariantes | Visivelmente indisponível. |
-| Ações rápidas | Nova paciente, novo agendamento, prontuário e venda abrem fluxo real; criar tarefa ainda para em Relacionamento. |
-| Páginas de módulo restantes | Relacionamento e Relatórios só descrevem o que virá. Configurações ainda é parcial. |
+| Páginas de módulo restantes | Relatórios ainda descreve o que virá. Configurações segue parcial. |
 | Períodos de retorno | Demonstrativos. Não são recomendação clínica. |
 | Números financeiros | Identificados como demonstrativos na própria tela. |
 
@@ -223,8 +218,8 @@ próprio e preenchimento.
 
 ## 6. O que não faz parte desta etapa
 
-Assinatura de termos · integração com Google Calendar ·
-integração com WhatsApp · envio de e-mails · emissão de nota fiscal ·
+Provedor externo de assinatura · integração com Google Calendar ·
+envio automático pelo WhatsApp ou de campanhas por e-mail · emissão de nota fiscal ·
 processamento de pagamentos · regras de lucro ou saldo · automações ·
 inteligência artificial · dados reais.
 
@@ -266,21 +261,26 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 src/
   middleware.ts           renova a sessão e barra rota protegida
   app/
-    layout.tsx            fontes e idioma
+    layout.tsx            fontes, idioma e aviso de hidratação no html
     globals.css           tokens de cor, tipografia, raio e sombra
     entrar/               login: página, formulário e ação
+    recuperar-senha/      solicitação do link de recuperação
+    redefinir-senha/      nova senha após validação do link
     sem-acesso/           conta existe mas não foi liberada
     (app)/
       layout.tsx          estrutura principal, exige sessão válida
       page.tsx            Visão Geral
       pacientes/          lista, cadastro, ficha, edição e importação
-      agenda/ …           sete páginas provisórias
+      agenda/             marcação, remarcação e situações
+      busca/              busca global conforme o perfil
+      relacionamento/     confirmações, retornos, tarefas e convites
   components/
     layout/               estrutura, menu, cabeçalho, perfil, selo, placeholder
     ui/                   cartão, botão, campo, situação, prioridade, lista, avatar, vazio
     overview/             indicadores, Linha do Dia, pendências, retornos, financeiro,
                           gráfico, aniversariantes, ações rápidas
     pacientes/            busca, lista, paginação, formulário, ficha, importador
+    relacionamento/       botões de situação e preparo dos convites
   server/
     consultas/            leitura do banco — `server-only`, uma função por assunto
     acoes/                escrita no banco — `"use server"`, validação de verdade
@@ -292,6 +292,8 @@ src/
     paciente.ts           regras do cadastro: CPF, telefone, endereço, validação
     csv.ts                leitor de CSV: separador, aspas, BOM, Latin-1
     importacao.ts         planilha → linhas validadas, sem gravar nada
+    busca.ts              higienização do termo e interpretação de datas
+    relacionamento.ts     validação de tarefas/retornos e mensagem de convite
     nav.ts                fonte única do menu
 supabase/
   migrations/             estrutura do banco, versionada
@@ -676,6 +678,7 @@ entregues às pacientes. A rota principal é `/formularios`; os modelos ficam em
 | `modelo_documento_versoes` | Versões imutáveis do texto do modelo, com autor, data e motivo. |
 | `documentos` | Documento emitido para uma paciente, com o **texto congelado** no momento da emissão e o hash desse texto. |
 | `documento_assinaturas` | Evidência da assinatura: quem assinou, data e hora, IP, dispositivo, como a identidade foi conferida e o hash do que foi assinado. |
+| `documento_campos` | Respostas da anamnese, com a pergunta congelada em cada linha. |
 
 ### Na tela
 
@@ -689,6 +692,45 @@ entregues às pacientes. A rota principal é `/formularios`; os modelos ficam em
 - **Cancelar** — para documento emitido por engano, com motivo. Assinado não
   cancela: emite-se um novo corrigindo, e o antigo fica marcado como
   substituído.
+
+### Anamnese
+
+A anamnese é um documento como os outros, com uma diferença de natureza:
+**ela não se assina, ela se preenche** — e a resposta pode ser corrigida
+sempre que for preciso. Contrato é um acordo que congela; anamnese é ficha
+clínica, que acompanha a paciente.
+
+O modelo define as perguntas, e cada pergunta tem um tipo:
+
+| Tipo | Para quê |
+|---|---|
+| Texto curto | Nome de medicamento, profissão |
+| Texto longo | "Descreva sua rotina de cuidados" |
+| Sim ou não | "Faz uso de anticoncepcional?" |
+| Escolha uma opção | Tipo de pele, frequência |
+| Escolha várias opções | "Marque o que já fez": botox, preenchimento, peeling |
+| Data | Última menstruação, data de uma cirurgia |
+| Número | Peso, altura, há quantos anos |
+
+Cada pergunta pode ser marcada como obrigatória e ganhar um texto de apoio.
+
+**Dois caminhos para preencher**, e os dois gravam no mesmo lugar:
+
+- **Na consulta** — a administradora abre a anamnese e preenche com a paciente
+  ao lado.
+- **Pelo link** — a paciente recebe o mesmo tipo de link dos contratos,
+  confirma a data de nascimento e responde de casa, antes de vir. Pode salvar
+  pela metade e voltar para completar enquanto o link valer.
+
+Salvar não exige ter respondido tudo: anamnese se preenche aos poucos, e
+guardar metade é melhor do que perder tudo porque falta uma resposta. A tela
+mostra quantas foram respondidas e quantas obrigatórias faltam.
+
+**A pergunta congela; a resposta, não.** Se o modelo mudar depois, a anamnese
+já emitida continua mostrando exatamente o que foi perguntado — senão a
+resposta passaria a responder outra coisa. E cada mudança de resposta fica na
+auditoria, com autor, data e valor anterior: "ela declarou que não tinha
+alergia" continua tendo prova.
 
 ### Congelar o texto é o ponto central
 
@@ -773,8 +815,9 @@ que funciona em qualquer aparelho. O que sai no papel é só o documento e o blo
 da assinatura; cabeçalho, botões e avisos ficam de fora.
 
 **A paciente não faz login em nada** e não cria conta. A página de assinatura é
-a única do sistema que abre sem senha, e o que ela mostra depende inteiramente
-do link e da data de nascimento.
+a única rota pública que serve conteúdo de paciente; o que ela mostra depende
+inteiramente do link e da data de nascimento. As outras rotas públicas de
+recuperação de senha atendem apenas aos usuários internos da clínica.
 
 ### Quem pode o quê
 
@@ -783,11 +826,89 @@ do link e da data de nascimento.
 | Criar, versionar e aposentar modelos | Só a administradora |
 | Consultar modelos | Todos os perfis |
 | Emitir, assinar e cancelar contrato, termo e orientação | Todos os perfis |
-| Anamnese | Só a administradora, como o prontuário |
+| Anamnese — emitir, preencher e corrigir | Só a administradora, como o prontuário |
 
 ### O que ainda não existe
 
-- **Anamnese com campos de formulário.** O tipo já é reconhecido e tratado como
-  conteúdo clínico, mas a tabela de respostas e o construtor de formulário ficam
-  para a próxima leva.
 - **PDF montado pelo sistema.** Hoje o arquivo sai pela impressão do navegador, que basta para a via da paciente. Um PDF com cabeçalho fixo e paginação própria fica para quando houver necessidade.
+
+## 16. Relacionamento
+
+A rota `/relacionamento` reúne a fila de acompanhamento e cinco frentes de
+trabalho: confirmações de consultas nos próximos 15 dias, retornos, tarefas,
+aniversários e convites para avaliação no Google. Confirmações atualizam a
+situação da agenda; retornos usam a data combinada pela equipe; tarefas podem
+ser criadas, concluídas, canceladas e reabertas. Nenhuma data de retorno é
+calculada como recomendação clínica.
+
+O convite de avaliação usa o [link direto da clínica no Google](https://g.page/r/CYXDzsOMXUv5ECE/review).
+A lista traz pacientes ativas com atendimento concluído recente e a equipe
+também pode buscar outra paciente ativa. Ela abre o WhatsApp com o texto pronto
+ou copia a mensagem e a envia pelo canal adequado.
+Depois marca o envio; o sistema grava paciente, responsável e hora em uma
+pendência concluída e evita outro registro do mesmo contato para a mesma
+paciente no dia. O mesmo fluxo vale para a mensagem de aniversário. Não há
+envio automático nem leitura das avaliações recebidas no Google. O registro
+representa a confirmação da equipe, não uma prova de entrega ou de avaliação.
+
+As tarefas são criadas em `/relacionamento/tarefas/nova`, com tipo, prioridade,
+descrição, paciente e prazo opcionais. Os retornos são criados em
+`/relacionamento/retornos/novo`, sempre com paciente e data escolhida pela
+equipe. Os botões de situação verificam sessão e dados no servidor antes de
+escrever. A agenda registra a trilha da confirmação pelo gatilho já existente.
+
+O módulo usa as tabelas `atendimentos`, `retornos` e `pendencias`, sem migração
+nova. Como `pendencias` ainda permite exclusão pela RLS, o registro de contato
+não deve ser tratado como uma trilha imutável de auditoria.
+
+## 17. Busca global
+
+O campo do cabeçalho envia um formulário GET para `/busca?q=...`, sem depender
+de JavaScript; no celular há um atalho para a mesma página. A pesquisa exige
+pelo menos dois caracteres, corta o termo em 80 e higieniza caracteres que
+alterariam a gramática dos filtros do PostgREST. A página mantém o termo na URL
+e reúne resultados por categoria:
+pacientes (incluindo arquivadas), atendimentos, documentos e, apenas para a
+administradora, prontuários. A consulta usa a sessão atual e a RLS de cada
+tabela; não inclui conteúdo clínico nem indicadores financeiros.
+
+Atendimentos podem ser encontrados pelo nome ou contato da paciente, pelo
+procedimento ou por uma data em `dd/mm/aaaa` ou `aaaa-mm-dd`. O resultado abre
+o cartão correspondente na Agenda. A prévia limita-se a oito atendimentos;
+quando houver mais, a equipe refina o termo. Pacientes, documentos e
+prontuários têm links para as respectivas listagens com a mesma busca.
+Não houve migração: a busca lê as tabelas e respeita as permissões existentes.
+
+## 18. Recuperação de senha
+
+O link **“Esqueci minha senha”** no login abre `/recuperar-senha`. A pessoa
+informa o e-mail; o navegador pede ao Supabase Auth um link que retorna a
+`/redefinir-senha`. Após um pedido aceito, a resposta da tela é igual para
+e-mail cadastrado ou desconhecido, para não revelar quem tem acesso ao sistema.
+Erros de limite de tentativas e de conexão recebem mensagens próprias.
+
+A página de nova senha valida o link de recuperação pelo `token_hash` ou pelo
+evento `PASSWORD_RECOVERY` do fluxo PKCE. Retira o token da barra de endereços,
+guarda na aba uma marca de 15 minutos vinculada ao usuário e mostra o formulário
+somente após essa validação. Link inválido ou vencido leva a pedir outro. A
+senha precisa ter pelo menos 12 caracteres e coincidir com a confirmação.
+Depois de `updateUser()`, o cliente encerra a sessão local e volta ao login com
+o aviso de sucesso. Uma sessão comum, sem o fluxo de recuperação, não abre o
+formulário de troca.
+
+As duas rotas são públicas no middleware e só usam o Supabase Auth; não houve
+migração. Para operar fora do ambiente local, ainda é preciso cadastrar a URL
+exata de retorno e configurar SMTP no projeto Supabase. O modelo de e-mail, o
+redirecionamento e os limites do SMTP padrão estão em
+[`supabase/README.md`](../supabase/README.md#recuperação-de-senha).
+
+## 19. Aviso de hidratação causado por extensão
+
+O aviso observado na rota de Relacionamento apontava para o `<html>`: uma
+extensão do navegador havia inserido o atributo
+`data-gitmind-ai-assistant-color-mode="light"` antes de o React hidratar a
+página. O layout raiz passou a usar `suppressHydrationWarning` nesse elemento.
+Isso silencia a divergência de atributos no `<html>`; não alcança componentes
+internos nem substitui a correção de uma diferença real entre HTML do servidor
+e do cliente. Se surgir um aviso em outro nó, confira esse nó e os valores que
+o geraram.

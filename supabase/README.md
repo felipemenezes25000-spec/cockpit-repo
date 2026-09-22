@@ -24,6 +24,8 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0014_assinatura_por_link.sql` | Assinatura à distância. `documento_links` guarda o **hash** do token, nunca o token. Abre a **primeira superfície anônima** do projeto: três funções `security definer` executáveis por `anon` (`documento_link_estado`, `documento_para_assinatura`, `documento_assinar_por_link`) — nenhuma tabela. Segundo fator: data de nascimento, com o link se fechando em 10 erros. |
 | `0015_canal_do_link.sql` | `grant update (canal_envio)` — grant de **coluna**, para a equipe registrar por onde o link foi enviado no clique do envio. `token_hash`, `expira_em` e `revogado_em` seguem sem UPDATE. |
 | `0016_via_da_paciente.sql` | Assinar deixa de revogar o link, e `documento_para_assinatura` passa a devolver o texto e os dados da assinatura quando `ja_assinado`. É por aí que a paciente salva a via dela. |
+| `0017_anamnese.sql` | Anamnese com campos de formulário. Perguntas em `modelo_documento_versoes.campos` (versionam com o texto), respostas em `documento_campos` com a pergunta congelada em cada linha. `documento_responder_por_link` é a quarta função alcançável por `anon` — e continua sendo só função, nenhuma tabela. |
+| `0018_emissao_grava_perguntas.sql` | Corrige a 0017: `documento_emitir` é invoker e esbarrava na RLS de `documento_campos`, que não tem política de INSERT. As perguntas passam a entrar só por `private.documento_campos_criar` (definer), que copia da versão do modelo do próprio documento, uma vez. |
 
 ## Projeto
 
@@ -116,6 +118,38 @@ Precisa ficar **desligado**: Authentication → Sign In / Providers → Email �
 
 Mesmo desligado, o banco não depende disso — a migração 0004 garante que uma
 conta criada de qualquer forma nasça inativa e sem privilégio.
+
+## Recuperação de senha
+
+O app usa `/recuperar-senha` para pedir o e-mail e `/redefinir-senha` para
+definir a senha. A URL local `http://localhost:3000/redefinir-senha` está na
+lista de redirecionamentos do Supabase Auth. Antes de publicar a função, adicione
+também a URL exata da implantação em **Authentication → URL Configuration** e
+configure **Authentication → Emails → SMTP Settings** com um serviço de envio.
+O SMTP padrão do Supabase não entrega a usuários fora da equipe do projeto.
+
+Com SMTP próprio, ajuste o modelo **Reset password** para que o link aponte
+diretamente à página do app e funcione mesmo quando o e-mail for aberto em outro
+aparelho:
+
+```html
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery">Redefinir minha senha</a>
+```
+
+`resetPasswordForEmail()` sempre fornece `redirectTo`; a página valida o hash
+com `verifyOtp({ type: "recovery" })`. O modelo padrão também é aceito pelo
+cliente no navegador, desde que o link seja aberto no mesmo navegador que
+solicitou a recuperação (fluxo PKCE). Depois de alterar a senha, a sessão é
+encerrada e a pessoa volta ao login. Nenhuma migração SQL é necessária.
+
+A confirmação de solicitação não informa se o e-mail pertence a uma conta.
+`/redefinir-senha` só exibe o formulário depois do link validado; mantém uma
+marca temporária de 15 minutos, vinculada ao usuário, no `sessionStorage` da aba
+e exige uma nova senha de pelo menos 12 caracteres. Link inválido ou expirado
+exige uma nova solicitação. A marca é uma proteção da interface para não usar
+essa página como troca de senha de uma sessão comum; ela não é uma autorização
+de servidor. `updateUser()` altera a senha do usuário autenticado na sessão do
+Supabase Auth, criada pelo link de recuperação nesse fluxo.
 
 ## Validação executada
 

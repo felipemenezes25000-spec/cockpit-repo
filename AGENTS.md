@@ -38,7 +38,7 @@ Hoje o sistema roda com **dados de demonstração** marcados no banco pela colun
 permanente de aviso. `npm run dados:limpar` apaga só o que foi semeado e o aviso
 some sozinho.
 
-### Estado atual (agosto de 2026)
+### Estado atual (setembro de 2026)
 
 | Módulo | Rota | Situação |
 |---|---|---|
@@ -48,8 +48,9 @@ some sozinho.
 | Financeiro | `/financeiro` | **Pronto** — vendas, recebimentos, despesas, taxas, movimentações, fluxo |
 | Configurações | `/configuracoes` | **Parcial** — só a tabela de procedimentos |
 | Prontuários | `/prontuarios` | **Pronto** — registro clínico versionado, restrito à administradora |
-| Documentos e Contratos | `/formularios` | Página provisória — modelo já desenhado (seção 8.7) |
-| Relacionamento | `/relacionamento` | Página provisória |
+| Documentos e Contratos | `/formularios` | Fluxos implementados — modelos, emissão, assinatura e anamnese; dependem das migrações versionadas (seção 8.7) |
+| Relacionamento | `/relacionamento` | **Pronto** — confirmações, retornos, tarefas, aniversários e convites para avaliação no Google |
+| Busca global | `/busca` | **Pronta** — pacientes, atendimentos, documentos e prontuários conforme o perfil |
 | Relatórios | `/relatorios` | Página provisória |
 
 Página provisória = existe, é navegável, descreve o que virá e avisa que está em
@@ -228,6 +229,8 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `0014_assinatura_por_link.sql` | Assinatura à distância — e a **primeira superfície anônima** do sistema: três funções que `anon` executa |
 | `0015_canal_do_link.sql` | `grant update` de **coluna** em `canal_envio`: o canal passa a ser gravado no clique do envio, não na criação |
 | `0016_via_da_paciente.sql` | Assinar deixa de revogar o link, e a função pública passa a devolver o texto depois de assinado — a via da paciente |
+| `0017_anamnese.sql` | Anamnese com campos de formulário: perguntas versionadas no modelo, respostas em `documento_campos`, preenchimento na consulta ou pelo link |
+| `0018_emissao_grava_perguntas.sql` | Corrige a 0017: a emissão não conseguia gravar as perguntas (RLS de quem clicou). `private.documento_campos_criar` vira a única porta de entrada delas |
 
 ### Tabelas
 
@@ -256,6 +259,7 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `documentos` | Documento emitido, com o **texto congelado** e o hash dele. Corpo nunca muda — gatilho | Todos os perfis; anamnese só administradora |
 | `documento_assinaturas` | Evidência da assinatura: quem, quando, IP, dispositivo, identidade conferida, hash | Todos inserem; ninguém edita nem apaga |
 | `documento_links` | Links de assinatura à distância. Guarda o **hash** do token, nunca o token | Só as funções da 0014 escrevem |
+| `documento_campos` | Respostas da anamnese, com a pergunta congelada em cada linha. **A pergunta não muda; a resposta, sim** | Administradora edita; ninguém insere nem apaga |
 | `auditoria` | Quem alterou o quê, por gatilho | Só os gatilhos (leitura: administradora) |
 
 Gatilhos de auditoria em: `pacientes`, `atendimentos`, `recebimentos`, `vendas`,
@@ -425,8 +429,19 @@ padrão da casa é traço (`—`) com a razão à vista, como no botão indispon
 
 - [`src/middleware.ts`](src/middleware.ts) → [`src/lib/supabase/middleware.ts`](src/lib/supabase/middleware.ts):
   renova a sessão a cada requisição e redireciona para `/entrar` quem não está
-  autenticado. Rotas públicas: `/entrar` e `/sem-acesso`. Guarda o destino em
-  `?proximo=`.
+  autenticado. Rotas públicas: `/entrar`, `/sem-acesso`, `/assinar`,
+  `/recuperar-senha` e `/redefinir-senha`. Guarda o destino em `?proximo=`.
+- Recuperação de senha: `/recuperar-senha` pede o link com
+  `resetPasswordForEmail()` e confirma o pedido sem revelar se o e-mail existe.
+  `/redefinir-senha` valida o `token_hash` com `verifyOtp({ type: "recovery" })`
+  ou recebe o evento `PASSWORD_RECOVERY` do fluxo PKCE; só então permite
+  `updateUser()`. A página exige senha de pelo menos 12 caracteres e confirmação,
+  guarda por 15 minutos uma marca de recuperação vinculada ao usuário na sessão
+  da aba, remove o token da URL e encerra a sessão local após a troca. Não é
+  uma rota para alterar a senha de uma sessão comum. O retorno local
+  `http://localhost:3000/redefinir-senha` está cadastrado no Supabase. Para
+  produção, cadastre também a URL exata da implantação e configure SMTP próprio;
+  veja [`supabase/README.md`](supabase/README.md).
 - [`src/app/(app)/layout.tsx`](src/app/(app)/layout.tsx): trata o caso de ter
   sessão válida mas **perfil desativado** → `/sem-acesso`.
 - **Sempre `getUser()`, nunca `getSession()`.** `getUser` valida o token no
@@ -442,6 +457,12 @@ padrão da casa é traço (`—`) com a razão à vista, como no botão indispon
 Next.js 15 (App Router) · React 19 · TypeScript estrito · Tailwind CSS v4 ·
 Supabase (`@supabase/ssr`) · `lucide-react` · `server-only`.
 
+O `<html>` do layout raiz usa `suppressHydrationWarning` porque uma extensão
+do navegador acrescentou `data-gitmind-ai-assistant-color-mode` antes da
+hidratação e gerou um aviso de atributo divergente. A supressão vale só para
+esse elemento; se o aviso apontar para outro componente, investigue o conteúdo
+renderizado no servidor e no cliente. Ela não corrige divergências de dados.
+
 Dependências são poucas de propósito. **Antes de adicionar uma, pergunte se dá
 para escrever.** O leitor de CSV foi escrito à mão (203 linhas) porque nenhuma
 biblioteca genérica resolve as três particularidades da planilha brasileira ao
@@ -456,18 +477,20 @@ Alias de import: `@/*` → `./src/*`.
 src/
   middleware.ts           renova a sessão e barra rota protegida
   app/
-    layout.tsx            fontes e idioma
+    layout.tsx            fontes, idioma e supressão do aviso de hidratação no html
     globals.css           TODOS os tokens de cor, tipografia, raio e sombra
     entrar/               login: página, formulário e ação
+    recuperar-senha/      solicitação do link de recuperação
+    redefinir-senha/      validação do link e definição da nova senha
     sem-acesso/           conta existe mas não foi liberada
     (app)/                tudo que exige sessão válida
       layout.tsx          estrutura principal; force-dynamic
       page.tsx            Visão Geral
-      pacientes/  agenda/  financeiro/  configuracoes/  …
+      pacientes/  agenda/  financeiro/  configuracoes/  busca/  relacionamento/  …
   components/
     layout/               estrutura, menu, cabeçalho, perfil, selo
     ui/                   cartão, botão, campo, chip de situação, prioridade, lista, avatar, vazio
-    overview/  pacientes/  agenda/  financeiro/  configuracoes/  prontuarios/
+    overview/  pacientes/  agenda/  financeiro/  configuracoes/  prontuarios/  relacionamento/
   server/
     consultas/            LEITURA do banco — `server-only`, uma função por assunto
     acoes/                ESCRITA no banco — `"use server"`, validação de verdade
@@ -483,6 +506,7 @@ src/
     venda.ts  despesa.ts  paciente.ts  procedimento.ts  atendimento.ts   regras de negócio
     prontuario.ts  prontuario-imagens.ts   regras do registro clínico e das fotos
     csv.ts  importacao.ts leitor de planilha e validação da importação
+    busca.ts  relacionamento.ts   busca segura e validação do acompanhamento
     nav.ts                fonte única do menu + identidade da clínica
 supabase/
   migrations/             estrutura do banco, versionada
@@ -657,6 +681,23 @@ também é português: `formulario-venda.tsx`, `lista-despesas.tsx`. **Siga a
 convenção da pasta em que você está**, não uma regra global.
 
 Valores e datas no padrão brasileiro.
+
+### 7.6 Busca global
+
+O cabeçalho abre `/busca?q=...` por um formulário GET; no celular mostra um
+atalho para a página. A busca começa com dois caracteres e o termo é limitado
+a 80. `lib/busca.ts` remove operadores especiais e normaliza espaços antes de
+montar filtros do PostgREST; uma data é interpretada no fuso da clínica.
+
+Busca pacientes (inclusive arquivadas), atendimentos por paciente,
+procedimento ou data, documentos por título/paciente e prontuários por
+título/paciente **só para a administradora**. Os resultados respeitam a RLS,
+e a página nunca lê conteúdo clínico nem mostra consolidado financeiro. Cada
+categoria oferece links diretos; resultados extensos de pacientes, documentos
+e prontuários levam às listagens filtradas. Atendimentos mostram até oito
+ocorrências recentes e apontam para o cartão do dia na Agenda; se houver mais,
+a tela pede um termo mais específico. O estado fica na URL, e o Enter funciona
+sem JavaScript. Não há mudança de banco.
 
 ---
 
@@ -1091,9 +1132,10 @@ revogado e expirado dão respostas distintas apenas porque nenhuma delas revela
 se o token existe — e só "data incorreta" diz o que houve, porque quem errou a
 própria data precisa corrigir.
 
-**`/assinar/[token]` é a única rota fora de `(app)`** e a única em `PUBLICAS`
-no middleware além de `/entrar` e `/sem-acesso`. Ela não consulta o banco fora
-das três funções.
+**`/assinar/[token]` é a única rota pública que serve conteúdo de paciente.**
+`/recuperar-senha` e `/redefinir-senha` também ficam fora de `(app)`, mas só
+interagem com o Supabase Auth. A assinatura não consulta o banco fora das
+funções próprias do módulo.
 
 #### A via da paciente (migração 0016)
 
@@ -1135,20 +1177,125 @@ Autentique, ZapSign ou Clicksign é implementar um conector, não redesenhar o
 módulo. Por isso `documento_assinaturas` já nasce com `provedor`,
 `referencia_externa` e `url_comprovante`, vazios enquanto for interna.
 
-#### O que esta leva não entrega
+#### Anamnese (migração 0017)
 
-**Anamnese e `documento_campos`.** O valor `anamnese` já existe no enum
-`tipo_documento` — valor novo não pode ser usado na mesma transação em que é
-acrescentado (a lição da 0006), e adiá-lo custaria uma migração só para isso.
-As políticas já o tratam como conteúdo clínico. O que falta é a tabela de
-respostas e o construtor de formulário, que é praticamente um módulo dentro do
-módulo.
+Decidido em 15/09/2026: a anamnese **não tem passo de confirmação** e as
+respostas podem ser corrigidas a qualquer momento. Não é exceção — é o que
+este documento sempre disse: contrato e termo, depois de assinados, não mudam;
+anamnese e ficha clínica são conteúdo que evolui.
+
+**A pergunta congela, a resposta vive.** É o que permite as duas coisas
+conviverem sem afrouxar nada:
+
+| Onde | O quê |
+|---|---|
+| `documentos.corpo_congelado` | O enunciado. O gatilho da 0013 continua recusando UPDATE nele |
+| `documento_campos.rotulo` | A pergunta, copiada do modelo na emissão. Também congelada |
+| `documento_campos.resposta` | O que evolui. Livre |
+
+Apontar para o modelo em vez de copiar a pergunta faria a correção de março
+reescrever o que foi perguntado em janeiro — e a resposta passaria a responder
+outra coisa.
+
+O rastro de quem mudou o quê não se perde: `documento_campos` entra na
+auditoria. "Ela declarou que não tinha alergia" continua tendo data, autor e
+valor anterior — na trilha, que é onde isso mora, não numa trava.
+
+**Sete tipos de campo:** `texto`, `texto_longo`, `sim_nao`, `escolha_unica`,
+`escolha_multipla`, `data`, `numero`. As perguntas moram em
+`modelo_documento_versoes.campos` (jsonb) porque **versionam junto com o
+texto** — uma versão do modelo é um enunciado e um conjunto de perguntas, e
+separá-los permitiria as duas coisas divergirem.
+
+Cada tipo é conferido nas duas portas: `private.campos_validos` valida a forma
+das perguntas na criação do modelo, e o CHECK `documento_campos_resposta`
+valida cada resposta — inclusive se a alternativa marcada existe, com o
+operador `?` do jsonb.
+
+**Anamnese não passa a `assinado`.** Fica em `emitido` para sempre, e
+"respondida" é **derivada** da contagem de obrigatórias com resposta — estado
+gravado envelhece, como "vencida" na §8.4. Na tela o rótulo de `emitido` vira
+"Em preenchimento", por `rotuloDaSituacao`.
+
+`documento_assinar_por_link` recusa anamnese explicitamente, mesmo a tela nunca
+oferecendo: defesa em profundidade.
+
+**Uma quarta função pública.** `documento_responder_por_link` é a paciente
+respondendo de casa, e continua valendo a regra: função, nunca tabela.
+`documento_campos` tem `revoke all ... from anon` como todas as outras.
+
+**Como as perguntas entram (migração 0018).** `documento_campos` não tem
+política de INSERT, de propósito: pergunta não se acrescenta à mão num documento
+emitido. Mas a 0017 fazia `documento_emitir` — que é `security invoker` — inserir
+direto, e a RLS de quem clicou recusava a própria emissão (42501, "seu perfil não
+tem permissão"). Nem a administradora emitia anamnese. Contratos sem pergunta
+não quebravam porque INSERT de zero linhas não aciona política.
+
+A porta agora é `private.documento_campos_criar`, `security definer`, a única
+forma de uma pergunta entrar na tabela. Ela não recebe perguntas por parâmetro —
+lê da versão do modelo que o próprio documento aponta — e só age se o documento
+ainda não tem nenhuma. `documento_emitir` continua invoker: dar privilégio de dono
+à emissão inteira para resolver uma inserção seria emprestar poder a tudo o que
+ela faz.
+
+> **A lição para a próxima migração:** função `security invoker` que escreve em
+> tabela sem política correspondente falha para todo mundo. "Sem política de
+> INSERT" e "só a função insere" só convivem se a função for definer — ou se
+> delegar a uma que seja.
+
+**`grant` não restringe no Supabase.** O padrão do projeto já concede todos os
+privilégios de tabela a `authenticated`, TRUNCATE inclusive, em toda tabela. Um
+`grant select, update` numa migração **não tira** o resto — só repete. O que
+impede INSERT, UPDATE e DELETE é a RLS com a política ausente. TRUNCATE não passa
+pela RLS, mas o PostgREST não o expõe por HTTP.
+
+Duas funções de escrita em vez de uma porque os guardas são diferentes: a da
+consulta é `security invoker` e exige sessão de administradora; a do link é
+`security definer` e exige token mais data de nascimento. Dar poder de definer
+a quem já tem sessão seria emprestar privilégio sem precisar.
+
+#### O que ainda não existe
+
+**PDF montado pelo sistema.** A via sai pela impressão do navegador.
 
 **Reordenação e exclusão de modelo.** Modelo se aposenta (`ativo = false`),
-nunca se apaga: ele explica os documentos que gerou. Nenhuma das quatro tabelas
-tem política de DELETE.
+nunca se apaga: ele explica os documentos que gerou. Nenhuma das seis tabelas
+tem política de DELETE, e `documento_campos` também não tem de INSERT — as
+perguntas nascem na emissão, a partir do modelo.
 
 ---
+
+### 8.8 Relacionamento
+
+Rota `/relacionamento`, com abas para fila de acompanhamento, confirmações,
+retornos, aniversários, avaliações e tarefas. Usa as tabelas existentes
+`atendimentos`, `retornos` e `pendencias`; não exige migração nova.
+
+- Confirmações mostram os próximos 15 dias ainda em `agendado` ou
+  `aguardando_confirmacao`. Alterar a situação usa o gatilho já existente da
+  agenda, que registra autor e data.
+- Retornos têm data informada pela equipe. O sistema **não** calcula período
+  clínico nem recomenda quando chamar a paciente. A equipe registra a situação
+  e pode reabrir o acompanhamento.
+- Tarefas de contato usam `pendencias`. A pessoa pode criar, concluir, cancelar
+  e reabrir; toda escrita valida a sessão e os dados na ação de servidor.
+- Aniversários vêm da data de nascimento do cadastro, no mês escolhido.
+- A avaliação solicitada nesta etapa é no **Google**, pelo link direto
+  fornecido pela clínica (`https://g.page/r/CYXDzsOMXUv5ECE/review`). A tela
+  mostra pacientes com atendimento concluído e permite buscar qualquer paciente
+  ativa,
+  prepara texto e abre WhatsApp Web ou copia a mensagem. **O envio é manual**:
+  abrir o WhatsApp não prova que a mensagem foi enviada. Depois do envio, a
+  equipe marca o convite, registrado como `pendencia` concluída de tipo
+  `pesquisa`, com paciente, responsável e hora. A mesma convenção registra
+  mensagens de aniversário com tipo `outro`. A ação evita novo registro do
+  mesmo tipo para a mesma paciente no mesmo dia da clínica. O sistema não lê a nota nem
+  confirma se a paciente avaliou no Google.
+
+As pendências existentes têm RLS `for all` e permitem DELETE no banco (ver §1).
+O histórico operacional desses convites, por usar `pendencias`, **não é
+imutável**. Se for exigida uma trilha inviolável de contatos, isso precisará de
+uma migração e tabela próprias.
 
 ## 9. Invariantes — o que nunca pode ser quebrado
 
@@ -1228,8 +1375,7 @@ pagamentos · automações · inteligência artificial · **qualquer
 recomendação clínica automática** (decisão de escopo — o sistema não sugere
 conduta).
 
-Também ainda provisórios na interface: busca global do cabeçalho (visual, marcada
-como indisponível) · ícone de notificações (mostra contagem, não abre nada) ·
+Também ainda provisórios na interface: ícone de notificações (mostra contagem, não abre nada) ·
 menu de perfil (opções desabilitadas com a razão no `title`) · botões "Resolver"
 das pendências (navegam para o módulo).
 

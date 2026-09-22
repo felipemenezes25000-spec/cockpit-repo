@@ -1,7 +1,7 @@
 import { Cake } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/avatar";
-import { BotaoIndisponivel } from "@/components/ui/button";
+import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { ItemLista, Lista } from "@/components/ui/data-list";
@@ -67,9 +67,9 @@ export async function Aniversariantes() {
                   </p>
                 </div>
 
-                <BotaoIndisponivel motivo="O envio de mensagens chega em uma próxima etapa">
-                  Enviar mensagem
-                </BotaoIndisponivel>
+                <BotaoLink href="/relacionamento?aba=aniversarios" tamanho="sm">
+                  Preparar mensagem
+                </BotaoLink>
               </ItemLista>
             );
           })}
@@ -77,7 +77,7 @@ export async function Aniversariantes() {
       </CardCorpo>
 
       <CardRodape className="text-outline">
-        O envio de mensagens será configurado no módulo Relacionamento.
+        O texto é preparado em Relacionamento; a equipe envia a mensagem manualmente.
       </CardRodape>
     </Card>
   );

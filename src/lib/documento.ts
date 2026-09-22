@@ -16,10 +16,29 @@ export type SituacaoDocumento =
   | "substituido";
 
 /**
- * Anamnese fica de fora: o enum do banco já a reconhece, mas esta leva
- * entrega contrato, termo e orientação. Ver a decisão 4 da migração 0013.
+ * Os quatro tipos estão em uso desde a 0017, que trouxe a anamnese com campos
+ * de formulário. Contrato, termo e orientação se assinam; anamnese se
+ * preenche e se corrige.
  */
-export const TIPOS_EM_USO: TipoDocumento[] = ["contrato", "termo", "orientacao"];
+export const TIPOS_EM_USO: TipoDocumento[] = [
+  "contrato",
+  "termo",
+  "orientacao",
+  "anamnese",
+];
+
+/** Anamnese não tem passo de confirmação — ela é conteúdo que evolui. */
+export function seAssina(tipo: TipoDocumento): boolean {
+  return tipo !== "anamnese";
+}
+
+export function rotuloDaSituacao(
+  situacao: SituacaoDocumento,
+  tipo: TipoDocumento,
+): string {
+  if (tipo === "anamnese" && situacao === "emitido") return "Em preenchimento";
+  return ROTULO_SITUACAO[situacao];
+}
 
 export const ROTULO_TIPO: Record<TipoDocumento, string> = {
   contrato: "Contrato",
@@ -28,6 +47,10 @@ export const ROTULO_TIPO: Record<TipoDocumento, string> = {
   anamnese: "Anamnese",
 };
 
+/**
+ * Para anamnese use `rotuloDaSituacao`: "aguardando assinatura" seria mentira
+ * num documento que não se assina.
+ */
 export const ROTULO_SITUACAO: Record<SituacaoDocumento, string> = {
   emitido: "Aguardando assinatura",
   assinado: "Assinado",
@@ -244,17 +267,200 @@ export function mensagemDoConvite(entrada: {
   endereco: string;
   validade: string;
 }): string {
-  const artigo = entrada.tipo === "orientacao" ? "a" : "o";
+  const artigo = entrada.tipo === "orientacao" || entrada.tipo === "anamnese" ? "a" : "o";
   const nome = ROTULO_TIPO[entrada.tipo].toLowerCase();
+  const verbo = seAssina(entrada.tipo) ? "ler e assinar" : "preencher";
 
   // Template literal com quebras de verdade: a mensagem é lida por gente, no
   // WhatsApp, e os parágrafos precisam chegar como parágrafos.
   return `Olá, ${entrada.primeiroNome}! Aqui é ${entrada.clinica}.
 
-Segue ${artigo} ${nome} para você ler e assinar:
+Segue ${artigo} ${nome} para você ${verbo}:
 ${entrada.endereco}
 
 Para abrir, vamos pedir sua data de nascimento — é só para garantir que ninguém além de você acesse o documento.
 
 O link vale até ${entrada.validade}.`;
+}
+
+// ---------------------------------------------------------------------
+// Campos da anamnese
+// ---------------------------------------------------------------------
+
+export type TipoCampo =
+  | "texto"
+  | "texto_longo"
+  | "sim_nao"
+  | "escolha_unica"
+  | "escolha_multipla"
+  | "data"
+  | "numero";
+
+export const TIPOS_CAMPO: TipoCampo[] = [
+  "texto",
+  "texto_longo",
+  "sim_nao",
+  "escolha_unica",
+  "escolha_multipla",
+  "data",
+  "numero",
+];
+
+export const ROTULO_TIPO_CAMPO: Record<TipoCampo, string> = {
+  texto: "Texto curto",
+  texto_longo: "Texto longo",
+  sim_nao: "Sim ou não",
+  escolha_unica: "Escolha uma opção",
+  escolha_multipla: "Escolha várias opções",
+  data: "Data",
+  numero: "Número",
+};
+
+export function precisaDeOpcoes(tipo: TipoCampo): boolean {
+  return tipo === "escolha_unica" || tipo === "escolha_multipla";
+}
+
+/** A pergunta, como o modelo a define. */
+export type CampoDoModelo = {
+  chave: string;
+  rotulo: string;
+  tipo: TipoCampo;
+  obrigatorio: boolean;
+  ajuda: string;
+  opcoes: string[];
+};
+
+/** A pergunta congelada no documento, com o que já foi respondido. */
+export type CampoRespondido = CampoDoModelo & {
+  resposta: string | null;
+  respostas: string[] | null;
+};
+
+/**
+ * Identificador estável da pergunta.
+ *
+ * É por ele que a resposta encontra a pergunta — não pela posição. Reordenar
+ * o formulário não pode trocar as respostas de lugar.
+ */
+export function novaChaveDeCampo(): string {
+  return `c${crypto.randomUUID().slice(0, 8)}`;
+}
+
+export function campoEmBranco(): CampoDoModelo {
+  return {
+    chave: novaChaveDeCampo(),
+    rotulo: "",
+    tipo: "texto",
+    obrigatorio: false,
+    ajuda: "",
+    opcoes: [],
+  };
+}
+
+/**
+ * As mesmas regras que `private.campos_validos` aplica no banco. Aqui elas
+ * existem para responder rápido a quem monta o formulário; lá, para valer.
+ */
+export function validarCampos(campos: CampoDoModelo[]): string | null {
+  if (campos.length > 120) return "No máximo 120 perguntas por formulário.";
+
+  const chaves = new Set<string>();
+
+  for (const [indice, campo] of campos.entries()) {
+    const posicao = indice + 1;
+
+    if (!campo.rotulo.trim()) return `A pergunta ${posicao} está sem enunciado.`;
+    if (campo.rotulo.length > 300) return `O enunciado da pergunta ${posicao} é longo demais.`;
+    if (chaves.has(campo.chave)) return `A pergunta ${posicao} está duplicada.`;
+    chaves.add(campo.chave);
+
+    if (precisaDeOpcoes(campo.tipo)) {
+      const validas = campo.opcoes.map((o) => o.trim()).filter(Boolean);
+      if (validas.length < 1) {
+        return `A pergunta ${posicao} é de escolha e não tem alternativa nenhuma.`;
+      }
+      if (new Set(validas).size !== validas.length) {
+        return `A pergunta ${posicao} tem alternativas repetidas.`;
+      }
+    }
+  }
+
+  return null;
+}
+
+export function normalizarCampos(campos: CampoDoModelo[]): CampoDoModelo[] {
+  return campos.map((campo) => ({
+    chave: campo.chave,
+    rotulo: campo.rotulo.trim().slice(0, 300),
+    tipo: campo.tipo,
+    obrigatorio: campo.obrigatorio,
+    ajuda: campo.ajuda.trim().slice(0, 300),
+    opcoes: precisaDeOpcoes(campo.tipo)
+      ? [...new Set(campo.opcoes.map((o) => o.trim()).filter(Boolean))].slice(0, 40)
+      : [],
+  }));
+}
+
+/** Respondida em branco não existe: ou tem valor, ou não foi respondida. */
+export function semResposta(campo: CampoRespondido): boolean {
+  if (campo.tipo === "escolha_multipla") {
+    return !campo.respostas || campo.respostas.length === 0;
+  }
+  return campo.resposta === null || campo.resposta.trim() === "";
+}
+
+export function obrigatoriasPendentes(campos: CampoRespondido[]): number {
+  return campos.filter((campo) => campo.obrigatorio && semResposta(campo)).length;
+}
+
+export function respondidas(campos: CampoRespondido[]): number {
+  return campos.filter((campo) => !semResposta(campo)).length;
+}
+
+/**
+ * Situação da anamnese, derivada das respostas.
+ *
+ * Não é gravada de propósito: estado gravado envelhece, e "respondida" só
+ * quer dizer alguma coisa em relação às perguntas que existem agora.
+ */
+export function situacaoDaAnamnese(
+  campos: CampoRespondido[],
+): "vazia" | "parcial" | "completa" {
+  if (campos.length === 0) return "vazia";
+  const feitas = respondidas(campos);
+  if (feitas === 0) return "vazia";
+  return obrigatoriasPendentes(campos) === 0 ? "completa" : "parcial";
+}
+
+export const ROTULO_ANAMNESE = {
+  vazia: "Sem respostas",
+  parcial: "Respondida em parte",
+  completa: "Respondida",
+} as const;
+
+/** O que o banco recusaria, dito em português antes de tentar. */
+export function validarResposta(
+  campo: CampoDoModelo,
+  valor: string,
+): string | null {
+  const texto = valor.trim();
+  if (!texto) return null;
+
+  if (campo.tipo === "data" && !/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    return "Data inválida.";
+  }
+
+  if (campo.tipo === "numero" && !/^-?[0-9]+([.,][0-9]{1,4})?$/.test(texto)) {
+    return "Informe um número.";
+  }
+
+  if (campo.tipo === "escolha_unica" && !campo.opcoes.includes(texto)) {
+    return "Escolha uma das alternativas.";
+  }
+
+  if ((campo.tipo === "texto" || campo.tipo === "texto_longo") && texto.length > 4000) {
+    return "Resposta longa demais.";
+  }
+
+  return null;
 }

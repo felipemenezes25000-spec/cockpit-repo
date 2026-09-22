@@ -98,10 +98,7 @@ export const MENU: ItemMenu[] = [
     // O módulo existe e não usa mais `ModuloEmConstrucao`. O que sobrou aqui
     // é o que ainda falta: anamnese com campos de formulário e PDF próprio.
     // Ver AGENTS.md §8.7.
-    proximosPassos: [
-      "Anamnese com campos de formulário respondidos na emissão",
-      "PDF montado pelo sistema, com paginação própria",
-    ],
+    proximosPassos: ["PDF montado pelo sistema, com paginação própria"],
   },
   {
     href: "/relacionamento",
@@ -110,10 +107,8 @@ export const MENU: ItemMenu[] = [
     finalidade:
       "Acompanhamento antes e depois do atendimento: confirmações, retornos, aniversários e pesquisas.",
     proximosPassos: [
-      "Régua de contato por etapa do atendimento",
-      "Lembretes de confirmação e de retorno",
-      "Pesquisa de satisfação",
-      "Mensagens de aniversário",
+      "Envio automático de lembretes, quando a clínica definir canal e cadência",
+      "Consulta das avaliações recebidas no Google",
     ],
   },
   {

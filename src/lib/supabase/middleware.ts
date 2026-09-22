@@ -5,12 +5,17 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
 /**
  * Rotas que existem sem login.
  *
- * `/assinar` é a única que serve conteúdo a quem não tem sessão, e serve
- * pouco: quem decide o que aparece são as três funções públicas da migração
- * 0014, que exigem o token do link e a data de nascimento da paciente. O
- * middleware só deixa a requisição chegar — a guarda é o banco.
+ * `/assinar` serve documentos a quem não tem sessão: quem decide o que aparece
+ * são as funções públicas do banco, que exigem o token do link e a data de
+ * nascimento da paciente. As rotas de senha só chamam o Supabase Auth.
  */
-const PUBLICAS = ["/entrar", "/sem-acesso", "/assinar"];
+const PUBLICAS = [
+  "/entrar",
+  "/sem-acesso",
+  "/assinar",
+  "/recuperar-senha",
+  "/redefinir-senha",
+];
 
 function ehPublica(caminho: string): boolean {
   return PUBLICAS.some((p) => caminho === p || caminho.startsWith(`${p}/`));

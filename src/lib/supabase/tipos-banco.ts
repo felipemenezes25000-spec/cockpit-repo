@@ -356,6 +356,78 @@ export type Database = {
           },
         ]
       }
+      documento_campos: {
+        Row: {
+          ajuda: string
+          atualizado_em: string
+          chave: string
+          criado_em: string
+          documento_id: string
+          exemplo: boolean
+          id: number
+          obrigatorio: boolean
+          opcoes: Json
+          ordem: number
+          respondido_em: string | null
+          respondido_por: string | null
+          resposta: string | null
+          respostas: string[] | null
+          rotulo: string
+          tipo: string
+        }
+        Insert: {
+          ajuda?: string
+          atualizado_em?: string
+          chave: string
+          criado_em?: string
+          documento_id: string
+          exemplo?: boolean
+          id?: never
+          obrigatorio?: boolean
+          opcoes?: Json
+          ordem: number
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta?: string | null
+          respostas?: string[] | null
+          rotulo: string
+          tipo: string
+        }
+        Update: {
+          ajuda?: string
+          atualizado_em?: string
+          chave?: string
+          criado_em?: string
+          documento_id?: string
+          exemplo?: boolean
+          id?: never
+          obrigatorio?: boolean
+          opcoes?: Json
+          ordem?: number
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta?: string | null
+          respostas?: string[] | null
+          rotulo?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_campos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documento_campos_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documento_links: {
         Row: {
           aberto_em: string | null
@@ -501,6 +573,7 @@ export type Database = {
       }
       modelo_documento_versoes: {
         Row: {
+          campos: Json
           corpo: string
           criado_em: string
           criado_por: string | null
@@ -511,6 +584,7 @@ export type Database = {
           versao: number
         }
         Insert: {
+          campos?: Json
           corpo: string
           criado_em?: string
           criado_por?: string | null
@@ -521,6 +595,7 @@ export type Database = {
           versao: number
         }
         Update: {
+          campos?: Json
           corpo?: string
           criado_em?: string
           criado_por?: string | null
@@ -1439,6 +1514,10 @@ export type Database = {
         }
         Returns: string
       }
+      documento_campos_responder: {
+        Args: { p_documento_id: string; p_respostas: Json }
+        Returns: undefined
+      }
       documento_emitir: {
         Args: {
           p_documento_anterior_id: string
@@ -1473,6 +1552,7 @@ export type Database = {
         Returns: {
           assinado_em: string
           assinado_por: string
+          campos: Json
           corpo: string
           emitido_em: string
           hash: string
@@ -1482,8 +1562,13 @@ export type Database = {
           titulo: string
         }[]
       }
+      documento_responder_por_link: {
+        Args: { p_nascimento: string; p_respostas: Json; p_token: string }
+        Returns: string
+      }
       modelo_documento_criar: {
         Args: {
+          p_campos: Json
           p_corpo: string
           p_descricao: string
           p_nome: string
@@ -1493,6 +1578,7 @@ export type Database = {
       }
       modelo_documento_nova_versao: {
         Args: {
+          p_campos: Json
           p_corpo: string
           p_descricao: string
           p_modelo_id: string

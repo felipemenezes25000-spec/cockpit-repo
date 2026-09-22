@@ -17,7 +17,7 @@ const ACOES: Acao[] = [
   { rotulo: "Novo agendamento", href: "/agenda/novo", icone: CalendarPlus },
   { rotulo: "Registrar atendimento", href: "/prontuarios/novo", icone: ClipboardPlus },
   { rotulo: "Registrar venda", href: "/financeiro/vendas/nova", icone: Wallet },
-  { rotulo: "Criar tarefa", href: "/relacionamento", icone: ListTodo },
+  { rotulo: "Criar tarefa", href: "/relacionamento/tarefas/nova", icone: ListTodo },
 ];
 
 export function AcoesRapidas() {

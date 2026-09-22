@@ -44,7 +44,8 @@ export function ListaDoDia({
         return (
           <li
             key={atendimento.id}
-            className="flex flex-col gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] sm:flex-row sm:items-start sm:gap-4"
+            id={`atendimento-${atendimento.id}`}
+            className="flex scroll-mt-24 flex-col gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] target:border-primary sm:flex-row sm:items-start sm:gap-4"
           >
             <div className="flex shrink-0 items-center gap-3 sm:w-28 sm:flex-col sm:items-start sm:gap-1">
               <span className="tabular text-lg font-semibold text-on-surface">

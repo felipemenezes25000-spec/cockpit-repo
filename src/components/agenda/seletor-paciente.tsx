@@ -22,9 +22,13 @@ import {
 export function SeletorPaciente({
   inicial,
   erro,
+  obrigatorio = true,
+  aoEscolher,
 }: {
   inicial: PacienteParaSelecao | null;
   erro?: string;
+  obrigatorio?: boolean;
+  aoEscolher?: (paciente: PacienteParaSelecao | null) => void;
 }) {
   const [escolhida, setEscolhida] = useState<PacienteParaSelecao | null>(inicial);
   const [termo, setTermo] = useState("");
@@ -56,7 +60,7 @@ export function SeletorPaciente({
   }, [termo, escolhida]);
 
   return (
-    <Campo id="busca-paciente" rotulo="Paciente" obrigatorio erro={erro}>
+    <Campo id="busca-paciente" rotulo="Paciente" obrigatorio={obrigatorio} erro={erro}>
       {/* O que a ação de servidor lê. Vazio enquanto ninguém foi escolhida. */}
       <input type="hidden" name="paciente_id" value={escolhida?.id ?? ""} />
 
@@ -76,6 +80,7 @@ export function SeletorPaciente({
             onClick={() => {
               setEscolhida(null);
               setTermo("");
+              aoEscolher?.(null);
             }}
             className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-tag)] text-outline transition-colors hover:bg-surface hover:text-primary"
             aria-label="Trocar a paciente"
@@ -124,7 +129,10 @@ export function SeletorPaciente({
                 <li key={opcao.id} role="option" aria-selected="false">
                   <button
                     type="button"
-                    onClick={() => setEscolhida(opcao)}
+                    onClick={() => {
+                      setEscolhida(opcao);
+                      aoEscolher?.(opcao);
+                    }}
                     className="flex w-full flex-col items-start gap-0.5 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-container-low"
                   >
                     <span className="text-sm font-medium text-on-surface">

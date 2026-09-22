@@ -16,7 +16,7 @@ function Linha({ documento }: { documento: DocumentoDaLista }) {
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-on-surface">{documento.titulo}</span>
           <MarcaTipo tipo={documento.tipo} />
-          <MarcaSituacao situacao={documento.situacao} />
+          <MarcaSituacao situacao={documento.situacao} tipo={documento.tipo} />
           {documento.exemplo ? (
             <span className="text-xs text-outline-variant">exemplo</span>
           ) : null}

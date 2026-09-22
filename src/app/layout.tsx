@@ -25,7 +25,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    // Extensões podem acrescentar atributos ao <html> antes da hidratação.
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={sans.variable}>{children}</body>
     </html>
   );

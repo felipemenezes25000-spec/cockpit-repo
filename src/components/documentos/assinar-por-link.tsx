@@ -12,7 +12,13 @@ import {
 import { useState } from "react";
 import { Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
-import { hashCurto, ROTULO_TIPO, type TipoDocumento } from "@/lib/documento";
+import {
+  hashCurto,
+  ROTULO_TIPO,
+  seAssina,
+  type TipoDocumento,
+} from "@/lib/documento";
+import { FormularioAnamnese } from "./formulario-anamnese";
 import { CLINICA } from "@/lib/nav";
 import {
   abrirDocumentoParaAssinatura,
@@ -287,7 +293,9 @@ export function AssinarPorLink({
         <h1 className="t-headline text-primary">
           {jaAssinado
             ? "Sua via do documento assinado"
-            : `${tipo ? ROTULO_TIPO[tipo] : "Documento"} para assinar`}
+            : `${tipo ? ROTULO_TIPO[tipo] : "Documento"} para ${
+                tipo && !seAssina(tipo) ? "preencher" : "assinar"
+              }`}
         </h1>
         <p className="mt-2 text-sm text-on-surface-variant">
           Para proteger seus dados, confirme sua data de nascimento antes de
@@ -325,6 +333,8 @@ export function AssinarPorLink({
             </>
           ) : jaAssinado ? (
             "Ver minha via"
+          ) : tipo && !seAssina(tipo) ? (
+            "Abrir formulário"
           ) : (
             "Abrir documento"
           )}
@@ -340,6 +350,40 @@ export function AssinarPorLink({
 
   if (documento.situacao !== "ok" || !documento.corpo) {
     return <Recusa situacao={documento.situacao} />;
+  }
+
+  // ----- anamnese: preencher, não assinar -----
+  if (tipo && !seAssina(tipo)) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="rounded-[var(--radius-painel)] border border-card-border bg-card">
+          <div className="border-b border-card-border px-6 pt-6 pb-4 sm:px-8">
+            <h1 className="t-headline text-primary">{documento.titulo}</h1>
+            <p className="mt-1 text-sm text-outline">{documento.paciente}</p>
+          </div>
+
+          <div className="px-6 py-6 sm:px-8">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
+              {documento.corpo}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-[var(--radius-painel)] border border-card-border bg-card px-6 py-6 sm:px-8">
+          {/* Sem passo de confirmação: a anamnese se preenche aos poucos e se
+              corrige quando for preciso. Voltar ao link retoma de onde parou. */}
+          <FormularioAnamnese
+            campos={documento.campos}
+            destino={{ tipo: "link", token, nascimento }}
+          />
+
+          <p className="mt-5 border-t border-card-border pt-4 text-xs text-outline">
+            Pode salvar e voltar depois para completar ou corrigir, enquanto o
+            link valer. Não há nada para assinar aqui.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // ----- documento e assinatura -----

@@ -9,7 +9,9 @@ import {
   normalizarAssinatura,
   uuidValido,
   validarAssinatura,
+  type CampoRespondido,
   type ErrosAssinatura,
+  type TipoCampo,
 } from "@/lib/documento";
 import { clienteServidor } from "@/lib/supabase/server";
 
@@ -183,7 +185,40 @@ export type DocumentoParaAssinar = {
   /** Preenchidos quando `situacao` é `ja_assinado` — é a via da paciente. */
   assinadoEm: string | null;
   assinadoPor: string | null;
+  /** As perguntas da anamnese, com o que já foi respondido. Vazio nos demais. */
+  campos: CampoRespondido[];
 };
+
+/**
+ * Fronteira do `jsonb`: depois daqui o resto trabalha com tipo do domínio.
+ * Pergunta malformada é descartada em vez de derrubar a página — a paciente
+ * não tem como consertar isso, e responder as outras ainda vale.
+ */
+function camposRespondidos(valor: unknown): CampoRespondido[] {
+  if (!Array.isArray(valor)) return [];
+
+  return valor.flatMap((bruto) => {
+    if (!bruto || typeof bruto !== "object") return [];
+    const campo = bruto as Record<string, unknown>;
+    if (typeof campo.chave !== "string" || typeof campo.rotulo !== "string") return [];
+
+    const textos = (item: unknown): string[] =>
+      Array.isArray(item) ? item.filter((v): v is string => typeof v === "string") : [];
+
+    return [
+      {
+        chave: campo.chave,
+        rotulo: campo.rotulo,
+        tipo: String(campo.tipo ?? "texto") as TipoCampo,
+        obrigatorio: campo.obrigatorio === true,
+        ajuda: typeof campo.ajuda === "string" ? campo.ajuda : "",
+        opcoes: textos(campo.opcoes),
+        resposta: typeof campo.resposta === "string" ? campo.resposta : null,
+        respostas: Array.isArray(campo.respostas) ? textos(campo.respostas) : null,
+      },
+    ];
+  });
+}
 
 /**
  * Abre o documento mediante data de nascimento.
@@ -207,6 +242,7 @@ export async function abrirDocumentoParaAssinatura(
     hash: null,
     assinadoEm: null,
     assinadoPor: null,
+    campos: [],
   };
 
   if (!token || !dataValida(nascimento)) return { ...vazio, situacao: "data_incorreta" };
@@ -230,6 +266,7 @@ export async function abrirDocumentoParaAssinatura(
     hash: linha.hash,
     assinadoEm: linha.assinado_em,
     assinadoPor: linha.assinado_por,
+    campos: camposRespondidos(linha.campos),
   };
 }
 
@@ -285,4 +322,30 @@ export async function assinarPorLink(entrada: {
   }
 
   return { situacao: String(data ?? "nao_encontrado"), erros: {} };
+}
+
+/**
+ * A paciente respondendo a anamnese pelo link.
+ *
+ * Não devolve mensagem pronta: devolve a situação, e quem a traduz é a tela —
+ * mesma razão das outras funções desta porta. A validação que vale é a do
+ * banco, que confere token, validade, data de nascimento, tipo do documento e
+ * cada alternativa marcada.
+ */
+export async function responderPorLink(entrada: {
+  token: string;
+  nascimento: string;
+  respostas: Record<string, string | string[] | null>;
+}): Promise<string> {
+  if (!entrada.token || !dataValida(entrada.nascimento)) return "data_incorreta";
+
+  const supabase = await clienteServidor();
+  const { data, error } = await supabase.rpc("documento_responder_por_link", {
+    p_token: entrada.token,
+    p_nascimento: entrada.nascimento,
+    p_respostas: entrada.respostas,
+  });
+
+  if (error) return "falhou";
+  return String(data ?? "nao_encontrado");
 }

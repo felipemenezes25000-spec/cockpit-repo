@@ -2,7 +2,7 @@ import { Ban, CircleCheck, Clock3, Replace } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
-  ROTULO_SITUACAO,
+  rotuloDaSituacao,
   ROTULO_TIPO,
   type SituacaoDocumento,
   type TipoDocumento,
@@ -42,9 +42,12 @@ const ESTILO: Record<
 
 export function MarcaSituacao({
   situacao,
+  tipo,
   className,
 }: {
   situacao: SituacaoDocumento;
+  /** O rótulo muda: anamnese não aguarda assinatura, está em preenchimento. */
+  tipo: TipoDocumento;
   className?: string;
 }) {
   const estilo = ESTILO[situacao];
@@ -59,7 +62,7 @@ export function MarcaSituacao({
       )}
     >
       <Icone aria-hidden="true" size={13} strokeWidth={1.75} />
-      {ROTULO_SITUACAO[situacao]}
+      {rotuloDaSituacao(situacao, tipo)}
     </span>
   );
 }

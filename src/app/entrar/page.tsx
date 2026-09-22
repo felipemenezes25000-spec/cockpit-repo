@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 export default async function PaginaEntrar({
   searchParams,
 }: {
-  searchParams: Promise<{ proximo?: string }>;
+  searchParams: Promise<{ proximo?: string; senha?: string }>;
 }) {
-  const { proximo } = await searchParams;
+  const { proximo, senha } = await searchParams;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
@@ -32,6 +32,12 @@ export default async function PaginaEntrar({
           <p className="mb-6 text-sm text-outline">
             Use o e-mail cadastrado pela clínica.
           </p>
+
+          {senha === "alterada" ? (
+            <p role="status" className="mb-5 rounded-[var(--radius-cartao)] border border-positivo-borda bg-positivo-fundo px-3.5 py-2.5 text-sm text-positivo">
+              Senha alterada. Entre com sua nova senha.
+            </p>
+          ) : null}
 
           <FormularioLogin proximo={proximo ?? "/"} />
         </div>
