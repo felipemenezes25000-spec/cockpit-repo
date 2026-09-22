@@ -1,0 +1,9 @@
+{
+  "aviso": "Contas de teste do Supabase LOCAL (Docker). Não existem em produção e não devem existir. Usadas por scripts/usuarios-locais.mjs e pelos testes E2E.",
+  "senha": "cockpit-local-2026",
+  "usuarios": [
+    { "email": "admin@cockpit.local", "nome": "Administradora Local", "papel": "administradora" },
+    { "email": "financeiro@cockpit.local", "nome": "Financeiro Local", "papel": "financeiro" },
+    { "email": "recepcao@cockpit.local", "nome": "Recepção Local", "papel": "recepcao" }
+  ]
+}

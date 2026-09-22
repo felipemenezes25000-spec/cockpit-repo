@@ -11,7 +11,9 @@
     "db:push": "supabase db push",
     "db:tipos": "supabase gen types typescript --linked --schema public > src/lib/supabase/tipos-banco.ts",
     "dados:exemplo": "supabase db query --linked --file supabase/dados-exemplo.sql -o table",
-    "dados:limpar": "supabase db query --linked --file supabase/dados-exemplo-limpar.sql -o table"
+    "dados:limpar": "supabase db query --linked --file supabase/dados-exemplo-limpar.sql -o table",
+    "local:usuarios": "node scripts/usuarios-locais.mjs",
+    "test:banco": "node scripts/testes-banco.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

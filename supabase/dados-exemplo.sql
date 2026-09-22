@@ -29,10 +29,15 @@ begin
   end if;
 end $$;
 
--- "Hoje" é o dia no relógio da clínica. O banco roda em UTC, então perto da
+-- "Hoje" é o dia no relógio da clínica: `(now() at time zone
+-- 'America/Sao_Paulo')::date`. O banco roda em UTC, então perto da
 -- meia-noite o dia do servidor e o de São Paulo divergem.
-create or replace function pg_temp.hoje_sp() returns date
-  language sql stable as $fn$ select (now() at time zone 'America/Sao_Paulo')::date $fn$;
+--
+-- A expressão vai escrita em cada uso, e não numa função `pg_temp`, porque o
+-- executor de seed do Supabase CLI envia o arquivo em lote e não cria o
+-- schema temporário — `supabase db reset` falhava com "schema pg_temp does
+-- not exist". Escrita por extenso, ela roda igual no psql, no
+-- `supabase db query` e no seed local.
 
 -- Recarregar é idempotente: limpa o exemplo anterior antes de semear.
 delete from public.pendencias    where exemplo;
@@ -75,15 +80,15 @@ insert into public.procedimentos (id, nome, duracao_min, valor_padrao, retorno_s
 
 insert into public.pacientes (id, nome, data_nascimento, telefone, exemplo) values
   ('c0000000-0000-4000-8000-000000000001','Aline Bastos',
-     make_date(1988, extract(month from pg_temp.hoje_sp())::int, 4),  '(11) 90000-0001', true),
+     make_date(1988, extract(month from (now() at time zone 'America/Sao_Paulo')::date)::int, 4),  '(11) 90000-0001', true),
   ('c0000000-0000-4000-8000-000000000002','Beatriz Nogueira',
-     make_date(1992, extract(month from pg_temp.hoje_sp())::int, 11), '(11) 90000-0002', true),
+     make_date(1992, extract(month from (now() at time zone 'America/Sao_Paulo')::date)::int, 11), '(11) 90000-0002', true),
   ('c0000000-0000-4000-8000-000000000003','Carolina Meireles',
-     make_date(1985, extract(month from pg_temp.hoje_sp())::int, 17), '(11) 90000-0003', true),
+     make_date(1985, extract(month from (now() at time zone 'America/Sao_Paulo')::date)::int, 17), '(11) 90000-0003', true),
   ('c0000000-0000-4000-8000-000000000004','Daniela Prado',
-     make_date(1990, extract(month from pg_temp.hoje_sp())::int, 23), '(11) 90000-0004', true),
+     make_date(1990, extract(month from (now() at time zone 'America/Sao_Paulo')::date)::int, 23), '(11) 90000-0004', true),
   ('c0000000-0000-4000-8000-000000000005','Eduarda Lins',
-     make_date(1979, extract(month from pg_temp.hoje_sp())::int, 28), '(11) 90000-0005', true),
+     make_date(1979, extract(month from (now() at time zone 'America/Sao_Paulo')::date)::int, 28), '(11) 90000-0005', true),
   ('c0000000-0000-4000-8000-000000000006','Fernanda Quintela', date '1983-02-09','(11) 90000-0006', true),
   ('c0000000-0000-4000-8000-000000000007','Gabriela Sarmento', date '1995-03-14','(11) 90000-0007', true),
   ('c0000000-0000-4000-8000-000000000008','Helena Vasques',    date '1987-05-02','(11) 90000-0008', true),
@@ -103,16 +108,16 @@ insert into public.pacientes (id, nome, data_nascimento, telefone, exemplo) valu
 insert into public.atendimentos
   (paciente_id, profissional_id, procedimento_id, inicio, duracao_min, situacao, valor, exemplo)
 values
-  ('c0000000-0000-4000-8000-000000000010','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000008', ((pg_temp.hoje_sp() + time '08:30') at time zone 'America/Sao_Paulo'), 30, 'concluido',              0, true),
-  ('c0000000-0000-4000-8000-000000000002','a0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000004', ((pg_temp.hoje_sp() + time '09:30') at time zone 'America/Sao_Paulo'), 60, 'concluido',            320, true),
-  ('c0000000-0000-4000-8000-000000000008','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000007', ((pg_temp.hoje_sp() + time '10:45') at time zone 'America/Sao_Paulo'), 60, 'em_atendimento',      2600, true),
-  ('c0000000-0000-4000-8000-000000000004','a0000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000003', ((pg_temp.hoje_sp() + time '12:00') at time zone 'America/Sao_Paulo'), 50, 'confirmado',          1200, true),
-  ('c0000000-0000-4000-8000-000000000016','a0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000006', ((pg_temp.hoje_sp() + time '13:30') at time zone 'America/Sao_Paulo'), 40, 'ausente',              540, true),
-  ('c0000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001', ((pg_temp.hoje_sp() + time '14:30') at time zone 'America/Sao_Paulo'), 45, 'confirmado',          1450, true),
-  ('c0000000-0000-4000-8000-000000000012','a0000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000005', ((pg_temp.hoje_sp() + time '15:30') at time zone 'America/Sao_Paulo'), 50, 'aguardando_confirmacao', 680, true),
-  ('c0000000-0000-4000-8000-000000000006','a0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000009', ((pg_temp.hoje_sp() + time '16:30') at time zone 'America/Sao_Paulo'), 50, 'cancelado',            260, true),
-  ('c0000000-0000-4000-8000-000000000014','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002', ((pg_temp.hoje_sp() + time '17:15') at time zone 'America/Sao_Paulo'), 60, 'aguardando_confirmacao',2100, true),
-  ('c0000000-0000-4000-8000-000000000011','a0000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000001', ((pg_temp.hoje_sp() + time '18:30') at time zone 'America/Sao_Paulo'), 45, 'agendado',            1450, true);
+  ('c0000000-0000-4000-8000-000000000010','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000008', (((now() at time zone 'America/Sao_Paulo')::date + time '08:30') at time zone 'America/Sao_Paulo'), 30, 'concluido',              0, true),
+  ('c0000000-0000-4000-8000-000000000002','a0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000004', (((now() at time zone 'America/Sao_Paulo')::date + time '09:30') at time zone 'America/Sao_Paulo'), 60, 'concluido',            320, true),
+  ('c0000000-0000-4000-8000-000000000008','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000007', (((now() at time zone 'America/Sao_Paulo')::date + time '10:45') at time zone 'America/Sao_Paulo'), 60, 'em_atendimento',      2600, true),
+  ('c0000000-0000-4000-8000-000000000004','a0000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000003', (((now() at time zone 'America/Sao_Paulo')::date + time '12:00') at time zone 'America/Sao_Paulo'), 50, 'confirmado',          1200, true),
+  ('c0000000-0000-4000-8000-000000000016','a0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000006', (((now() at time zone 'America/Sao_Paulo')::date + time '13:30') at time zone 'America/Sao_Paulo'), 40, 'ausente',              540, true),
+  ('c0000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001', (((now() at time zone 'America/Sao_Paulo')::date + time '14:30') at time zone 'America/Sao_Paulo'), 45, 'confirmado',          1450, true),
+  ('c0000000-0000-4000-8000-000000000012','a0000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000005', (((now() at time zone 'America/Sao_Paulo')::date + time '15:30') at time zone 'America/Sao_Paulo'), 50, 'aguardando_confirmacao', 680, true),
+  ('c0000000-0000-4000-8000-000000000006','a0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000009', (((now() at time zone 'America/Sao_Paulo')::date + time '16:30') at time zone 'America/Sao_Paulo'), 50, 'cancelado',            260, true),
+  ('c0000000-0000-4000-8000-000000000014','a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002', (((now() at time zone 'America/Sao_Paulo')::date + time '17:15') at time zone 'America/Sao_Paulo'), 60, 'aguardando_confirmacao',2100, true),
+  ('c0000000-0000-4000-8000-000000000011','a0000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000001', (((now() at time zone 'America/Sao_Paulo')::date + time '18:30') at time zone 'America/Sao_Paulo'), 45, 'agendado',            1450, true);
 
 -- Alguns atendimentos passados, para a linha do tempo de cada paciente.
 insert into public.atendimentos
@@ -120,7 +125,7 @@ insert into public.atendimentos
 select p.id,
        'a0000000-0000-4000-8000-000000000001',
        'b0000000-0000-4000-8000-000000000001',
-       ((pg_temp.hoje_sp() - d.dias) + time '10:00') at time zone 'America/Sao_Paulo',
+       (((now() at time zone 'America/Sao_Paulo')::date - d.dias) + time '10:00') at time zone 'America/Sao_Paulo',
        45, 'concluido', 1450, true
   from (values
     ('c0000000-0000-4000-8000-000000000015'::uuid, 210),
@@ -138,29 +143,29 @@ select p.id,
 -- ---------------------------------------------------------------------
 
 insert into public.retornos (paciente_id, procedimento_id, sugerido_para, situacao, exemplo) values
-  ('c0000000-0000-4000-8000-000000000015','b0000000-0000-4000-8000-000000000007', pg_temp.hoje_sp() -  30, 'nao_iniciado',        true),
-  ('c0000000-0000-4000-8000-000000000007','b0000000-0000-4000-8000-000000000002', pg_temp.hoje_sp() + 110, 'aguardando_resposta', true),
-  ('c0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000001', pg_temp.hoje_sp() -  15, 'em_contato',          true),
-  ('c0000000-0000-4000-8000-000000000009','b0000000-0000-4000-8000-000000000003', pg_temp.hoje_sp() -  13, 'nao_iniciado',        true),
-  ('c0000000-0000-4000-8000-000000000013','b0000000-0000-4000-8000-000000000001', pg_temp.hoje_sp() +  54, 'nao_iniciado',        true),
-  ('c0000000-0000-4000-8000-000000000005','b0000000-0000-4000-8000-000000000005', pg_temp.hoje_sp() -  22, 'nao_iniciado',        true),
-  ('c0000000-0000-4000-8000-000000000011','b0000000-0000-4000-8000-000000000009', pg_temp.hoje_sp() -  33, 'aguardando_resposta', true);
+  ('c0000000-0000-4000-8000-000000000015','b0000000-0000-4000-8000-000000000007', (now() at time zone 'America/Sao_Paulo')::date -  30, 'nao_iniciado',        true),
+  ('c0000000-0000-4000-8000-000000000007','b0000000-0000-4000-8000-000000000002', (now() at time zone 'America/Sao_Paulo')::date + 110, 'aguardando_resposta', true),
+  ('c0000000-0000-4000-8000-000000000003','b0000000-0000-4000-8000-000000000001', (now() at time zone 'America/Sao_Paulo')::date -  15, 'em_contato',          true),
+  ('c0000000-0000-4000-8000-000000000009','b0000000-0000-4000-8000-000000000003', (now() at time zone 'America/Sao_Paulo')::date -  13, 'nao_iniciado',        true),
+  ('c0000000-0000-4000-8000-000000000013','b0000000-0000-4000-8000-000000000001', (now() at time zone 'America/Sao_Paulo')::date +  54, 'nao_iniciado',        true),
+  ('c0000000-0000-4000-8000-000000000005','b0000000-0000-4000-8000-000000000005', (now() at time zone 'America/Sao_Paulo')::date -  22, 'nao_iniciado',        true),
+  ('c0000000-0000-4000-8000-000000000011','b0000000-0000-4000-8000-000000000009', (now() at time zone 'America/Sao_Paulo')::date -  33, 'aguardando_resposta', true);
 
 -- ---------------------------------------------------------------------
 -- Pendências
 -- ---------------------------------------------------------------------
 
 insert into public.pendencias (tipo, paciente_id, descricao, prazo, prioridade, exemplo) values
-  ('termo',       'c0000000-0000-4000-8000-000000000008','Termo de consentimento do bioestimulador aguardando assinatura', pg_temp.hoje_sp(),     'alta',  true),
-  ('confirmacao', 'c0000000-0000-4000-8000-000000000012','Atendimento de hoje às 15:30 ainda sem confirmação',             pg_temp.hoje_sp(),'alta',  true),
-  ('anamnese',    'c0000000-0000-4000-8000-000000000014','Anamnese não preenchida para o preenchimento labial',            pg_temp.hoje_sp(),'alta',  true),
-  ('pagamento',   'c0000000-0000-4000-8000-000000000016','Parcela do peeling químico em aberto',                           pg_temp.hoje_sp() - 3, 'alta',  true),
-  ('confirmacao', 'c0000000-0000-4000-8000-000000000011','Confirmar atendimento de amanhã às 18:30',                       pg_temp.hoje_sp() + 1, 'media', true),
-  ('retorno',     'c0000000-0000-4000-8000-000000000003','Retorno da toxina botulínica precisa ser agendado',              pg_temp.hoje_sp() + 2, 'media', true),
-  ('pagamento',   'c0000000-0000-4000-8000-000000000005','Saldo do microagulhamento combinado para esta semana',           pg_temp.hoje_sp() + 4, 'media', true),
-  ('pesquisa',    'c0000000-0000-4000-8000-000000000004','Pesquisa de satisfação do skinbooster ainda não respondida',     pg_temp.hoje_sp() + 5, 'baixa', true),
-  ('termo',       'c0000000-0000-4000-8000-000000000002','Orientações pós-procedimento não entregues',                     pg_temp.hoje_sp() + 7, 'baixa', true),
-  ('pesquisa',    'c0000000-0000-4000-8000-000000000010','Pesquisa de satisfação da avaliação inicial',                    pg_temp.hoje_sp() + 9, 'baixa', true);
+  ('termo',       'c0000000-0000-4000-8000-000000000008','Termo de consentimento do bioestimulador aguardando assinatura', (now() at time zone 'America/Sao_Paulo')::date,     'alta',  true),
+  ('confirmacao', 'c0000000-0000-4000-8000-000000000012','Atendimento de hoje às 15:30 ainda sem confirmação',             (now() at time zone 'America/Sao_Paulo')::date,'alta',  true),
+  ('anamnese',    'c0000000-0000-4000-8000-000000000014','Anamnese não preenchida para o preenchimento labial',            (now() at time zone 'America/Sao_Paulo')::date,'alta',  true),
+  ('pagamento',   'c0000000-0000-4000-8000-000000000016','Parcela do peeling químico em aberto',                           (now() at time zone 'America/Sao_Paulo')::date - 3, 'alta',  true),
+  ('confirmacao', 'c0000000-0000-4000-8000-000000000011','Confirmar atendimento de amanhã às 18:30',                       (now() at time zone 'America/Sao_Paulo')::date + 1, 'media', true),
+  ('retorno',     'c0000000-0000-4000-8000-000000000003','Retorno da toxina botulínica precisa ser agendado',              (now() at time zone 'America/Sao_Paulo')::date + 2, 'media', true),
+  ('pagamento',   'c0000000-0000-4000-8000-000000000005','Saldo do microagulhamento combinado para esta semana',           (now() at time zone 'America/Sao_Paulo')::date + 4, 'media', true),
+  ('pesquisa',    'c0000000-0000-4000-8000-000000000004','Pesquisa de satisfação do skinbooster ainda não respondida',     (now() at time zone 'America/Sao_Paulo')::date + 5, 'baixa', true),
+  ('termo',       'c0000000-0000-4000-8000-000000000002','Orientações pós-procedimento não entregues',                     (now() at time zone 'America/Sao_Paulo')::date + 7, 'baixa', true),
+  ('pesquisa',    'c0000000-0000-4000-8000-000000000010','Pesquisa de satisfação da avaliação inicial',                    (now() at time zone 'America/Sao_Paulo')::date + 9, 'baixa', true);
 
 -- ---------------------------------------------------------------------
 -- Financeiro do mês corrente. Os recebimentos quitados se espalham entre
@@ -170,10 +175,10 @@ insert into public.pendencias (tipo, paciente_id, descricao, prazo, prioridade, 
 insert into public.recebimentos
   (paciente_id, descricao, valor, valor_recebido, forma, situacao, vencimento, recebido_em, exemplo)
 select d.paciente, d.descricao, d.valor, d.valor, d.forma::public.forma_pagamento, 'recebido',
-       greatest(date_trunc('month', pg_temp.hoje_sp())::date,
-                pg_temp.hoje_sp() - (d.ordem * (extract(day from pg_temp.hoje_sp())::int - 1) / 13)),
-       greatest(date_trunc('month', pg_temp.hoje_sp())::date,
-                pg_temp.hoje_sp() - (d.ordem * (extract(day from pg_temp.hoje_sp())::int - 1) / 13)),
+       greatest(date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date)::date,
+                (now() at time zone 'America/Sao_Paulo')::date - (d.ordem * (extract(day from (now() at time zone 'America/Sao_Paulo')::date)::int - 1) / 13)),
+       greatest(date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date)::date,
+                (now() at time zone 'America/Sao_Paulo')::date - (d.ordem * (extract(day from (now() at time zone 'America/Sao_Paulo')::date)::int - 1) / 13)),
        true
   from (values
     ('c0000000-0000-4000-8000-000000000002'::uuid,'Limpeza de pele profunda',  320.00,'pix',      0),
@@ -193,17 +198,17 @@ select d.paciente, d.descricao, d.valor, d.valor, d.forma::public.forma_pagament
 
 insert into public.recebimentos
   (paciente_id, descricao, valor, forma, situacao, vencimento, exemplo) values
-  ('c0000000-0000-4000-8000-000000000016','Peeling químico — 2ª parcela',      270.00,'pix',    'previsto', pg_temp.hoje_sp() - 3,  true),
-  ('c0000000-0000-4000-8000-000000000005','Microagulhamento — saldo',          340.00,'pix',    'previsto', pg_temp.hoje_sp() + 4,  true),
-  ('c0000000-0000-4000-8000-000000000003','Toxina botulínica — 2ª parcela',    725.00,'credito','previsto', pg_temp.hoje_sp() + 9,  true),
-  ('c0000000-0000-4000-8000-000000000015','Bioestimulador — 2ª parcela',      1300.00,'credito','previsto', pg_temp.hoje_sp() + 14, true),
-  ('c0000000-0000-4000-8000-000000000001','Toxina botulínica — 2ª parcela',    725.00,'credito','previsto', pg_temp.hoje_sp() + 21, true);
+  ('c0000000-0000-4000-8000-000000000016','Peeling químico — 2ª parcela',      270.00,'pix',    'previsto', (now() at time zone 'America/Sao_Paulo')::date - 3,  true),
+  ('c0000000-0000-4000-8000-000000000005','Microagulhamento — saldo',          340.00,'pix',    'previsto', (now() at time zone 'America/Sao_Paulo')::date + 4,  true),
+  ('c0000000-0000-4000-8000-000000000003','Toxina botulínica — 2ª parcela',    725.00,'credito','previsto', (now() at time zone 'America/Sao_Paulo')::date + 9,  true),
+  ('c0000000-0000-4000-8000-000000000015','Bioestimulador — 2ª parcela',      1300.00,'credito','previsto', (now() at time zone 'America/Sao_Paulo')::date + 14, true),
+  ('c0000000-0000-4000-8000-000000000001','Toxina botulínica — 2ª parcela',    725.00,'credito','previsto', (now() at time zone 'America/Sao_Paulo')::date + 21, true);
 
 insert into public.despesas (descricao, categoria, valor, competencia, vencimento, pago_em, situacao, exemplo)
 select d.descricao, d.categoria::public.categoria_despesa, d.valor,
-       date_trunc('month', pg_temp.hoje_sp())::date,
-       date_trunc('month', pg_temp.hoje_sp())::date + d.vence_dia,
-       case when d.paga then date_trunc('month', pg_temp.hoje_sp())::date + d.vence_dia else null end,
+       date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date)::date,
+       date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date)::date + d.vence_dia,
+       case when d.paga then date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date)::date + d.vence_dia else null end,
        case when d.paga then 'paga' else 'pendente' end::public.situacao_despesa,
        true
   from (values
@@ -223,8 +228,8 @@ insert into public.recebimentos
   (paciente_id, descricao, valor, valor_recebido, forma, situacao, vencimento, recebido_em, exemplo)
 select 'c0000000-0000-4000-8000-000000000001', 'Faturamento do mês (exemplo)',
        h.valor, h.valor, 'pix', 'recebido',
-       (date_trunc('month', pg_temp.hoje_sp()) - (h.meses || ' months')::interval)::date + 14,
-       (date_trunc('month', pg_temp.hoje_sp()) - (h.meses || ' months')::interval)::date + 14,
+       (date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date) - (h.meses || ' months')::interval)::date + 14,
+       (date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date) - (h.meses || ' months')::interval)::date + 14,
        true
   from (values (5, 21400.00), (4, 24950.00), (3, 19800.00), (2, 27300.00), (1, 25150.00))
     as h(meses, valor);
