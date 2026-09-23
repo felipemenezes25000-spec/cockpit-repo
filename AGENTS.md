@@ -14,7 +14,8 @@ Complementos, quando precisar de mais profundidade:
 |---|---|
 | [`docs/overview-sistema.md`](docs/overview-sistema.md) | Produto: propósito, cada módulo em detalhe, decisões de design e o que é provisório |
 | [`supabase/README.md`](supabase/README.md) | Banco: migrações, como aplicar, como criar usuário, validação de segurança executada |
-| [`README.md`](README.md) | Só o essencial para rodar |
+| [`README.md`](README.md) | A vitrine no GitHub: módulos, arquitetura, segurança, como rodar e testar. Resume — as regras valem daqui |
+| [`docs/prompt-onboarding-codex.md`](docs/prompt-onboarding-codex.md) | Primeira mensagem para um agente de IA novo: ler, provar que entendeu, relatar divergências |
 
 ---
 
@@ -31,12 +32,17 @@ observação decorativa: é o motivo de a RLS estar ligada em toda tabela, de a
 chave `service_role` não existir na aplicação e de venda, histórico e ajuste não
 poderem ser apagados. Desde a migração 0019 isso vale **no banco para todas as
 tabelas**: nenhuma política permite DELETE, com uma exceção deliberada —
-`prontuario_imagens`, pela LGPD (§8.5).
+`prontuario_imagens`, pela LGPD (§8.5). (Vale no banco local e nos testes; em
+produção a 0019 ainda não foi aplicada — ver o aviso na §4.)
 
 Hoje o sistema roda com **dados de demonstração** marcados no banco pela coluna
-`exemplo`. Enquanto existir um registro assim, a interface exibe uma faixa
-permanente de aviso. `npm run dados:limpar` apaga só o que foi semeado e o aviso
-some sozinho.
+`exemplo`. Enquanto existir **paciente** marcada assim (`temDadosDeExemplo()`,
+em `server/consultas/exemplo.ts`), o layout exibe uma faixa permanente de aviso
+— e também quando essa checagem falha, por segurança. `npm run dados:limpar`
+apaga só o que foi semeado e o aviso some sozinho. A semeadura se protege do
+outro lado: `dados-exemplo.sql` levanta exceção e não carrega nada se já houver
+paciente, atendimento ou recebimento sem a marca, para não misturar
+demonstração com cadastro real.
 
 ### Estado atual (setembro de 2026)
 
@@ -48,7 +54,7 @@ some sozinho.
 | Financeiro | `/financeiro` | **Pronto** — vendas, recebimentos, despesas, taxas, movimentações, fluxo |
 | Configurações | `/configuracoes` | **Parcial** — só a tabela de procedimentos |
 | Prontuários | `/prontuarios` | **Pronto** — registro clínico versionado, restrito à administradora |
-| Documentos e Contratos | `/formularios` | Fluxos implementados — modelos, emissão, assinatura e anamnese; dependem das migrações versionadas (seção 8.7) |
+| Documentos e Contratos | `/formularios` | **Pronto** — modelos versionados, emissão com texto congelado, assinatura no balcão e por link, anamnese |
 | Relacionamento | `/relacionamento` | **Pronto** — confirmações, retornos, tarefas, aniversários e convites para avaliação no Google |
 | Busca global | `/busca` | **Pronta** — pacientes, atendimentos, documentos e prontuários conforme o perfil |
 | Relatórios | `/relatorios` | Página provisória |
@@ -83,7 +89,8 @@ npm run dados:limpar   # apaga só o que tem exemplo = true
 
 **Antes de dar qualquer trabalho por concluído: `npm run lint`,
 `npm run typecheck` e `npm test` precisam passar limpos**; mudou banco ou
-permissão, `npm run test:banco` também. Veja logo abaixo por que `npm run build`
+permissão, `npm run test:banco` também; mexeu em tela ou fluxo,
+`npm run test:e2e`. Veja logo abaixo por que `npm run build`
 não é o zelo extra que parece.
 
 > ### ⚠️ Não rode `npm run build` com o servidor de desenvolvimento no ar
@@ -122,11 +129,50 @@ não é o zelo extra que parece.
 > |---|---|---|
 > | `npm test` | Regras de `lib/` (dinheiro, datas, validações, CSV, erros), ações de servidor com o Supabase trocado por um falso (`testes/supabase-falso.ts`) e componentes (jsdom + Testing Library) | `src/**/*.test.ts(x)` |
 > | `npm run test:banco` | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim | `supabase/testes/permissoes.sql` |
-> | `npm run test:e2e` | Fluxos inteiros no navegador (login, paciente, agenda, venda, despesa, prontuário, documento e assinatura por link) e todas as telas em 360, 768 e 1440 px, sem rolagem horizontal nem erro de console | `e2e/` |
+> | `npm run test:e2e` | Fluxos inteiros no navegador (login, paciente, agenda, venda, despesa, prontuário, documento e assinatura por link) e 39 endereços — 34 do sistema, com a sessão da administradora, e 5 públicos — em 360, 768 e 1440 px, sem rolagem horizontal nem erro de console. Ficam fora as telas de detalhe e de edição por `[id]` (exceto a ficha e a edição da paciente) e `/sem-acesso`; `/nao-existe`, sem sessão, cai no login, então a página 404 não é conferida | `e2e/` |
 >
 > Os dois últimos precisam do Supabase local no ar (abaixo) com as contas de
-> teste. O E2E recusa rodar se o `.env.local` não apontar para 127.0.0.1.
+> teste. O E2E exige o `.env.local` e recusa rodar se ele não apontar para
+> `127.0.0.1` ou `localhost`.
 > Regra nova ou bug corrigido ganha teste junto.
+>
+> **Vitest.** `npm test` e `npm run test:unit` são o mesmo `vitest run`;
+> `npm run test:watch` fica observando. `*.test.tsx` roda em jsdom, o resto em
+> Node, com `TZ=UTC` de propósito (como na Vercel), `server-only` trocado por um
+> módulo vazio e `restoreMocks` ligado. No Supabase falso, alvo sem resposta
+> devolve `{ data: null, error: null }` — o que a RLS devolve quando esconde a
+> linha — e a última resposta da fila se repete. Em `acoes.test.ts`, o
+> `redirect` lança `Redirecionou`: espere a exceção.
+>
+> **`test:banco` não usa o CLI do Supabase** (o `db query` não aceita vários
+> comandos num arquivo). `scripts/testes-banco.mjs` manda o arquivo ao `psql`
+> de dentro do contêiner local (`supabase_db_<project_id>`, com
+> `ON_ERROR_STOP`), mostra só a tabela final e sai com código diferente de zero
+> se alguma asserção falhar. Um erro fora das asserções — um passo de
+> preparação, uma conta de teste que não existe — para tudo antes da tabela, e
+> aparece só a mensagem do `psql`.
+>
+> **E2E.** O `globalSetup` (`e2e/preparar.ts`) entra com as três contas e
+> grava as sessões em `e2e/.auth/`. O Playwright sobe o `npm run dev`, mas
+> **reaproveita qualquer servidor que já esteja na porta 3000** — confira o que
+> está no ar. Um teste por vez, sem nova tentativa; capturas em
+> `e2e/capturas/`, relatório em `e2e/relatorio/`. `e2e/recorte.mjs` recorta uma
+> seção de uma tela para revisão visual.
+>
+> **Os testes dependem do seed.** O E2E e o `test:banco` usam nomes, ids e
+> contagens de `supabase/dados-exemplo.sql` (Aline Bastos, Beatriz Nogueira,
+> Dra. Marina Rocha, Toxina botulínica, as 7 despesas de exemplo): mude os dois
+> juntos. O seed põe o aniversário de Beatriz no dia 11 do mês em que o
+> `db reset` rodou, mas o fluxo de assinatura por link digita `1992-09-11` fixo
+> (`e2e/fluxos.spec.ts`): fora de setembro, esse teste falha na data de
+> nascimento.
+>
+> **O que ainda não tem teste.** Só 10 das 47 ações de servidor têm teste de
+> unidade (`acoes/acoes.test.ts`). `assinatura-link`, `documentos`,
+> `importar-pacientes`, `procedimentos`, `prontuario-imagens`, `prontuarios` e
+> `relacionamento` não têm nenhum. Prontuário, documentos e assinatura por link
+> passam pelo E2E; importação, Relacionamento, procedimentos e fotos não passam
+> por teste nenhum.
 
 > ### Supabase local (Docker) — o banco de desenvolvimento
 >
@@ -142,6 +188,13 @@ não é o zelo extra que parece.
 > Hyper-V. As contas de teste estão em `supabase/usuarios-locais.json` e não
 > existem em produção. Migração nova se testa aqui primeiro — `db reset` precisa
 > passar do zero.
+>
+> `local:usuarios` (`scripts/usuarios-locais.mjs`) é o único código do
+> repositório que usa uma chave `service_role`: a de demonstração do Supabase
+> local, lida de `supabase status` e igual em toda instalação, só para criar as
+> contas pela API de administração do Auth. O script para antes de qualquer
+> requisição se a URL não for `127.0.0.1` ou `localhost`. Não é a aplicação,
+> então não fere a regra da §3 — e não é modelo para produção.
 >
 > ### ⚠️ Produção continua sem homologação
 >
@@ -192,7 +245,7 @@ as quebras de linha para LF no repositório.
 | Camada | Onde | Detalhe |
 |---|---|---|
 | Aplicação | **Vercel** | `vercel.json`: `framework: nextjs`, região **`gru1`** (São Paulo) |
-| Repositório | **GitHub** | `https://github.com/fellpsbr/cockpit-consultorio` — `main` é produção; trabalho em branch própria |
+| Repositório | **GitHub** | `https://github.com/felipemenezes25000-spec/cockpit-repo`. Hoje tem um único branch, `jamal-do-mal`. Trabalho em branch própria |
 | Banco e autenticação | **Supabase** | Projeto `Cockpit-Consultorio2`, ref `khoaluytzzagtwmpaukx`, região **`sa-east-1` (São Paulo)** |
 
 **Por que tudo em São Paulo:** latência e soberania do dado. A região do projeto
@@ -232,6 +285,16 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 — nada é alterado direto pelo painel.**
 
 ### As migrações existentes
+
+> **⚠️ As migrações 0019 a 0022 estão escritas e verificadas no banco local (do
+> zero, com o seed e com `npm run test:banco`), mas ainda não foram aplicadas
+> em produção** — ver [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção).
+> Até o dono do projeto aplicá-las, as garantias que este documento marca como
+> "desde a 0019", "(0020)", "(0021)" e "(0022)" — nenhuma tabela com DELETE,
+> confirmar recebimento só pela RLS do financeiro, origem da taxa conferida pelo
+> banco, choque de horário recusado pelo banco, documento à prova da API — valem
+> no banco local e nos testes, **não no banco da clínica**. Remova este aviso no
+> mesmo commit em que registrar a aplicação.
 
 | Arquivo | O que faz |
 |---|---|
@@ -280,18 +343,20 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `prontuario_versoes` | Conteúdo clínico versionado: queixa, avaliação, conduta, evolução, orientações e observações | Administradora insere; ninguém edita nem apaga |
 | `prontuario_imagens` | Fotos de evolução: caminho no bucket e metadados. **Única tabela que pode apagar** — ver §8.5 | Administradora |
 | `prontuario_imagem_eliminacoes` | Por que cada foto foi eliminada, e a pedido de quem. Sem UPDATE e sem DELETE | Administradora insere |
-| `modelos_documento` | Catálogo de texto-base: contrato, termo, orientação. Cabeçalho mutável | Administradora |
+| `modelos_documento` | Catálogo de texto-base: contrato, termo, orientação e anamnese. Cabeçalho mutável | Administradora |
 | `modelo_documento_versoes` | Versões imutáveis do texto do modelo | Administradora insere; ninguém edita nem apaga |
 | `documentos` | Documento emitido, com o **texto congelado** e o hash dele. Corpo nunca muda — gatilho | Todos os perfis; anamnese só administradora. Nasce só do texto do modelo; depois muda **só** `situacao` e `motivo_cancelamento`, e só a partir de `emitido` (0022) |
 | `documento_assinaturas` | Evidência da assinatura: quem, quando, IP, dispositivo, identidade conferida, hash | Todos inserem; ninguém edita nem apaga. Hash, hora, canal e operador são escritos pelo banco (0022) |
-| `documento_links` | Links de assinatura à distância. Guarda o **hash** do token, nunca o token | Só as funções da 0014 escrevem |
+| `documento_links` | Links de assinatura à distância. Guarda o **hash** do token, nunca o token | Criar e revogar: só `documento_link_criar`/`documento_link_revogar`. Tentativas e aberturas: as funções públicas. A equipe atualiza só `canal_envio`, no clique do envio (0015) |
 | `documento_campos` | Respostas da anamnese, com a pergunta congelada em cada linha. **A pergunta não muda; a resposta, sim** | Administradora edita só as colunas de resposta, e só com o documento `emitido`; ninguém insere nem apaga |
-| `auditoria` | Quem alterou o quê, por gatilho | Só os gatilhos (leitura: administradora) |
+| `auditoria` | Quem alterou o quê, por gatilho, com a cópia da linha inteira (`to_jsonb`) em `dados` | Só os gatilhos (leitura: administradora) |
 
 Gatilhos de auditoria em: `pacientes`, `atendimentos`, `recebimentos`, `vendas`,
 `ajustes_financeiros`, `prontuarios`, `prontuario_versoes`, `prontuario_imagens`,
-os seis do módulo de documentos e — desde a 0019 — `retornos`, `pendencias`,
-`despesas`, `taxas_cartao`, `procedimentos`, `profissionais` e `perfis`.
+cinco das seis tabelas do módulo de documentos (`modelo_documento_versoes` fica
+de fora: só recebe INSERT, e cada versão já guarda autor e data) e — desde a
+0019 — `retornos`, `pendencias`, `despesas`, `taxas_cartao`, `procedimentos`,
+`profissionais` e `perfis`.
 
 ### Funções do banco
 
@@ -313,11 +378,27 @@ próprio banco, nunca de parâmetro:
 E os gatilhos de regra: `venda_confere_taxa`, `recebimento_confirmado_imutavel`
 (0020), `atendimento_sem_choque` (0021), `perfil_proprio_so_nome` (0019),
 `documento_nasce_do_modelo`, `documento_transicao_valida`,
-`assinatura_confere_documento`, `campo_resposta_valida`,
-`prontuario_versao_conferida`, `imagem_so_sai_com_motivo` (0022).
+`assinatura_confere_documento`, `assinatura_fecha_documento`,
+`campo_resposta_valida`, `prontuario_versao_conferida`,
+`imagem_so_sai_com_motivo` (0022).
+
+Por fim, duas validadoras da anamnese, chamadas de dentro das funções do
+módulo: `private.campos_validos` (forma das perguntas na criação e na nova
+versão do modelo — 0017, endurecida na 0022) e `private.resposta_de_campo`
+(uma resposta conferida contra a pergunta, a mesma regra na consulta e no link
+— 0022).
 
 > **Toda função auxiliar de política nova nasce em `private`.** É o que impede
 > que ela apareça como endpoint RPC.
+
+As funções de gatilho mais antigas ficaram em `public`: `tocar_atualizado_em`,
+`auditar`, `registrar_situacao_atendimento`, `criar_perfil_para_novo_usuario`
+(0001; é o gatilho `ao_criar_usuario` em `auth.users`), `documento_congelar` e
+`documento_texto_nao_muda` (0013). Nenhuma é chamável pela API: o EXECUTE foi
+revogado de `public`, `anon` e `authenticated` (0002, 0004 e 0019), e o gatilho
+continua disparando porque o Postgres confere EXECUTE ao criar o gatilho, não a
+cada disparo. Não as tome por modelo: gatilho novo nasce em `private`, com o
+mesmo revoke.
 
 No schema `public`, chamadas por RPC pela aplicação:
 
@@ -325,11 +406,25 @@ No schema `public`, chamadas por RPC pela aplicação:
 - `public.venda_alterar_pagamento(...)` — histórico + recebimento reescrito ou ajuste
 - `public.prontuario_registrar(...)` — cria o prontuário e a versão 1 na mesma transação
 - `public.prontuario_nova_versao(...)` — atualiza o cabeçalho e insere nova versão clínica
+- `public.prontuario_imagem_eliminar(imagem, motivo)` — grava o motivo em
+  `prontuario_imagem_eliminacoes` e apaga a linha da foto na mesma transação; o
+  arquivo sai antes, pela aplicação (0012)
+- `public.modelo_documento_criar`, `modelo_documento_nova_versao`,
+  `documento_emitir`, `documento_assinar` e `documento_campos_responder` — o
+  módulo de documentos (§8.7)
 
-Todas são **`SECURITY INVOKER`** de propósito: a RLS de quem chama continua
-valendo. A recepção consegue registrar venda (política de INSERT), mas esbarra
-na política de UPDATE ao tentar alterar; no prontuário, só a administradora passa
-nas políticas e nas funções.
+Essas são **`SECURITY INVOKER`** de propósito: a RLS de quem chama continua
+valendo. A recepção consegue registrar venda (política de INSERT); se tentar
+alterar, `venda_alterar_pagamento` recusa logo na entrada (42501, desde a
+0020), e pela API direta a política de UPDATE de `vendas` recusa de novo. No
+prontuário, só a administradora passa nas políticas e nas funções.
+
+As outras seis que a aplicação chama são **`SECURITY DEFINER`**, porque quem
+chama não tem permissão na tabela: `documento_link_criar` e
+`documento_link_revogar` (a equipe só tem SELECT e UPDATE de `canal_envio` em
+`documento_links`; cada uma confere `private.tem_acesso()` e, na anamnese,
+`private.e_administradora()` por conta própria) e as quatro funções públicas do
+link, que `anon` executa (§8.7).
 
 **Invoker não quer dizer que o banco confie no que chega.** Desde a 0020 a
 origem da taxa de toda venda é conferida por gatilho — vale para a função e para
@@ -353,25 +448,35 @@ porta.
    o próximo número. Nunca edite um arquivo já aplicado.
 6. Depois de `npm run db:push`, rode **`npm run db:tipos`** e comite o
    `tipos-banco.ts` junto — conferindo o `git diff` (ver a §2).
-10. **Migração nova passa por `npx supabase db reset` e `npm run test:banco`**
-    no banco local antes de ir para produção, e o que ela passou a garantir
-    entra em `supabase/testes/permissoes.sql`.
-11. **Gatilho que só vale para sessão de usuário deixa passar quando
-    `auth.uid()` é nulo** — é manutenção pelo SQL do projeto, que já passa por
-    cima da RLS. Regra de transição de estado (documento, recebimento) vale
-    sempre.
-7. **Toda função nova leva `set search_path = public, pg_temp`,
+7. **Migração nova passa por `npx supabase db reset` e `npm run test:banco`**
+   no banco local antes de ir para produção, e o que ela passou a garantir
+   entra em `supabase/testes/permissoes.sql`.
+8. **Gatilho que só vale para sessão de usuário deixa passar quando
+   `auth.uid()` é nulo** — é manutenção pelo SQL do projeto, que já passa por
+   cima da RLS. É o caso de `recebimento_confirmado_imutavel` (0020): sem
+   sessão, um recebimento confirmado ainda pode ser corrigido. A transição de
+   estado do documento (`documento_transicao_valida`, 0022) vale sempre.
+9. **Toda função nova leva `set search_path = public, pg_temp`,
    `revoke all on function ... from public, anon` (e de `authenticated` também,
    quando é função de gatilho) e `grant execute` só para quem precisa.** O
    `alter default privileges` da 0009 **não** resolve isso: o Postgres concede
    EXECUTE a `PUBLIC` em toda função nova, e sem o revoke explícito ela nasce
    chamável por anônimo em `/rest/v1/rpc/` — exatamente o que a 0002 e a 0003
-   consertaram.
-8. **Tabela nova leva as colunas de rastro** (`criado_em`, `atualizado_em`,
-   `criado_por`) e o gatilho `tocar_atualizado_em`, como todas as existentes.
-9. **Função de gatilho continua `SECURITY DEFINER`.** `authenticated` só tem
-   SELECT em `auditoria` e `atendimento_situacoes` — trocar para INVOKER faz o
-   gatilho falhar ao inserir a trilha, e a operação inteira cai junto.
+   consertaram. (O comentário da `0019_privilegio_minimo.sql` que fala em
+   "contra a regra 7" se refere a esta, que antes tinha esse número.)
+10. **Tabela nova leva as colunas de rastro** (`criado_em`, `atualizado_em`,
+    `criado_por`) e o gatilho `tocar_atualizado_em`. Não tome as antigas por
+    modelo: `perfis`, `profissionais`, `procedimentos`, `retornos`,
+    `pendencias` e `taxas_cartao` não têm `criado_por`, e nelas o autor só
+    fica no `ator_id` da `auditoria`.
+11. **Função de gatilho que grava em tabela de trilha é `SECURITY DEFINER`.**
+    `authenticated` só tem SELECT em `auditoria` e `atendimento_situacoes` —
+    trocar `auditar` ou `registrar_situacao_atendimento` para INVOKER faz o
+    gatilho falhar ao inserir a trilha, e a operação inteira cai junto. Gatilho
+    que só calcula ou confere `NEW` pode ser INVOKER (`tocar_atualizado_em`,
+    `documento_congelar`, `documento_texto_nao_muda`), e
+    `assinatura_confere_documento` (0022) **precisa** ser: é o `current_user`
+    que separa o balcão da função pública do link.
 
 ### `src/lib/supabase/tipos-banco.ts` é gerado
 
@@ -388,10 +493,23 @@ está errado, o banco está errado — corrija com migração e regenere.
 |---|---|---|
 | `administradora` | Dra. Érika | Tudo: despesas, auditoria, gestão de usuários, tabela de taxas, importação em massa |
 | `financeiro` | Quem opera o caixa | Vendas, recebimentos, despesas, alteração de taxa com justificativa. **Não** configura a tabela de taxas nem gerencia usuários |
-| `recepcao` | Atendimento e agendamento | Pacientes, agenda, retornos, pendências, registro de venda **com a taxa padrão**. Sem despesas, sem auditoria, sem consolidado financeiro |
+| `recepcao` | Atendimento e agendamento | Pacientes, agenda, retornos, pendências, registro de venda **com a taxa padrão**. No Financeiro vê vendas, movimentações e os números de entrada; despesas pagas, despesas pendentes e resultado de caixa aparecem como `—`, e as abas Despesas, Taxas de cartão e Fluxo mensal não aparecem. Sem auditoria |
 
 O perfil "Profissional" está previsto para quando a equipe crescer. Não existe
 ainda.
+
+**Auditoria e gestão de usuários existem só no banco.** A RLS dá à
+administradora a leitura de `auditoria` e a edição de `perfis`, mas nenhuma
+tela lê a trilha nem libera ou promove conta: "Equipe" e "Acesso e permissões"
+estão "em breve" em Configurações, e "Perfis e permissões" fica desabilitado no
+menu de perfil. Hoje isso se faz pelo painel do Supabase ou por SQL
+([`supabase/README.md`](supabase/README.md)).
+
+**O que a recepção vê de dinheiro.** `recebimentos` é lido por todo perfil
+ativo (`recebimentos_leitura`, 0019). Por isso, na Visão Geral, a recepção vê
+recebido no mês, a receber, o que venceu e o gráfico dos últimos seis meses; só
+"Despesas do mês" vira `—`. Não é vazamento — e esconder esses totais seria
+decisão da clínica, não correção.
 
 ### Como alguém entra
 
@@ -413,6 +531,15 @@ sem privilégio. Defesa em profundidade.
 > o login passa a falhar com "Database error querying schema" para **todo
 > mundo**. Use o painel do Supabase ou a API de administração.
 
+**Para tirar o acesso de alguém, desative o perfil (`ativo = false`) — não
+apague a conta.** Desativar vale na hora: `private.tem_acesso()` lê `perfis` a
+cada consulta, `usuarioAtual()` passa a responder `null`, as ações recusam e o
+layout manda para `/sem-acesso`. Apagar a conta no Auth leva a linha de
+`perfis` junto (`on delete cascade`) e põe `null` nas colunas de autor que
+apontam para ela, e o nome some das trilhas. Se a pessoa emitiu documento, o
+gatilho `documento_transicao_valida` (0022) recusa a mudança de `emitido_por`
+e a exclusão inteira falha.
+
 ### As três camadas de permissão
 
 Toda regra de acesso é verificada em três lugares, e as três precisam existir:
@@ -426,19 +553,39 @@ Toda regra de acesso é verificada em três lugares, e as três precisam existir
 
 Onde estão:
 
-- Interface: `src/components/**/somente-*.tsx`, checagens de papel nas páginas
+- Interface: `src/components/**/somente-*.tsx`, checagens de papel nas páginas.
+  O menu lateral (`MENU` em `lib/nav.ts`) é o mesmo para os três perfis: quem
+  abre Prontuários sem ser administradora recebe `AcessoRestritoProntuario`.
+  Dentro dos módulos a porta é escondida — abas do Financeiro e botões de
+  escrita dependem do papel —, e quem chega pela URL a uma tela fora do seu
+  alcance recebe `SomenteFinanceiro` ou `SomenteAdministradora` (a importação
+  de planilha mostra um cartão próprio)
 - Servidor: **`ehAdministradora()` / `ehFinanceira()` de `src/lib/auth.ts`** — são
   estas que valem
-- Banco: políticas em `0001`, `0003` e `0007`
+- Banco: políticas da `0003` (que recriou todas as da `0001`) e da `0007`,
+  com as `for all` reescritas uma por operação, sem DELETE, na `0019`; prontuário, fotos e
+  documentos trazem as suas nas próprias migrações (`0010`–`0017`; a política
+  de envio das fotos ao Storage foi refeita na `0022`); gatilhos de regra em
+  `0019`–`0022`
 
-> `podeAlterarTaxa()`, `podeOperarFinanceiro()` e `podeConfigurarTaxas()` existem
-> em `src/lib/venda.ts` e **não são chamadas por ninguém** — código morto. Não as
-> use achando que são a camada de servidor; use `ehFinanceira()`.
+> As antigas `podeAlterarTaxa()`, `podeOperarFinanceiro()` e
+> `podeConfigurarTaxas()` de `src/lib/venda.ts` foram removidas (§13). Se
+> aparecer `podeAlterarTaxa` numa página, é só o nome de uma variável que guarda
+> o resultado de `ehFinanceira()`. A camada de servidor é `ehFinanceira()`.
 
 **Toda ação de servidor abre com `usuarioAtual()`, e isso é obrigatório.** O
 `layout.tsx` do grupo `(app)` protege a *renderização de página*, não a chamada
 de uma server action — ela chega por POST direto no endpoint, sem passar pelo
-layout. Ação nova sem essa primeira linha é rota aberta.
+layout. Ação nova sem essa primeira linha é rota aberta. As exceções rodam por
+natureza sem perfil: `entrar` e `sair` (`src/app/entrar/actions.ts`), que criam
+e encerram a sessão, e as três ações do link público em
+`src/server/acoes/assinatura-link.ts` (`abrirDocumentoParaAssinatura`,
+`assinarPorLink`, `responderPorLink`), em que quem decide é a função pública do
+banco, com o token e a data de nascimento (§8.7). Nas demais, a primeira linha
+pode ser um auxiliar do próprio arquivo que chama `usuarioAtual()` e já confere
+o papel — `exigirAcesso()` (documentos), `exigirFinanceira()` (despesas),
+`exigirAdministradora()` (procedimentos, taxas), `administradoraOuErro()`
+(fotos) —, e isso conta como abrir com `usuarioAtual()`.
 
 Nem toda regra de aplicação tem equivalente no banco, e isso é **intencional**.
 Exemplo: a importação de planilha é restrita à administradora **por regra da
@@ -458,6 +605,11 @@ escreve código inseguro por analogia:
 | Configurar tabela de taxas só administradora | Sim — `taxas_insercao` / `taxas_edicao` |
 | Alterar venda só financeiro | Sim — `vendas_edicao` e `venda_alterar_pagamento` |
 | Choque de horário | Sim, desde a 0021 — gatilho `atendimentos_sem_choque` |
+| Data de recebimento ou de pagamento não pode estar no futuro | **Não** — só a ação (venda já recebida, confirmação, pagamento de despesa); o banco aceita data futura |
+| `recebido` × `recebido_divergencia` decidido pelo valor | **Não** — a ação compara com o líquido previsto; o banco aceita `recebido` com qualquer `valor_recebido` |
+| Transições de situação (recebimento cancelado é terminal; despesa só paga ou cancela a partir de `pendente`) | **Não** — a RLS deixa o financeiro levar um recebimento `cancelado` de volta a `previsto`, ou uma despesa `cancelada` direto a `paga` |
+| Motivo e justificativa com 5 caracteres ou mais | **Não** — o banco só exige motivo não vazio (`venda_alterar_pagamento`) e justificativa não nula (`taxa_manual_justificada`) |
+| Competência da despesa = mês do vencimento | **Não** — regra da ação (§13) |
 
 ### A RLS filtra em silêncio — e isso mente nos agregados
 
@@ -475,7 +627,7 @@ uma das três saídas, nunca uma quarta:
 
 | Saída | Quando | Exemplo no código |
 |---|---|---|
-| O número vira `number | null` | A tela é legítima para quem não vê tudo | `IndicadoresDoPeriodo.despesasPagas` |
+| O número vira `number \| null` | A tela é legítima para quem não vê tudo | `IndicadoresDoPeriodo.despesasPagas` |
 | A consulta **falha alto** | A tela inteira perde sentido sem o dado | `fluxoMensal()` lança se não for financeiro |
 | A rota é fechada | Mesma coisa, do lado da página | `/financeiro/fluxo` → `SomenteFinanceiro` |
 
@@ -485,12 +637,33 @@ padrão da casa é traço (`—`) com a razão à vista, como no botão indispon
 
 **Nunca some uma tabela restrita numa tela aberta e imprima o total.**
 
+**O mesmo vale para nomes.** `perfis_le_proprio` (0003) deixa recepção e
+financeiro lerem só a própria linha de `perfis`. Todo embed `perfis ( nome )`
+volta `null` quando o autor é outra pessoa: na trilha de situação da agenda, em
+quem emitiu o documento ou gerou o link, no operador da assinatura no balcão (a
+tela mostra "não registrado") e no autor de alteração e ajuste de venda. Não é
+dado faltando, é a RLS. Não trate esse `null` como "sem autor", e não abra a
+leitura de `perfis` para resolver: mostrar o nome dos colegas pede uma decisão
+e uma porta que exponha só `id` e `nome`.
+
 ### Fluxo de sessão
 
 - [`src/middleware.ts`](src/middleware.ts) → [`src/lib/supabase/middleware.ts`](src/lib/supabase/middleware.ts):
   renova a sessão a cada requisição e redireciona para `/entrar` quem não está
   autenticado. Rotas públicas: `/entrar`, `/sem-acesso`, `/assinar`,
-  `/recuperar-senha` e `/redefinir-senha`. Guarda o destino em `?proximo=`.
+  `/recuperar-senha` e `/redefinir-senha`. Guarda o destino em `?proximo=` —
+  só o caminho, sem a query string. O `matcher` deixa de fora só estáticos e
+  imagens: sem sessão, qualquer caminho fora das rotas públicas, inclusive um
+  que não existe, vai para `/entrar`; com sessão, abrir `/entrar` leva a `/`.
+- A ação `entrar` só aceita destino interno — começa com `/`, não com `//` nem
+  `/\` — e o corta em 300 caracteres (`destinoSeguro()`): é o que impede usar o
+  login como redirecionamento para outro site. A recusa tem frases próprias
+  para conta não confirmada, muitas tentativas (429) e falha do serviço;
+  credencial errada tem uma frase só, para não revelar quais e-mails existem.
+- **Sair** (`sair()`) chama `signOut()` sem argumento, e o escopo padrão do
+  Supabase é `global`: encerra a sessão da conta em **todos** os aparelhos. Se
+  duas pessoas dividirem um login, sair num computador derruba o outro. A troca
+  de senha, ao contrário, encerra só a sessão local (`{ scope: "local" }`).
 - Recuperação de senha: `/recuperar-senha` pede o link com
   `resetPasswordForEmail()` e confirma o pedido sem revelar se o e-mail existe.
   `/redefinir-senha` valida o `token_hash` com `verifyOtp({ type: "recovery" })`
@@ -543,18 +716,21 @@ src/
     recuperar-senha/      solicitação do link de recuperação
     redefinir-senha/      validação do link e definição da nova senha
     sem-acesso/           conta existe mas não foi liberada
-    error.tsx  global-error.tsx   telas de erro fora do sistema e do layout raiz
+    assinar/[token]/      assinatura e anamnese por link — a única rota pública com conteúdo de paciente
+    error.tsx  global-error.tsx  not-found.tsx   telas de erro e de rota inexistente
     (app)/                tudo que exige sessão válida
       layout.tsx          estrutura principal + faixa de demonstração; force-dynamic
       error.tsx           erro dentro do sistema: menu de pé, aviso na área de conteúdo
       loading.tsx         esqueleto enquanto a próxima tela carrega
       page.tsx            Visão Geral
-      pacientes/  agenda/  financeiro/  configuracoes/  busca/  relacionamento/  …
+      pacientes/  agenda/  prontuarios/  financeiro/  formularios/ (Documentos e Contratos)
+      relacionamento/  busca/  relatorios/  configuracoes/
   components/
     layout/               estrutura, menu, cabeçalho, perfil, faixa de demonstração, tela de erro
     ui/                   cartão, botão, campo, formulário de ação, abas, seletor segmentado,
                           chip de situação, prioridade, lista, avatar, vazio
-    overview/  pacientes/  agenda/  financeiro/  configuracoes/  prontuarios/  relacionamento/
+    overview/  pacientes/  agenda/  financeiro/  configuracoes/  prontuarios/  documentos/
+    relacionamento/
   server/
     consultas/            LEITURA do banco — `server-only`, uma função por assunto
     acoes/                ESCRITA no banco — `"use server"`, validação de verdade
@@ -569,6 +745,8 @@ src/
     moeda.ts              centavos inteiros e pontos-base
     venda.ts  despesa.ts  paciente.ts  procedimento.ts  atendimento.ts   regras de negócio
     prontuario.ts  prontuario-imagens.ts   regras do registro clínico e das fotos
+    documento.ts          regras de modelo, emissão, assinatura, link e anamnese
+    cn.ts                 junta classes condicionais, sem biblioteca externa
     csv.ts  importacao.ts leitor de planilha e validação da importação
     busca.ts  relacionamento.ts   busca segura e validação do acompanhamento
     nav.ts                fonte única do menu + identidade da clínica
@@ -577,6 +755,7 @@ src/
     acao.ts               `ResultadoAcao`, o contrato das ações de botão
     formulario.ts         leitura do FormData nas ações: texto, UUID, valores digitados
 supabase/
+  config.toml             Supabase local: portas 5532x, Postgres 17
   migrations/             estrutura do banco, versionada
   testes/permissoes.sql   testes do banco por perfil (npm run test:banco)
   usuarios-locais.json    contas de teste do Supabase local
@@ -586,14 +765,22 @@ e2e/                      Playwright: fluxos e telas, contra o Supabase local
 scripts/                  contas locais, testes do banco, geração segura de tipos
 docs/
   overview-sistema.md     documento de produto
+  prompt-onboarding-codex.md   primeira mensagem para um agente de IA novo
   redesign                mockup do Google Stitch (referência visual, NÃO é fonte)
+  assets/                 as imagens animadas (SVG) do README
 ```
 
 ### As regras de arquitetura
 
 **1. Componente não conversa com o banco.**
 Leitura passa por `src/server/consultas/`, escrita por `src/server/acoes/`.
-Sem exceção.
+Uma exceção, deliberada: o upload das fotos de evolução
+(`components/prontuarios/enviar-fotos.tsx`) vai do navegador direto ao Storage,
+porque a Vercel corta o corpo da requisição em 4,5 MB e o bucket aceita 10 MB
+(§8.5). A linha da foto continua sendo gravada pela ação `registrarImagem`. Não
+"conserte" esse upload para passar pela ação, e não abra outra exceção sem um
+motivo desse tamanho. (O cliente do navegador também aparece nos fluxos de
+senha, mas lá só fala com o Auth.)
 
 **2. Consulta é `server-only`, ação é `"use server"`.**
 `import "server-only"` no topo de todo arquivo de consulta. O import vaza para
@@ -603,10 +790,15 @@ o cliente? O build quebra — que é exatamente o que se quer.
 A validação do formulário é conveniência para responder rápido. **Quem envia o
 formulário por fora não passa por ela.** A validação que vale é a da ação.
 
-**4. A regra mora em `lib/`, e é chamada pelos dois lados.**
-`validarPaciente`, `calcularVenda`, `validarDespesa` são usadas pelo formulário
-**e** pela ação. Por isso esses arquivos **não** são `server-only`. *Uma regra
-escrita duas vezes vira duas regras diferentes na terceira mudança.* Foi
+**4. A regra mora em `lib/`, e todo caminho de escrita passa por ela.**
+`validarPaciente`, `validarProcedimento`, `calcularVenda` e `validarDespesa`
+são chamadas pelas ações de servidor — e `validarPaciente` também pela
+importação em massa. Os formulários delas são `noValidate`: aplicam máscara, enviam e
+mostram os erros que a ação devolve. Do lado do cliente, `lib/` fornece listas,
+rótulos e a conta da prévia (a da venda usa `custoDaTaxa`, a mesma que
+`calcularVenda` usa). Por isso esses arquivos **não** são `server-only`. Se um
+formulário passar a validar antes de enviar, ele chama **a mesma função**. *Uma
+regra escrita duas vezes vira duas regras diferentes na terceira mudança.* Foi
 exatamente esse o cuidado que impediu a importação em massa de virar a porta
 dos fundos das validações do cadastro.
 
@@ -630,12 +822,26 @@ e recebe `(_anterior, dados: FormData)`. O componente é `"use client"` e usa
 o formulário não esvaziar. O botão de envio é **sempre um componente filho local**
 que chama `useFormStatus()` — `useFormStatus` só enxerga o `<form>` de um
 ancestral, então um botão no mesmo componente do form nunca fica `pending`.
+Exceções existentes, não imite: `cancelarDocumento` (`acoes/documentos.ts`) e as
+ações de foto `atualizarImagem` e `eliminarImagem` (`acoes/prontuario-imagens.ts`)
+devolvem `{ erro: string | null }`, sem erro por campo nem `valores`. E há
+ações que nem são formulário — o componente as chama direto, com os próprios
+argumentos, e cada uma tem o seu retorno: as três ações do link público,
+`criarLinkAssinatura`, `registrarCanalDoLink`, `responderAnamnese`,
+`buscarPacientesParaSelecao` e o envio de fotos (`registrarImagem`).
 
 > O que se usa é `BotaoLink` (navegação), `FormularioDeAcao` + `BotaoDeAcao`
 > (ação de um botão só) e botões locais com `useFormStatus` nos formulários
 > maiores. As primitivas de `ui/` (`Card`, `CardCabecalho`, `CardCorpo`,
 > `EstadoVazio`, `SituacaoChip`, `NavegacaoEmAbas`, `SEGMENTO_GRUPO`) e as
 > classes de campo são obrigatórias — reusar, nunca reinventar com Tailwind solto.
+>
+> Raio, sombra e texto também são tokens de `globals.css`: `--radius-painel`
+> (16px), `--radius-controle` (12px), `--radius-cartao` (8px) e `--radius-tag`
+> (4px); `--shadow-cartao`, `--shadow-realce` e `--shadow-flutuante`; as classes
+> `.t-display`, `.t-headline`, `.t-body-lg` e `.rotulo`; e os utilitários
+> `.tabular` (algarismos de largura fixa), `.rolagem-discreta` e `.esqueleto`.
+> No componente: `rounded-[var(--radius-cartao)]`, `shadow-[var(--shadow-realce)]`.
 >
 > **Campo: altura, largura, recuo e texto são opções, não sobrescrita.** Use
 > `classeDeEntrada({ altura: "compacta", largura: "auto" })`, nunca
@@ -654,6 +860,8 @@ alcançou uma linha (`.select("id").maybeSingle()`): RLS que esconde a linha nã
 dá erro — dá zero linhas, e zero linhas não é sucesso. Quando duas pessoas podem
 mexer no mesmo registro, a condição de estado vai **no UPDATE**
 (`.in("situacao", ["previsto", "pendente"])`), não só na leitura antes.
+**Exceção ainda aberta, não imite:** os botões de situação do Relacionamento
+(`EstadoRelacionamento` + `AcaoInline`) — ver §13.
 
 **10. Nenhuma ação usa `try/catch`, e `redirect()` é sempre a última linha.**
 `redirect()` funciona lançando uma exceção que o Next captura: dentro de um
@@ -669,6 +877,38 @@ vai para o log por `registrarFalha(contexto, error)` — sanitizado, sem `detail
 nem valor digitado. Consulta que falha usa `falhaDeConsulta(...)`, que registra
 e lança uma frase segura para o `error.tsx` da rota. **Consulta que não lê o
 `error` é bug**: falha de banco vira lista vazia e ninguém fica sabendo.
+
+A ordem da tradução: o código passado em `especificas` vence tudo; depois,
+estrutura ausente (`PGRST202`, `PGRST205`, `42P01`, `42883` ou "schema cache")
+vira "A migração pendente precisa ser aplicada.", e falha de rede sem código
+vira a frase de conexão; `P0001` e um `42501` com frase nossa passam, desde que
+tenham até 240 caracteres e não tenham cara de texto técnico; 15 códigos têm
+frase padrão; o resto vira a `padrao` do contexto. `registrarFalha` não
+registra `P0001`: recusa de regra não é falha técnica.
+
+Em Documentos e Prontuários, a estrutura ausente troca a página pelo card
+"Migração pendente". O texto desses cards é de antes do Supabase local: cita só
+a 0013 ou a 0010 e manda rodar `npm.cmd run db:push` — comando de produção, do
+dono do projeto (§2). Se o card aparecer no seu ambiente, rode
+`npx supabase db reset` no banco local.
+
+**Telas de erro.** `TelaDeErro` (`components/layout/tela-de-erro.tsx`) nunca
+mostra `error.message`: nem a frase lançada por `falhaDeConsulta` chega à tela.
+A pessoa vê uma frase fixa, com o foco no título, e o `digest` como
+"Código do erro", para cruzar com o log. "Tentar de novo" faz
+`router.refresh()` + `reset()`, porque só `reset()` repetiria o erro guardado.
+Uma falha no próprio layout de `(app)` (perfil, pendências) sobe para
+`app/error.tsx`, sem menu. A 404 (`app/not-found.tsx`) aparece fora da
+estrutura do sistema, inclusive para `notFound()` de uma tela de `(app)`.
+
+**12. Leitura passa por `cache()` do React.**
+Quase todas as consultas de `server/consultas/` (e `usuarioAtual()`) são
+embrulhadas em `cache`: dentro de um request, layout, página e componentes chamam a mesma
+função e o banco responde uma vez — o layout e a lista de pendências dividem
+`pendenciasAbertas()`, e `indicadores()` reaproveita `atendimentosDeHoje()` e
+`resumoFinanceiro()`. Consulta nova segue o padrão. Tirar o `cache` não quebra
+nada visível, só multiplica as idas ao banco. Ele vale por request e compara
+argumentos por identidade: passe valores primitivos.
 
 ---
 
@@ -696,7 +936,10 @@ valor_final − taxa_valor  = valor_liquido
 por `venda_registrar`, a função deriva `valor_final` e `valor_liquido` das mesmas
 entradas que a constraint confere — a igualdade é satisfeita por construção. As
 CHECKs pegam INSERT direto com valores incoerentes, não erro de cálculo da
-aplicação. Quem garante o centavo é `lib/moeda.ts`.
+aplicação. Quem calcula o centavo é `lib/moeda.ts`. Desde a 0020, o gatilho
+`vendas_confere_taxa` confere o único arredondamento da venda,
+`taxa_valor = round(valor_final × taxa_percentual / 100, 2)`, e recusa a
+gravação se a aplicação tiver arredondado diferente (§8.4).
 
 ### 7.2 Fuso horário — sempre o relógio da clínica
 
@@ -722,8 +965,10 @@ mês, 29/02, horário de verão histórico) estão em `src/lib/dates.test.ts`.
 
 ### 7.3 Cor — duas famílias que não se misturam
 
-**Nenhuma cor é escrita fora de [`src/app/globals.css`](src/app/globals.css).**
-Nada de `bg-[#ABC123]` em componente.
+**Nenhuma cor é escrita fora de [`src/app/globals.css`](src/app/globals.css)**,
+com uma exceção comentada no código: o `themeColor` da `viewport` em
+`src/app/layout.tsx` (`#ffffff`, o `--color-surface`), porque a meta tag não lê
+variável de CSS. Nada de `bg-[#ABC123]` em componente.
 
 **Marca (azul)** — navegação, ações principais, links, títulos, foco. Não
 comunica estado nenhum: é a cor de "o sistema", não de "a situação".
@@ -754,14 +999,21 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
 
 ### 7.4 Acessibilidade
 
-- Todo par texto/fundo passa no **WCAG AA** (mínimo 4.5:1).
+- Todo par texto/fundo **precisa** passar no **WCAG AA** (mínimo 4.5:1).
+  Exceção conhecida, não imite: `text-outline` (`#72767c`) só passa sobre
+  branco (4.57:1); sobre o painel `bg-card` cai para 4.34:1, e hoje é usado
+  assim na descrição do `CardCabecalho`. Texto secundário dentro de painel usa
+  `text-on-surface-variant` (8.88:1).
 - **Cor nunca comunica sozinha.** Todo estado leva também texto, ícone próprio
   e forma (preenchido, contornado).
 - Foco sempre visível.
 - `aria-current` na navegação; atalho "Ir para o conteúdo".
 - `prefers-reduced-motion` respeitado.
 - **Botão que não executa nada fica visivelmente indisponível, com a razão à
-  vista** (no `title`). Não some, não engana.
+  vista** (no `title`). Não some, não engana. A primitiva para isso é
+  `BotaoIndisponivel` (`ui/button.tsx`: tracejado, `aria-disabled`, razão no
+  `title`); hoje não é usada em tela nenhuma, mas é ela que se usa quando
+  precisar, em vez de inventar outro estilo de desabilitado.
 
 ### 7.5 Idioma
 
@@ -770,12 +1022,17 @@ coluna, migrações e mensagens de commit: **tudo em português**.
 `clienteServidor`, `usuarioAtual`, `validarPaciente`, `taxa_percentual`.
 
 **Nome de arquivo é a exceção, e ela tem forma.** Em `components/ui/`,
-`components/layout/` e `components/overview/` o arquivo é em inglês e o símbolo
-exportado em português: `button.tsx` exporta `BotaoLink`, `empty-state.tsx`
-exporta `EstadoVazio`, `day-rail.tsx` exporta `LinhaDoDia`. Nos módulos de
-domínio (`pacientes/`, `agenda/`, `financeiro/`, `configuracoes/`) o arquivo
-também é português: `formulario-venda.tsx`, `lista-despesas.tsx`. **Siga a
-convenção da pasta em que você está**, não uma regra global.
+`components/layout/` e `components/overview/`, os arquivos mais antigos têm nome
+em inglês e o símbolo exportado em português: `button.tsx` exporta `BotaoLink`,
+`empty-state.tsx` exporta `EstadoVazio`, `day-rail.tsx` exporta `LinhaDoDia`. Os
+acrescentados depois já nasceram em português (`ui/abas.tsx`,
+`ui/formulario-acao.tsx`, `ui/segmento.ts`, `layout/botao-sair.tsx`,
+`layout/tela-de-erro.tsx`). Nos módulos de
+domínio (`pacientes/`, `agenda/`, `financeiro/`, `configuracoes/`,
+`prontuarios/`, `documentos/`, `relacionamento/`) o arquivo também é português:
+`formulario-venda.tsx`, `lista-despesas.tsx`, `painel-assinatura.tsx`.
+**Arquivo novo leva nome em português**, também nas pastas mistas; não renomeie
+os antigos só por isso.
 
 Valores e datas no padrão brasileiro.
 
@@ -819,17 +1076,34 @@ sem JavaScript. Não há mudança de banco.
   campo e no comentário da coluna no banco.
 - **Endereço em `jsonb`**, lido com tolerância: registro antigo fora do formato
   não quebra a ficha.
-- **Não existe excluir paciente.** Ela tem atendimento, recebimento e, adiante,
-  documento assinado apontando para o cadastro; o banco recusaria
-  (`on delete restrict`). **Arquivar** tira da lista, preserva tudo e é
-  reversível no clique seguinte.
+- **O banco guarda o cadastro normalizado** (`normalizarPaciente` e
+  `paraOBanco`, em `lib/paciente.ts`): CPF, telefone e CEP só com dígitos,
+  e-mail em minúsculas, UF em maiúsculas, texto aparado e cortado no limite de
+  cada campo, opcional vazio como `NULL` (nunca `""`) e endereço todo vazio
+  como `endereco = NULL`. A formatação volta só na exibição, e a busca por
+  dígitos depende desse formato: quem gravar paciente por outro caminho (SQL,
+  script) grava do mesmo jeito.
+- **Não existe excluir paciente.** Atendimentos, vendas, recebimentos,
+  prontuários e documentos apontam para o cadastro com `on delete restrict`. E
+  desde a 0019 o banco nem concede DELETE em `pacientes` a `authenticated`: a
+  tentativa pela API é recusada por permissão (42501) antes de chegar à chave
+  estrangeira. **Arquivar** tira da lista, preserva tudo e é reversível no
+  clique seguinte.
+- **Arquivada some dos seletores, mas não fica bloqueada.** O seletor de
+  paciente (agenda, venda, documento, prontuário, convite) usa o filtro padrão
+  "ativas" de `listarPacientes`. A ficha da arquivada, porém, continua
+  oferecendo "Marcar atendimento" (`/agenda/novo?paciente=`), e nem a página,
+  nem a ação, nem o banco recusam. Se a regra passar a ser "arquivada não
+  marca", é decisão da clínica, e vale nas três camadas.
 - **Ficha inexistente e ficha sem permissão devolvem a mesma tela.** A RLS não
   distingue as duas, e a interface também não deve — dizer que o registro existe
   já é informação.
 
 **Busca** (`/pacientes`): cobre nome, nome social, e-mail e telefone. Quando o
-termo é só dígito, procura também no CPF — a recepção digita `11987654321`, não
-o formato guardado. Vírgula, parêntese, aspas, barra invertida, `*` e `%` são
+termo tem **3 dígitos ou mais**, a pontuação é ignorada e a busca procura
+também no CPF e no telefone só com os dígitos — a recepção digita
+`11987654321`, `(11) 98765` ou `529.982.247-25`, sem precisar acertar o formato
+guardado. Vírgula, parêntese, aspas, barra invertida, `*` e `%` são
 **retirados do termo** antes de virar filtro: os quatro primeiros são a gramática
 do PostgREST, os dois últimos viram curinga no `ilike` (quem digitasse `%`
 listaria a base inteira). Ver `termoSeguro()` em
@@ -842,16 +1116,33 @@ listaria a base inteira). Ver `termoSeguro()` em
   as linhas já analisadas seria mais rápido, mas então o que entra no banco
   seria o que o navegador disse ter lido — e não é ele quem decide.
 - Separador `;` detectado contando **fora das aspas** (Excel pt-BR usa
-  ponto-e-vírgula porque a vírgula é o decimal).
+  ponto-e-vírgula porque a vírgula é o decimal). Conta `;`, `,` e tabulação só
+  na primeira linha; no empate vence o primeiro dessa ordem, e arquivo de uma
+  coluna só fica com `;`.
 - Encoding: **UTF-8 estrito primeiro, Windows-1252 como queda**. A ordem
   importa — Latin-1 nunca falha, então testá-lo antes leria todo arquivo UTF-8
   com acento errado.
 - BOM removido; data `dd/mm/aaaa` convertida, com a data interpretada na prévia.
+  Também aceita `dd-mm-aaaa`, `dd.mm.aaaa` e `aaaa-mm-dd`. Ano com dois dígitos
+  entra com aviso: maior que os dois últimos dígitos do ano atual vira 19xx,
+  senão 20xx.
 - Colunas reconhecidas **pelo nome**, sem acento e sem maiúscula. Coluna
-  desconhecida é **listada como ignorada**, não faz falhar.
+  desconhecida é **listada como ignorada**, não faz falhar. Cada campo fica com
+  a primeira coluna que casar na ordem de `SINONIMOS` (`lib/importacao.ts`):
+  com "Telefone" e "Celular", vale "Telefone", e "Celular" sai como ignorada.
+- Linhas totalmente vazias são descartadas. O número da linha na prévia conta
+  o cabeçalho como 1 e só bate com o Excel se não houver linha em branco antes
+  ou no meio.
+- **Baixar modelo** gera na página um CSV com as 15 colunas de
+  `COLUNAS_DO_MODELO` (separador `;`, BOM para o Excel e uma linha de exemplo).
+  Essa lista é separada de `SINONIMOS`, e nada no código ou nos testes amarra as
+  duas: cabeçalho do modelo precisa continuar sendo nome aceito em `SINONIMOS`.
 - **A validação é a mesma do cadastro manual** (`validarPaciente`).
 - Duplicata só por CPF — homônimo existe, nome igual não prova nada. CPF
-  repetido dentro do próprio arquivo também é detectado.
+  repetido dentro do próprio arquivo também é detectado. Consequência:
+  **reimportar a mesma planilha grava de novo toda linha sem CPF.** Se uma
+  importação parou no meio, tire as linhas já gravadas antes de repetir — não
+  há exclusão para desfazer cadastro em dobro, só arquivar.
 - Gravação em lotes de 100; lote que cai é reenviado linha a linha.
 - Limites: 2 MB e 2000 linhas. `next.config.ts` sobe o
   `serverActions.bodySizeLimit` para 3 MB para a mensagem da tela aparecer em
@@ -879,7 +1170,13 @@ listaria a base inteira). Ver `termoSeguro()` em
   caminhos que fazem sentido (`PROXIMAS_SITUACOES` em
   [`src/lib/atendimento.ts`](src/lib/atendimento.ts)), mas **o servidor aceita
   qualquer situação válida** — um "concluído" clicado errado precisa ter volta.
-  Cancelado e ausente reabrem como agendado.
+  Cancelado e ausente reabrem como agendado. Na tela, hoje: "Não compareceu"
+  só aparece a partir de `confirmado`; Cancelar e Não compareceu pedem
+  confirmação do navegador (`window.confirm`); e **`concluido` não tem botão
+  nenhum** — a ação aceitaria a volta, mas nenhuma tela a oferece. O
+  Relacionamento também muda a situação (`confirmarPelaLista`), só de
+  `agendado` ou `aguardando_confirmacao` para `confirmado` ou
+  `aguardando_confirmacao`.
 - **Toda mudança é gravada por gatilho** em `atendimento_situacoes`, com autor e
   hora.
 - Hora é lida como **hora de parede da clínica** (`instanteNaClinica`), nunca do
@@ -892,12 +1189,34 @@ As sete situações: `agendado`, `aguardando_confirmacao`, `confirmado`,
 ### 8.3 Configurações → Procedimentos
 
 - **Todo mundo vê a tabela; só a administradora escreve** — na página e de novo
-  na ação, espelhando a política `procedimentos_escrita`.
+  na ação, espelhando as políticas `procedimentos_insercao` e
+  `procedimentos_edicao` (0019; até então, `procedimentos_escrita`).
 - **Procedimento não se apaga.** O histórico aponta para ele
   (`on delete restrict`). *"Tirar da agenda"* esconde das novas marcações — o
-  formulário da Agenda só lista ativos — e preserva o passado.
+  formulário de marcar só lista procedimentos e profissionais ativos — e
+  preserva o passado. Na **edição** de um atendimento, o procedimento e o
+  profissional dele continuam na lista mesmo inativos; sem isso, desativar
+  travaria a edição de todo atendimento antigo. É regra de interface: nem a
+  ação nem o banco recusam um procedimento ou profissional inativo que chegue
+  no POST.
 - **Editar muda o padrão, não o passado.** Duração e valor gravados em cada
   atendimento são cópias do momento da marcação.
+- **Regras do catálogo** (`validarProcedimento`, `lib/procedimento.ts`): nome
+  com 2 caracteres ou mais; duração de 5 a 480 minutos; valor até
+  R$ 1.000.000,00 (vazio vira zero); retorno sugerido de 1 a 3650 dias, ou
+  vazio. O banco só exige `duracao_min > 0`: **o teto de 480 minutos é da
+  aplicação**, e é dele que vem a janela de 8 horas da agenda (§8.2). Subir o
+  teto sem mexer na janela não deixa passar choque — o gatilho da 0021 compara
+  o intervalo inteiro —, só troca a mensagem com o nome de quem ocupa pela do
+  banco.
+- **Não há tela de equipe.** `profissionais` só se preenche por SQL (o card
+  "Equipe" de `/configuracoes` está "em breve"). Sem profissional ativa, "Quem
+  atende" fica vazio e a agenda não marca nada. `npm run dados:limpar` apaga as
+  profissionais e os procedimentos de exemplo: ao sair da demonstração,
+  cadastre a equipe real pelo SQL do projeto, e não marque atendimento real com
+  profissional ou procedimento de exemplo — o `on delete restrict` de
+  `atendimentos` faria a limpeza falhar. Para tirar alguém da agenda,
+  `ativo = false`, nunca DELETE.
 - **Produtos não existem no sistema.** "Produtos" hoje é só categoria de
   despesa. Estoque e venda de produto são decisão futura, com migração própria.
 
@@ -917,6 +1236,14 @@ confirmar com a clínica.**
 - **A taxa é copiada na venda.** `taxa_percentual` e `taxa_valor` são fotografia
   do momento; `taxa_cartao_id` é só proveniência. **Mudar a tabela padrão amanhã
   não pode mudar o que já foi vendido.**
+- **A tabela de taxas se edita no lugar.** A administradora muda operadora,
+  tipo, parcelas e percentual da própria linha, mesmo já usada (a lista mostra
+  "aplicada em N vendas"). A venda guarda a cópia, mas `taxa_cartao_id` passa a
+  apontar para dados diferentes, e a tela "Alterar taxa" mostra o percentual
+  **atual** da linha como "Taxa padrão da tabela". Linha não se apaga: desativa
+  e reativa, e o índice único (operadora, tipo, parcelas) vale só entre as
+  ativas — reativar em conflito é recusado com mensagem. O financeiro vê a aba
+  e não edita; o formulário de venda só oferece taxas ativas.
 - **Taxa manual exige justificativa**, fica marcada na venda e **não toca a
   tabela padrão**. Restrita ao financeiro e à administradora — verificado também
   dentro de `venda_registrar`.
@@ -950,10 +1277,20 @@ taxa, líquido) e **exige motivo**. Depois:
 
 Tudo entra em `venda_alteracoes`, com autor, data e hora.
 
-> Quem decide isso é a função SQL `venda_alterar_pagamento` (migração 0008), não
-> a aplicação. `decidirEfeito()` em `src/lib/venda.ts` descreve a mesma regra mas
-> **não é chamado por ninguém** — é código morto. Lê-lo ajuda a entender; alterá-lo
-> não muda comportamento nenhum.
+**A diferença do ajuste é `novo líquido − valor_recebido`** — contra o que de
+fato entrou, não contra o líquido anterior —, e diferença zero não gera ajuste.
+Ajustes anteriores não entram na conta. Consequências: com recebimento em
+divergência, a primeira alteração absorve a divergência; e uma segunda
+alteração depois da confirmação não desconta o ajuste da primeira (de 6% para 3% e de
+volta para 6% deixa +R$ 30,00 num caixa que não mudou, numa venda de
+R$ 1.000,00). A tela de alteração mostra `novo líquido − líquido anterior`, que
+pode não bater com o ajuste gravado (§13).
+
+> Quem decide isso é a função SQL `venda_alterar_pagamento` (migração 0008,
+> recriada na 0020), não a aplicação. `decidirEfeito()` em `src/lib/venda.ts`
+> descreve a mesma regra e **não é chamado pela aplicação**: os testes
+> (`venda.test.ts`) o usam como especificação (§13). Lê-lo ajuda a entender;
+> alterá-lo não muda o que o banco faz.
 
 **Situações do recebimento:** `previsto` · `pendente` · `recebido` ·
 `recebido_divergencia` (valor efetivo ≠ líquido previsto — **decidido pelo
@@ -962,12 +1299,38 @@ sistema, não por opinião**) · `cancelado`.
 > **`situacao` não é uma coluna solta.** CHECK constraints a amarram a outras
 > colunas: `recebimento_coerente` exige que `recebido`/`recebido_divergencia`
 > tenham `recebido_em` **e** `valor_recebido`, e que as demais situações tenham
-> os dois nulos; `despesa_coerente` faz o mesmo com `paga`/`pago_em`. Um UPDATE
-> que mexa só na situação é recusado pelo banco. Sempre escreva o conjunto.
+> os dois nulos; `despesa_coerente` faz o mesmo com `paga`/`pago_em`. O banco
+> recusa um UPDATE que leve a situação para `recebido`/`recebido_divergencia`
+> (ou `paga`) sem esses campos, ou que a tire de lá sem limpá-los. Entre
+> `previsto`, `pendente` e `cancelado` basta a situação — é o que
+> `mudarSituacaoRecebimento` faz. Ao cruzar essa fronteira, escreva o conjunto.
+
+**Ciclo do recebimento na tela.** Nasce `previsto`, ou `recebido` quando o
+pagamento foi no balcão. `pendente` é marcado à mão pelo financeiro ("Marcar
+como pendente" / "Voltar para previsto"); nenhuma rotina muda a situação por
+data — o "já venceu" dos indicadores é derivado (`vencimento < hoje`).
+**Cancelar é terminal na interface**: nenhuma ação sai de `cancelado`, e a
+venda não ganha outro recebimento, porque `recebimento_da_venda_criar` recusa
+quando já existe qualquer um. A venda continua somando em "Total vendido" e
+aparece no filtro "Canceladas".
+
+**Confirmação errada não tem desfazer.** O confirmado é imutável para qualquer
+sessão (0020), e nenhuma ação corrige valor ou data de uma confirmação. Campo de
+valor vazio é lido como R$ 0,00: a tela avisa a divergência, mas deixa enviar,
+e fica gravado `recebido_divergencia` com zero. O único caminho que gera ajuste
+é alterar a forma ou a taxa da venda. Como corrigir é decisão em aberto (§10).
 
 **Situações da despesa:** `pendente` · `paga` · `cancelada`. **"Vencida" é
 derivada** (pendente com prazo no passado), nunca gravada — estado gravado
 envelheceria errado à meia-noite.
+
+A lista do mês traz também as **pendentes atrasadas de meses anteriores**.
+Pagar pede a data (não futura) e aceita forma opcional; pagar e cancelar só
+valem a partir de `pendente`; reabrir volta `paga` ou `cancelada` para
+`pendente` e apaga `pago_em` e a forma. **Editar vale em qualquer situação,
+inclusive paga**: muda valor e vencimento — e, com ele, a competência — de
+despesa de mês já fechado. A mudança fica na auditoria (0019), mas o número
+do mês fechado muda.
 
 **Os números:**
 
@@ -978,6 +1341,21 @@ a receber          = estoque, não fluxo: tudo que ainda não entrou,
                      de qualquer período
 ```
 
+Os demais cartões da visão geral do Financeiro (`consultas/painel-financeiro.ts`):
+
+```
+total vendido      = Σ valor_final das vendas com data_venda no mês
+                     (inclui venda cujo recebimento foi cancelado)
+total recebido     = Σ valor (bruto) dos confirmados com recebido_em no mês
+taxas de cartão    = Σ taxa_valor desses mesmos confirmados
+despesas pagas     = Σ das pagas com pago_em no mês
+despesas pendentes = Σ das pendentes com vencimento antes do fim do mês,
+                     inclusive as atrasadas de meses anteriores
+```
+
+Com divergência ou ajuste no mês, total recebido − taxas ≠ líquido recebido,
+porque o líquido é o que de fato entrou.
+
 **Lucro não entra.** A regra não foi definida pela clínica — falta decidir o que
 entra na conta (valor bruto, custo de produto, comissão, impostos, taxa). Não
 invente um indicador de lucro.
@@ -987,9 +1365,18 @@ invente um indicador de lucro.
 | Ação | Recepção | Financeiro | Administradora |
 |---|:--:|:--:|:--:|
 | Registrar venda com taxa padrão | ✓ | ✓ | ✓ |
+| Registrar venda já recebida (pagamento no balcão) | ✓ | ✓ | ✓ |
 | Confirmar recebimento, lançar despesa | — | ✓ | ✓ |
 | Alterar forma de pagamento / taxa (com motivo) | — | ✓ | ✓ |
 | Configurar a tabela de taxas | — | — | ✓ |
+
+**"Já recebido" na venda é de todo perfil** — o pagamento no balcão, em
+dinheiro ou PIX, é decisão registrada no cabeçalho da 0020. O recebimento
+nasce `recebido` por `private.recebimento_da_venda_criar`, com
+`valor_recebido` igual ao líquido da venda e a data informada; a ação recusa
+data futura, o banco não. Por construção nunca nasce em divergência e, dali em
+diante, é imutável como qualquer confirmado. O que a recepção não faz é
+confirmar depois um recebimento previsto.
 
 ### 8.5 Prontuários
 
@@ -1025,13 +1412,46 @@ identificável na própria imagem.
   que se corrige; foto se acrescenta ou se remove. Amarrá-la a
   `prontuario_versoes` faria cada correção de texto orfanar ou duplicar as
   fotos. O eixo da evolução é a `data_captura` de cada imagem — quando foi
-  *tirada*, não quando foi enviada.
+  *tirada*, não quando foi enviada. Ela **não pode ser no futuro** (no dia da
+  clínica): `motivoDataInvalida`, conferida por `registrarImagem` e
+  `atualizarImagem`. O banco não garante — a coluna é só `not null`.
 - **O caminho tem forma obrigatória:** `<prontuario_id>/<uuid>.<ext>`, com CHECK
   no banco. Sem isso uma linha poderia apontar para o arquivo de outra paciente.
+  E o **nome original do arquivo fica fora do caminho, de propósito**: costuma
+  trazer o nome da paciente ("maria-antes.jpg"), e o caminho aparece em log, em
+  URL assinada e no painel do Storage. Ele fica na coluna `nome_original`,
+  atrás da RLS. Não "melhore" o caminho para ficar legível no painel.
 - **Existe uma quarta porta.** A RLS da tabela não protege o arquivo: quem sabe
-  o caminho fala com `storage.objects`, que tem política própria. As quatro
-  políticas de Storage da 0011 são as primeiras do projeto — **toda tabela nova
-  que use Storage precisa das suas.**
+  o caminho fala com `storage.objects`, que tem política própria. A 0011 criou
+  as primeiras políticas de Storage do projeto; desde a 0022 são três —
+  leitura, envio e eliminação, todas só para a administradora. **Não há
+  UPDATE**: a aplicação nunca sobrescreve (envia com `upsert: false`). Não
+  recrie essa política. **Toda tabela nova que use Storage precisa das suas.**
+
+##### O que a 0022 fechou no prontuário e nas fotos
+
+As funções da 0010–0012 já faziam a coisa certa; a tabela é que aceitava o que
+chegasse pela API. Desde a 0022 (ver o aviso da §4), o banco confere por
+qualquer porta:
+
+- **A paciente do prontuário não muda:** UPDATE só em `atendimento_id`,
+  `data_registro` e `titulo`.
+- **Versão nova é conferida** por `prontuario_versao_conferida`: precisa ser a
+  próxima da sequência, e autor, hora e `exemplo = false` são escritos pelo
+  banco, não por quem insere.
+- **O caminho tem forma exata** (`prontuario_imagens_caminho_forma`), e apagar
+  a linha da foto exige o motivo já registrado (`imagem_so_sai_com_motivo`).
+
+Os gatilhos deixam passar quando não há sessão: é a manutenção pelo SQL do
+projeto.
+
+**Limites, e onde valem.** Com par no banco: título com 3 caracteres ou mais
+(a tela corta em 160; o banco não tem máximo), motivo da nova versão de 5 a
+240, cada campo clínico até 6.000, legenda até 300, motivo da eliminação de 10
+a 500. Só na aplicação: 12 fotos por envio, dimensões até 30.000 px (fora
+disso gravam nulas, sem recusar), nome original cortado em 200, 20 prontuários
+por página e busca que casa no máximo 50 pacientes. Mudou um número de um
+lado, mude o par do outro.
 
 ##### A exceção ao "não se apaga"
 
@@ -1048,7 +1468,15 @@ imagem era, não por que deixou de existir, e o papel `authenticated` só tem
 SELECT nela. Sem uma tabela própria, a tela pediria uma justificativa que o
 sistema descartaria no mesmo instante.
 
-Duas coisas que a implementação respeita, e que precisam continuar valendo:
+A auditoria guarda **a linha inteira** (`to_jsonb`) a cada INSERT, UPDATE e
+DELETE. Depois de uma eliminação continuam em `auditoria.dados`, sem a imagem,
+o `nome_original` (que costuma trazer o nome da paciente) e cada legenda que a
+foto já teve; `prontuario_imagem_eliminacoes` repete caminho, `nome_original` e
+data da captura. O texto clínico de cada versão do prontuário também fica
+copiado na auditoria. É isso que a clínica diz à titular que pedir a
+eliminação: sai a imagem, não o registro de que ela existiu.
+
+Três coisas que a implementação respeita, e que precisam continuar valendo:
 
 1. **Apagar a linha não apaga o arquivo.** São dois lugares, e a ordem importa:
    **arquivo primeiro**. Invertida, se a remoção do arquivo falhar sobra um
@@ -1058,6 +1486,13 @@ Duas coisas que a implementação respeita, e que precisam continuar valendo:
    duplicada, enquadramento errado). Eliminar é DELETE, e só a pedido da
    titular, com motivo (mínimo de 10 caracteres, guardado) e confirmação
    marcada — as duas conferidas de novo no servidor.
+3. **O módulo sobrevive a um banco sem as migrações.** Sem as tabelas da
+   0010/0011, `/prontuarios` mostra o card "Migração pendente" (§6, regra 11) e
+   a busca global, "Prontuários indisponíveis no momento.". Sem a 0012, a
+   galeria funciona sem o histórico de eliminações — e `eliminarImagem`
+   confere que `prontuario_imagem_eliminacoes` existe **antes** de remover o
+   arquivo: sem isso, o arquivo seria destruído e o registro da eliminação
+   falharia, perdendo justamente a imagem que o registro deveria explicar.
 
 ##### O arquivo não passa pela ação de servidor
 
@@ -1066,8 +1501,10 @@ só a linha. **Não é otimização:** a Vercel corta o corpo de uma requisiçã
 função em 4,5 MB e o bucket aceita 10 MB — uma foto no meio dessa faixa
 morreria com um erro de plataforma que a tela não teria como explicar.
 
-Quem autoriza o envio é a política de Storage da 0011, que só deixa a
-administradora escrever no bucket. É a mesma barreira, em outro lugar.
+Quem autoriza o envio é a política `prontuario_imagens_storage_envio` (criada
+na 0011, refeita na 0022): só a administradora escreve no bucket, e só com nome
+no formato `<uuid>/<uuid>.(jpg|png|webp)`, em hexadecimal minúsculo. É a mesma
+barreira, em outro lugar.
 
 Duas consequências que a implementação carrega:
 
@@ -1114,9 +1551,9 @@ de uma vez. **Não há reordenação manual** na tela: a ordem é a de envio.
 ##### Aberto
 
 **Consentimento não está modelado.** Foto de paciente normalmente exige termo
-assinado, que viverá no módulo Documentos — decidido em 29/08/2026 que os dois
-módulos **não se acoplam**: a paciente assina o termo e tira as fotos, sem o
-sistema ligar uma coisa à outra. Consequência a assumir: não há, no banco,
+assinado, que a clínica emite e colhe no módulo Documentos (§8.7) — decidido
+em 29/08/2026 que os dois módulos **não se acoplam**: a paciente assina o
+termo e tira as fotos, sem o sistema ligar uma coisa à outra. Consequência a assumir: não há, no banco,
 registro de qual termo autorizou qual foto. Se isso passar a ser exigido, entra
 por migração nova.
 
@@ -1129,18 +1566,42 @@ pendências, próximos retornos, resumo financeiro e aniversariantes.
   com a clínica se é assim que ela pensa — ver seção 10.)
 - A Linha do Dia hoje se ajusta aos atendimentos existentes, porque o **horário
   de funcionamento ainda não foi definido**.
+- **Os números** (`server/consultas/indicadores.ts`; nenhum é calculado no
+  componente): "Confirmados" conta só `confirmado` de hoje; "Confirmações
+  pendentes", só `aguardando_confirmacao` de hoje (`agendado` não entra);
+  "Aguardando retorno" conta **retornos**, não pacientes, que não estão
+  `agendado` nem `recusado`, de qualquer data — inclusive meses adiante;
+  "Recebido no mês" soma `valor_recebido` dos confirmados no mês, **sem
+  ajustes**; "A receber" é estoque. As bases diferem das do Financeiro (§13).
+- **Recortes:** pendências, as 6 primeiras por prioridade e prazo — "Ver todas"
+  leva ao Relacionamento, que não lista anamnese, termo nem pagamento; retornos,
+  5 pelo progresso na janela de contato; aniversariantes, 5 na ordem do dia do
+  mês, inclusive quem já fez.
+- **Linha do Dia:** vazio de 15 minutos ou mais vira "N min sem atendimento";
+  cancelados e ausentes aparecem esmaecidos e riscados. O marcador "agora" é
+  componente de cliente: não renderiza no servidor e reavalia a cada 60 s — é o
+  que evita divergência de hidratação. Não mova esse cálculo para o servidor.
 
 ### 8.7 Documentos e Contratos (migração 0013)
 
-Contrato, termo e orientação: cadastrar o modelo, emitir para a paciente e
-colher a assinatura. Rota `/formularios`; modelos em `/formularios/modelos`.
+Contrato, termo, orientação e anamnese: cadastrar o modelo, emitir para a
+paciente e colher a assinatura (na anamnese, as respostas). A seção cobre as
+migrações 0013 a 0018, com ajustes na 0019 e na 0022. Rota `/formularios`;
+modelos em `/formularios/modelos`.
 
 Contrato e anamnese têm naturezas diferentes, e o modelo separa as duas:
 
 - **Modelo** — texto que se corrige. Versionado, com autor, data e motivo em
   cada versão, no mesmo desenho de `prontuarios` + `prontuario_versoes`.
 - **Documento emitido** — depois de emitido, **não muda mais**. Correção gera
-  documento novo que referencia o anterior, e o anterior vira `substituido`.
+  documento novo que referencia o anterior (mesma paciente). O anterior vira
+  `substituido` só se ainda estava `emitido`; assinado continua `assinado`;
+  cancelado ou já substituído não se corrige (`documento_emitir` recusa e manda
+  corrigir a partir do documento em vigor). Na ficha, "Emitir correção" leva a
+  `/formularios/novo?paciente=…&corrige=…` e aparece também em documento
+  cancelado — quem recusa é o banco. O novo mostra "Este documento corrige um
+  anterior"; o antigo não mostra o caminho inverso. Anamnese corrigida nasce
+  com as perguntas da versão vigente e sem respostas.
 
 #### Congelar o texto é o ponto central
 
@@ -1230,15 +1691,46 @@ Cinco decisões contêm o risco, e nenhuma é dispensável:
    que deveria proteger. Se for mexer nelas, mantenha isso. E desde a 0022 a
    linha do link fica travada (`for update`) durante a conferência: antes,
    requisições em paralelo liam `tentativas < 10` ao mesmo tempo, e "dez" virava
-   "dez mais o tamanho do pool de conexões".
+   "dez mais o tamanho do pool de conexões". São dez erros **seguidos**, não
+   dez no total: `documento_para_assinatura` zera a contagem sempre que a data
+   confere, e assinar e responder zeram ao terminar com sucesso. O limite freia
+   a varredura; quem a impede é o token de 256 bits, o prazo e a revogação.
 5. **Sem data de nascimento cadastrada, não nasce link.** `data_nascimento` é
    opcional no cadastro; emitir link para quem não tem a data daria um link
    protegido só pelo token. A criação recusa e manda cadastrar.
 
-A tela também não ensina nada a quem não deveria estar ali: link inexistente,
-revogado e expirado dão respostas distintas apenas porque nenhuma delas revela
-se o token existe — e só "data incorreta" diz o que houve, porque quem errou a
-própria data precisa corrigir.
+A tela também não ensina nada útil a quem não deveria estar ali. Link
+inexistente, revogado, expirado e bloqueado dão respostas distintas — isso
+revela que um token existe, mas só a quem já o tem, e 256 bits não se
+adivinham. Antes da data de nascimento sai só o tipo do documento; "data
+incorreta" é a única resposta que diz o que houve, porque quem errou a própria
+data precisa corrigir.
+
+O contrato das funções públicas: todas devolvem `nao_encontrado`, `revogado`,
+`expirado`, `bloqueado` ou `ok`; as três que recebem a data acrescentam
+`data_incorreta` (conta um erro); `ja_assinado` sai do estado, da abertura e da
+assinatura; `indisponivel`, quando o documento foi cancelado ou substituído, ou
+quando o tipo não cabe (anamnese não se assina, contrato não se responde);
+assinar acrescenta `nome_invalido` e `cpf_invalido`, e responder,
+`respostas_invalidas`. A aplicação acrescenta `falhou`, para erro de
+infraestrutura ("o link continua valendo"). `documento_link_estado` devolve
+também o `tipo`, antes da data, e mais nada.
+
+#### Envio do link
+
+O painel mostra o endereço com **Copiar** e, quando o telefone cadastrado
+serve (`numeroWhatsapp`: 10 ou 11 dígitos, ou 12/13 começando com 55),
+**Enviar pelo WhatsApp**: um link `https://wa.me/55<número>?text=<mensagem>`
+que abre a conversa com a mensagem pronta (`mensagemDoConvite`). Quem aperta
+enviar é a pessoa; o sistema não manda mensagem. O canal é gravado **no
+clique** (`registrarCanalDoLink`, grant de coluna da 0015) como
+`WhatsApp (11) 91234-5678`; copiar não registra nada. Desde a 0022, a CHECK
+`documento_links_canal_formato` só aceita vazio ou esse formato, e a
+verificação de identidade da assinatura por link é escrita pelo banco a partir
+dele. **Canal novo (e-mail, SMS) exige migração que amplie a CHECK** — e
+`registrarCanalDoLink` não lê o erro do UPDATE, então um canal fora do formato
+se perde em silêncio. A validade vai de 1 a 90 dias no banco; a tela oferece 7,
+15 ou 30.
 
 **`/assinar/[token]` é a única rota pública que serve conteúdo de paciente.**
 `/recuperar-senha` e `/redefinir-senha` também ficam fora de `(app)`, mas só
@@ -1265,7 +1757,11 @@ via é o **mesmo grau de acesso** que ler antes de assinar, não um grau novo.
 
 Consequência assumida: o documento fica legível por quem tiver o link e a data
 durante toda a validade, não só até a assinatura. Quem quiser encurtar isso
-escolhe 7 dias na emissão, ou revoga depois que a paciente confirmar que salvou.
+escolhe 7 dias ao gerar o link — a validade é do link, não da emissão.
+**Revogar depois da assinatura não tem tela hoje:** o painel do link, único
+lugar com o botão Revogar, só aparece com o documento `emitido`
+(`detalhe-documento.tsx`). `documento_link_revogar` funciona em qualquer
+situação, mas falta o botão na ficha do documento assinado.
 Cancelado e substituído continuam sem corpo — não há via de documento que
 deixou de valer.
 
@@ -1280,10 +1776,15 @@ se parte entre páginas.
 > **Links assinados antes da 0016 continuam revogados.** A migração muda o
 > comportamento daqui para frente; ela não ressuscita o que já foi fechado.
 
-O passo da assinatura fica **isolado atrás de uma interface**: trocar para
-Autentique, ZapSign ou Clicksign é implementar um conector, não redesenhar o
-módulo. Por isso `documento_assinaturas` já nasce com `provedor`,
-`referencia_externa` e `url_comprovante`, vazios enquanto for interna.
+A troca para Autentique, ZapSign ou Clicksign está **prevista no modelo de
+dados, não no código**: `documento_assinaturas` já tem `provedor`,
+`referencia_externa` e `url_comprovante`, vazios enquanto for interna. Não há
+camada de conector — as ações chamam `documento_assinar` e
+`documento_assinar_por_link` direto —, e desde a 0022 o gatilho
+`assinatura_confere_documento` grava `provedor = 'interno'` (e zera os campos
+externos) em toda assinatura feita pela sessão de um perfil. Como a
+`service_role` não entra na aplicação, um conector vai precisar de função
+própria no banco, por migração.
 
 #### Anamnese (migração 0017)
 
@@ -1309,19 +1810,30 @@ O rastro de quem mudou o quê não se perde: `documento_campos` entra na
 auditoria. "Ela declarou que não tinha alergia" continua tendo data, autor e
 valor anterior — na trilha, que é onde isso mora, não numa trava.
 
+O autor, porém, só aparece na consulta: `documento_campos_responder` grava
+`respondido_por`. Pelo link, `respondido_por` e o `ator_id` da auditoria ficam
+nulos — a paciente não tem perfil. Ator nulo em `documento_campos` é a
+paciente pelo link (ou manutenção direto por SQL). E a auditoria guarda a linha
+depois da mudança, não um "antes e depois": o valor anterior é a entrada
+anterior do mesmo registro.
+
 **Sete tipos de campo:** `texto`, `texto_longo`, `sim_nao`, `escolha_unica`,
 `escolha_multipla`, `data`, `numero`. As perguntas moram em
 `modelo_documento_versoes.campos` (jsonb) porque **versionam junto com o
 texto** — uma versão do modelo é um enunciado e um conjunto de perguntas, e
 separá-los permitiria as duas coisas divergirem.
 
-Cada tipo é conferido nas duas portas: `private.campos_validos` valida a forma
-das perguntas na criação do modelo, e o CHECK `documento_campos_resposta`
-valida cada resposta — inclusive se a alternativa marcada existe, com o
-operador `?` do jsonb.
+Cada tipo é conferido no banco. `private.campos_validos` valida a forma das
+perguntas na criação do modelo e em cada nova versão. Cada resposta passa por
+`private.resposta_de_campo` nas duas funções de resposta — tudo ou nada — e
+pelo gatilho `campo_resposta_valida` em qualquer UPDATE: alternativa existente
+(inclusive na escolha múltipla, que grava em `respostas` e o CHECK não vê) e
+data que existe de fato (a regex sozinha aceitaria 31/02). O CHECK
+`documento_campos_resposta` continua como última barreira para o valor único.
 
-**Anamnese não passa a `assinado`.** Fica em `emitido` para sempre, e
-"respondida" é **derivada** da contagem de obrigatórias com resposta — estado
+**Anamnese não passa a `assinado`.** Fica em `emitido` enquanto não for
+cancelada ou substituída por uma correção — e aí para de aceitar resposta.
+"Respondida" é **derivada** da contagem de obrigatórias com resposta — estado
 gravado envelhece, como "vencida" na §8.4. Na tela o rótulo de `emitido` vira
 "Em preenchimento", por `rotuloDaSituacao`.
 
@@ -1331,6 +1843,14 @@ oferecendo: defesa em profundidade.
 **Uma quarta função pública.** `documento_responder_por_link` é a paciente
 respondendo de casa, e continua valendo a regra: função, nunca tabela.
 `documento_campos` tem `revoke all ... from anon` como todas as outras.
+
+**Perguntas fora da anamnese.** O editor aceita perguntas em qualquer tipo de
+modelo ("Contrato, termo e orientação costumam não ter perguntas"), e a emissão
+as congela em `documento_campos`. Mas só a anamnese as mostra, na ficha e no
+link: num contrato ficam gravadas e invisíveis, `documento_responder_por_link`
+recusa (`indisponivel`), e só `documento_campos_responder` as alcança — pela
+API e por qualquer perfil ativo, porque a política de `documento_campos` só
+restringe à administradora quando o documento é anamnese.
 
 **Como as perguntas entram (migração 0018).** `documento_campos` não tem
 política de INSERT, de propósito: pergunta não se acrescenta à mão num documento
@@ -1353,11 +1873,12 @@ ela faz.
 
 **Os grants restringem desde a 0019.** Antes, o padrão do projeto concedia todos
 os privilégios de tabela a `authenticated` (TRUNCATE inclusive) e um `grant`
-numa migração só repetia. Agora cada tabela declara o que `authenticated` faz, e
-UPDATE é por coluna onde o resto da linha é congelado: em `documentos`, só
-`situacao` e `motivo_cancelamento`; em `documento_campos`, só as colunas de
-resposta; em `prontuarios`, só atendimento, data e título; em
-`documento_links`, só `canal_envio`.
+numa migração só repetia. Agora cada tabela declara o que `authenticated` faz.
+O UPDATE por coluna, onde o resto da linha é congelado, veio na 0022: em
+`documentos`, só `situacao` e `motivo_cancelamento`; em `documento_campos`, só
+as colunas de resposta; em `prontuarios`, só atendimento, data e título. Em
+`documento_links`, só `canal_envio`, desde a 0015 (a 0019 repete o grant depois
+do `revoke all`).
 
 **O que a 0022 fechou.** Antes dela, as políticas de INSERT e UPDATE deixavam
 qualquer perfil ativo, pela API, inventar um documento "assinado" com o texto
@@ -1371,9 +1892,18 @@ canal e operador escritos pelo banco; e a assinatura registrada fecha o
 documento na mesma transação.
 
 Duas funções de escrita em vez de uma porque os guardas são diferentes: a da
-consulta é `security invoker` e exige sessão de administradora; a do link é
+consulta é `security invoker` e exige sessão (na anamnese, a RLS só deixa a
+administradora); a do link é
 `security definer` e exige token mais data de nascimento. Dar poder de definer
 a quem já tem sessão seria emprestar privilégio sem precisar.
+
+**Limites.** Corpo do modelo até 100.000 caracteres; até 120 perguntas por
+modelo; enunciado e texto de apoio até 300; alternativas de uma pergunta de
+escolha: o banco aceita de 1 a 50, com até 200 caracteres, e a tela guarda até
+40, com até 160; resposta de texto até 4.000; número até 30 caracteres com até
+4 casas decimais (a tela, 20); escolha múltipla até 50 marcações; um envio de
+respostas até 200 perguntas e 200 mil caracteres. Onde tela e banco diferem,
+vale o banco.
 
 #### O que ainda não existe
 
@@ -1395,9 +1925,14 @@ retornos, aniversários, avaliações e tarefas. Usa as tabelas existentes
 - Confirmações mostram os próximos 15 dias ainda em `agendado` ou
   `aguardando_confirmacao`. Alterar a situação usa o gatilho já existente da
   agenda, que registra autor e data.
-- Retornos têm data informada pela equipe. O sistema **não** calcula período
-  clínico nem recomenda quando chamar a paciente. A equipe registra a situação
-  e pode reabrir o acompanhamento.
+- Retornos têm data informada pela equipe. O Relacionamento **não** calcula
+  período clínico nem recomenda quando chamar a paciente. A equipe registra a
+  situação e pode reabrir o acompanhamento. **Exceção a conhecer:** o painel
+  "Próximos retornos" da Visão Geral (§8.6) usa
+  `procedimentos.retorno_sugerido_dias` (90 quando não há) para desenhar uma
+  faixa em volta da mesma data — "No período" a partir de 85% do intervalo,
+  "Passou do período" a partir de 115%. Os mesmos retornos aparecem com regras
+  diferentes nas duas telas. Os intervalos são demonstrativos (§10, item 2).
 - Tarefas de contato usam `pendencias`. A pessoa pode criar, concluir, cancelar
   e reabrir; toda escrita valida a sessão e os dados na ação de servidor.
 - Aniversários vêm da data de nascimento do cadastro, no mês escolhido.
@@ -1412,11 +1947,29 @@ retornos, aniversários, avaliações e tarefas. Usa as tabelas existentes
   mensagens de aniversário com tipo `outro`. A ação evita novo registro do
   mesmo tipo para a mesma paciente no mesmo dia da clínica. O sistema não lê a nota nem
   confirma se a paciente avaliou no Google.
+- **O registro de contato é reconhecido pela descrição**, não pelo tipo:
+  `Convite para avaliação no Google enviado pela equipe` ou `Mensagem de
+  aniversário enviada pela equipe`. A deduplicação procura a mesma descrição no
+  mesmo dia, a aba Tarefas esconde esses textos e a aba Avaliações só reconhece
+  os que começam com eles. Mudar o texto em `acoes/relacionamento.ts` sem mudar
+  os filtros de `consultas/relacionamento.ts` quebra as duas coisas. Os
+  registros de aniversário ficam gravados, mas hoje nenhuma tela os mostra.
+- **WhatsApp:** `telefoneParaWhatsApp()` tira um `55` inicial, exige 10 ou 11
+  dígitos e prefixa `55`; fora disso a linha mostra "Sem telefone válido" e
+  sobra "Copiar mensagem". Número de DDD 55 gravado sem o código do país perde
+  o DDD e é recusado. "Marcar como enviada" só habilita depois de abrir ou
+  copiar — trava de interface, que a ação não confere.
+- **Recortes:** a fila mostra até 5 tarefas e 5 retornos; as candidatas a
+  avaliação vêm dos 100 atendimentos concluídos mais recentes; os convites
+  registrados, das 200 pendências resolvidas mais recentes de tipo
+  `pesquisa`/`outro`.
 
-As pendências existentes têm RLS `for all` e permitem DELETE no banco (ver §1).
-O histórico operacional desses convites, por usar `pendencias`, **não é
-imutável**. Se for exigida uma trilha inviolável de contatos, isso precisará de
-uma migração e tabela próprias.
+Desde a 0019, `pendencias` não tem política nem grant de DELETE e entrou na
+auditoria (ver §1): o registro de um convite não se apaga pela API, e cada
+mudança fica na trilha. Mas ele continua **editável** — a política de UPDATE
+deixa reabrir, cancelar e mudar a descrição —, então não é uma prova
+inviolável de contato. Se for exigida uma trilha imutável de contatos, isso
+precisará de uma migração e tabela próprias.
 
 ## 9. Invariantes — o que nunca pode ser quebrado
 
@@ -1435,14 +1988,14 @@ errada, ou precisa de uma conversa com a clínica antes.
 - [ ] `getUser()`, nunca `getSession()`
 - [ ] Migração já aplicada não foi editada — correção virou arquivo novo
 - [ ] Toda tabela com dado de paciente entrou na auditoria
-- [ ] Erro de banco virou mensagem em português por `mensagemDoBanco` (§6, regra 11) — nenhuma ação interpola `error.message`
+- [ ] Erro de banco virou mensagem em português por `mensagemDoBanco` (§6, regra 11) — nenhuma ação nova interpola `error.message` (o caso que sobrou, na importação, está no §13)
 - [ ] Toda consulta lê o `error`; toda escrita confere que alcançou uma linha
 
 **Arquitetura**
 
-- [ ] Nenhum componente conversa com o banco direto
+- [ ] Nenhum componente conversa com o banco direto (única exceção: o upload das fotos de evolução para o Storage, §6 regra 1)
 - [ ] Consulta é `server-only`; ação é `"use server"`
-- [ ] Toda escrita valida no servidor, com a mesma função que o formulário usa
+- [ ] Toda escrita valida no servidor com a função de `lib/`; formulário que validar antes usa a mesma função
 - [ ] Permissão verificada nas três camadas (interface, ação, banco)
 - [ ] `revalidatePath` depois de escrever, inclusive `/`
 - [ ] Estado de tela (busca, filtro, página, dia, mês) foi para a URL
@@ -1455,14 +2008,14 @@ errada, ou precisa de uma conversa com a clínica antes.
 - [ ] Cálculo em centavos inteiros, um arredondamento por operação
 - [ ] Taxa descontada do líquido, nunca somada à paciente, nunca lançada como despesa
 - [ ] Cópia congelada da taxa preservada na venda
-- [ ] Tabela financeira nova sem política de DELETE (as antigas têm — ver §8.4)
+- [ ] Tabela financeira nova sem política nem grant de DELETE (nenhuma das existentes tem, desde a 0019 — ver §8.4)
 - [ ] Alteração pós-confirmação gerou ajuste, sem tocar o original
 - [ ] Toda alteração de forma/taxa tem motivo e entrou no histórico
 
 **Tempo e apresentação**
 
 - [ ] Todo cálculo de dia passou por `lib/dates.ts`
-- [ ] Nenhuma cor escrita fora de `globals.css`
+- [ ] Nenhuma cor escrita fora de `globals.css` (a única exceção é o `themeColor` do layout raiz)
 - [ ] Estado comunicado por texto + ícone + forma, não só por cor
 - [ ] Contraste ≥ 4.5:1 em texto
 - [ ] Botão sem função está visivelmente indisponível, com a razão à vista
@@ -1486,9 +2039,12 @@ padrão para destravar.**
 5. **Horário de funcionamento.** Definido, a Linha do Dia pode mostrar o
    expediente inteiro, com as pontas vazias.
 6. **Situações do atendimento.** As sete cobrem a rotina? Falta "remarcado"?
+7. **Correção de confirmação errada.** Como corrigir valor ou data digitados
+   errado ao confirmar um recebimento? Hoje não há caminho na interface (§8.4).
 
 Já decididas e **fechadas** — não reabra sem motivo novo: divisão de permissões
-(três perfis), método de assinatura (interna, atrás de interface), fuso
+(três perfis), método de assinatura (interna; troca de provedor prevista só no
+modelo de dados, §8.7), fuso
 (São Paulo, sempre), vermelho para despesa (convenção contábil).
 
 ---
@@ -1503,7 +2059,8 @@ conduta).
 
 Também ainda provisórios na interface: ícone de notificações (mostra contagem, não abre nada) ·
 menu de perfil (opções desabilitadas com a razão no `title`) · botões "Resolver"
-das pendências (navegam para o módulo).
+das pendências (navegam para o módulo) · telas de auditoria e de gestão de
+usuários (não existem; ver §5).
 
 ---
 
@@ -1547,12 +2104,18 @@ sem combinar.
 ### Ao mexer no banco
 
 1. Escreva a migração nova (`00NN_nome_descritivo.sql`), com cabeçalho
-   comentado explicando o **porquê** — é o padrão dos nove arquivos existentes.
-2. `npm run db:push`
-3. `npm run db:tipos`
-4. `npm run typecheck`
-5. Atualize [`supabase/README.md`](supabase/README.md) (tabela de migrações) e
+   comentado explicando o **porquê** — é o padrão de todos os arquivos
+   existentes.
+2. Aplique no Supabase local (`npx supabase db reset`), rode
+   `npm run test:banco` e acrescente ao `supabase/testes/permissoes.sql` o que a
+   migração passou a garantir.
+3. Se mudou tabela ou função pública, `npm run db:tipos:local` e
+   `npm run typecheck`.
+4. Atualize [`supabase/README.md`](supabase/README.md) (tabela de migrações) e
    este arquivo, se a regra mudou.
+5. **Produção é com o dono do projeto** (§2): ele roda `npm run db:push` e
+   `npm run db:tipos`, conferindo o `git diff` dos tipos. Agente não roda
+   nenhum dos dois.
 
 ### Ao terminar um módulo
 
@@ -1576,7 +2139,7 @@ comportamento antigo por padrão.
 | `alterarTaxaManual` gravava taxa em venda de PIX/dinheiro | Recusado na ação e no banco (gatilho `vendas_confere_taxa`, 0020) |
 | Ações `Promise<void>` descartavam o erro (reativar taxa, situação, arquivar…) | Devolvem `ResultadoAcao`; a recusa aparece ao lado do botão (§6, regra 9) |
 | `instanteNaClinica` aceitava 31/02 como 03/03 | Toda data de formulário passa por `dataValida()` (§7.2) |
-| 10 ações interpolavam `error.message` | Nenhuma; tudo por `lib/erros-banco.ts` |
+| 10 ações interpolavam `error.message` | Passaram a usar `lib/erros-banco.ts`. **Sobrou um caso, ainda aberto:** o motivo de linha recusada na importação em massa (ver Dívidas conhecidas) |
 | `SITUACOES_VALIDAS` era array solto | Derivada de `PROXIMAS_SITUACOES` (`Record`) |
 | Faixa de exemplo montada por página | No layout; página nova já nasce com ela |
 | `perfis_atualiza_proprio_nome` deixava mexer em `ativo` | Gatilho `perfil_proprio_so_nome` (0019) |
@@ -1605,6 +2168,10 @@ banco faz.
 - **Ajuste financeiro entra no período pela data da correção (`criado_em`)**, não
   pela data do recebimento corrigido. Corrigir em setembro uma venda de agosto
   move dinheiro para setembro. É decisão de regra contábil — pergunte.
+- **Alteração repetida depois da confirmação acumula ajuste.**
+  `venda_alterar_pagamento` compara o novo líquido só com `valor_recebido`, sem
+  os ajustes já lançados (§8.4). O tratamento também é regra contábil —
+  pergunte.
 - **Venda sem recebimento pela API.** A recepção ainda pode inserir uma linha em
   `vendas` direto pela API, sem passar por `venda_registrar`; o gatilho da 0020
   garante a taxa, mas a venda fica sem recebimento. Fechar exigiria tirar o
@@ -1613,6 +2180,19 @@ banco faz.
 - **A exclusão direta de foto pela API (administradora) exige o motivo** desde a
   0022, mas não apaga o arquivo do bucket — isso continua sendo papel de
   `eliminarImagem`, que remove o arquivo antes.
+- **A importação em massa ainda mostra a mensagem crua do Postgres.** Em
+  `importarPacientes` (`acoes/importar-pacientes.ts`), quando o lote cai, as
+  linhas são reenviadas uma a uma, e uma recusa com código diferente de `23505`
+  vira `erroDaLinha.message` em "Recusadas pelo banco" — em inglês, com nome de
+  constraint ou tabela, e sem passar por `registrarFalha`. Conserto:
+  `mensagemDoBanco` mais `registrarFalha`, como nas outras ações.
+- **Relacionamento fora do contrato das ações de botão.** `mudarSituacaoTarefa`,
+  `mudarSituacaoRetorno` e `confirmarPelaLista` (`acoes/relacionamento.ts`)
+  recebem e devolvem `EstadoRelacionamento` e usam um componente próprio,
+  `AcaoInline`, com classes soltas em vez de `FormularioDeAcao`. O arquivo
+  também não passa por `mensagemDoBanco` nem `registrarFalha`: todo erro de
+  banco vira uma frase fixa e não chega ao log (§6, regras 9 e 11). O destino é
+  `ResultadoAcao` + `FormularioDeAcao`.
 - **`npm audit` ainda aponta o Next 15.** Os dois alertas críticos de execução
   remota foram fechados subindo para 15.5.26 (22/09/2026). Sobram um alerta
   moderado do próprio `next` e o `postcss` 8.4.31 que o Next fixa por dentro
@@ -1625,3 +2205,15 @@ banco faz.
 período, não só do mês na URL, e vêm de `valor_liquido` (já sem a taxa). Os
 demais são **fluxo do mês**. Misturar os dois numa conta produz número sem
 significado.
+
+**Rótulos parecidos, bases diferentes.** No mesmo mês os números podem não
+bater, e não é erro de soma:
+
+- Visão Geral → "Recebido no mês" e "Entradas do mês" somam o
+  `valor_recebido` dos confirmados, **sem** ajustes; Financeiro → "Líquido recebido" é a mesma soma **com** os
+  ajustes do mês.
+- Visão Geral → "Despesas do mês" soma as não canceladas (pagas e pendentes)
+  **por competência**; Financeiro → "Despesas pagas" soma só as pagas, **por
+  `pago_em`**.
+- Ficha da paciente → "Total recebido" e "Em aberto" somam o **valor bruto**
+  (`valor`), antes da taxa.

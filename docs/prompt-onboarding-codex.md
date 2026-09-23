@@ -19,7 +19,7 @@ por escrito.
 
 1. `AGENTS.md` na raiz — INTEIRO. É o documento-chave e a fonte de verdade.
    Preste atenção especial à seção 9 (invariantes) e à seção 13 (erros
-   conhecidos e código morto).
+   conhecidos e dívidas).
 2. `docs/overview-sistema.md` — o produto: cada módulo, as decisões de design e
    o porquê delas.
 3. `supabase/README.md` — o banco por cima.
@@ -46,8 +46,9 @@ cite arquivo e linha. Se continuar sem resposta, diga "não achei" — não inve
  4. A taxa de cartão aparece em algum lugar como despesa? Por quê?
  5. Quem pode alterar a taxa de uma venda? Em quantas camadas isso é verificado,
     e quais são elas nominalmente?
- 6. Cite duas regras de permissão que a interface e a ação de servidor impõem mas
-    que a RLS NÃO cobre. Por que isso é intencional em um caso?
+ 6. Qual regra de permissão a interface e a ação de servidor impõem mas a RLS
+    NÃO cobre, e por que isso é intencional? Cite duas regras que já foram
+    assim e passaram a ser garantidas pelo banco — e em que migração.
  7. Por que `papel_atual`, `tem_acesso` e `e_administradora` vivem no schema
     `private` e não em `public`?
  8. Uma conta recém-criada no Supabase consegue ver dado de paciente? Por quê?
@@ -68,8 +69,9 @@ cite arquivo e linha. Se continuar sem resposta, diga "não achei" — não inve
 Depois de responder, me diga:
 
 - **Contradições**: qualquer ponto em que o `AGENTS.md` diverge do código. Cite
-  os dois lados. O documento já foi auditado uma vez, mas não é infalível — e a
-  regra do projeto é que o código vence e o documento é corrigido no mesmo commit.
+  os dois lados. O documento já foi auditado contra o código, mas não é
+  infalível — e a regra do projeto é que o código vence e o documento é
+  corrigido no mesmo commit.
 - **O que ficou obscuro**: o que você entendeu pela metade e precisaria conferir
   antes de mexer.
 - **O que eu precisaria decidir**: qualquer coisa que dependa da clínica e não
@@ -80,7 +82,9 @@ Depois de responder, me diga:
 
 Estas valem a partir de agora, em toda tarefa:
 
-- **Nunca** use a chave `service_role`, em lugar nenhum.
+- **Nunca** use a chave `service_role` na aplicação, e a de produção em lugar
+  nenhum. A única no repositório é a de demonstração do Supabase local, dentro
+  de `npm run local:usuarios` (AGENTS.md §2).
 - **Nunca** edite uma migração já aplicada. Correção é arquivo novo.
 - **Nunca** edite `src/lib/supabase/tipos-banco.ts` à mão — é gerado.
 - **Nunca** rode `db:push`, `db:tipos`, `dados:exemplo` ou `dados:limpar`: os

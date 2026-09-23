@@ -38,7 +38,7 @@ crescer.
 |---|---|---|
 | **Administradora** | Dra. Érika Passos | Acesso completo, incluindo despesas, relatórios, configurações e trilha de auditoria |
 | **Financeiro** | Quem opera o caixa | Vendas, recebimentos, despesas e alteração de taxa com justificativa. Não configura tabela de taxas nem gerencia usuários |
-| **Recepção** | Atendimento e agendamento | Agenda, cadastro de pacientes, confirmações, retornos, pendências e lançamento de recebimentos. Não acessa despesas, o consolidado financeiro nem conteúdo clínico |
+| **Recepção** | Atendimento e agendamento | Agenda, cadastro de pacientes, confirmações, retornos, pendências, emissão e assinatura de contratos, termos e orientações, e registro de venda com a taxa padrão. O recebimento nasce com a venda, a receber ou já recebido quando o pagamento é feito no balcão. Vê as vendas, as movimentações e os números de entrada do Financeiro. Não confirma recebimento depois, não altera venda e não acessa despesas, resultado de caixa, fluxo mensal nem conteúdo clínico |
 
 As regras estão nas políticas de acesso do próprio banco, não apenas na
 interface: mesmo que alguém contorne a tela, o banco recusa.
@@ -54,7 +54,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 | Pacientes | `/pacientes` | Cadastro e histórico de cada paciente |
 | Prontuários | `/prontuarios` | Registro clínico versionado e fotos de evolução, restritos à administradora |
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
-| Documentos e Contratos | `/formularios` | Contratos, termos e orientações emitidos e assinados pelas pacientes |
+| Documentos e Contratos | `/formularios` | Contratos, termos e orientações assinados pelas pacientes, e anamneses preenchidas por elas ou na consulta |
 | Relacionamento | `/relacionamento` | Confirmações, retornos, tarefas, aniversários e convites para avaliação no Google |
 | Relatórios | `/relatorios` | Indicadores de atendimento e faturamento |
 | Configurações | `/configuracoes` | Clínica, equipe, procedimentos e preferências |
@@ -66,19 +66,26 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 ### Estrutura e navegação
 
 - Estrutura principal reutilizável, com menu lateral, cabeçalho e área de conteúdo.
-- Menu lateral com os nove módulos, indicação da página atual (cor de fundo, cor do
-  texto, barra à esquerda e `aria-current`), recolhimento para faixa de ícones no
-  computador e gaveta sobreposta no celular e no tablet.
+- Menu lateral com os nove módulos, indicação da página atual (cor de fundo, texto
+  em negrito na cor da marca, barra à direita do item e `aria-current`),
+  recolhimento para faixa de ícones no computador e gaveta sobreposta no celular
+  e no tablet.
 - Cabeçalho com título da página, data de hoje por extenso, busca global para
   pacientes, atendimentos, documentos e prontuários conforme o perfil, ícone de
   notificações com a contagem de pendências de prioridade alta e menu do usuário.
-- Faixa de contexto no topo de cada tela, com o aviso permanente **"Ambiente de
-  demonstração — dados fictícios"** à esquerda e a etapa atual à direita.
+- Faixa de demonstração no topo da área de conteúdo, montada pelo layout: "**Ambiente
+  de demonstração.** Pacientes, valores e agendamentos marcados como *exemplo*
+  são fictícios." Aparece enquanto houver paciente marcada como
+  exemplo no banco (ou se essa checagem falhar, por segurança) e some sozinha
+  depois de `npm run dados:limpar`.
 - Atalho "Ir para o conteúdo" para navegação por teclado e página de rota inexistente.
 
 ### Visão Geral
 
-- **Ações rápidas** — cinco atalhos que navegam de verdade para os fluxos dos módulos.
+- **Ações rápidas** — atalhos que navegam de verdade para os fluxos dos módulos:
+  Nova paciente, Novo agendamento, Registrar atendimento, Registrar venda e
+  Criar tarefa. "Registrar atendimento" (prontuário) só aparece para a
+  administradora; recepção e financeiro veem quatro.
 - **Indicadores** — seis cartões, todos calculados a partir dos dados fictícios:
   atendimentos de hoje, confirmados, confirmações pendentes, pacientes aguardando
   retorno, recebido no mês e valores a receber.
@@ -87,9 +94,14 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
   marcador "agora", destaque no atendimento em curso e legenda das situações.
 - **Pendências da clínica** — tipo, paciente, detalhe, prazo, prioridade e botão
   que leva ao módulo responsável.
-- **Próximos retornos** — paciente, último procedimento, data do último
-  atendimento, situação do acompanhamento e uma barra mostrando onde a paciente
-  está dentro do período sugerido de contato.
+- **Próximos retornos** — até cinco retornos em aberto (nem agendados nem
+  recusados), com paciente, procedimento do retorno, situação do acompanhamento
+  e uma barra mostrando onde a paciente está dentro do período sugerido de
+  contato. A data exibida como "último atendimento" não vem da agenda: é a data
+  combinada menos o intervalo de retorno do procedimento, ou 90 dias quando não
+  há procedimento ou intervalo. Por isso um retorno criado em
+  `/relacionamento/retornos/novo`, que nasce sem procedimento, aparece como
+  "Procedimento" e com uma data 90 dias antes da combinada.
 - **Resumo financeiro** — entradas, despesas, valores pendentes e a evolução dos
   recebimentos nos últimos seis meses.
 - **Aniversariantes do mês** — nome, data, último atendimento e botão de contato.
@@ -110,8 +122,11 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 
 ### Páginas provisórias
 
-Relatórios ainda têm uma rota acessível que descreve o planejado, avisa que
-está em construção e oferece um botão de volta para a Visão Geral.
+Relatórios ainda têm uma rota acessível que descreve o planejado — faturamento
+por período e por procedimento, taxa de comparecimento e de retorno, desempenho
+por profissional e exportação —, avisa que está em construção e oferece um
+botão de volta para a Visão Geral. Esse texto vem do item `/relatorios` em
+`src/lib/nav.ts`; nenhum desses números existe ainda.
 
 ### Base técnica
 
@@ -142,7 +157,7 @@ Navegação, ações principais, links, títulos e foco. Não comunica estado ne
 | Azul de ação — botão | `#0A6ED1` | 5.04:1 com texto branco |
 | Azul claro de apoio | `#D6E9FB` | — |
 | Página | `#FFFFFF` · painel `#F9F9FA` com borda `#E3E5E8` |  |
-| Texto | `#1B1C1E` · secundário `#43474D` · terciário `#72767C` | 9.35:1 · 4.57:1 |
+| Texto | `#1B1C1E` · secundário `#43474D` · terciário `#72767C` | 17.05:1 · 9.35:1 · 4.57:1 sobre branco |
 
 #### 2. Estado — quatro semânticas fixas
 
@@ -179,9 +194,12 @@ que as separa é o ícone, o rótulo e o preenchimento.
 
 #### Acessibilidade da cor
 
-Todo par de texto sobre fundo passa no WCAG AA (mínimo 4.5:1); o mais apertado é
-o verde positivo, em 4.60:1. As bordas ficam entre 1.5:1 e 2.1:1, abaixo do
-mínimo de 3:1 para elemento não-textual — **aceitável porque nenhuma borda
+O par mais apertado é o texto terciário (`#72767C`): 4.57:1 sobre branco, logo
+acima do mínimo de 4.5:1 do WCAG AA. **Sobre o painel `#F9F9FA` ele cai para
+4.34:1, e sobre `#F4F6F8` para 4.22:1, abaixo do AA**, e hoje aparece assim na
+descrição do cabeçalho dos cartões. Entre os estados, o mais apertado é o
+verde positivo sobre o próprio fundo, em 4.60:1. As bordas ficam entre 1.5:1 e
+2.1:1, abaixo do mínimo de 3:1 para elemento não-textual — **aceitável porque nenhuma borda
 carrega significado sozinha**: todo estado é identificado por texto, ícone
 próprio e preenchimento.
 
@@ -235,9 +253,11 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 2. **Períodos de retorno por procedimento.** Os intervalos usados na demonstração
    são exemplos. A equipe clínica precisa definir os valores reais antes de virarem
    regra do sistema.
-3. ~~**Divisão de permissões.**~~ Definida na Etapa 2: administradora e recepção,
-   com as despesas e a auditoria restritas à administradora. O perfil Profissional
-   entra quando a equipe crescer.
+3. ~~**Divisão de permissões.**~~ Definida na Etapa 2 (administradora e
+   recepção) e completada no Financeiro (Etapa 5) com o perfil financeiro: são
+   três perfis, com a auditoria restrita à administradora e as despesas ao
+   financeiro e à administradora. O perfil Profissional entra quando a equipe
+   crescer.
 4. **Definição de "atendimento do dia".** Hoje o indicador desconsidera os
    cancelados e conta o restante. Falta confirmar se é assim que a clínica pensa.
 5. **Canal de contato preferencial** para confirmação, retorno e aniversário.
@@ -250,12 +270,17 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 8. **Situações do atendimento.** As sete atuais cobrem a rotina? Falta alguma, como
    "remarcado"?
 9. ~~**Método de assinatura dos contratos.**~~ Definido: assinatura interna, com
-   o passo isolado atrás de uma interface para permitir conectar uma plataforma
-   externa depois. Ver a seção 10.
+   os campos de referência externa já no banco para um dia conectar uma
+   plataforma externa. Ver a seção 15.
+10. **Correção de confirmação errada.** Como corrigir valor ou data digitados
+    errado ao confirmar um recebimento? Hoje não há caminho na interface.
 
 ---
 
 ## 8. Organização do código
+
+A árvore completa e atualizada está no [`AGENTS.md`](../AGENTS.md) §6; esta
+mostra o essencial de cada módulo.
 
 ```
 src/
@@ -267,19 +292,39 @@ src/
     recuperar-senha/      solicitação do link de recuperação
     redefinir-senha/      nova senha após validação do link
     sem-acesso/           conta existe mas não foi liberada
+    assinar/[token]/      assinatura e anamnese por link, a única rota pública com
+                          conteúdo de paciente
+    error.tsx  global-error.tsx  not-found.tsx   telas de erro e de rota inexistente
     (app)/
-      layout.tsx          estrutura principal, exige sessão válida
+      layout.tsx          estrutura principal e faixa de demonstração, exige sessão válida
+      error.tsx  loading.tsx   tela de erro e esqueleto de carregamento
       page.tsx            Visão Geral
       pacientes/          lista, cadastro, ficha, edição e importação
       agenda/             marcação, remarcação e situações
+      prontuarios/        lista, novo, ficha com fotos de evolução e nova versão
+      financeiro/         visão geral, vendas, despesas, taxas de cartão,
+                          movimentações e fluxo mensal
+      formularios/        Documentos e Contratos: lista, emissão, ficha e modelos
       busca/              busca global conforme o perfil
       relacionamento/     confirmações, retornos, tarefas e convites
+      relatorios/         página provisória
+      configuracoes/      hub e tabela de procedimentos (lista, novo, editar)
   components/
-    layout/               estrutura, menu, cabeçalho, perfil, selo, placeholder
-    ui/                   cartão, botão, campo, situação, prioridade, lista, avatar, vazio
+    layout/               estrutura, menu, cabeçalho, perfil, selo, placeholder, tela de erro
+    ui/                   cartão, botão, campo, formulário de ação, abas, seletor segmentado,
+                          situação, prioridade, lista, avatar, vazio
     overview/             indicadores, Linha do Dia, pendências, retornos, financeiro,
                           gráfico, aniversariantes, ações rápidas
     pacientes/            busca, lista, paginação, formulário, ficha, importador
+    agenda/               lista do dia, navegação de dias, formulário, seletor de
+                          paciente, botões de situação
+    prontuarios/          lista, busca, formulário, ficha, galeria e envio de fotos,
+                          acesso restrito
+    financeiro/           abas, indicadores do mês, listas, filtros, navegação de mês,
+                          formulários, alteração de pagamento e de taxa, confirmação
+                          de recebimento
+    documentos/           lista, filtros, emissão, modelos, anamnese, link e assinatura
+    configuracoes/        formulário e lista de procedimentos, trava de administradora
     relacionamento/       botões de situação e preparo dos convites
   server/
     consultas/            leitura do banco — `server-only`, uma função por assunto
@@ -289,6 +334,14 @@ src/
     auth.ts               usuário da sessão com o perfil carregado
     dates.ts              todo cálculo de dia, no fuso da clínica
     format.ts             pt-BR: moeda, data, hora
+    periodo.ts            o mês da URL (?mes=AAAA-MM)
+    moeda.ts              centavos inteiros e pontos-base
+    venda.ts  despesa.ts  regras da venda e da despesa
+    atendimento.ts        situações e próximos passos, dinheiro em centavos, duração
+    procedimento.ts       regras do catálogo de procedimentos
+    prontuario.ts  prontuario-imagens.ts   regras do registro clínico e das fotos
+    documento.ts          tipos, situações e regras dos documentos
+    erros-banco.ts        erro do banco vira frase em português
     paciente.ts           regras do cadastro: CPF, telefone, endereço, validação
     csv.ts                leitor de CSV: separador, aspas, BOM, Latin-1
     importacao.ts         planilha → linhas validadas, sem gravar nada
@@ -297,9 +350,14 @@ src/
     nav.ts                fonte única do menu
 supabase/
   migrations/             estrutura do banco, versionada
+  testes/                 testes do banco por perfil
+testes/                   preparação do Vitest
+e2e/                      Playwright: fluxos e telas
 docs/
   overview-sistema.md     este documento
+  prompt-onboarding-codex.md   primeira mensagem para um agente de IA novo
   redesign                mockup do Google Stitch que define a identidade visual
+  assets/                 as imagens animadas (SVG) do README
 ```
 
 Regras que valem para as próximas etapas:
@@ -363,8 +421,9 @@ servidor.
 
 ### Busca
 
-Cobre nome, nome social, e-mail e telefone. Quando o termo é só dígito, procura
-também no CPF — a recepção digita `11987654321`, não o formato exato guardado.
+Cobre nome, nome social, e-mail e telefone. Quando o termo tem 3 dígitos ou
+mais, a pontuação é ignorada e a busca procura também no CPF e no telefone só
+pelos dígitos — a recepção digita `11987654321`, não o formato exato guardado.
 
 O termo, o filtro e a página ficam na **URL**, não em memória: dá para recarregar,
 voltar pelo navegador e mandar o link para outra pessoa. A digitação navega
@@ -378,10 +437,13 @@ listaria a base inteira.
 
 ### Validação
 
-O formulário valida antes de enviar, mas **a validação que vale é a do
-servidor** — quem envia o formulário por fora não passa pela primeira. As duas
-usam as mesmas funções de `src/lib/paciente.ts`, que por isso não é
-`server-only`.
+A validação é **só a do servidor**. A ação normaliza os campos e chama
+`validarPaciente`, a mesma função da importação em massa, e devolve os erros
+campo a campo junto com o que foi digitado, sem esvaziar o formulário. O
+formulário não valida antes de enviar: só formata CPF, telefone e CEP enquanto
+se digita, e UF e origem são listas de escolha. `src/lib/paciente.ts` não é
+`server-only` porque o formulário usa dali as listas de UF e origem e o
+`apenasDigitos` das máscaras.
 
 | Campo | Regra |
 |---|---|
@@ -391,7 +453,7 @@ usam as mesmas funções de `src/lib/paciente.ts`, que por isso não é
 | E-mail | Opcional, checagem de forma |
 | Data de nascimento | Não pode estar no futuro nem antes de 1900 |
 | UF | Precisa estar na lista dos 27 estados |
-| Origem | Lista fechada — texto livre não vira relatório depois |
+| Origem | Lista fechada **só no formulário**. O servidor não valida o campo (só corta em 60 caracteres), e a importação grava texto livre, com aviso. É convenção da interface, não garantia: relatório por origem precisa tratar valor fora da lista |
 
 CPF repetido é recusado pelo índice único do banco, não só pela tela: o erro
 `23505` vira "Já existe uma paciente cadastrada com este CPF".
@@ -430,6 +492,16 @@ O que a prévia separa:
 | Com erro | Fica de fora, com o motivo por linha e o número da linha como aparece no Excel |
 | Já cadastrada | Pulada. Só o CPF marca duplicata — homônimo existe, nome igual não prova que é a mesma pessoa |
 
+Aviso não impede a linha de entrar. Ela aparece como "Vai entrar", com o alerta
+ao lado, para conferência:
+
+| Aviso | Por quê |
+|---|---|
+| Só um nome ("falta o sobrenome?") | Planilha antiga tem registro só com o primeiro nome; recusar impediria trazer a base |
+| Sem telefone e sem e-mail | Não dá para confirmar atendimento |
+| Origem gravada como texto livre | O cadastro manual usa lista fechada; a importação não força a lista |
+| Ano com dois dígitos | Mostra o ano que foi entendido, para conferir |
+
 CPF repetido **dentro do próprio arquivo** também é detectado: a primeira
 ocorrência entra, as seguintes apontam para a linha original.
 
@@ -447,6 +519,21 @@ dela. Trazer uma base inteira de uma vez é outra coisa. A checagem existe na
 página e **de novo na ação de servidor** — esconder o botão não é proteger a rota.
 
 Limites: 2 MB e 2000 linhas por arquivo.
+
+### Resumo da ficha
+
+O **Resumo** da ficha é somado no servidor, fora do Financeiro:
+
+| Linha | Conta |
+|---|---|
+| Atendimentos concluídos | Atendimentos da paciente em "concluído" |
+| Total recebido | Recebimentos "recebido" e "recebido com divergência" |
+| Em aberto | Recebimentos "previsto" e "pendente"; cancelado fica de fora |
+
+Os valores são brutos, o que a paciente paga, sem descontar taxa de cartão —
+por isso não se comparam com os números líquidos do Financeiro. Na mesma ficha,
+retornos mostram só os que não estão agendados nem recusados, e pendências só
+as abertas. Se mudar as situações do recebimento, esta soma precisa acompanhar.
 
 ### Arquivar em vez de apagar
 
@@ -517,9 +604,11 @@ marcados como "em breve".
 
 Decisões:
 
-- **Todo mundo vê a tabela; só a administradora escreve** — na página e de novo
-  na ação, espelhando a política `procedimentos_escrita` do banco. Quem não
-  pode editar não vê os botões: botão que vai falhar é pior que botão ausente.
+- **Todo mundo vê a tabela; só a administradora escreve** — na página, de novo
+  na ação e no banco, pelas políticas `procedimentos_insercao` e
+  `procedimentos_edicao` (migração 0019, sem DELETE — ainda não aplicada em
+  produção, ver a seção 20). Quem não pode editar não
+  vê os botões: botão que vai falhar é pior que botão ausente.
 - **Procedimento não se apaga.** O histórico de atendimentos aponta para ele e
   o banco recusaria (`on delete restrict`). "Tirar da agenda" esconde das novas
   marcações — o formulário da Agenda só lista ativos — e preserva o passado.
@@ -533,11 +622,26 @@ Decisões:
 ## 13. Módulo Financeiro (Etapa 5)
 
 Vendas, recebimentos, despesas, taxas de cartão, movimentações e fluxo de
-caixa. Seis áreas em abas dentro de `/financeiro`, todas com o mês na URL —
-e as listas com filtros também na URL: situação, forma e busca por paciente
-nas vendas; situação (incluindo a vencida derivada) e categoria nas despesas;
-tipo nas movimentações. O filtro acontece depois da consulta, no servidor:
+caixa. Seis áreas em abas dentro de `/financeiro`. Visão geral, Vendas,
+Despesas e Movimentações têm o mês na URL; Taxas de cartão mostra a tabela
+inteira, e o Fluxo mensal, sempre os últimos 12 meses. As listas também guardam
+os filtros na URL (abaixo). O filtro acontece depois da consulta, no servidor:
 o volume é mensal, dezenas de linhas.
+
+Parâmetros aceitos na URL:
+
+- `?mes=AAAA-MM` (ano de 2000 a 2100). Qualquer outro valor cai no mês atual.
+- Vendas: `situacao=abertas|recebidas|canceladas`, `forma=` (pix, dinheiro,
+  debito, credito, boleto, transferencia, outra) e `busca=` (paciente ou
+  procedimento, até 80 caracteres).
+- Despesas: `situacao=pendentes|vencidas|pagas|canceladas` (vencida é a
+  derivada; pendentes vem sem as vencidas) e `categoria=` (produtos, estrutura,
+  equipe, marketing, impostos, outros).
+- Movimentações: `tipo=vendas|entradas|saidas|ajustes`.
+- Nova venda: `?paciente=<id>` já chega com a paciente escolhida.
+
+Valor fora da lista é ignorado. As setas de mês levam só `?mes=`, então trocar
+de mês limpa os filtros.
 
 ### O modelo
 
@@ -565,8 +669,9 @@ o volume é mensal, dezenas de linhas.
 - **Gravação composta é função do banco.** `venda_registrar` e
   `venda_alterar_pagamento` fazem tudo ou nada, SECURITY INVOKER — a RLS de
   quem chama continua valendo.
-- **Registro financeiro não se apaga.** Nenhuma tabela nova tem política de
-  DELETE. Corrigir é cancelar, ajustar ou reabrir.
+- **Registro financeiro não se apaga.** Desde a 0019 (seção 20), nenhuma
+  tabela do Financeiro tem política de DELETE. Corrigir é cancelar, ajustar ou
+  reabrir.
 
 ### Mudança de forma de pagamento e de taxa
 
@@ -587,6 +692,21 @@ Recebimento: previsto · pendente · recebido · recebido com divergência
 (valor efetivo ≠ líquido previsto — decidido pelo sistema, não por opinião) ·
 cancelado. Despesa: pendente · paga · cancelada — "vencida" é derivada
 (pendente com prazo no passado), nunca gravada, para não envelhecer errado.
+
+### Movimentações
+
+O extrato do mês, do mais recente para o mais antigo. As 8 últimas também
+aparecem na Visão geral do Financeiro.
+
+| Tipo | Valor | Data |
+|---|---|---|
+| Venda | Valor final, sem sinal: é o fato gerador, não caixa | Data da venda |
+| Entrada | Valor efetivamente recebido (+) | Data do recebimento |
+| Saída | Valor da despesa paga (−) | Data do pagamento |
+| Ajuste | Valor do ajuste (+ ou −) | Data da correção, não a do recebimento |
+
+Para a recepção, as saídas não vêm, porque a RLS esconde as despesas, e o
+filtro "Saídas" não aparece.
 
 ### Permissões
 
@@ -609,6 +729,22 @@ principal é `/prontuarios`; também há criação por paciente
 (`/prontuarios/novo?paciente=`) e por atendimento
 (`/prontuarios/novo?atendimento=`).
 
+### Telas
+
+| Rota | O que tem |
+|---|---|
+| `/prontuarios` | Lista, 20 por página, com busca por título e por dados da paciente |
+| `/prontuarios/novo` | Cadastro do prontuário com a versão 1 |
+| `/prontuarios/[id]` | Ficha: versão atual, atendimento vinculado, histórico de versões e, no fim, as fotos de evolução |
+| `/prontuarios/[id]/editar` | Nova versão, com o formulário preenchido pela versão atual |
+
+O item "Prontuários" aparece no menu para todos os perfis. Recepção e
+financeiro que abrem qualquer uma dessas rotas veem o cartão "Prontuário
+clínico restrito", não um erro. Os atalhos para o registro clínico ("Registrar
+atendimento" na Visão Geral, "Novo prontuário" no cabeçalho da ficha da
+paciente e "Registrar prontuário" no histórico de atendimentos) só aparecem
+para a administradora.
+
 ### O modelo
 
 | Tabela | Papel |
@@ -621,6 +757,12 @@ principal é `/prontuarios`; também há criação por paciente
 - O acesso fica restrito à administradora até existir perfil clínico próprio.
 - Criar prontuário grava cabeçalho e versão 1 na mesma transação.
 - Editar cria nova versão; não há edição nem exclusão de versão existente.
+- Na tela de nova versão, o formulário vem preenchido com o cabeçalho e o texto
+  da versão atual. A paciente fica travada: aparece, não se escolhe. O
+  atendimento vinculado é mantido e não há como trocá-lo nem desvinculá-lo pela
+  tela, embora o banco aceite outro atendimento da mesma paciente ou nenhum.
+  Data e título podem mudar. O motivo começa vazio e exige pelo menos 5
+  caracteres, até 240.
 - O conteúdo clínico tem seis campos: queixa/anamnese, avaliação, conduta,
   evolução, orientações e observações clínicas.
 - Pelo menos um campo clínico precisa estar preenchido.
@@ -664,9 +806,9 @@ Decisões:
   eliminado: uma imagem no bucket sem nenhum registro apontando para ela seria
   dado de saúde sem dono e sem rastro.
 - **Mesmo alcance do prontuário**: só a administradora, também no Storage.
-- **Consentimento não está ligado ao sistema.** A paciente assina o termo (no
-  módulo Documentos, quando existir) e tira as fotos; o banco não registra qual
-  termo autorizou qual imagem. Decisão de 29/08/2026 — os dois módulos não se
+- **Consentimento não está ligado ao sistema.** A paciente assina o termo no
+  módulo Documentos (seção 15) e tira as fotos; o banco não registra qual termo
+  autorizou qual imagem. Decisão de 29/08/2026 — os dois módulos não se
   acoplam.
 - **Não há reordenação manual** das fotos: dentro do mesmo dia, vale a ordem de
   envio.
@@ -674,21 +816,28 @@ Decisões:
 ## 15. Documentos e Contratos
 
 Contratos de prestação de serviços, termos de consentimento e orientações
-entregues às pacientes. A rota principal é `/formularios`; os modelos ficam em
+entregues às pacientes, e a anamnese, que se preenche em vez de se assinar. A
+rota principal é `/formularios`; os modelos ficam em
 `/formularios/modelos`.
 
 ### O modelo
 
 | Tabela | Papel |
 |---|---|
-| `modelos_documento` | Texto-base de contrato, termo ou orientação. Cabeçalho: tipo, nome, descrição, se está em uso. |
-| `modelo_documento_versoes` | Versões imutáveis do texto do modelo, com autor, data e motivo. |
+| `modelos_documento` | Texto-base de contrato, termo, orientação ou anamnese. Cabeçalho: tipo, nome, descrição, se está em uso. |
+| `modelo_documento_versoes` | Versões imutáveis do texto do modelo (e, na anamnese, das perguntas, que versionam junto), com autor, data e motivo. |
 | `documentos` | Documento emitido para uma paciente, com o **texto congelado** no momento da emissão e o hash desse texto. |
 | `documento_assinaturas` | Evidência da assinatura: quem assinou, data e hora, IP, dispositivo, como a identidade foi conferida e o hash do que foi assinado. |
 | `documento_campos` | Respostas da anamnese, com a pergunta congelada em cada linha. |
 
 ### Na tela
 
+- **Lista** — `/formularios`, do mais recente para o mais antigo, 20 por
+  página. A busca procura no título do documento e na paciente (nome, nome
+  social, e-mail e telefone — sem CPF), considerando no máximo as 50 primeiras
+  pacientes que casam com o termo. Filtros por situação e por tipo; busca,
+  filtros e página ficam na URL, e trocar um filtro volta para a página 1. O
+  filtro "Aguardando assinatura" traz também as anamneses em preenchimento.
 - **Modelos** — a administradora cadastra o texto-base e grava novas versões com
   motivo. A recepção consulta, para saber o que existe. Modelo se aposenta,
   nunca se apaga: ele explica os documentos que gerou.
@@ -697,8 +846,12 @@ entregues às pacientes. A rota principal é `/formularios`; os modelos ficam em
 - **Assinar** — a paciente lê na tela da clínica e a recepção registra nome, CPF
   (opcional) e como conferiu a identidade.
 - **Cancelar** — para documento emitido por engano, com motivo. Assinado não
-  cancela: emite-se um novo corrigindo, e o antigo fica marcado como
-  substituído.
+  cancela: para corrigir, emite-se um novo apontando para ele. O assinado
+  continua assinado, porque o que a paciente assinou não se desfaz; só um
+  documento ainda aguardando assinatura passa a "substituído". Cancelado e substituído
+  não se corrigem: corrige-se a partir do documento em vigor. Cancelar (ou
+  substituir) não revoga o link, mas quem o abrir verá "Documento
+  indisponível", sem o texto.
 
 ### Anamnese
 
@@ -764,12 +917,12 @@ está na força da prova, caso alguém conteste.
 | Assinatura dentro do sistema, com trilha de evidências | R$ 0 | Simples. Válida, mas contestável. |
 | Plataforma especializada (ZapSign, Clicksign, Autentique) | R$ 30 a R$ 50/mês | Trilha auditável independente e PDF com log próprio. |
 
-**Decidido:** a assinatura é feita dentro do sistema, e o passo da assinatura
-fica isolado atrás de uma interface. Trocar para Autentique, ZapSign ou
-Clicksign depois é implementar um novo conector — não redesenhar o módulo. Por
-isso `documento_assinaturas` já nasce com os campos de referência externa
-(`provedor`, `referencia_externa`, `url_comprovante`), vazios enquanto a
-assinatura for interna.
+**Decidido:** a assinatura é feita dentro do sistema. `documento_assinaturas`
+já nasce com os campos de referência externa (`provedor`, `referencia_externa`,
+`url_comprovante`), vazios enquanto a assinatura for interna, para o dia de
+trocar por Autentique, ZapSign ou Clicksign. Mas essa troca ainda exige código
+e migração novos: hoje as ações chamam as funções do banco direto, e o banco
+grava toda assinatura feita pela equipe como "interno".
 
 **Há dois caminhos, e o registro diz qual foi usado**, porque a força da prova
 não é a mesma:
@@ -784,10 +937,12 @@ evidência que o assinante pudesse escrever não serviria de evidência.
 
 ### O link de assinatura
 
-A recepção gera um link, escolhe a validade (7, 15 ou 30 dias) e anota por onde
-vai enviá-lo — esse canal entra na evidência da assinatura. A paciente abre,
-**confirma a própria data de nascimento**, lê o documento e assina escrevendo o
-nome completo.
+A equipe gera o link — qualquer perfil; o de anamnese, só a administradora — e
+escolhe a validade (7, 15 ou 30 dias). O canal não é digitado: ao clicar em
+"Enviar pelo WhatsApp", o sistema grava "WhatsApp" e o telefone da paciente, e
+esse registro entra na evidência da assinatura. Link só copiado fica sem canal,
+e a ficha mostra "ainda não enviado". A paciente abre, **confirma a própria
+data de nascimento**, lê o documento e assina escrevendo o nome completo.
 
 Três cuidados, porque um link de WhatsApp é encaminhado, fotografado e vai parar
 em backup de nuvem:
@@ -801,8 +956,9 @@ em backup de nuvem:
   digital do link, não o link. Se a clínica perder o endereço, gera outro — e o
   anterior é cancelado automaticamente. Um link só fica vivo por documento.
 
-A clínica pode cancelar o link a qualquer momento, e vê na ficha do documento
-se já foi aberto e quantas vezes.
+Enquanto o documento aguarda assinatura, a clínica pode cancelar o link e vê na
+ficha se ele já foi aberto e quantas vezes. Depois de assinado ou cancelado, o
+painel do link sai da ficha.
 
 ### A via da paciente
 
@@ -814,8 +970,9 @@ O link **continua valendo até o prazo dele**, em modo leitura: ela pode voltar
 depois, confirmar a data de nascimento de novo e salvar a via outra vez. É o
 mesmo grau de acesso de antes de assinar — a proteção não mudou.
 
-Se a clínica quiser encurtar essa janela, escolhe 7 dias na emissão, ou cancela
-o link depois que a paciente confirmar que guardou o arquivo.
+Se a clínica quiser encurtar essa janela, escolhe 7 dias ao gerar o link.
+Cancelar o link depois da assinatura ainda não tem botão: o painel do link some
+da ficha quando o documento é assinado.
 
 O arquivo sai pela impressão do navegador, com "Salvar como PDF" — o caminho
 que funciona em qualquer aparelho. O que sai no papel é só o documento e o bloco
@@ -865,8 +1022,9 @@ equipe. Os botões de situação verificam sessão e dados no servidor antes de
 escrever. A agenda registra a trilha da confirmação pelo gatilho já existente.
 
 O módulo usa as tabelas `atendimentos`, `retornos` e `pendencias`, sem migração
-nova. Como `pendencias` ainda permite exclusão pela RLS, o registro de contato
-não deve ser tratado como uma trilha imutável de auditoria.
+nova. Desde a auditoria de setembro (seção 20), `pendencias` não se apaga pela
+API e toda mudança entra na auditoria — mas o registro continua editável pela
+equipe, então não deve ser tratado como prova inviolável de contato.
 
 ## 17. Busca global
 
@@ -949,14 +1107,18 @@ registro do que depende da clínica. O detalhe de cada regra está no
 
 ### Erros que se veem
 
-- Nenhuma mensagem do banco em inglês ou com detalhe técnico chega à tela. O
-  que falha diz em português o que fazer; o detalhe vai para o log do servidor,
-  sem dado de paciente.
+- Nenhuma mensagem do banco em inglês ou com detalhe técnico chega à tela, com
+  uma exceção ainda aberta: na importação de planilha, uma linha recusada pelo
+  banco por motivo diferente de CPF repetido mostra a frase do Postgres. No
+  resto, o que falha diz em português o que fazer; o detalhe vai para o log do
+  servidor, sem dado de paciente.
 - Os botões de ação (mudar situação, arquivar, ativar, revogar, pagar) mostram
   a recusa ao lado do botão. Antes, se o banco recusasse, nada acontecia e
   ninguém era avisado.
-- Toda tela tem estado de carregamento e de erro, com "Tentar de novo". O login
-  distingue senha errada de serviço fora do ar.
+- Toda tela do sistema tem estado de carregamento (um esqueleto único, com
+  título, indicadores e lista), e toda tela, inclusive as públicas, tem estado de erro com "Tentar
+  de novo". As telas públicas (login, senha e assinatura por link) não têm
+  esqueleto próprio. O login distingue senha errada de serviço fora do ar.
 
 ### Interface
 
@@ -968,7 +1130,11 @@ registro do que depende da clínica. O detalhe de cada regra está no
 - O seletor de paciente funciona pelo teclado (setas, Enter, Esc).
 - O menu do celular prende o foco enquanto está aberto e some da ordem do Tab
   quando fechado.
-- O Relacionamento passou a usar os mesmos componentes do resto do sistema.
+- O Relacionamento passou a usar os componentes de tela do resto do sistema
+  (cartões, abas, chips de situação, estado vazio e campos). Os botões de ação
+  (situação e registro de contato) ainda são próprios do módulo, fora do padrão
+  de botão do sistema (AGENTS.md §6, regra 9), mas mostram a recusa ao lado do
+  botão do mesmo jeito.
 - A faixa de demonstração vem do layout e fala com quem usa o sistema.
 - O atalho de registro clínico só aparece para a administradora.
 
@@ -976,7 +1142,9 @@ registro do que depende da clínica. O detalhe de cada regra está no
 
 O sistema passou a ter suíte automatizada: regras de dinheiro, datas,
 validações, CSV e erros; ações de servidor e componentes; permissões do banco
-por perfil; e fluxos de ponta a ponta com todas as telas em três larguras.
+por perfil; e fluxos de ponta a ponta, com 35 das 47 telas conferidas em três
+larguras. Ficam fora dessa varredura as páginas de detalhe e edição por id
+(menos as da paciente) e `/sem-acesso`.
 Nada roda contra produção — tudo usa o Supabase local.
 
 ### Segurança da hospedagem

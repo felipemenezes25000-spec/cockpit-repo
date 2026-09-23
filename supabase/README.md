@@ -14,11 +14,11 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0004_cadastro_nao_concede_acesso.sql` | Perfil novo nasce inativo e como recepção. O papel deixa de vir do metadado do cadastro. |
 | `0005_marca_dados_de_exemplo.sql` | Coluna `exemplo` nas tabelas de conteúdo, para o sistema saber o que é fictício e avisar na tela. |
 | `0006_financeiro_enums.sql` | Enums do Financeiro: formas boleto/outra, papel `financeiro`, situações do recebimento (em_aberto vira previsto), tipo de cartão e situação de despesa. |
-| `0007_financeiro_fundacao.sql` | Vendas, tabela de taxas de cartão, histórico de alterações e ajustes. A conta fecha por CHECK constraint; registro financeiro não tem política de DELETE. |
+| `0007_financeiro_fundacao.sql` | Vendas, tabela de taxas de cartão, histórico de alterações e ajustes. A conta fecha por CHECK constraint; vendas, histórico e ajustes sem política de DELETE (taxas e despesas ficam com `for all`, que inclui DELETE, até a 0019). |
 | `0008_operacoes_de_venda.sql` | Funções `venda_registrar` e `venda_alterar_pagamento`: gravações compostas em transação, com a RLS de quem chama. |
 | `0009_anon_fora_das_tabelas_novas.sql` | Revoga o anon das tabelas novas e muda o default para as futuras já nascerem sem o grant. |
 | `0010_prontuarios.sql` | Prontuários clínicos versionados, com RLS restrita à administradora e funções transacionais de criação/nova versão. |
-| `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado `prontuario-imagens`, metadados em `prontuario_imagens` e as quatro políticas de `storage.objects` — as primeiras do projeto. Única tabela com política de DELETE, por causa da LGPD. |
+| `0011_prontuario_imagens.sql` | Fotos de evolução: bucket privado `prontuario-imagens`, metadados em `prontuario_imagens` e as quatro políticas de `storage.objects` — as primeiras do projeto. Primeira política de DELETE deliberada, por causa da LGPD — e, desde a 0019, a única. |
 | `0012_eliminacao_de_imagem.sql` | Onde o motivo da eliminação pousa: `prontuario_imagem_eliminacoes` (sem UPDATE, sem DELETE) e a função `prontuario_imagem_eliminar`, que registra e apaga na mesma transação. O arquivo sai antes, pela aplicação. |
 | `0013_documentos.sql` | Documentos e contratos: `modelos_documento` + versões, `documentos` com texto congelado e hash por gatilho, `documento_assinaturas`. Funções `documento_emitir` (lê o corpo do banco, nunca do cliente) e `documento_assinar`. |
 | `0014_assinatura_por_link.sql` | Assinatura à distância. `documento_links` guarda o **hash** do token, nunca o token. Abre a **primeira superfície anônima** do projeto: três funções `security definer` executáveis por `anon` (`documento_link_estado`, `documento_para_assinatura`, `documento_assinar_por_link`) — nenhuma tabela. Segundo fator: data de nascimento, com o link se fechando em 10 erros. |
@@ -52,6 +52,15 @@ npx supabase db reset    # do zero: migrações + seed (as contas precisam ser r
 `config.toml` usa as portas 5532x porque o Windows reserva 54286–54385 para o
 Hyper-V. O banco local é onde toda migração nova se testa antes de produção:
 `db reset` precisa passar do zero, e `test:banco` precisa continuar verde.
+
+O Auth local tem o cadastro público e o login anônimo desligados
+(`enable_signup = false` e `enable_anonymous_sign_ins = false`, em `[auth]`; o
+`enable_signup = true` de `[auth.email]` só liga o login por e-mail) e JWT de 1
+hora com rotação do refresh token. Ele não envia e-mail de verdade: o que o Auth
+mandaria, como o link de recuperação de senha, cai na caixa de teste em
+<http://127.0.0.1:55324>. O `email_sent = 2` de `[auth.rate_limit]` não vale
+aqui: o próprio arquivo avisa que ele depende de SMTP configurado, e sem SMTP o
+Auth local sobe praticamente sem limite de envio.
 
 **Nunca crie usuário inserindo em `auth.users`** — nem no local. O script usa a
 API de administração do Auth, como o painel.
@@ -128,8 +137,9 @@ npx supabase db diff --linked
 | `recepcao` | Pacientes, agenda, retornos, pendências e registro de venda com a taxa padrão. Sem despesas, sem auditoria |
 
 O papel fica em `public.perfis.papel` e é lido pelas funções
-`private.papel_atual()`, `private.e_administradora()` e `private.tem_acesso()`,
-usadas por todas as políticas.
+`private.papel_atual()`, `private.tem_acesso()`, `private.e_administradora()` e
+`private.e_financeira()` (administradora **ou** financeiro), usadas por todas as
+políticas.
 
 Elas ficam no schema `private` de propósito: o PostgREST só publica os schemas
 configurados, então nada ali vira endpoint em `/rest/v1/rpc/`. Toda função
@@ -148,7 +158,10 @@ Para criar o acesso de alguém:
 
 1. Supabase → Authentication → Users → **Add user** (e-mail e senha).
 2. A pessoa aparece em `public.perfis` como recepção, inativa.
-3. Libere pelo sistema, ou por SQL:
+3. Libere por SQL, ou editando a linha em `public.perfis` pelo Table Editor do
+   painel. A tela de acesso ainda não existe: "Acesso e permissões" aparece como
+   "em breve" em Configurações, e "Perfis e permissões" está desabilitada no
+   menu do usuário. Por SQL:
 
 ```sql
 update public.perfis
@@ -201,15 +214,32 @@ essa página como troca de senha de uma sessão comum; ela não é uma autoriza�
 de servidor. `updateUser()` altera a senha do usuário autenticado na sessão do
 Supabase Auth, criada pelo link de recuperação nesse fluxo.
 
+O mínimo de 12 caracteres é regra **da interface**: `formulario-nova-senha.tsx`
+confere no navegador e chama `updateUser()` direto do cliente. O Auth só recusa
+o que a configuração dele manda, e o `config.toml` local aceita 6 caracteres,
+sem requisito de composição e sem reautenticação (`minimum_password_length = 6`,
+`password_requirements = ""`, `secure_password_change = false`). No local,
+quem tem sessão consegue gravar uma senha menor pela API. Para a regra valer no
+servidor, suba o mínimo do Auth: no local, no `config.toml`; em produção, nas
+configurações de senha do provedor Email, no painel — tarefa do dono do
+projeto. O valor de produção não está no repositório: confira antes de afirmar
+que a regra vale lá.
+
 ## Validação executada
 
-Depois de aplicar as três migrações, o banco foi testado com dois usuários de
-teste (uma administradora e uma recepcionista), removidos ao final:
+Hoje a validação do banco é automática e roda no Supabase local:
+`npm run test:banco` executa as **78 asserções** de
+[`testes/permissoes.sql`](testes/permissoes.sql), por perfil, numa transação
+desfeita no fim.
+
+O registro abaixo é histórico — a primeira validação, feita à mão em agosto de
+2026, depois de aplicar as três primeiras migrações, com dois usuários de teste
+(uma administradora e uma recepcionista) removidos ao final:
 
 | Verificação | Resultado |
 |---|---|
 | 11 tabelas com RLS ligada e política associada | ok |
-| Gatilho cria o perfil no cadastro do usuário, respeitando o papel | ok |
+| Gatilho cria o perfil no cadastro do usuário, lendo o papel do metadado | ok na época — era a escalada de privilégio que a 0004 fechou; hoje o perfil nasce sempre recepção e inativo |
 | Trilha de situação do atendimento gravada automaticamente | ok |
 | Auditoria registra inserções em pacientes e atendimentos | ok |
 | Recepção lê pacientes e agenda | ok |
