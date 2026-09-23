@@ -1,3 +1,4 @@
+import { partesDoDia } from "./dates";
 import { lerCsv, type PlanilhaLida } from "./csv";
 import {
   normalizarPaciente,
@@ -147,7 +148,7 @@ export function interpretarDataBr(bruto: string): DataInterpretada | null {
 
   if (br[3].length === 2) {
     // Data de nascimento: ano à frente do atual só pode ser do século passado.
-    const anoAtual = new Date().getUTCFullYear();
+    const anoAtual = partesDoDia().ano;
     const doisUltimos = anoAtual % 100;
     ano = ano > doisUltimos ? 1900 + ano : 2000 + ano;
     aviso = `Ano com dois dígitos ("${br[3]}") foi lido como ${ano}. Confira.`;

@@ -1,3 +1,5 @@
+import { dataValida } from "./dates";
+import { cpfValido } from "./paciente";
 /**
  * Regras de documento e modelo, válidas no formulário e no servidor.
  *
@@ -190,9 +192,11 @@ export function validarAssinatura(valores: ValoresAssinatura): ErrosAssinatura {
   }
 
   // CPF é opcional — nem toda paciente traz documento, e a assinatura vale
-  // pelo conjunto de evidências. Informado, precisa estar completo.
-  if (valores.cpf && valores.cpf.length !== 11) {
-    erros.cpf = "CPF incompleto. Deixe em branco ou informe os 11 dígitos.";
+  // pelo conjunto de evidências. Informado, precisa ser um CPF que existe: é
+  // a mesma regra do cadastro, e evidência com dígito errado não identifica
+  // ninguém.
+  if (valores.cpf && !cpfValido(valores.cpf)) {
+    erros.cpf = "CPF inválido. Confira os números ou deixe em branco.";
   }
 
   if (valores.verificacao.length < 3) {
@@ -446,7 +450,7 @@ export function validarResposta(
   const texto = valor.trim();
   if (!texto) return null;
 
-  if (campo.tipo === "data" && !/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+  if (campo.tipo === "data" && !dataValida(texto)) {
     return "Data inválida.";
   }
 

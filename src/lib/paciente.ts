@@ -1,4 +1,4 @@
-import { diferencaEmDias, instanteNaClinica, partesDoDia } from "./dates";
+import { chaveDoDia, dataValida, diferencaEmDias, instanteNaClinica, partesDoDia } from "./dates";
 
 /**
  * Regras da paciente que valem nos dois lados.
@@ -277,23 +277,16 @@ export function validarPaciente(v: ValoresPaciente): ErrosPaciente {
   }
 
   if (v.data_nascimento) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(v.data_nascimento)) {
+    const [ano] = v.data_nascimento.split("-").map(Number);
+    // Ano antes de 1900 recebe frase própria: quase sempre é erro de digitação
+    // ("1089"), não data que não existe.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v.data_nascimento) && ano < 1900) {
+      erros.data_nascimento = "Confira o ano de nascimento.";
+    } else if (!dataValida(v.data_nascimento)) {
+      // 31/02 e 29/02 fora de ano bissexto não existem — antes passavam.
       erros.data_nascimento = "Data inválida.";
-    } else {
-      const [ano, mes, dia] = v.data_nascimento.split("-").map(Number);
-      const hoje = partesDoDia();
-      const noFuturo =
-        ano > hoje.ano ||
-        (ano === hoje.ano && mes > hoje.mes) ||
-        (ano === hoje.ano && mes === hoje.mes && dia > hoje.dia);
-
-      if (mes < 1 || mes > 12 || dia < 1 || dia > 31) {
-        erros.data_nascimento = "Data inválida.";
-      } else if (noFuturo) {
-        erros.data_nascimento = "A data de nascimento não pode estar no futuro.";
-      } else if (ano < 1900) {
-        erros.data_nascimento = "Confira o ano de nascimento.";
-      }
+    } else if (v.data_nascimento > chaveDoDia()) {
+      erros.data_nascimento = "A data de nascimento não pode estar no futuro.";
     }
   }
 

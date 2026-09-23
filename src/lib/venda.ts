@@ -10,7 +10,6 @@ type Enums = Database["public"]["Enums"];
 export type FormaPagamento = Enums["forma_pagamento"];
 export type SituacaoRecebimento = Enums["situacao_recebimento"];
 export type TipoCartao = Enums["tipo_cartao"];
-export type Papel = Enums["papel_usuario"];
 
 export const ROTULO_FORMA: Record<FormaPagamento, string> = {
   pix: "PIX",
@@ -139,6 +138,10 @@ export type EfeitoDaMudanca =
  * Já confirmado: o registro original NÃO é tocado — a diferença entre o novo
  * líquido e o que foi confirmado vira um ajuste financeiro à parte. Diferença
  * zero não gera ajuste nenhum.
+ *
+ * Quem decide de verdade é a função SQL `venda_alterar_pagamento`; esta é a
+ * mesma regra escrita em TypeScript, e os testes (`venda.test.ts`) a usam
+ * como especificação. Mudou uma, mude a outra.
  */
 export function decidirEfeito(
   situacao: SituacaoRecebimento,
@@ -152,21 +155,4 @@ export function decidirEfeito(
   const diferenca = novoLiquidoCent - confirmadoCent;
   if (diferenca === 0) return { tipo: "nada" };
   return { tipo: "ajuste", valorCent: diferenca };
-}
-
-// ---------------------------------------------------------------------
-// Permissões do módulo
-// ---------------------------------------------------------------------
-
-/** Recepção registra venda com a taxa padrão; mexer em taxa é do financeiro. */
-export function podeAlterarTaxa(papel: Papel): boolean {
-  return papel === "administradora" || papel === "financeiro";
-}
-
-export function podeOperarFinanceiro(papel: Papel): boolean {
-  return papel === "administradora" || papel === "financeiro";
-}
-
-export function podeConfigurarTaxas(papel: Papel): boolean {
-  return papel === "administradora";
 }

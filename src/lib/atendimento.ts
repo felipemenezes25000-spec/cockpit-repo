@@ -84,7 +84,8 @@ export function lerCentavos(bruto: string): number | null {
   let inteiro: string;
   let fracao = "";
 
-  let m = /^(\d{1,3}(?:\.\d{3})+)(?:,(\d{1,2}))?$/.exec(texto);
+  // Grupo de milhar não começa com zero: "0.001" não é mil.
+  let m = /^([1-9]\d{0,2}(?:\.\d{3})+)(?:,(\d{1,2}))?$/.exec(texto);
   if (m) {
     inteiro = m[1].replace(/\./g, "");
     fracao = m[2] ?? "";
