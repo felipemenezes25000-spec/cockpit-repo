@@ -979,6 +979,14 @@ validações, CSV e erros; ações de servidor e componentes; permissões do ban
 por perfil; e fluxos de ponta a ponta com todas as telas em três larguras.
 Nada roda contra produção — tudo usa o Supabase local.
 
+### Segurança da hospedagem
+
+- Nenhuma tela pode ser embutida em outro site, e o sistema pede para não ser
+  indexado por buscadores. Na tela de assinatura, o endereço com o token não
+  vaza para links externos.
+- O Next.js subiu de 15.5.22 para 15.5.26, que fecha dois alertas críticos de
+  execução remota. Os alertas que sobram só fecham no Next 16 (AGENTS.md §13).
+
 ### Pendente de aplicação em produção
 
 As migrações 0019 a 0022 foram escritas e testadas no banco local, **não

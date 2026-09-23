@@ -1613,6 +1613,11 @@ banco faz.
 - **A exclusão direta de foto pela API (administradora) exige o motivo** desde a
   0022, mas não apaga o arquivo do bucket — isso continua sendo papel de
   `eliminarImagem`, que remove o arquivo antes.
+- **`npm audit` ainda aponta o Next 15.** Os dois alertas críticos de execução
+  remota foram fechados subindo para 15.5.26 (22/09/2026). Sobram um alerta
+  moderado do próprio `next` e o `postcss` 8.4.31 que o Next fixa por dentro
+  (usado só no build, sobre o nosso CSS). Os dois só fecham no Next 16, que é
+  versão maior: planeje a migração, não rode `npm audit fix --force`.
 
 ### Sobre os indicadores: estoque vs fluxo
 
