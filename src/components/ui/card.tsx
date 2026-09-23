@@ -47,7 +47,7 @@ export function CardCabecalho({
       <div className="min-w-0">
         <h2 className="t-headline text-primary">{titulo}</h2>
         {descricao ? (
-          <p className="mt-1 text-sm text-outline">{descricao}</p>
+          <p className="mt-1 text-sm text-on-surface-variant">{descricao}</p>
         ) : null}
       </div>
       {/* `max-w-full`: no celular a ação desce para a linha de baixo e, se

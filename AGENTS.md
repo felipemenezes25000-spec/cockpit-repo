@@ -1001,9 +1001,17 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
 
 - Todo par texto/fundo **precisa** passar no **WCAG AA** (mínimo 4.5:1).
   Exceção conhecida, não imite: `text-outline` (`#72767c`) só passa sobre
-  branco (4.57:1); sobre o painel `bg-card` cai para 4.34:1, e hoje é usado
-  assim na descrição do `CardCabecalho`. Texto secundário dentro de painel usa
-  `text-on-surface-variant` (8.88:1).
+  branco (4.57:1); sobre o painel `bg-card` cai para 4.34:1, e sobre
+  `bg-surface-container-low` para 4.22:1. Não é caso isolado: a auditoria de
+  23/09/2026 achou o par em 183 textos de 29 das 32 telas do sistema —
+  metadados, contagens e descrições dentro de painel, e a própria tela de
+  entrar. A descrição do `CardCabecalho` já saiu da lista. Trocar classe por
+  classe não fecha a conta; o conserto é escurecer `--color-outline` em
+  `globals.css`, decisão de design do dono do projeto. Texto secundário novo
+  dentro de painel usa `text-on-surface-variant` (8.88:1). E
+  `text-outline-variant` (`#c1c6cd`, 1.72:1) é cor de contorno e de ícone,
+  não de texto — ainda aparece como texto em rótulos pequenos da Visão Geral,
+  do Financeiro e dos modelos de documento.
 - **Cor nunca comunica sozinha.** Todo estado leva também texto, ícone próprio
   e forma (preenchido, contornado).
 - Foco sempre visível.

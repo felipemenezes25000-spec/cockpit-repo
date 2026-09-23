@@ -45,12 +45,12 @@ export function ListaProntuarios({
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/prontuarios/${prontuario.id}`}
-                className="t-title text-on-surface transition-colors hover:text-primary"
+                className="font-medium text-on-surface transition-colors hover:text-primary"
               >
                 {prontuario.titulo}
               </Link>
               {prontuario.exemplo ? (
-                <span className="rounded-[var(--radius-tag)] bg-atencao-fundo px-2 py-0.5 text-xs font-medium text-atencao-texto">
+                <span className="rounded-[var(--radius-tag)] bg-atencao-fundo px-2 py-0.5 text-xs font-medium text-atencao">
                   exemplo
                 </span>
               ) : null}

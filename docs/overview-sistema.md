@@ -196,9 +196,11 @@ que as separa é o ícone, o rótulo e o preenchimento.
 
 O par mais apertado é o texto terciário (`#72767C`): 4.57:1 sobre branco, logo
 acima do mínimo de 4.5:1 do WCAG AA. **Sobre o painel `#F9F9FA` ele cai para
-4.34:1, e sobre `#F4F6F8` para 4.22:1, abaixo do AA**, e hoje aparece assim na
-descrição do cabeçalho dos cartões. Entre os estados, o mais apertado é o
-verde positivo sobre o próprio fundo, em 4.60:1. As bordas ficam entre 1.5:1 e
+4.34:1, e sobre `#F4F6F8` para 4.22:1, abaixo do AA**, e hoje aparece assim em
+metadados, contagens e descrições dentro dos painéis de quase todas as telas
+(o cabeçalho dos cartões já passou para `#43474D`, 8.88:1). Entre os estados,
+o mais apertado é o verde positivo sobre o próprio fundo, em 4.60:1. As bordas
+ficam entre 1.5:1 e
 2.1:1, abaixo do mínimo de 3:1 para elemento não-textual — **aceitável porque nenhuma borda
 carrega significado sozinha**: todo estado é identificado por texto, ícone
 próprio e preenchimento.
