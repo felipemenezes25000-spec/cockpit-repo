@@ -1,43 +1,11 @@
 @import "tailwindcss";
 
-/*
- * `docs/redesign` é o mockup do Google Stitch: HTML com dezenas de cores
- * escritas à mão em classes como `bg-[#4A5D4E]`. A detecção automática de
- * conteúdo do Tailwind varria a pasta e gerava esses utilitários no CSS de
- * produção — código morto que ainda por cima reintroduzia o verde antigo no
- * pacote depois da troca da marca. O mockup é referência de design, não fonte.
- */
 @source not "../../docs";
 
-/* ------------------------------------------------------------------
-   Cockpit Consultório — identidade visual
-
-   Duas famílias de cor, com papéis que não se misturam:
-
-   1. MARCA (azul). Navegação, ações principais, links, títulos e foco.
-      Não comunica estado nenhum — é a cor de "o sistema", não de "a
-      situação". Antes era o verde do mockup do Stitch; virou azul para
-      liberar o verde a significar só coisa boa.
-
-   2. ESTADO. Quatro semânticas fixas, e cada uma quer dizer uma coisa só:
-
-      negativo   vermelho  algo deu errado ou exige ação imediata
-      atenção    laranja   falta fazer algo; não é erro
-      positivo   verde     deu certo, está resolvido
-      informativo azul     neutro, em curso, apenas informa
-
-   Vermelho é reservado ao que é de fato negativo. Pendência comum,
-   confirmação em aberto e prazo se aproximando são atenção, não erro:
-   se tudo grita, nada é ouvido.
-
-   Cor nunca comunica sozinha — todo indicador de estado leva também
-   ícone e texto.
-
-   Nenhuma cor deve ser escrita fora daqui.
-------------------------------------------------------------------- */
-
+/* Cockpit Consultório — Clinical Precision
+   Marca e estados continuam separados. Os tokens abaixo adicionam profundidade,
+   movimento e superfícies sem sacrificar contraste ou semântica. */
 @theme {
-  /* Superfícies */
   --color-surface: #ffffff;
   --color-surface-bright: #fcfcfd;
   --color-surface-container-lowest: #ffffff;
@@ -46,31 +14,14 @@
   --color-surface-container-high: #e6e9ed;
   --color-surface-variant: #e1e4e8;
 
-  /* Painéis e cartões */
-  --color-card: #f9f9fa;
-  --color-card-border: #e3e5e8;
+  --color-card: #fbfcfe;
+  --color-card-border: #dfe5ec;
 
-  /* Texto e contornos */
   --color-on-surface: #1b1c1e;
   --color-on-surface-variant: #43474d;
-  /*
-   * `outline` é o texto terciário (legenda, data, contador). Precisa de
-   * 4,5:1 em TODO fundo onde aparece; o valor antigo (#72767c) dava 4,34
-   * no card, 4,22 no container-low e 3,96 no container. #5f6369 dá:
-   * surface 6,04 · bright 5,89 · card 5,74 · container-low 5,58 ·
-   * container 5,25 · container-high 4,96 · surface-variant 4,74 —
-   * e segue abaixo de `on-surface-variant` (9,35 no branco).
-   *
-   * `outline-variant` (1,72:1 no branco) é SÓ borda, divisória e ícone
-   * decorativo. Nunca texto.
-   */
   --color-outline: #5f6369;
   --color-outline-variant: #c1c6cd;
 
-  /*
-   * Azul da marca. `primary` é o tom escuro, para texto e título;
-   * `primary-container` é o preenchimento de botão.
-   */
   --color-primary: #0854a0;
   --color-primary-container: #0a6ed1;
   --color-on-primary: #ffffff;
@@ -81,65 +32,58 @@
   --color-secondary-fixed-dim: #b4d3ef;
   --color-on-secondary-container: #0854a0;
 
-  /* ---- Estado: negativo ----
-     Não compareceu · cancelado · vencido · falha · pendência crítica */
   --color-negativo: #bb0000;
   --color-negativo-fundo: #fceaea;
   --color-negativo-borda: #e6a3a3;
 
-  /* ---- Estado: atenção ----
-     Confirmação pendente · aguardando assinatura · retorno próximo ·
-     cadastro incompleto.
-
-     São dois tons de propósito: `acento` (#e9730c) é o laranja pedido e
-     fica em ícone e borda; `atencao` é o mesmo laranja mais escuro, para
-     texto. #e9730c sobre o fundo suave dá 2.75:1 e reprova no WCAG —
-     ilegível para quem tem baixa visão. O tom escuro dá 6.2:1. */
   --color-atencao: #8f4700;
   --color-atencao-acento: #e9730c;
   --color-atencao-fundo: #fff3d6;
   --color-atencao-borda: #f1c40f;
 
-  /* ---- Estado: positivo ----
-     Confirmado · recebido · concluído · finalizado */
-  /* #107e3e dava 4,47:1 no container (#edeff2); #0e7639 dá 4,97 ali,
-     5,11 no próprio fundo e 5,72 no branco. */
   --color-positivo: #0e7639;
   --color-positivo-fundo: #eaf5ea;
   --color-positivo-borda: #a9d3a9;
 
-  /* ---- Estado: informativo ----
-     Agendado · em atendimento · aviso neutro.
-     O texto usa o azul escuro da marca: sobre o fundo suave, o azul de
-     ação dá 4.49:1 e fica logo abaixo do mínimo. */
   --color-informativo: #0a6ed1;
   --color-informativo-texto: #0854a0;
   --color-informativo-fundo: #eaf3fb;
   --color-informativo-borda: #a3c4e6;
 
-  /*
-   * `error` é o negativo, com os nomes que o Material usa. Existe para a
-   * validação de formulário continuar legível como "erro" no código.
-   */
   --color-error: #bb0000;
   --color-error-container: #fceaea;
   --color-on-error-container: #8e0000;
 
-  /* Tipografia — uma família só, como no mockup */
   --font-sans: var(--fonte-sans), ui-sans-serif, system-ui, sans-serif;
 
-  /* Raios: o mockup encurta a escala do Material, inclusive nos "pills" */
-  --radius-painel: 16px;
-  --radius-cartao: 8px;
+  --radius-painel: 22px;
+  --radius-cartao: 14px;
   --radius-controle: 12px;
-  --radius-tag: 4px;
+  --radius-tag: 7px;
 
-  --shadow-cartao: 0 2px 10px rgba(0, 0, 0, 0.01);
-  --shadow-realce: 0 4px 16px rgba(0, 0, 0, 0.05);
-  --shadow-flutuante: 0 12px 32px -12px rgba(28, 27, 27, 0.18), 0 2px 6px rgba(28, 27, 27, 0.05);
+  --shadow-cartao: 0 1px 2px rgba(15, 35, 58, 0.035), 0 6px 20px rgba(15, 35, 58, 0.035);
+  --shadow-realce: 0 2px 4px rgba(15, 35, 58, 0.04), 0 12px 30px rgba(15, 35, 58, 0.08);
+  --shadow-flutuante: 0 24px 64px -24px rgba(8, 41, 76, 0.28), 0 8px 24px -12px rgba(8, 41, 76, 0.16);
+  --shadow-primary: 0 8px 22px -10px rgba(10, 110, 209, 0.58);
 }
 
-/* ------------------------------------------------------------------ */
+:root {
+  --surface-canvas: #f6f9fc;
+  --surface-raised: rgba(255, 255, 255, 0.88);
+  --surface-floating: rgba(255, 255, 255, 0.94);
+  --surface-glass: rgba(250, 252, 255, 0.78);
+  --surface-selected: rgba(209, 232, 255, 0.58);
+  --border-optical: rgba(100, 128, 157, 0.18);
+  --border-highlight: rgba(255, 255, 255, 0.9);
+
+  --motion-instant: 110ms;
+  --motion-fast: 160ms;
+  --motion-normal: 240ms;
+  --motion-emphasis: 360ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
 
 @layer base {
   * {
@@ -148,10 +92,16 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    background: var(--surface-canvas);
   }
 
   body {
-    background-color: var(--color-surface);
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 12% -8%, rgba(10, 110, 209, 0.105), transparent 31rem),
+      radial-gradient(circle at 88% 8%, rgba(167, 205, 242, 0.15), transparent 28rem),
+      linear-gradient(180deg, #fbfdff 0%, var(--surface-canvas) 34rem, #f7f9fc 100%);
+    background-attachment: fixed;
     color: var(--color-on-surface);
     font-family: var(--font-sans);
     font-size: 0.875rem;
@@ -160,11 +110,30 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Foco sempre visível — requisito de acessibilidade do sistema */
+  ::selection {
+    background: var(--color-primary-fixed);
+    color: var(--color-primary);
+  }
+
   :focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-    border-radius: 4px;
+    outline: 2px solid var(--color-primary-container);
+    outline-offset: 3px;
+    border-radius: 7px;
+    box-shadow: 0 0 0 4px rgba(10, 110, 209, 0.1);
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: var(--color-primary-container);
+  }
+
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-on-surface);
+    box-shadow: 0 0 0 1000px #fff inset;
+    transition: background-color 9999s ease-out;
   }
 
   .tabular {
@@ -174,70 +143,131 @@
 }
 
 @layer utilities {
-  /* Escala tipográfica do mockup */
   .t-display {
-    font-size: 2rem;
-    line-height: 1.2;
-    font-weight: 600;
+    font-size: clamp(2rem, 3vw, 2.65rem);
+    line-height: 1.08;
+    font-weight: 650;
+    letter-spacing: -0.035em;
   }
+
   .t-headline {
-    font-size: 1.5rem;
-    line-height: 1.3;
-    font-weight: 500;
+    font-size: clamp(1.25rem, 2vw, 1.55rem);
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
+
   .t-body-lg {
     font-size: 1.125rem;
     line-height: 1.6;
   }
+
   .rotulo {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.72rem;
+    font-weight: 650;
     line-height: 1;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.075em;
     text-transform: uppercase;
     color: var(--color-on-surface-variant);
   }
 
-  /* Esqueleto de carregamento: a forma do que vai chegar, sem saltos.
-     A animação some com `prefers-reduced-motion` (regra no fim do arquivo). */
+  .glass-surface {
+    background: var(--surface-glass);
+    border-color: var(--border-optical);
+    box-shadow: inset 0 1px 0 var(--border-highlight);
+    -webkit-backdrop-filter: blur(18px) saturate(145%);
+    backdrop-filter: blur(18px) saturate(145%);
+  }
+
+  .premium-panel {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 252, 255, 0.9));
+    border-color: var(--border-optical);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.96),
+      var(--shadow-cartao);
+  }
+
+  .premium-interactive {
+    transition:
+      transform var(--motion-fast) var(--ease-enter),
+      box-shadow var(--motion-normal) var(--ease-standard),
+      border-color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
+  }
+
+  .page-reveal {
+    animation: page-reveal var(--motion-emphasis) var(--ease-enter) both;
+  }
+
   .esqueleto {
     border-radius: var(--radius-tag);
     background: linear-gradient(
       90deg,
       var(--color-surface-container) 0%,
-      var(--color-surface-container-low) 50%,
+      #f9fbfd 48%,
       var(--color-surface-container) 100%
     );
-    background-size: 200% 100%;
-    animation: esqueleto-brilho 1.4s ease-in-out infinite;
+    background-size: 220% 100%;
+    animation: esqueleto-brilho 1.45s var(--ease-standard) infinite;
   }
 
   .rolagem-discreta {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-surface-variant) transparent;
+    scrollbar-color: rgba(95, 99, 105, 0.24) transparent;
   }
+
   .rolagem-discreta::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   .rolagem-discreta::-webkit-scrollbar-thumb {
-    background-color: var(--color-surface-variant);
-    border-radius: 4px;
+    background-color: rgba(95, 99, 105, 0.22);
+    border-radius: 999px;
   }
+
   .rolagem-discreta::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-outline-variant);
+    background-color: rgba(95, 99, 105, 0.36);
   }
+
   .rolagem-discreta::-webkit-scrollbar-track {
     background: transparent;
   }
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .premium-interactive:hover {
+    transform: translateY(-2px);
+    border-color: rgba(10, 110, 209, 0.24);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.98),
+      var(--shadow-realce);
+  }
+}
+
 @keyframes esqueleto-brilho {
+  from { background-position: 105% 0; }
+  to { background-position: -105% 0; }
+}
+
+@keyframes page-reveal {
   from {
-    background-position: 100% 0;
+    opacity: 0;
+    transform: translateY(7px);
   }
   to {
-    background-position: -100% 0;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulso-agora {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(10, 110, 209, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(10, 110, 209, 0);
   }
 }
 
@@ -250,20 +280,11 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .page-reveal {
+    animation: none !important;
+  }
 }
-
-/* ---------------------------------------------------------------------
-   Impressão
-   
-   Existe por um motivo só: a paciente precisa sair com a via do que
-   assinou, e "Salvar em PDF" do navegador é o caminho que funciona em
-   todo aparelho sem o sistema carregar uma biblioteca de PDF.
-
-   O que sai no papel é a folha marcada com `.folha`; o resto da página
-   — cabeçalho da clínica, botões, avisos — leva `.sem-impressao` e
-   desaparece. Fundo e borda saem junto: tinta colorida em contrato não
-   ajuda ninguém a ler.
---------------------------------------------------------------------- */
 
 @media print {
   .sem-impressao {
@@ -276,7 +297,7 @@
   }
 
   body {
-    background: #fff;
+    background: #fff !important;
   }
 
   .folha {
@@ -289,7 +310,6 @@
     box-shadow: none !important;
   }
 
-  /* Rolagem não existe no papel: o texto inteiro precisa sair. */
   .folha-texto {
     max-height: none !important;
     overflow: visible !important;
@@ -298,8 +318,6 @@
     background: #fff !important;
   }
 
-  /* Quebrar o bloco de evidências ao meio tiraria a leitura do conjunto,
-     que é justamente o que dá valor a ele. */
   .folha-evidencias {
     break-inside: avoid;
     page-break-inside: avoid;

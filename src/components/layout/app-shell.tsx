@@ -6,7 +6,6 @@ import { BarraLateral } from "./sidebar";
 import { BarraSuperior } from "./topbar";
 import type { UsuarioAtual } from "@/lib/perfil";
 
-/** Estrutura principal: menu lateral, cabeçalho e área de conteúdo. */
 export function EstruturaApp({
   children,
   usuario,
@@ -16,7 +15,6 @@ export function EstruturaApp({
   children: ReactNode;
   usuario: UsuarioAtual;
   pendenciasAltas: number;
-  /** Faixa de demonstração, quando há dado de exemplo no banco. */
   aviso?: ReactNode;
 }) {
   const [recolhida, setRecolhida] = useState(false);
@@ -29,12 +27,10 @@ export function EstruturaApp({
     gatilhoGaveta.current?.focus();
   }, []);
 
-  // Trocar de módulo fecha a gaveta no celular.
   useEffect(() => {
     setGavetaAberta(false);
   }, [caminho]);
 
-  // Esc fecha a gaveta e devolve o foco a quem a abriu.
   useEffect(() => {
     if (!gavetaAberta) return;
     function aoTeclar(e: KeyboardEvent) {
@@ -44,7 +40,6 @@ export function EstruturaApp({
     return () => document.removeEventListener("keydown", aoTeclar);
   }, [gavetaAberta, fecharGaveta]);
 
-  // Com a gaveta aberta, o fundo não rola.
   useEffect(() => {
     if (!gavetaAberta) return;
     const anterior = document.body.style.overflow;
@@ -55,10 +50,14 @@ export function EstruturaApp({
   }, [gavetaAberta]);
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="relative flex min-h-screen bg-transparent">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_42%_0%,rgba(10,110,209,0.065),transparent_52%)]"
+      />
       <a
         href="#conteudo"
-        className="sr-only rounded-[var(--radius-cartao)] bg-primary px-4 py-2 text-on-primary focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50"
+        className="sr-only rounded-[var(--radius-cartao)] bg-primary px-4 py-2 text-on-primary shadow-[var(--shadow-flutuante)] focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
       >
         Ir para o conteúdo
       </a>
@@ -77,8 +76,11 @@ export function EstruturaApp({
           usuario={usuario}
           pendenciasAltas={pendenciasAltas}
         />
-        <main id="conteudo" className="flex-1 px-4 py-8 sm:px-8 xl:px-20">
-          <div className="mx-auto w-full max-w-[1600px]">
+        <main
+          id="conteudo"
+          className="relative flex-1 px-3 py-5 sm:px-6 sm:py-7 xl:px-10 2xl:px-14"
+        >
+          <div className="page-reveal mx-auto w-full max-w-[1600px]">
             {aviso}
             {children}
           </div>

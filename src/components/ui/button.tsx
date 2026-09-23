@@ -6,23 +6,22 @@ type Variante = "primaria" | "secundaria" | "contorno" | "silenciosa";
 type Tamanho = "md" | "sm";
 
 const BASE =
-  "inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55";
+  "group relative inline-flex items-center justify-center gap-2 overflow-hidden font-medium transition-[transform,box-shadow,background-color,border-color,color] duration-200 ease-out active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:transform-none";
 
 const VARIANTES: Record<Variante, string> = {
-  /* Ação principal: azul da marca cheio, escurece no hover */
-  primaria: "bg-primary-container text-on-primary hover:bg-primary",
-  /* Ação da mesma família, em contorno azul */
+  primaria:
+    "border border-primary-container bg-primary-container text-on-primary shadow-[var(--shadow-primary)] hover:border-primary hover:bg-primary hover:shadow-[0_12px_28px_-12px_rgba(8,84,160,0.68)]",
   secundaria:
-    "border border-primary bg-surface text-primary hover:bg-surface-container-low",
-  /* Ação neutra dentro de um painel cinza */
+    "border border-primary/25 bg-surface/90 text-primary shadow-[var(--shadow-cartao)] hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary-fixed/40 hover:shadow-[var(--shadow-realce)]",
   contorno:
-    "border border-card-border bg-surface text-primary hover:bg-surface-container-low",
-  silenciosa: "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
+    "border border-card-border bg-surface/90 text-primary shadow-[var(--shadow-cartao)] hover:-translate-y-0.5 hover:border-primary-fixed-dim hover:bg-surface hover:shadow-[var(--shadow-realce)]",
+  silenciosa:
+    "text-on-surface-variant hover:bg-primary-fixed/40 hover:text-primary",
 };
 
 const TAMANHOS: Record<Tamanho, string> = {
   md: "h-11 rounded-[var(--radius-controle)] px-6 text-sm",
-  sm: "h-9 rounded-[var(--radius-cartao)] px-4 text-sm",
+  sm: "h-9 rounded-[10px] px-4 text-sm",
 };
 
 export function BotaoLink({
@@ -44,19 +43,17 @@ export function BotaoLink({
       className={cn(BASE, VARIANTES[variante], TAMANHOS[tamanho], className)}
       {...props}
     >
-      {children}
+      {variante === "primaria" ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/60"
+        />
+      ) : null}
+      <span className="relative inline-flex items-center gap-2">{children}</span>
     </Link>
   );
 }
 
-/**
- * Ação que ainda não existe. Fica visivelmente indisponível e explica o porquê,
- * em vez de fingir que concluiu alguma coisa.
- *
- * O motivo vai no `title` (dica ao passar o mouse) e também no nome acessível,
- * em texto só para leitor de tela: `title` sozinho não é lido de forma
- * confiável e não aparece no toque.
- */
 export function BotaoIndisponivel({
   children,
   motivo = "Disponível em uma próxima etapa",
@@ -77,7 +74,7 @@ export function BotaoIndisponivel({
       className={cn(
         BASE,
         TAMANHOS[tamanho],
-        "cursor-not-allowed border border-dashed border-outline-variant bg-transparent text-outline",
+        "cursor-not-allowed border border-dashed border-outline-variant bg-white/40 text-outline shadow-none",
         className,
       )}
     >

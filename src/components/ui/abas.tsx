@@ -6,20 +6,6 @@ import { cn } from "@/lib/cn";
 
 export type Aba = { href: string; rotulo: string; ativa: boolean; contagem?: number };
 
-/**
- * Navegação entre as áreas de um módulo — Financeiro, Relacionamento.
- *
- * São links, não abas ARIA: cada área tem endereço próprio, então voltar pelo
- * navegador e mandar o link funcionam (AGENTS.md §6, regra 5). A área atual
- * leva `aria-current="page"`. No celular a faixa rola na horizontal dentro de
- * si mesma, sem empurrar a página, e um degradê na borda direita avisa que há
- * mais áreas além da vista.
- *
- * Ao abrir, a faixa rola até a área atual: no celular, "Fluxo mensal" ou
- * "Tarefas" ficavam fora da vista, e a pessoa não sabia onde estava. Rola só a
- * faixa (`scrollLeft` do contêiner, não `scrollIntoView`, que também rolaria
- * a página até a faixa).
- */
 export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; abas: Aba[]; className?: string }) {
   const faixa = useRef<HTMLDivElement>(null);
   const atual = abas.find((aba) => aba.ativa)?.href;
@@ -34,35 +20,20 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
 
   return (
     <nav aria-label={rotulo} className={cn("relative", className)}>
-      <div ref={faixa} className="rolagem-discreta relative overflow-x-auto">
-        <ul className="flex min-w-max gap-1 border-b border-card-border">
+      <div ref={faixa} className="rolagem-discreta relative overflow-x-auto rounded-[14px] border border-card-border/80 bg-white/50 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <ul className="flex min-w-max gap-1">
           {abas.map((aba) => (
             <li key={aba.href}>
-              <Link
-                href={aba.href}
-                aria-current={aba.ativa ? "page" : undefined}
-                className={cn(
-                  "-mb-px inline-flex min-h-11 items-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors",
-                  aba.ativa
-                    ? "border-primary text-primary"
-                    : "border-transparent text-on-surface-variant hover:border-outline-variant hover:text-primary",
-                )}
-              >
+              <Link href={aba.href} aria-current={aba.ativa ? "page" : undefined} className={cn("relative inline-flex min-h-10 items-center gap-2 rounded-[10px] px-3.5 text-sm font-medium transition-[transform,background-color,box-shadow,color] duration-200 active:scale-[0.985]", aba.ativa ? "bg-white text-primary shadow-[0_1px_2px_rgba(15,35,58,0.06),0_6px_16px_-10px_rgba(8,84,160,0.4)]" : "text-on-surface-variant hover:bg-white/60 hover:text-primary")}>
+                {aba.ativa ? <span aria-hidden="true" className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-primary-container" /> : null}
                 {aba.rotulo}
-                {aba.contagem !== undefined && aba.contagem > 0 ? (
-                  <span className="tabular rounded-full bg-secondary-fixed px-1.5 py-px text-[0.6875rem] font-semibold text-primary">
-                    {aba.contagem}
-                  </span>
-                ) : null}
+                {aba.contagem !== undefined && aba.contagem > 0 ? <span className="tabular rounded-full bg-primary-fixed/80 px-1.5 py-px text-[0.68rem] font-semibold text-primary">{aba.contagem}</span> : null}
               </Link>
             </li>
           ))}
         </ul>
       </div>
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute top-0 right-0 bottom-px w-8 bg-linear-to-l from-surface to-transparent sm:hidden"
-      />
+      <span aria-hidden="true" className="pointer-events-none absolute top-1 right-1 bottom-1 w-8 rounded-r-[12px] bg-linear-to-l from-white/90 to-transparent sm:hidden" />
     </nav>
   );
 }

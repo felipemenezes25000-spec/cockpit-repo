@@ -1,10 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-/**
- * Painel da Visão Geral: fundo cinza-claro sobre a página branca, borda fina e
- * canto de 16px. É a caixa maior — os cartões brancos ficam dentro dela.
- */
 export function Card({
   children,
   className,
@@ -17,11 +13,15 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "rounded-[var(--radius-painel)] border border-card-border bg-card",
+        "premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border",
         className,
       )}
     >
-      {children}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-8 top-0 z-0 h-px bg-white/95"
+      />
+      <div className="relative z-[1] contents">{children}</div>
     </Tag>
   );
 }
@@ -40,19 +40,18 @@ export function CardCabecalho({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-end justify-between gap-3 border-b border-card-border px-4 pt-5 pb-4 sm:px-8 sm:pt-8",
+        "flex flex-wrap items-end justify-between gap-4 border-b border-card-border/80 px-4 pt-5 pb-4 sm:px-7 sm:pt-7",
         className,
       )}
     >
       <div className="min-w-0">
         <h2 className="t-headline text-primary">{titulo}</h2>
         {descricao ? (
-          <p className="mt-1 text-sm text-on-surface-variant">{descricao}</p>
+          <p className="mt-1.5 max-w-3xl text-sm leading-6 text-on-surface-variant">
+            {descricao}
+          </p>
         ) : null}
       </div>
-      {/* `max-w-full`: no celular a ação desce para a linha de baixo e, se
-          tiver mais de um botão, eles quebram entre si em vez de empurrar a
-          página para o lado. */}
       {acao ? <div className="max-w-full shrink-0">{acao}</div> : null}
     </div>
   );
@@ -65,9 +64,7 @@ export function CardCorpo({
   children: ReactNode;
   className?: string;
 }) {
-  // Recuo de 16 px no celular: com o px-4 do `<main>`, o px-6 deixava 240 px
-  // para o conteúdo a 320 px, e botões e buscas estouravam o cartão.
-  return <div className={cn("px-4 py-6 sm:px-8", className)}>{children}</div>;
+  return <div className={cn("px-4 py-5 sm:px-7 sm:py-6", className)}>{children}</div>;
 }
 
 export function CardRodape({
@@ -80,7 +77,7 @@ export function CardRodape({
   return (
     <div
       className={cn(
-        "border-t border-card-border px-4 py-4 text-xs sm:px-8",
+        "border-t border-card-border/75 bg-surface/40 px-4 py-4 text-xs sm:px-7",
         className,
       )}
     >
