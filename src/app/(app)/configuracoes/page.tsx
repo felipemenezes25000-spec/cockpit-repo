@@ -1,8 +1,18 @@
-import { Building2, ChevronRight, Clock3, Images, ShieldCheck, Stethoscope, Users } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import {
+  Building2,
+  ChevronRight,
+  Clock3,
+  Images,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  Stethoscope,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { ehAdministradora } from "@/lib/auth";
 import { listarProcedimentos } from "@/server/consultas/procedimentos";
 
@@ -19,6 +29,61 @@ type Secao = {
   resumo?: string;
 };
 
+function CartaoConfiguracao({ secao }: { secao: Secao }) {
+  const Icone = secao.icone;
+  const disponivel = Boolean(secao.href);
+
+  const conteudo = (
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <span
+          className={
+            disponivel
+              ? "flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/55 bg-linear-to-br from-white to-primary-fixed/55 text-primary shadow-[var(--shadow-primary)]"
+              : "flex size-11 shrink-0 items-center justify-center rounded-2xl border border-card-border/80 bg-surface-container-low text-outline"
+          }
+        >
+          <Icone aria-hidden="true" size={20} strokeWidth={1.65} />
+        </span>
+
+        {disponivel ? (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-outline transition-[transform,background-color,color] duration-150 group-hover:translate-x-0.5 group-hover:bg-primary-fixed/55 group-hover:text-primary">
+            <ChevronRight aria-hidden="true" size={17} strokeWidth={1.7} />
+          </span>
+        ) : (
+          <SeloHero className="min-h-7 px-2.5 py-0 text-[0.66rem]">Em preparação</SeloHero>
+        )}
+      </div>
+
+      <div className="mt-5">
+        <h3 className="text-base font-semibold tracking-[-0.015em] text-on-surface">{secao.titulo}</h3>
+        <p className="mt-1.5 text-sm leading-6 text-on-surface-variant">{secao.descricao}</p>
+      </div>
+
+      {secao.resumo ? (
+        <div className="mt-4 border-t border-card-border/65 pt-3">
+          <span className="text-xs font-semibold text-primary">{secao.resumo}</span>
+        </div>
+      ) : null}
+    </>
+  );
+
+  const classe = disponivel
+    ? "premium-interactive group relative isolate block h-full overflow-hidden rounded-[var(--radius-painel)] border border-card-border/75 bg-surface/72 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),var(--shadow-cartao)]"
+    : "relative block h-full rounded-[var(--radius-painel)] border border-dashed border-outline-variant/80 bg-surface-container-low/55 p-5";
+
+  if (secao.href) {
+    return (
+      <Link href={secao.href} className={classe}>
+        <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-primary-fixed/35 blur-2xl transition-transform duration-300 group-hover:scale-125" />
+        {conteudo}
+      </Link>
+    );
+  }
+
+  return <div className={classe}>{conteudo}</div>;
+}
+
 export default async function PaginaConfiguracoes() {
   const [procedimentos, administradora] = await Promise.all([
     listarProcedimentos(),
@@ -29,23 +94,19 @@ export default async function PaginaConfiguracoes() {
   const secoes: Secao[] = [
     {
       titulo: "Procedimentos",
-      descricao: "A tabela do que a clínica faz: nome, duração, valor e retorno sugerido.",
+      descricao: "A tabela operacional da clínica: nome, duração, valor e retorno sugerido usados na agenda.",
       icone: Stethoscope,
       href: "/configuracoes/procedimentos",
-      resumo:
-        ativos === 0
-          ? "Nenhum ativo"
-          : `${ativos} ${ativos === 1 ? "ativo" : "ativos"} na agenda`,
+      resumo: ativos === 0 ? "Nenhum procedimento ativo" : `${ativos} ${ativos === 1 ? "procedimento ativo" : "procedimentos ativos"}`,
     },
-    // Só a administradora: a função do banco recusa as outras pessoas.
     ...(administradora
       ? [
           {
             titulo: "Conferência das fotos",
-            descricao:
-              "Fotos de evolução com registro e sem arquivo, ou com arquivo e sem registro. Só leitura.",
+            descricao: "Reconciliação de fotos de evolução com registro e arquivo, em modo somente leitura.",
             icone: Images,
             href: "/configuracoes/fotos",
+            resumo: "Ferramenta administrativa de integridade",
           },
         ]
       : []),
@@ -56,93 +117,65 @@ export default async function PaginaConfiguracoes() {
     },
     {
       titulo: "Dados da clínica",
-      descricao: "Nome, endereço, contato e o que aparece nos documentos.",
+      descricao: "Nome, endereço, contatos e informações institucionais usadas nos documentos.",
       icone: Building2,
     },
     {
       titulo: "Horário de funcionamento",
-      descricao: "Expediente por dia da semana, para a agenda mostrar o dia inteiro.",
+      descricao: "Expediente por dia da semana para estruturar visualmente a agenda completa.",
       icone: Clock3,
     },
     {
       titulo: "Acesso e permissões",
-      descricao: "Liberar contas novas e definir quem é administradora.",
+      descricao: "Liberação de contas novas e administração dos perfis de acesso do sistema.",
       icone: ShieldCheck,
     },
   ];
 
+  const disponiveis = secoes.filter((secao) => secao.href).length;
+
   return (
-    <div>
+    <div className="flex flex-col gap-6">
+      <CabecalhoDePagina
+        icone={Settings2}
+        rotulo="Sistema"
+        titulo="Configurações"
+        descricao="Centralize as definições que sustentam a operação do consultório. O que ainda não pode ser editado aparece explicitamente como preparação, sem fingir ser uma função disponível."
+        meta={
+          <>
+            <SeloHero tom="informativo">{disponiveis} {disponiveis === 1 ? "área disponível" : "áreas disponíveis"}</SeloHero>
+            <SeloHero>{secoes.length - disponiveis} em preparação</SeloHero>
+            {administradora ? (
+              <SeloHero tom="positivo">
+                <Sparkles aria-hidden="true" size={13} strokeWidth={1.7} />
+                Visão administrativa
+              </SeloHero>
+            ) : null}
+          </>
+        }
+      />
 
-      <Card>
-        <CardCabecalho
-          titulo="Configurações"
-          descricao="O que a clínica precisa definir uma vez para o resto do sistema funcionar. Os itens marcados como em breve ainda não podem ser alterados por aqui."
-        />
-        <CardCorpo>
-          <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {secoes.map((secao) => {
-              const Icone = secao.icone;
-              const conteudo = (
-                <>
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-secondary-fixed text-primary">
-                    <Icone aria-hidden="true" size={18} strokeWidth={1.5} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="font-medium text-on-surface">{secao.titulo}</span>
-                      {!secao.href ? (
-                        <span className="shrink-0 rounded-[var(--radius-tag)] border border-dashed border-outline px-1.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap text-on-surface-variant">
-                          em breve
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-on-surface-variant">
-                      {secao.descricao}
-                    </span>
-                    {secao.resumo ? (
-                      <span className="mt-1.5 block text-xs font-medium text-primary">
-                        {secao.resumo}
-                      </span>
-                    ) : null}
-                  </span>
-                  {secao.href ? (
-                    <ChevronRight
-                      aria-hidden="true"
-                      size={18}
-                      strokeWidth={1.5}
-                      className="shrink-0 text-outline-variant"
-                    />
-                  ) : null}
-                </>
-              );
+      <section aria-labelledby="configuracoes-disponiveis">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="rotulo text-primary/80">Operação</p>
+            <h2 id="configuracoes-disponiveis" className="mt-1 text-xl font-semibold tracking-[-0.025em] text-on-surface">
+              Áreas do sistema
+            </h2>
+          </div>
+          <p className="hidden max-w-md text-right text-xs leading-5 text-outline sm:block">
+            Itens sem link permanecem visíveis para deixar claro o que está planejado, sem criar falsas ações.
+          </p>
+        </div>
 
-              const classe =
-                "flex items-start gap-4 rounded-[var(--radius-cartao)] border p-4";
-
-              return (
-                <li key={secao.titulo}>
-                  {secao.href ? (
-                    <Link
-                      href={secao.href}
-                      className={`${classe} border-card-border bg-surface shadow-[var(--shadow-cartao)] transition-colors hover:border-primary`}
-                    >
-                      {conteudo}
-                    </Link>
-                  ) : (
-                    // Seção que ainda não existe: contorno tracejado e fundo cinza, sem
-                    // seta nem hover — não é link e não finge ser. O selo "em breve"
-                    // diz o motivo em texto, não só pela aparência.
-                    <div className={`${classe} border-dashed border-outline-variant bg-surface-container-low`}>
-                      {conteudo}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </CardCorpo>
-      </Card>
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {secoes.map((secao) => (
+            <li key={secao.titulo}>
+              <CartaoConfiguracao secao={secao} />
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

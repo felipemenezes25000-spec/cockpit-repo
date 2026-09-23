@@ -18,7 +18,7 @@ function BotaoEntrar() {
       type="submit"
       disabled={pending}
       aria-busy={pending || undefined}
-      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-60"
+      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary/10 bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary hover:shadow-[0_12px_28px_-12px_rgba(10,110,209,0.72)] active:translate-y-px active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0"
     >
       {pending ? (
         <>
@@ -43,13 +43,8 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
       <input type="hidden" name="proximo" value={proximo} />
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="rotulo">
-          E-mail
-        </label>
+        <label htmlFor="email" className="rotulo">E-mail</label>
         <input
-          // A chave remonta o campo com o e-mail devolvido pela ação: o React
-          // limpa o formulário depois de cada envio, e errar a senha não pode
-          // obrigar a digitar o e-mail de novo.
           key={estado.email ?? ""}
           id="email"
           name="email"
@@ -68,9 +63,15 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="senha" className="rotulo">
-          Senha
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="senha" className="rotulo">Senha</label>
+          <Link
+            href="/recuperar-senha"
+            className="inline-flex min-h-7 items-center rounded-lg px-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-fixed/40"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
         <input
           id="senha"
           name="senha"
@@ -81,28 +82,20 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           aria-describedby={comErro ? "erro-login" : undefined}
           className={cn(ENTRADA, senhaInvalida && ENTRADA_ERRO)}
         />
-        <Link
-          href="/recuperar-senha"
-          className="self-end py-1 text-sm font-medium text-primary hover:underline"
-        >
-          Esqueci minha senha
-        </Link>
       </div>
 
       {estado.erro ? (
         <p
           id="erro-login"
           role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-sm text-on-error-container"
+          className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {estado.erro}
         </p>
       ) : null}
 
-      <div className="mt-2">
-        <BotaoEntrar />
-      </div>
+      <div className="mt-2"><BotaoEntrar /></div>
     </form>
   );
 }

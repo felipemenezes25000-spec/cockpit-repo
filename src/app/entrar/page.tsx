@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthShell } from "@/components/ui/auth-shell";
 import { destinoSeguro } from "./destino";
 import { FormularioLogin } from "./login-form";
 
@@ -15,40 +16,17 @@ export default async function PaginaEntrar({
   const { proximo, senha } = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
-      <div className="w-full max-w-sm">
-        <div className="mb-8">
-          <span
-            aria-hidden="true"
-            className="mb-5 flex size-12 items-center justify-center rounded-[var(--radius-controle)] bg-secondary-fixed text-sm font-bold text-primary"
-          >
-            ÉP
-          </span>
-          <h1 className="t-headline font-bold text-primary">Dra. Érika Passos</h1>
-          <p className="rotulo mt-1">Consultório de estética</p>
-        </div>
-
-        <div className="rounded-[var(--radius-painel)] border border-card-border bg-card p-6 sm:p-8">
-          <h2 className="mb-1 font-medium text-on-surface">Entrar no sistema</h2>
-          <p className="mb-6 text-sm text-outline">
-            Use o e-mail cadastrado pela clínica.
-          </p>
-
-          {senha === "alterada" ? (
-            <p role="status" className="mb-5 rounded-[var(--radius-cartao)] border border-positivo-borda bg-positivo-fundo px-3.5 py-2.5 text-sm text-positivo">
-              Senha alterada. Entre com sua nova senha.
-            </p>
-          ) : null}
-
-          {/* A ação confere de novo: o campo oculto pode ser editado. */}
-          <FormularioLogin proximo={destinoSeguro(proximo)} />
-        </div>
-
-        <p className="mt-6 text-center text-xs text-outline">
-          O acesso é criado pela administradora. Se você ainda não tem login, fale
-          com a recepção.
+    <AuthShell
+      titulo="Entrar no sistema"
+      descricao="Use o e-mail cadastrado pela clínica para acessar sua área de trabalho."
+    >
+      {senha === "alterada" ? (
+        <p role="status" className="mb-5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3 text-sm text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+          Senha alterada. Entre com sua nova senha.
         </p>
-      </div>
-    </main>
+      ) : null}
+
+      <FormularioLogin proximo={destinoSeguro(proximo)} />
+    </AuthShell>
   );
 }

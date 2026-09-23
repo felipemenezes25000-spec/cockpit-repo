@@ -123,17 +123,24 @@ export function FormularioNovaSenha() {
   }
 
   if (situacao === "validando") {
-    return <p role="status" className="flex items-center gap-2 text-sm text-outline"><LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> Validando o link…</p>;
+    return (
+      <p role="status" className="flex items-center gap-2 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/60 px-3.5 py-3 text-sm text-outline">
+        <LoaderCircle aria-hidden="true" size={18} className="animate-spin text-primary" />
+        Validando o link…
+      </p>
+    );
   }
 
   if (situacao === "invalido") {
     return (
       <div className="space-y-4 text-sm">
-        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-on-error-container">
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           O link expirou ou não é válido. Solicite outro para continuar.
         </p>
-        <Link href="/recuperar-senha" className="inline-flex min-h-6 items-center font-medium text-primary hover:underline">Pedir outro link</Link>
+        <Link href="/recuperar-senha" className="inline-flex min-h-9 items-center rounded-[var(--radius-controle)] bg-primary-fixed/40 px-3 font-semibold text-primary transition-colors hover:bg-primary-fixed/65">
+          Pedir outro link
+        </Link>
       </div>
     );
   }
@@ -150,12 +157,12 @@ export function FormularioNovaSenha() {
         <input id="confirmacao-senha" name="confirmacao-senha" type="password" autoComplete="new-password" required aria-invalid={erro ? true : undefined} aria-describedby={erro ? "erro-nova-senha" : undefined} value={confirmacao} onChange={(evento) => definirConfirmacao(evento.target.value)} className={ENTRADA} />
       </div>
       {erro ? (
-        <p id="erro-nova-senha" role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-sm text-on-error-container">
+        <p id="erro-nova-senha" role="alert" className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erro}
         </p>
       ) : null}
-      <button type="submit" disabled={salvando} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60">
+      <button type="submit" disabled={salvando} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary/10 bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary hover:shadow-[0_12px_28px_-12px_rgba(10,110,209,0.72)] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
         {salvando ? <><LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> Salvando…</> : "Salvar nova senha"}
       </button>
     </form>

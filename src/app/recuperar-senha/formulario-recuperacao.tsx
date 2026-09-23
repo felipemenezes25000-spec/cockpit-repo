@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CircleAlert, LoaderCircle } from "lucide-react";
+import { CircleAlert, LoaderCircle, MailCheck } from "lucide-react";
 import { ENTRADA } from "@/components/ui/field";
 
 export function FormularioRecuperacao() {
@@ -16,10 +16,6 @@ export function FormularioRecuperacao() {
     definirEnviando(true);
 
     try {
-      // O cliente do Supabase no navegador pesa ~70 kB e só serve no envio:
-      // carregado aqui, a tela abre com o JS da base (o `next build` media
-      // 178 kB de First Load contra ~105 kB das outras telas públicas). Se o
-      // pedaço não baixar, cai no mesmo aviso de falha de conexão.
       const { clienteNavegador } = await import("@/lib/supabase/client");
       const { error } = await clienteNavegador().auth.resetPasswordForEmail(
         email.trim(),
@@ -35,7 +31,6 @@ export function FormularioRecuperacao() {
         return;
       }
 
-      // A confirmação é igual para e-mails cadastrados e desconhecidos.
       definirEnviado(true);
     } catch {
       definirErro("Não foi possível conectar ao serviço de e-mail. Tente novamente mais tarde.");
@@ -46,9 +41,13 @@ export function FormularioRecuperacao() {
 
   if (enviado) {
     return (
-      <p role="status" className="rounded-[var(--radius-cartao)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3 text-sm text-positivo">
-        Se houver uma conta com esse e-mail, você receberá um link para redefinir a senha. Confira também a pasta de spam.
-      </p>
+      <div role="status" className="rounded-[var(--radius-painel)] border border-positivo-borda bg-positivo-fundo/80 px-4 py-4 text-sm text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
+        <span className="mb-2 flex size-9 items-center justify-center rounded-xl bg-surface/70">
+          <MailCheck aria-hidden="true" size={18} strokeWidth={1.8} />
+        </span>
+        <p className="font-semibold">Confira seu e-mail</p>
+        <p className="mt-1 leading-6">Se houver uma conta com esse e-mail, você receberá um link para redefinir a senha. Confira também a pasta de spam.</p>
+      </div>
     );
   }
 
@@ -62,22 +61,21 @@ export function FormularioRecuperacao() {
           type="email"
           autoComplete="email"
           required
-          // Os erros daqui são do serviço (limite, conexão), não do e-mail
-          // digitado: o aviso fica ligado ao campo sem marcá-lo inválido.
           aria-describedby={erro ? "erro-recuperacao" : undefined}
           value={email}
           onChange={(evento) => definirEmail(evento.target.value)}
           className={ENTRADA}
+          placeholder="voce@clinica.com.br"
         />
       </div>
       {erro ? (
-        <p id="erro-recuperacao" role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-sm text-on-error-container">
+        <p id="erro-recuperacao" role="alert" className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erro}
         </p>
       ) : null}
-      <button type="submit" disabled={enviando} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60">
-        {enviando ? <><LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> Enviando…</> : "Enviar link"}
+      <button type="submit" disabled={enviando} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary/10 bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary hover:shadow-[0_12px_28px_-12px_rgba(10,110,209,0.72)] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
+        {enviando ? <><LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> Enviando…</> : "Enviar link seguro"}
       </button>
     </form>
   );

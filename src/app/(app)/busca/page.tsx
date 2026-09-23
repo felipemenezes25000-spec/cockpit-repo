@@ -7,6 +7,7 @@ import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { SituacaoChip } from "@/components/ui/status-chip";
 import { classeDeEntrada } from "@/components/ui/field";
+import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { usuarioAtual } from "@/lib/auth";
 import { termoDeBusca } from "@/lib/busca";
 import { ROTULO_TIPO } from "@/lib/documento";
@@ -18,17 +19,19 @@ export const metadata: Metadata = {
   description: "Encontre pacientes, atendimentos, documentos e prontuários do consultório.",
 };
 
-/**
- * Seção sem resultado vira uma linha, não um estado vazio grande: com quatro
- * seções, o celular rolava uns 400 px por seção só para dizer "nada aqui".
- */
 function SemResultado({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-outline">{children}</p>;
+  return (
+    <p className="rounded-[var(--radius-controle)] border border-card-border/70 bg-surface-container-low/55 px-3.5 py-3 text-sm text-outline">
+      {children}
+    </p>
+  );
 }
 
 function verTodos(destino: string) {
   return <BotaoLink href={destino} tamanho="sm">Ver todos</BotaoLink>;
 }
+
+const linhaResultado = "premium-interactive block rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/58 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:border-primary-fixed-dim";
 
 export default async function PaginaBusca({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -41,24 +44,160 @@ export default async function PaginaBusca({ searchParams }: {
   const resultado = termo.length >= 2 ? await buscarGlobalmente(termo, administradora) : null;
   const query = encodeURIComponent(termo);
 
-  return <div>
-    <div className="mb-6"><p className="rotulo mb-2">Encontre no consultório</p><h2 className="t-display text-primary">Busca global</h2><p className="mt-1 text-sm text-outline">Pacientes, atendimentos, documentos{administradora ? " e prontuários" : ""} em um lugar.</p></div>
-    <form method="get" action="/busca" role="search" aria-label="Buscar em todos os módulos" className="mb-8 flex flex-col gap-3 sm:flex-row">
-      <div className="relative min-w-0 flex-1"><Search aria-hidden="true" size={18} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" /><input type="search" name="q" minLength={2} maxLength={80} required defaultValue={termo} autoFocus aria-label="O que deseja buscar?" placeholder="Nome, telefone, procedimento ou data (dd/mm/aaaa)" className={classeDeEntrada({ recuo: "busca" })} /></div>
-      <button type="submit" className="h-11 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary hover:bg-primary">Buscar</button>
-    </form>
+  const totalVisivel = resultado
+    ? resultado.pacientes.total + resultado.atendimentos.length + (resultado.documentos?.total ?? 0) + (resultado.prontuarios?.total ?? 0)
+    : 0;
 
-    {!resultado ? <Card><EstadoVazio icone={Search} titulo="O que você procura?" descricao="Digite pelo menos dois caracteres. Para localizar atendimentos, use o nome da paciente, o procedimento ou a data." /></Card> : <>
-      <p className="mb-4 text-sm text-on-surface-variant">Resultados para <strong className="text-on-surface">“{termo}”</strong></p>
-      <div className="grid items-start gap-5 xl:grid-cols-2">
-        <Card><CardCabecalho titulo={`Pacientes · ${resultado.pacientes.total}`} descricao="Nome, contato ou CPF. Inclui cadastros arquivados." acao={resultado.pacientes.total > 0 ? verTodos(`/pacientes?busca=${query}&situacao=todas`) : undefined} /><CardCorpo>{resultado.pacientes.itens.length === 0 ? <SemResultado>Nenhuma paciente encontrada. Tente outro nome ou contato.</SemResultado> : <ul>{resultado.pacientes.itens.slice(0, 6).map((p) => <li key={p.id} className="border-b border-card-border last:border-0"><Link href={`/pacientes/${p.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:text-primary"><span className="font-medium">{p.exibicao}</span><span className="text-xs text-outline">{p.telefone || p.email || "Sem contato"}{!p.ativo && " · Arquivada"}</span></Link></li>)}</ul>}</CardCorpo></Card>
+  return (
+    <div className="flex flex-col gap-6">
+      <CabecalhoDePagina
+        icone={Search}
+        rotulo="Navegação"
+        titulo="Busca global"
+        descricao={`Encontre pacientes, atendimentos, documentos${administradora ? " e prontuários" : ""} sem precisar lembrar em qual módulo o registro está.`}
+        meta={
+          <>
+            <SeloHero tom="informativo">Busca por nome, contato, procedimento ou data</SeloHero>
+            {resultado ? <SeloHero tom={totalVisivel > 0 ? "positivo" : "neutro"}>{totalVisivel} resultados localizados</SeloHero> : null}
+          </>
+        }
+      />
 
-        <Card><CardCabecalho titulo={`Atendimentos · ${resultado.atendimentos.length}${resultado.maisAtendimentos ? "+" : ""}`} descricao="Por paciente, procedimento ou data; até 8 mais recentes." /><CardCorpo>{resultado.atendimentos.length === 0 ? <SemResultado>Nenhum atendimento encontrado. Busque pelo nome, procedimento ou uma data.</SemResultado> : <ul>{resultado.atendimentos.map((a) => <li key={a.id} className="border-b border-card-border last:border-0"><Link href={a.href} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:text-primary"><span><span className="block font-medium">{a.paciente}</span><span className="text-xs text-outline">{a.procedimento} · {formatarData(a.inicio)} às {formatarHora(a.inicio)}</span></span><SituacaoChip situacao={a.situacao} compacto /></Link></li>)}</ul>}{resultado.maisAtendimentos && <p className="mt-3 text-xs text-outline">Há mais atendimentos; refine o termo para encontrá-los.</p>}</CardCorpo></Card>
+      <form method="get" action="/busca" role="search" aria-label="Buscar em todos os módulos" className="premium-panel flex flex-col gap-3 rounded-[var(--radius-painel)] border p-4 sm:flex-row sm:p-5">
+        <div className="relative min-w-0 flex-1">
+          <Search aria-hidden="true" size={18} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
+          <input
+            type="search"
+            name="q"
+            minLength={2}
+            maxLength={80}
+            required
+            defaultValue={termo}
+            autoFocus
+            aria-label="O que deseja buscar?"
+            placeholder="Nome, telefone, procedimento ou data (dd/mm/aaaa)"
+            className={classeDeEntrada({ recuo: "busca" })}
+          />
+        </div>
+        <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary/10 bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary active:translate-y-px active:scale-[0.99]">
+          <Search aria-hidden="true" size={16} strokeWidth={1.8} />
+          Buscar
+        </button>
+      </form>
 
-        <Card><CardCabecalho titulo={`Documentos${resultado.documentos ? ` · ${resultado.documentos.total}` : ""}`} descricao="Título ou paciente; acesso conforme seu perfil." acao={resultado.documentos?.total ? verTodos(`/formularios?busca=${query}`) : undefined} /><CardCorpo>{!resultado.documentos ? <p className="text-sm text-outline">Documentos indisponíveis no momento.</p> : resultado.documentos.itens.length === 0 ? <SemResultado>Nenhum documento encontrado. Tente outro título ou nome de paciente.</SemResultado> : <ul>{resultado.documentos.itens.slice(0, 6).map((d) => <li key={d.id} className="border-b border-card-border last:border-0"><Link href={`/formularios/${d.id}`} className="block py-3 hover:text-primary"><span className="block font-medium">{d.titulo}</span><span className="text-xs text-outline">{ROTULO_TIPO[d.tipo]} · {d.paciente} · {formatarData(d.emitidoEm)}</span></Link></li>)}</ul>}</CardCorpo></Card>
+      {!resultado ? (
+        <Card>
+          <EstadoVazio
+            icone={Search}
+            titulo="O que você procura?"
+            descricao="Digite pelo menos dois caracteres. Para localizar atendimentos, use o nome da paciente, o procedimento ou a data."
+          />
+        </Card>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-on-surface-variant">Resultados para <strong className="text-on-surface">“{termo}”</strong></p>
+            <SeloHero>{totalVisivel} encontrados</SeloHero>
+          </div>
 
-        {administradora && <Card><CardCabecalho titulo={`Prontuários${resultado.prontuarios ? ` · ${resultado.prontuarios.total}` : ""}`} descricao="Registros clínicos visíveis apenas para a administradora." acao={resultado.prontuarios?.total ? verTodos(`/prontuarios?busca=${query}`) : undefined} /><CardCorpo>{!resultado.prontuarios ? <p className="text-sm text-outline">Prontuários indisponíveis no momento.</p> : resultado.prontuarios.itens.length === 0 ? <SemResultado>Nenhum prontuário encontrado. Tente outro título ou nome de paciente.</SemResultado> : <ul>{resultado.prontuarios.itens.slice(0, 6).map((p) => <li key={p.id} className="border-b border-card-border last:border-0"><Link href={`/prontuarios/${p.id}`} className="block py-3 hover:text-primary"><span className="block font-medium">{p.titulo}</span><span className="text-xs text-outline">{p.paciente} · {formatarData(p.dataRegistro)}</span></Link></li>)}</ul>}</CardCorpo></Card>}
-      </div>
-    </>}
-  </div>;
+          <div className="grid items-start gap-5 xl:grid-cols-2">
+            <Card>
+              <CardCabecalho titulo={`Pacientes · ${resultado.pacientes.total}`} descricao="Nome, contato ou CPF. Inclui cadastros arquivados." acao={resultado.pacientes.total > 0 ? verTodos(`/pacientes?busca=${query}&situacao=todas`) : undefined} />
+              <CardCorpo>
+                {resultado.pacientes.itens.length === 0 ? (
+                  <SemResultado>Nenhuma paciente encontrada. Tente outro nome ou contato.</SemResultado>
+                ) : (
+                  <ul className="flex flex-col gap-2.5">
+                    {resultado.pacientes.itens.slice(0, 6).map((p) => (
+                      <li key={p.id}>
+                        <Link href={`/pacientes/${p.id}`} className={linhaResultado}>
+                          <span className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-semibold text-on-surface">{p.exibicao}</span>
+                            {!p.ativo ? <SeloHero className="min-h-6 px-2 py-0 text-[0.66rem]">Arquivada</SeloHero> : null}
+                          </span>
+                          <span className="mt-1 block text-xs text-outline">{p.telefone || p.email || "Sem contato"}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardCorpo>
+            </Card>
+
+            <Card>
+              <CardCabecalho titulo={`Atendimentos · ${resultado.atendimentos.length}${resultado.maisAtendimentos ? "+" : ""}`} descricao="Por paciente, procedimento ou data; até 8 mais recentes." />
+              <CardCorpo>
+                {resultado.atendimentos.length === 0 ? (
+                  <SemResultado>Nenhum atendimento encontrado. Busque pelo nome, procedimento ou uma data.</SemResultado>
+                ) : (
+                  <ul className="flex flex-col gap-2.5">
+                    {resultado.atendimentos.map((a) => (
+                      <li key={a.id}>
+                        <Link href={a.href} className={linhaResultado}>
+                          <span className="flex flex-wrap items-start justify-between gap-2">
+                            <span>
+                              <span className="block font-semibold text-on-surface">{a.paciente}</span>
+                              <span className="mt-1 block text-xs text-outline">{a.procedimento} · {formatarData(a.inicio)} às {formatarHora(a.inicio)}</span>
+                            </span>
+                            <SituacaoChip situacao={a.situacao} compacto />
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {resultado.maisAtendimentos ? <p className="mt-3 text-xs text-outline">Há mais atendimentos; refine o termo para encontrá-los.</p> : null}
+              </CardCorpo>
+            </Card>
+
+            <Card>
+              <CardCabecalho titulo={`Documentos${resultado.documentos ? ` · ${resultado.documentos.total}` : ""}`} descricao="Título ou paciente; acesso conforme seu perfil." acao={resultado.documentos?.total ? verTodos(`/formularios?busca=${query}`) : undefined} />
+              <CardCorpo>
+                {!resultado.documentos ? (
+                  <SemResultado>Documentos indisponíveis no momento.</SemResultado>
+                ) : resultado.documentos.itens.length === 0 ? (
+                  <SemResultado>Nenhum documento encontrado. Tente outro título ou nome de paciente.</SemResultado>
+                ) : (
+                  <ul className="flex flex-col gap-2.5">
+                    {resultado.documentos.itens.slice(0, 6).map((d) => (
+                      <li key={d.id}>
+                        <Link href={`/formularios/${d.id}`} className={linhaResultado}>
+                          <span className="block font-semibold text-on-surface">{d.titulo}</span>
+                          <span className="mt-1 block text-xs text-outline">{ROTULO_TIPO[d.tipo]} · {d.paciente} · {formatarData(d.emitidoEm)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardCorpo>
+            </Card>
+
+            {administradora ? (
+              <Card>
+                <CardCabecalho titulo={`Prontuários${resultado.prontuarios ? ` · ${resultado.prontuarios.total}` : ""}`} descricao="Registros clínicos visíveis apenas para a administradora." acao={resultado.prontuarios?.total ? verTodos(`/prontuarios?busca=${query}`) : undefined} />
+                <CardCorpo>
+                  {!resultado.prontuarios ? (
+                    <SemResultado>Prontuários indisponíveis no momento.</SemResultado>
+                  ) : resultado.prontuarios.itens.length === 0 ? (
+                    <SemResultado>Nenhum prontuário encontrado. Tente outro título ou nome de paciente.</SemResultado>
+                  ) : (
+                    <ul className="flex flex-col gap-2.5">
+                      {resultado.prontuarios.itens.slice(0, 6).map((p) => (
+                        <li key={p.id}>
+                          <Link href={`/prontuarios/${p.id}`} className={linhaResultado}>
+                            <span className="block font-semibold text-on-surface">{p.titulo}</span>
+                            <span className="mt-1 block text-xs text-outline">{p.paciente} · {formatarData(p.dataRegistro)}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardCorpo>
+              </Card>
+            ) : null}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
