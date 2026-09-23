@@ -6,17 +6,6 @@ import { useFormStatus } from "react-dom";
 import { ACAO_INICIAL, type AcaoDeBotao } from "@/lib/acao";
 import { cn } from "@/lib/cn";
 
-/**
- * Formulário de uma ação só — arquivar, mudar situação, ativar, revogar.
- *
- * Continua sendo `<form>` de verdade (AGENTS.md §6, regra 6): sem JavaScript
- * o botão ainda envia. O que muda é que a resposta da ação volta para a tela.
- * Antes, uma recusa do banco revalidava a página e nada acontecia; agora a
- * frase aparece colada ao botão, anunciada ao leitor de tela.
- *
- * O sucesso também é anunciado, mas só para leitor de tela (`sr-only`): quem
- * enxerga já vê a lista mudar.
- */
 export function FormularioDeAcao({
   acao,
   campos,
@@ -26,13 +15,10 @@ export function FormularioDeAcao({
   alinhamento = "inicio",
 }: {
   acao: AcaoDeBotao;
-  /** Campos escondidos que a ação lê: `{ id, para }`. */
   campos: Record<string, string>;
-  /** Pergunta de `window.confirm` antes de enviar, para ação que pede cuidado. */
   confirmacao?: string;
   children: ReactNode;
   className?: string;
-  /** De que lado a mensagem de erro se alinha, conforme onde o botão mora. */
   alinhamento?: "inicio" | "fim";
 }) {
   const [estado, executar] = useActionState(acao, ACAO_INICIAL);
@@ -47,7 +33,7 @@ export function FormularioDeAcao({
             }
           : undefined
       }
-      className={cn("flex flex-col gap-1", alinhamento === "fim" && "items-end", className)}
+      className={cn("flex flex-col gap-1.5", alinhamento === "fim" && "items-end", className)}
     >
       {Object.entries(campos).map(([nome, valor]) => (
         <input key={nome} type="hidden" name={nome} value={valor} />
@@ -59,7 +45,7 @@ export function FormularioDeAcao({
         <p
           role="alert"
           className={cn(
-            "max-w-xs text-xs leading-snug text-negativo",
+            "max-w-xs rounded-lg border border-negativo-borda/65 bg-negativo-fundo/65 px-2.5 py-1.5 text-xs leading-snug text-negativo",
             alinhamento === "fim" && "text-right",
           )}
         >
@@ -80,13 +66,16 @@ type Tom = "neutro" | "positivo" | "negativo" | "informativo" | "silencioso" | "
 
 const TONS: Record<Tom, string> = {
   neutro:
-    "border border-card-border bg-surface text-on-surface-variant hover:border-primary hover:text-primary",
-  positivo: "border border-positivo-borda bg-surface text-positivo hover:bg-positivo-fundo",
-  negativo: "border border-negativo-borda bg-surface text-negativo hover:bg-negativo-fundo",
+    "border border-card-border/90 bg-surface/85 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:border-primary-fixed-dim hover:bg-primary-fixed/20 hover:text-primary",
+  positivo:
+    "border border-positivo-borda/90 bg-positivo-fundo/55 text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-positivo-fundo hover:shadow-[0_6px_14px_-10px_rgba(14,118,57,0.65)]",
+  negativo:
+    "border border-negativo-borda/90 bg-negativo-fundo/45 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-negativo-fundo",
   informativo:
-    "border border-informativo-borda bg-surface text-informativo-texto hover:bg-informativo-fundo",
-  silencioso: "text-outline hover:bg-surface-container-low hover:text-primary",
-  primario: "bg-primary-container text-on-primary hover:bg-primary",
+    "border border-informativo-borda/90 bg-informativo-fundo/55 text-informativo-texto shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-informativo-fundo",
+  silencioso: "text-outline hover:bg-surface/80 hover:text-primary",
+  primario:
+    "border border-primary-container bg-linear-to-b from-primary-container to-primary text-on-primary shadow-[var(--shadow-primary)] hover:brightness-[0.96]",
 };
 
 const TAMANHOS = {
@@ -94,18 +83,6 @@ const TAMANHOS = {
   xs: "h-8 px-3 text-xs [&_svg]:size-3.5",
 } as const;
 
-/**
- * O botão de envio do `FormularioDeAcao`.
- *
- * Precisa ser componente filho: `useFormStatus` só enxerga o `<form>` de um
- * ancestral (AGENTS.md §6, regra 8). Enquanto a ação roda, fica indisponível —
- * dois cliques rápidos não viram duas gravações — e troca o ícone pelo
- * indicador de progresso.
- *
- * O ícone chega como elemento (`<Archive />`), não como componente: página de
- * servidor não pode passar função para componente de cliente. O tamanho vem
- * daqui, pelo CSS, para todo botão do sistema ter o mesmo.
- */
 export function BotaoDeAcao({
   children,
   icone,
@@ -119,7 +96,6 @@ export function BotaoDeAcao({
   tom?: Tom;
   tamanho?: keyof typeof TAMANHOS;
   className?: string;
-  /** Nome para leitor de tela quando o texto visível não basta ("Arquivar foto de 12/03"). */
   rotuloAcessivel?: string;
 }) {
   const { pending } = useFormStatus();
@@ -131,7 +107,7 @@ export function BotaoDeAcao({
       aria-busy={pending || undefined}
       aria-label={rotuloAcessivel}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-cartao)] font-medium whitespace-nowrap transition-colors duration-150 disabled:cursor-wait disabled:opacity-60",
+        "inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-controle)] font-medium whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-wait disabled:opacity-60 disabled:active:translate-y-0 disabled:active:scale-100",
         TAMANHOS[tamanho],
         TONS[tom],
         className,

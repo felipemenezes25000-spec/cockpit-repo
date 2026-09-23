@@ -7,71 +7,50 @@ type Estilo = {
   rotulo: string;
   icone: LucideIcon;
   classes: string;
-  /** Cor do ponto sobre a linha do tempo da agenda. */
   marcador: string;
 };
 
-/**
- * Cada situação recebe a semântica que ela realmente tem:
- *
- * | Situação                | Semântica   | Por quê |
- * |-------------------------|-------------|---------|
- * | Agendado                | informativo | Só informa: nada a fazer ainda |
- * | Aguardando confirmação  | atenção     | Falta alguém ligar. Não é erro |
- * | Confirmado              | positivo    | Deu certo |
- * | Em atendimento          | informativo | Está acontecendo agora |
- * | Concluído               | positivo    | Terminou bem |
- * | Cancelado               | negativo    | Perdeu-se o horário |
- * | Não compareceu          | negativo    | Perdeu-se o horário sem aviso |
- *
- * Cancelado e não compareceu dividem o vermelho porque as duas são a mesma
- * má notícia. O que as separa é o ícone, o rótulo e o preenchimento: cancelado
- * vem sólido, ausência vem em contorno. Cor nunca decide sozinha.
- *
- * "Em atendimento" é o único preenchido com a cor cheia — é o que está
- * acontecendo neste minuto e precisa saltar na lista.
- */
 export const ESTILO_SITUACAO: Record<SituacaoAtendimento, Estilo> = {
   agendado: {
     rotulo: "Agendado",
     icone: Circle,
-    classes: "bg-informativo-fundo text-informativo-texto",
+    classes: "border border-informativo-borda/75 bg-informativo-fundo/72 text-informativo-texto",
     marcador: "bg-informativo-borda",
   },
   aguardando_confirmacao: {
     rotulo: "Aguardando confirmação",
     icone: Clock3,
-    classes: "bg-atencao-fundo text-atencao",
+    classes: "border border-atencao-borda/80 bg-atencao-fundo/78 text-atencao",
     marcador: "bg-atencao-acento",
   },
   confirmado: {
     rotulo: "Confirmado",
     icone: Check,
-    classes: "border border-positivo-borda bg-positivo-fundo text-positivo",
+    classes: "border border-positivo-borda/85 bg-positivo-fundo/78 text-positivo",
     marcador: "bg-positivo",
   },
   em_atendimento: {
     rotulo: "Em atendimento",
     icone: Activity,
-    classes: "bg-informativo font-semibold text-on-primary",
+    classes: "border border-informativo bg-informativo font-semibold text-on-primary shadow-[0_5px_14px_-9px_rgba(10,110,209,0.7)]",
     marcador: "bg-informativo",
   },
   concluido: {
     rotulo: "Concluído",
     icone: CheckCheck,
-    classes: "bg-positivo-fundo text-positivo",
+    classes: "border border-positivo-borda/75 bg-positivo-fundo/72 text-positivo",
     marcador: "bg-positivo-borda",
   },
   cancelado: {
     rotulo: "Cancelado",
     icone: X,
-    classes: "bg-negativo-fundo text-negativo",
+    classes: "border border-negativo-borda/75 bg-negativo-fundo/72 text-negativo",
     marcador: "bg-negativo",
   },
   ausente: {
     rotulo: "Paciente não compareceu",
     icone: Slash,
-    classes: "border border-negativo-borda bg-surface text-negativo",
+    classes: "border border-negativo-borda/85 bg-surface/80 text-negativo",
     marcador: "bg-negativo-borda",
   },
 };
@@ -82,7 +61,6 @@ export function SituacaoChip({
   className,
 }: {
   situacao: SituacaoAtendimento;
-  /** Encurta "Paciente não compareceu" para caber em listas estreitas. */
   compacto?: boolean;
   className?: string;
 }) {
@@ -93,12 +71,12 @@ export function SituacaoChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-[var(--radius-controle)] px-2 py-0.5 text-xs whitespace-nowrap",
+        "inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.72rem] font-medium whitespace-nowrap shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
         estilo.classes,
         className,
       )}
     >
-      <Icone aria-hidden="true" size={14} strokeWidth={1.75} />
+      <Icone aria-hidden="true" size={13} strokeWidth={1.8} />
       {rotulo}
     </span>
   );
