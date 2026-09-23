@@ -1,4 +1,12 @@
-import { Cake, CalendarCheck, ClipboardList, Repeat2, Star, type LucideIcon } from "lucide-react";
+import {
+  Cake,
+  CalendarCheck,
+  ClipboardList,
+  HeartHandshake,
+  Repeat2,
+  Star,
+  type LucideIcon,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BuscarConvite } from "@/components/relacionamento/buscar-convite";
@@ -10,6 +18,7 @@ import { recortarFila } from "@/components/relacionamento/fila";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { classeDeEntrada } from "@/components/ui/field";
+import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { SituacaoChip } from "@/components/ui/status-chip";
 import { diferencaEmDias, partesDoDia } from "@/lib/dates";
 import { descreverPrazo, formatarData, formatarHora } from "@/lib/format";
@@ -72,10 +81,9 @@ function mesDaUrl(valor: string | string[] | undefined): number {
   return Number.isInteger(mes) && mes >= 1 && mes <= 12 ? mes : partesDoDia().mes;
 }
 
-/** Linha de lista com a informação à esquerda e as ações à direita (embaixo, no celular). */
 function Linha({ children, acoes }: { children: React.ReactNode; acoes: React.ReactNode }) {
   return (
-    <li className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3 border-b border-card-border py-4 last:border-0">
+    <li className="premium-interactive flex flex-wrap items-start justify-between gap-x-4 gap-y-3 rounded-[var(--radius-cartao)] border border-card-border/75 bg-surface/68 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
       <div className="min-w-[12rem] flex-1">{children}</div>
       <div className="flex flex-wrap items-center gap-2">{acoes}</div>
     </li>
@@ -118,17 +126,18 @@ function Tarefa({ tarefa }: { tarefa: TarefaRelacionamento }) {
         </>
       }
     >
-      <p className="text-sm font-medium text-on-surface">{tarefa.descricao}</p>
-      <p className="mt-1 text-xs text-outline">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-semibold text-on-surface">{tarefa.descricao}</p>
+        {atrasada ? <SeloHero tom="negativo" className="min-h-6 px-2 py-0 text-[0.68rem]">Atrasada</SeloHero> : null}
+      </div>
+      <p className="mt-1.5 text-xs leading-5 text-outline">
         {ROTULO_TAREFA[tarefa.tipo as keyof typeof ROTULO_TAREFA] ?? "Tarefa"} ·{" "}
         {tarefa.paciente ?? "Sem paciente"} · {tarefa.prazo ? formatarData(tarefa.prazo) : "Sem prazo"} · {situacao}
       </p>
-      {atrasada ? <p className="mt-1 text-xs font-medium text-negativo">Atrasada</p> : null}
     </Linha>
   );
 }
 
-/** Um botão de passo do retorno; o nome da paciente vai para o leitor de tela. */
 function PassoRetorno({
   retorno,
   para,
@@ -171,16 +180,16 @@ function Retorno({ retorno }: { retorno: RetornoRelacionamento }) {
         )
       }
     >
-      <Link href={`/pacientes/${retorno.pacienteId}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
+      <Link href={`/pacientes/${retorno.pacienteId}`} className="inline-flex min-h-6 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">
         {retorno.paciente}
       </Link>
-      <p className="mt-1 text-xs text-outline">
+      <p className="mt-1.5 text-xs leading-5 text-outline">
         {retorno.procedimento ? `${retorno.procedimento} · ` : ""}
         Contato {descreverPrazo(diferencaEmDias(retorno.sugeridoPara))} · {formatarData(retorno.sugeridoPara)} ·{" "}
         {ROTULO_RETORNO[retorno.situacao]}
       </p>
       {retorno.telefone ? <p className="mt-1 text-xs text-outline">{retorno.telefone}</p> : null}
-      {retorno.observacoes ? <p className="mt-1 text-xs text-on-surface-variant">{retorno.observacoes}</p> : null}
+      {retorno.observacoes ? <p className="mt-2 text-xs leading-5 text-on-surface-variant">{retorno.observacoes}</p> : null}
     </Linha>
   );
 }
@@ -199,12 +208,18 @@ function Indicador({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-3 rounded-[var(--radius-painel)] border border-card-border bg-card p-4 transition-colors hover:border-primary sm:p-5"
+      className="premium-interactive group relative isolate overflow-hidden rounded-[var(--radius-painel)] border border-card-border/75 bg-surface/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] sm:p-5"
     >
-      <Icone aria-hidden="true" size={19} strokeWidth={1.75} className="text-primary" />
-      <span>
-        <span className="tabular block text-2xl font-semibold text-on-surface">{valor}</span>
-        <span className="mt-1 block text-xs text-on-surface-variant">{titulo}</span>
+      <span aria-hidden="true" className="pointer-events-none absolute -top-12 -right-10 -z-10 size-28 rounded-full bg-primary-fixed/40 blur-2xl transition-transform duration-300 group-hover:scale-125" />
+      <div className="flex items-start justify-between gap-3">
+        <span className="flex size-9 items-center justify-center rounded-xl border border-primary-fixed-dim/50 bg-primary-fixed/45 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <Icone aria-hidden="true" size={18} strokeWidth={1.7} />
+        </span>
+        <span className="text-xs font-medium text-outline transition-colors group-hover:text-primary">Abrir</span>
+      </div>
+      <span className="mt-5 block">
+        <span className="tabular block text-3xl font-semibold tracking-[-0.035em] text-on-surface">{valor}</span>
+        <span className="mt-1 block text-xs font-medium text-on-surface-variant">{titulo}</span>
       </span>
     </Link>
   );
@@ -221,7 +236,6 @@ export default async function PaginaRelacionamento({
     confirmacoesParaContato(),
     retornosParaContato(),
     tarefasDeContato(),
-    // Só a visão geral mostra o total; a aba de avaliações busca a lista dela.
     aba === "visao" ? candidatasAAvaliacao() : Promise.resolve([]),
   ]);
 
@@ -239,19 +253,29 @@ export default async function PaginaRelacionamento({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-xl text-sm text-on-surface-variant">
-          Contatos antes e depois do atendimento, organizados para a equipe.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <BotaoLink href="/relacionamento/retornos/novo" tamanho="sm">
-            Novo retorno
-          </BotaoLink>
-          <BotaoLink href="/relacionamento/tarefas/nova" variante="primaria" tamanho="sm">
-            Criar tarefa
-          </BotaoLink>
-        </div>
-      </div>
+      <CabecalhoDePagina
+        icone={HeartHandshake}
+        rotulo="Relacionamento"
+        titulo="Acompanhamento da clínica"
+        descricao="Confirmações, retornos, tarefas e momentos de relacionamento organizados em uma única fila operacional."
+        acoes={
+          <>
+            <BotaoLink href="/relacionamento/retornos/novo" tamanho="sm">
+              Novo retorno
+            </BotaoLink>
+            <BotaoLink href="/relacionamento/tarefas/nova" variante="primaria" tamanho="sm">
+              Criar tarefa
+            </BotaoLink>
+          </>
+        }
+        meta={
+          <>
+            <SeloHero tom={confirmacoes.length > 0 ? "atencao" : "positivo"}>{confirmacoes.length} a confirmar</SeloHero>
+            <SeloHero tom={retornosNoPrazo.length > 0 ? "informativo" : "positivo"}>{retornosNoPrazo.length} retornos na data</SeloHero>
+            <SeloHero>{abertas.length} tarefas abertas</SeloHero>
+          </>
+        }
+      />
 
       <NavegacaoEmAbas
         rotulo="Seções de relacionamento"
@@ -273,25 +297,14 @@ export default async function PaginaRelacionamento({
           </div>
 
           <Card>
-            <CardCabecalho
-              titulo="Fila de acompanhamento"
-              descricao="Tarefas abertas e retornos que chegaram à data combinada."
-            />
+            <CardCabecalho titulo="Fila de acompanhamento" descricao="Tarefas abertas e retornos que chegaram à data combinada." />
             <CardCorpo>
               {abertas.length + retornosNoPrazo.length === 0 ? (
-                <EstadoVazio
-                  icone={ClipboardList}
-                  titulo="Acompanhamento em dia"
-                  descricao="As próximas ações aparecerão aqui."
-                />
+                <EstadoVazio icone={ClipboardList} titulo="Acompanhamento em dia" descricao="As próximas ações aparecerão aqui." />
               ) : (
-                <ul>
-                  {fila.tarefas.map((t) => (
-                    <Tarefa key={t.id} tarefa={t} />
-                  ))}
-                  {fila.retornos.map((r) => (
-                    <Retorno key={r.id} retorno={r} />
-                  ))}
+                <ul className="flex flex-col gap-3">
+                  {fila.tarefas.map((t) => <Tarefa key={t.id} tarefa={t} />)}
+                  {fila.retornos.map((r) => <Retorno key={r.id} retorno={r} />)}
                 </ul>
               )}
             </CardCorpo>
@@ -320,7 +333,7 @@ export default async function PaginaRelacionamento({
             {confirmacoes.length === 0 ? (
               <EstadoVazio icone={CalendarCheck} titulo="Tudo confirmado" descricao="Não há atendimentos aguardando confirmação." />
             ) : (
-              <ul>
+              <ul className="flex flex-col gap-3">
                 {confirmacoes.map((item) => (
                   <Linha
                     key={item.id}
@@ -328,30 +341,20 @@ export default async function PaginaRelacionamento({
                       <>
                         <SituacaoChip situacao={item.situacao} compacto />
                         {item.situacao === "agendado" ? (
-                          <FormularioDeAcao
-                            acao={confirmarPelaLista}
-                            campos={{ id: item.id, para: "aguardando_confirmacao" }}
-                            alinhamento="fim"
-                          >
-                            <BotaoDeAcao tamanho="xs" rotuloAcessivel={`Aguardando resposta: ${item.paciente}`}>
-                              Aguardando resposta
-                            </BotaoDeAcao>
+                          <FormularioDeAcao acao={confirmarPelaLista} campos={{ id: item.id, para: "aguardando_confirmacao" }} alinhamento="fim">
+                            <BotaoDeAcao tamanho="xs" rotuloAcessivel={`Aguardando resposta: ${item.paciente}`}>Aguardando resposta</BotaoDeAcao>
                           </FormularioDeAcao>
                         ) : null}
                         <FormularioDeAcao acao={confirmarPelaLista} campos={{ id: item.id, para: "confirmado" }} alinhamento="fim">
-                          <BotaoDeAcao tamanho="xs" tom="positivo" rotuloAcessivel={`Confirmar: ${item.paciente}`}>
-                            Confirmar
-                          </BotaoDeAcao>
+                          <BotaoDeAcao tamanho="xs" tom="positivo" rotuloAcessivel={`Confirmar: ${item.paciente}`}>Confirmar</BotaoDeAcao>
                         </FormularioDeAcao>
                       </>
                     }
                   >
-                    <Link href={`/pacientes/${item.pacienteId}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
+                    <Link href={`/pacientes/${item.pacienteId}`} className="inline-flex min-h-6 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">
                       {item.paciente}
                     </Link>
-                    <p className="mt-1 text-xs text-outline">
-                      {item.procedimento} · {formatarData(item.inicio)} às {formatarHora(item.inicio)}
-                    </p>
+                    <p className="mt-1.5 text-xs text-outline">{item.procedimento} · {formatarData(item.inicio)} às {formatarHora(item.inicio)}</p>
                     <p className="mt-1 text-xs text-outline">{item.telefone || item.email || "Sem contato cadastrado"}</p>
                   </Linha>
                 ))}
@@ -363,19 +366,12 @@ export default async function PaginaRelacionamento({
 
       {aba === "retornos" ? (
         <Card>
-          <CardCabecalho
-            titulo="Retornos"
-            descricao="Datas combinadas pela equipe e situação de cada contato."
-          />
+          <CardCabecalho titulo="Retornos" descricao="Datas combinadas pela equipe e situação de cada contato." />
           <CardCorpo>
             {retornos.length === 0 ? (
               <EstadoVazio icone={Repeat2} titulo="Nenhum retorno" descricao="Registre uma data combinada para acompanhar a paciente." />
             ) : (
-              <ul>
-                {retornos.map((r) => (
-                  <Retorno key={r.id} retorno={r} />
-                ))}
-              </ul>
+              <ul className="flex flex-col gap-3">{retornos.map((r) => <Retorno key={r.id} retorno={r} />)}</ul>
             )}
           </CardCorpo>
         </Card>
@@ -383,18 +379,13 @@ export default async function PaginaRelacionamento({
 
       {aba === "tarefas" ? (
         <Card>
-          <CardCabecalho
-            titulo="Tarefas de contato"
-            descricao={`${abertas.length} em aberto · ${tarefas.length - abertas.length} resolvidas ou canceladas`}
-          />
+          <CardCabecalho titulo="Tarefas de contato" descricao={`${abertas.length} em aberto · ${tarefas.length - abertas.length} resolvidas ou canceladas`} />
           <CardCorpo>
             {tarefas.length === 0 ? (
               <EstadoVazio icone={ClipboardList} titulo="Nenhuma tarefa" descricao="Crie uma tarefa para não perder um contato importante." />
             ) : (
-              <ul>
-                {[...abertas, ...tarefas.filter((t) => t.situacao !== "aberta")].map((t) => (
-                  <Tarefa key={t.id} tarefa={t} />
-                ))}
+              <ul className="flex flex-col gap-3">
+                {[...abertas, ...tarefas.filter((t) => t.situacao !== "aberta")].map((t) => <Tarefa key={t.id} tarefa={t} />)}
               </ul>
             )}
           </CardCorpo>
@@ -416,23 +407,13 @@ async function Aniversarios({ mes }: { mes: number }) {
         titulo="Aniversários"
         descricao="Prepare a mensagem e registre o envio manual."
         acao={
-          // GET: o mês vai para a URL e o Enter funciona sem JavaScript.
           <form method="get" className="flex items-center gap-2">
             <input type="hidden" name="aba" value="aniversarios" />
-            <label htmlFor="mes" className="sr-only">
-              Mês
-            </label>
+            <label htmlFor="mes" className="sr-only">Mês</label>
             <select id="mes" name="mes" defaultValue={mes} className={classeDeEntrada({ altura: "compacta", largura: "auto" })}>
-              {MESES.map((nome, i) => (
-                <option key={nome} value={i + 1}>
-                  {nome}
-                </option>
-              ))}
+              {MESES.map((nome, i) => <option key={nome} value={i + 1}>{nome}</option>)}
             </select>
-            <button
-              type="submit"
-              className="inline-flex h-9 items-center rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3 text-sm font-medium text-primary transition-colors hover:bg-surface-container-low"
-            >
+            <button type="submit" className="premium-interactive inline-flex h-9 items-center rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-sm font-medium text-primary shadow-[var(--shadow-cartao)] hover:border-primary-fixed-dim">
               Ver
             </button>
           </form>
@@ -442,19 +423,11 @@ async function Aniversarios({ mes }: { mes: number }) {
         {pessoas.length === 0 ? (
           <EstadoVazio icone={Cake} titulo="Nenhum aniversário neste mês" descricao="Escolha outro mês para consultar." />
         ) : (
-          <ul>
+          <ul className="flex flex-col gap-3">
             {pessoas.map((p) => (
-              <Linha
-                key={p.id}
-                acoes={<ConviteContato pacienteId={p.id} nome={p.nome} telefone={p.telefone} tipo="aniversario" />}
-              >
-                <Link href={`/pacientes/${p.id}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
-                  {p.nome}
-                </Link>
-                <p className="mt-1 text-xs text-outline">
-                  Dia {p.dia} de {MESES[mes - 1]} ·{" "}
-                  <span className="whitespace-nowrap">{p.telefone || "Sem telefone cadastrado"}</span>
-                </p>
+              <Linha key={p.id} acoes={<ConviteContato pacienteId={p.id} nome={p.nome} telefone={p.telefone} tipo="aniversario" />}>
+                <Link href={`/pacientes/${p.id}`} className="inline-flex min-h-6 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">{p.nome}</Link>
+                <p className="mt-1.5 text-xs text-outline">Dia {p.dia} de {MESES[mes - 1]} · <span className="whitespace-nowrap">{p.telefone || "Sem telefone cadastrado"}</span></p>
               </Linha>
             ))}
           </ul>
@@ -472,33 +445,20 @@ async function Avaliacoes() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardCabecalho titulo="Convidar uma paciente" descricao="Busque qualquer paciente ativa para preparar o link de avaliação." />
-        <CardCorpo>
-          <BuscarConvite />
-        </CardCorpo>
+        <CardCorpo><BuscarConvite /></CardCorpo>
       </Card>
 
       <Card>
-        <CardCabecalho
-          titulo="Convites para avaliar no Google"
-          descricao="Pacientes atendidas recentemente. Abra a mensagem e marque o envio depois de concluí-lo."
-        />
+        <CardCabecalho titulo="Convites para avaliar no Google" descricao="Pacientes atendidas recentemente. Abra a mensagem e marque o envio depois de concluí-lo." />
         <CardCorpo>
           {pessoas.length === 0 ? (
             <EstadoVazio icone={Star} titulo="Nenhum atendimento concluído" descricao="Pacientes atendidas aparecerão aqui." />
           ) : (
-            <ul>
+            <ul className="flex flex-col gap-3">
               {pessoas.map((p) => (
-                <Linha
-                  key={p.id}
-                  acoes={<ConviteContato pacienteId={p.id} nome={p.nome} telefone={p.telefone} tipo="avaliacao" />}
-                >
-                  <Link href={`/pacientes/${p.id}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
-                    {p.nome}
-                  </Link>
-                  <p className="mt-1 text-xs text-outline">
-                    Último atendimento em {formatarData(p.ultimoAtendimento)} ·{" "}
-                    <span className="whitespace-nowrap">{p.telefone || "Sem telefone cadastrado"}</span>
-                  </p>
+                <Linha key={p.id} acoes={<ConviteContato pacienteId={p.id} nome={p.nome} telefone={p.telefone} tipo="avaliacao" />}>
+                  <Link href={`/pacientes/${p.id}`} className="inline-flex min-h-6 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">{p.nome}</Link>
+                  <p className="mt-1.5 text-xs text-outline">Último atendimento em {formatarData(p.ultimoAtendimento)} · <span className="whitespace-nowrap">{p.telefone || "Sem telefone cadastrado"}</span></p>
                 </Linha>
               ))}
             </ul>
@@ -507,23 +467,16 @@ async function Avaliacoes() {
       </Card>
 
       <Card>
-        <CardCabecalho
-          titulo="Convites registrados"
-          descricao="O sistema registra o envio informado pela equipe, sem consultar a avaliação no Google."
-        />
+        <CardCabecalho titulo="Convites registrados" descricao="O sistema registra o envio informado pela equipe, sem consultar a avaliação no Google." />
         <CardCorpo>
           {convites.length === 0 ? (
             <EstadoVazio icone={Star} titulo="Nenhum convite registrado" descricao="Após o envio, marque a paciente na lista acima." />
           ) : (
-            <ul>
+            <ul className="flex flex-col gap-2.5">
               {convites.map((c) => (
-                <li key={c.id} className="flex flex-wrap justify-between gap-2 border-b border-card-border py-3 text-sm last:border-0">
-                  <Link href={`/pacientes/${c.pacienteId}`} className="inline-flex min-h-6 items-center font-medium text-primary hover:underline">
-                    {c.paciente}
-                  </Link>
-                  <time dateTime={c.quando.toISOString()} className="text-xs text-outline">
-                    {formatarData(c.quando)} às {formatarHora(c.quando)}
-                  </time>
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/58 px-3.5 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+                  <Link href={`/pacientes/${c.pacienteId}`} className="inline-flex min-h-6 items-center font-semibold text-primary underline-offset-4 hover:underline">{c.paciente}</Link>
+                  <time dateTime={c.quando.toISOString()} className="tabular text-xs text-outline">{formatarData(c.quando)} às {formatarHora(c.quando)}</time>
                 </li>
               ))}
             </ul>

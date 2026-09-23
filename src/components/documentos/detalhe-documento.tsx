@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { formatarData, formatarHora } from "@/lib/format";
 import { formatarCpf } from "@/lib/paciente";
 import { hashCurto, seAssina, situacaoDaAnamnese, ROTULO_ANAMNESE } from "@/lib/documento";
@@ -33,16 +34,13 @@ function Metadado({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2">
-      <Icone
-        aria-hidden="true"
-        size={16}
-        strokeWidth={1.75}
-        className="mt-0.5 shrink-0 text-outline"
-      />
+    <div className="flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary-fixed/45 text-primary">
+        <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
+      </span>
       <div className="min-w-0">
-        <dt className="text-xs font-medium uppercase text-outline">{rotulo}</dt>
-        <dd className="mt-0.5 text-sm break-words text-on-surface">{children}</dd>
+        <dt className="rotulo text-[0.65rem] text-outline">{rotulo}</dt>
+        <dd className="mt-1 text-sm leading-5 break-words text-on-surface">{children}</dd>
       </div>
     </div>
   );
@@ -50,11 +48,9 @@ function Metadado({
 
 function Evidencia({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
-    <div className="flex flex-col gap-0.5 border-t border-card-border py-2.5 first:border-t-0 first:pt-0 sm:flex-row sm:gap-4">
-      <span className="text-xs font-medium uppercase text-outline sm:w-44 sm:shrink-0">
-        {rotulo}
-      </span>
-      <span className="text-sm break-words text-on-surface">{valor}</span>
+    <div className="grid gap-1 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
+      <span className="rotulo text-[0.65rem] text-outline">{rotulo}</span>
+      <span className="text-sm leading-5 break-words text-on-surface">{valor}</span>
     </div>
   );
 }
@@ -69,85 +65,75 @@ export function DetalheDocumento({
   const assinatura = documento.assinatura;
   const anamnese = !seAssina(documento.tipo);
   const preenchimento = situacaoDaAnamnese(documento.campos);
-  // Só a anamnese em vigor aceita resposta; é a mesma condição do banco.
   const aceitaResposta = documento.situacao === "emitido";
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <BotaoLink href="/formularios" variante="contorno" tamanho="sm">
-          <FileSignature aria-hidden="true" size={16} strokeWidth={1.75} />
-          Documentos
-        </BotaoLink>
+      <LinkDeVoltar href="/formularios">Voltar para documentos</LinkDeVoltar>
 
-        {/* Corrigir não é editar: gera documento novo apontando para este. */}
-        {documento.situacao !== "substituido" ? (
-          <BotaoLink
-            href={`/formularios/novo?paciente=${documento.pacienteId}&corrige=${documento.id}`}
-            variante="contorno"
-            tamanho="sm"
-          >
-            <Replace aria-hidden="true" size={16} strokeWidth={1.75} />
-            Emitir correção
-          </BotaoLink>
-        ) : null}
-      </div>
+      <CabecalhoDePagina
+        icone={FileSignature}
+        rotulo="Documento emitido"
+        titulo={documento.titulo}
+        descricao={
+          <>
+            Registro de <span className="font-medium text-on-surface">{documento.paciente}</span> com texto congelado, trilha de emissão e evidências preservadas.
+          </>
+        }
+        acoes={
+          documento.situacao !== "substituido" ? (
+            <BotaoLink
+              href={`/formularios/novo?paciente=${documento.pacienteId}&corrige=${documento.id}`}
+              variante="contorno"
+              tamanho="sm"
+            >
+              <Replace aria-hidden="true" size={16} strokeWidth={1.75} />
+              Emitir correção
+            </BotaoLink>
+          ) : undefined
+        }
+        meta={
+          <>
+            <MarcaTipo tipo={documento.tipo} />
+            <MarcaSituacao situacao={documento.situacao} tipo={documento.tipo} />
+            <SeloHero>{formatarData(documento.emitidoEm)}</SeloHero>
+            {assinatura ? <SeloHero tom="positivo">Assinatura registrada</SeloHero> : null}
+            {documento.exemplo ? <SeloHero tom="atencao">Dado demonstrativo</SeloHero> : null}
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="flex flex-col gap-6">
           <Card>
             <CardCabecalho
-              titulo={documento.titulo}
-              descricao={
-                <span className="flex flex-wrap items-center gap-2 pt-1">
-                  <MarcaTipo tipo={documento.tipo} />
-                  <MarcaSituacao situacao={documento.situacao} tipo={documento.tipo} />
-                  {documento.exemplo ? (
-                    <span className="text-xs text-outline">exemplo</span>
-                  ) : null}
-                </span>
-              }
+              titulo={anamnese ? "Conteúdo congelado" : "Texto assinado ou a assinar"}
+              descricao="Esta é a cópia preservada do conteúdo emitido. Alterações posteriores no modelo não reescrevem este registro."
             />
             <CardCorpo>
               {documento.situacao === "cancelado" ? (
-                <p className="mb-5 rounded-[var(--radius-cartao)] border border-outline-variant bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                  <strong className="font-medium">Cancelado.</strong>{" "}
-                  {documento.motivoCancelamento}
+                <p className="mb-5 rounded-[var(--radius-controle)] border border-negativo-borda/70 bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo">
+                  <strong className="font-semibold">Documento cancelado.</strong> {documento.motivoCancelamento}
                 </p>
               ) : null}
 
-              {/* O texto exatamente como foi congelado. `whitespace-pre-wrap`
-                  não é estilo: parágrafo, recuo e linha em branco fazem parte
-                  do que a paciente leu. */}
-              <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-5 py-5 sm:px-7 sm:py-6">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
+              <article className="relative mx-auto max-w-4xl rounded-[calc(var(--radius-painel)-2px)] border border-card-border/85 bg-white px-5 py-6 shadow-[0_22px_60px_-44px_rgba(8,41,76,0.42),inset_0_1px_0_rgba(255,255,255,1)] sm:px-8 sm:py-8">
+                <span aria-hidden="true" className="absolute inset-x-10 top-0 h-px bg-primary-fixed/75" />
+                <p className="whitespace-pre-wrap text-[0.94rem] leading-7 text-on-surface">
                   {documento.corpo}
                 </p>
-              </div>
+              </article>
             </CardCorpo>
 
             <CardRodape className="flex items-start gap-2 text-outline">
-              <Fingerprint
-                aria-hidden="true"
-                size={14}
-                strokeWidth={1.75}
-                className="mt-0.5 shrink-0"
-              />
+              <Fingerprint aria-hidden="true" size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" />
               <span>
                 Impressão digital do texto (SHA-256):{" "}
-                <code className="tabular break-all text-on-surface-variant">
-                  {documento.hash}
-                </code>
+                <code className="tabular break-all text-on-surface-variant">{documento.hash}</code>
               </span>
             </CardRodape>
           </Card>
 
-          {/* Anamnese não se assina: ela se preenche, e a resposta pode ser
-              corrigida depois. Conteúdo que evolui, ao contrário do contrato —
-              mas só enquanto está `emitido`. Cancelada ou substituída, o banco
-              recusa toda resposta (`documento_campos_responder`), e um botão
-              Salvar que sempre falha é pior do que botão nenhum (§5): as
-              respostas ficam à vista, só para leitura. */}
           {anamnese ? (
             <Card>
               <CardCabecalho
@@ -170,18 +156,11 @@ export function DetalheDocumento({
             </Card>
           ) : null}
 
-          {/* Dois caminhos, e a ordem na tela diz qual é o principal: o link
-              é o fluxo esperado; o balcão serve quando a paciente já está na
-              clínica. A prova de cada um é diferente, e cada painel diz a sua. */}
           {documento.situacao === "emitido" ? (
             <Card>
               <CardCabecalho
-                titulo={
-                  anamnese
-                    ? "Ou enviar para a paciente preencher"
-                    : "Enviar para a paciente assinar"
-                }
-                descricao="Link com validade, protegido pela data de nascimento dela."
+                titulo={anamnese ? "Enviar para a paciente preencher" : "Enviar para a paciente assinar"}
+                descricao="Link com validade e proteção pela data de nascimento da paciente."
               />
               <PainelLink
                 documentoId={documento.id}
@@ -200,8 +179,8 @@ export function DetalheDocumento({
           {documento.situacao === "emitido" && !anamnese ? (
             <Card>
               <CardCabecalho
-                titulo="Ou assinar aqui, no balcão"
-                descricao="Quando a paciente está presente e alguém confere o documento com foto."
+                titulo="Assinar presencialmente"
+                descricao="Alternativa para quando a paciente está no balcão e alguém confere o documento com foto."
               />
               <PainelAssinatura documentoId={documento.id} />
             </Card>
@@ -211,24 +190,17 @@ export function DetalheDocumento({
             <Card>
               <CardCabecalho
                 titulo="Evidências da assinatura"
-                descricao="O que dá força à assinatura simples é o conjunto de circunstâncias."
+                descricao="A força da assinatura simples vem do conjunto de circunstâncias registradas."
               />
               <CardCorpo>
-                <div className="flex flex-col">
+                <div className="grid gap-2.5">
                   <Evidencia rotulo="Assinado por" valor={assinatura.nome} />
-                  {assinatura.cpf ? (
-                    <Evidencia rotulo="CPF" valor={formatarCpf(assinatura.cpf)} />
-                  ) : null}
+                  {assinatura.cpf ? <Evidencia rotulo="CPF" valor={formatarCpf(assinatura.cpf)} /> : null}
                   <Evidencia
                     rotulo="Data e hora"
-                    valor={`${formatarData(assinatura.assinadoEm)} às ${formatarHora(
-                      assinatura.assinadoEm,
-                    )}`}
+                    valor={`${formatarData(assinatura.assinadoEm)} às ${formatarHora(assinatura.assinadoEm)}`}
                   />
-                  <Evidencia
-                    rotulo="Identidade conferida"
-                    valor={assinatura.verificacao}
-                  />
+                  <Evidencia rotulo="Identidade conferida" valor={assinatura.verificacao} />
                   <Evidencia
                     rotulo="Como assinou"
                     valor={
@@ -238,35 +210,17 @@ export function DetalheDocumento({
                     }
                   />
                   {assinatura.canal === "balcao" ? (
-                    <Evidencia
-                      rotulo="Operador no balcão"
-                      valor={assinatura.operador ?? "não registrado"}
-                    />
+                    <Evidencia rotulo="Operador no balcão" valor={assinatura.operador ?? "não registrado"} />
                   ) : null}
-                  {/* Pelo link, IP e dispositivo chegam na requisição e o banco
-                      não os confere (0028 os comenta como declarados). O
-                      rótulo diz isso, para a evidência não parecer mais forte
-                      do que é. */}
                   <Evidencia
-                    rotulo={
-                      assinatura.canal === "link"
-                        ? "Endereço IP (informado pelo navegador)"
-                        : "Endereço IP"
-                    }
+                    rotulo={assinatura.canal === "link" ? "Endereço IP (informado pelo navegador)" : "Endereço IP"}
                     valor={assinatura.ip ?? "não informado"}
                   />
                   <Evidencia
-                    rotulo={
-                      assinatura.canal === "link"
-                        ? "Dispositivo (informado pelo navegador)"
-                        : "Dispositivo"
-                    }
+                    rotulo={assinatura.canal === "link" ? "Dispositivo (informado pelo navegador)" : "Dispositivo"}
                     valor={assinatura.dispositivo ?? "não informado"}
                   />
-                  <Evidencia
-                    rotulo="Texto assinado"
-                    valor={hashCurto(assinatura.hashAssinado)}
-                  />
+                  <Evidencia rotulo="Texto assinado" valor={hashCurto(assinatura.hashAssinado)} />
                   <Evidencia
                     rotulo="Provedor"
                     valor={
@@ -278,13 +232,8 @@ export function DetalheDocumento({
                 </div>
 
                 {assinatura.hashAssinado !== documento.hash ? (
-                  <p
-                    role="alert"
-                    className="mt-5 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
-                  >
-                    O hash registrado na assinatura não corresponde ao texto atual
-                    do documento. Isso não deveria acontecer — o banco impede
-                    alteração do texto. Avise quem cuida do sistema.
+                  <p role="alert" className="mt-5 rounded-[var(--radius-controle)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
+                    O hash registrado na assinatura não corresponde ao texto atual do documento. Isso não deveria acontecer — o banco impede alteração do texto. Avise quem cuida do sistema.
                   </p>
                 ) : null}
               </CardCorpo>
@@ -292,30 +241,26 @@ export function DetalheDocumento({
           ) : null}
         </div>
 
-        <aside className="flex flex-col gap-6">
+        <aside className="flex flex-col gap-6 xl:sticky xl:top-28 xl:self-start">
           <Card as="div">
             <CardCabecalho titulo="Resumo" />
             <CardCorpo>
-              <dl className="flex flex-col gap-4">
-                <Metadado icone={UserRound} rotulo="Paciente">
-                  {documento.paciente}
-                </Metadado>
+              <dl className="grid gap-3">
+                <Metadado icone={UserRound} rotulo="Paciente">{documento.paciente}</Metadado>
                 <Metadado icone={CalendarDays} rotulo="Emitido">
-                  {formatarData(documento.emitidoEm)} às{" "}
-                  {formatarHora(documento.emitidoEm)}
+                  {formatarData(documento.emitidoEm)} às {formatarHora(documento.emitidoEm)}
                   {documento.emitidoPor ? ` · ${documento.emitidoPor}` : ""}
                 </Metadado>
                 {documento.modeloNome ? (
                   <Metadado icone={FileSignature} rotulo="Modelo de origem">
-                    {documento.modeloNome}
-                    {documento.modeloVersao ? ` · versão ${documento.modeloVersao}` : ""}
+                    {documento.modeloNome}{documento.modeloVersao ? ` · versão ${documento.modeloVersao}` : ""}
                   </Metadado>
                 ) : null}
               </dl>
 
               <Link
                 href={`/pacientes/${documento.pacienteId}`}
-                className="mt-4 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+                className="mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] px-3 text-sm font-medium text-primary transition-colors hover:bg-primary-fixed/40"
               >
                 Abrir ficha da paciente
               </Link>
@@ -323,14 +268,9 @@ export function DetalheDocumento({
               {documento.documentoAnteriorId ? (
                 <Link
                   href={`/formularios/${documento.documentoAnteriorId}`}
-                  className="mt-2 flex items-start gap-2 border-t border-card-border pt-4 text-sm text-on-surface-variant underline-offset-4 hover:text-primary hover:underline"
+                  className="mt-2 flex items-start gap-2 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 text-sm text-on-surface-variant transition-colors hover:border-primary-fixed-dim hover:text-primary"
                 >
-                  <Replace
-                    aria-hidden="true"
-                    size={16}
-                    strokeWidth={1.75}
-                    className="mt-0.5 shrink-0"
-                  />
+                  <Replace aria-hidden="true" size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
                   Este documento corrige um anterior
                 </Link>
               ) : null}
@@ -338,15 +278,10 @@ export function DetalheDocumento({
           </Card>
 
           <Card as="div">
-            <CardCabecalho titulo="O que não muda" />
+            <CardCabecalho titulo="Integridade do registro" />
             <CardCorpo className="flex flex-col gap-3">
-              <p className="flex items-start gap-2 text-sm text-on-surface-variant">
-                <ShieldCheck
-                  aria-hidden="true"
-                  size={16}
-                  strokeWidth={1.75}
-                  className="mt-0.5 shrink-0 text-primary"
-                />
+              <p className="flex items-start gap-2 rounded-[var(--radius-controle)] bg-primary-fixed/25 px-3 py-3 text-sm leading-6 text-on-surface-variant">
+                <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.75} className="mt-0.5 shrink-0 text-primary" />
                 {anamnese
                   ? "O enunciado e as perguntas são a cópia congelada do que foi perguntado. Corrigir o modelo depois não reescreve esta anamnese — só as respostas mudam."
                   : "O texto acima é a cópia congelada do que a paciente leu. Alterar o modelo depois não altera este documento — o banco recusa qualquer mudança no corpo."}

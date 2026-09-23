@@ -1,6 +1,6 @@
 import {
-  ArrowLeft,
   CalendarDays,
+  FileText,
   History,
   PencilLine,
   UserRound,
@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { formatarData, formatarHora } from "@/lib/format";
 import type { FotosDoProntuario } from "@/server/consultas/prontuario-imagens";
 import type {
@@ -26,11 +27,13 @@ function Metadado({
   valor: string;
 }) {
   return (
-    <div className="flex items-start gap-2">
-      <Icone aria-hidden="true" size={16} strokeWidth={1.75} className="mt-0.5 text-outline" />
-      <div>
-        <dt className="text-xs font-medium uppercase text-outline">{rotulo}</dt>
-        <dd className="mt-0.5 text-sm text-on-surface">{valor}</dd>
+    <div className="flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary-fixed/45 text-primary">
+        <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
+      </span>
+      <div className="min-w-0">
+        <dt className="rotulo text-[0.65rem] text-outline">{rotulo}</dt>
+        <dd className="mt-1 text-sm leading-5 break-words text-on-surface">{valor}</dd>
       </div>
     </div>
   );
@@ -40,9 +43,10 @@ function BlocoClinico({ rotulo, valor }: { rotulo: string; valor: string }) {
   if (!valor.trim()) return null;
 
   return (
-    <section className="border-t border-card-border pt-5 first:border-t-0 first:pt-0">
-      <h3 className="text-xs font-medium uppercase text-outline">{rotulo}</h3>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
+    <section className="relative rounded-[var(--radius-cartao)] border border-card-border/70 bg-surface/58 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:px-5 sm:py-5">
+      <span aria-hidden="true" className="absolute inset-y-4 left-0 w-0.5 rounded-full bg-primary-fixed-dim" />
+      <h3 className="rotulo pl-1 text-[0.67rem] text-outline">{rotulo}</h3>
+      <p className="mt-2 pl-1 whitespace-pre-wrap text-sm leading-7 text-on-surface">
         {valor}
       </p>
     </section>
@@ -51,7 +55,7 @@ function BlocoClinico({ rotulo, valor }: { rotulo: string; valor: string }) {
 
 function ConteudoClinico({ versao }: { versao: VersaoDoProntuario }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="grid gap-3">
       <BlocoClinico rotulo="Queixa e anamnese" valor={versao.queixa} />
       <BlocoClinico rotulo="Avaliação" valor={versao.avaliacao} />
       <BlocoClinico rotulo="Conduta" valor={versao.conduta} />
@@ -64,23 +68,27 @@ function ConteudoClinico({ versao }: { versao: VersaoDoProntuario }) {
 
 function VersaoHistorico({ versao }: { versao: VersaoDoProntuario }) {
   return (
-    <details className="group border-t border-card-border py-4 first:border-t-0 first:pt-0 last:pb-0">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+    <details className="group rounded-[var(--radius-cartao)] border border-card-border/75 bg-surface/58 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] open:bg-surface">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5">
         <span className="min-w-0">
-          <span className="block text-sm font-medium text-on-surface">
+          <span className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-primary-fixed/45 text-[0.7rem] font-bold text-primary">
+              v{versao.numero}
+            </span>
             Versão {versao.numero}
           </span>
-          <span className="block truncate text-xs text-outline">
-            {versao.motivo} · {formatarData(versao.criadoEm)} às{" "}
-            {formatarHora(versao.criadoEm)}
+          <span className="mt-1 block truncate text-xs text-outline">
+            {versao.motivo} · {formatarData(versao.criadoEm)} às {formatarHora(versao.criadoEm)}
             {versao.criadoPor ? ` · ${versao.criadoPor}` : ""}
           </span>
         </span>
-        <span className="text-xs font-medium text-primary group-open:hidden">Abrir</span>
-        <span className="hidden text-xs font-medium text-primary group-open:inline">Fechar</span>
+        <span className="rounded-full bg-surface-container-low px-2.5 py-1 text-xs font-medium text-primary transition-colors group-open:bg-primary-fixed/55">
+          <span className="group-open:hidden">Abrir</span>
+          <span className="hidden group-open:inline">Fechar</span>
+        </span>
       </summary>
 
-      <div className="mt-4 rounded-[var(--radius-cartao)] bg-surface px-4 py-4">
+      <div className="border-t border-card-border/70 p-4">
         <ConteudoClinico versao={versao} />
       </div>
     </details>
@@ -100,70 +108,68 @@ export function DetalheProntuario({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href="/prontuarios"
-          className="inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-        >
-          <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-          Voltar para prontuários
-        </Link>
+      <LinkDeVoltar href="/prontuarios">Voltar para prontuários</LinkDeVoltar>
 
-        <BotaoLink
-          href={`/prontuarios/${prontuario.id}/editar`}
-          variante="primaria"
-          tamanho="sm"
-        >
-          <PencilLine aria-hidden="true" size={16} strokeWidth={1.75} />
-          Nova versão
-        </BotaoLink>
-      </div>
+      <CabecalhoDePagina
+        icone={FileText}
+        rotulo="Prontuário clínico"
+        titulo={prontuario.titulo}
+        descricao={
+          <>
+            Registro versionado de <span className="font-medium text-on-surface">{prontuario.paciente}</span>. O conteúdo clínico permanece legível e cada atualização nasce como uma nova versão.
+          </>
+        }
+        acoes={
+          <BotaoLink
+            href={`/prontuarios/${prontuario.id}/editar`}
+            variante="primaria"
+            tamanho="sm"
+          >
+            <PencilLine aria-hidden="true" size={16} strokeWidth={1.75} />
+            Nova versão
+          </BotaoLink>
+        }
+        meta={
+          <>
+            {versaoAtual ? <SeloHero tom="informativo">Versão atual: {versaoAtual.numero}</SeloHero> : null}
+            <SeloHero>{formatarData(prontuario.dataRegistro)}</SeloHero>
+            {prontuario.atendimento ? <SeloHero tom="positivo">Vinculado a atendimento</SeloHero> : null}
+            {prontuario.exemplo ? <SeloHero tom="atencao">Dado demonstrativo</SeloHero> : null}
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
         <Card>
           <CardCabecalho
-            titulo={prontuario.titulo}
+            titulo="Registro atual"
             descricao={
-              <>
-                {prontuario.paciente}
-                {prontuario.exemplo ? " · exemplo" : ""}
-              </>
+              versaoAtual
+                ? `${versaoAtual.motivo} · ${formatarData(versaoAtual.criadoEm)} às ${formatarHora(versaoAtual.criadoEm)}${versaoAtual.criadoPor ? ` · ${versaoAtual.criadoPor}` : ""}`
+                : "Este prontuário ainda não tem versão registrada."
             }
           />
           <CardCorpo>
             {versaoAtual ? (
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-[var(--radius-tag)] bg-informativo-fundo px-2 py-1 text-xs font-medium text-informativo-texto">
-                    Versão {versaoAtual.numero}
-                  </span>
-                  <span className="text-xs text-outline">
-                    {versaoAtual.motivo} · {formatarData(versaoAtual.criadoEm)} às{" "}
-                    {formatarHora(versaoAtual.criadoEm)}
-                    {versaoAtual.criadoPor ? ` · ${versaoAtual.criadoPor}` : ""}
-                  </span>
+                  <SeloHero tom="informativo">Versão {versaoAtual.numero}</SeloHero>
+                  <span className="text-xs text-outline">Conteúdo clínico atual</span>
                 </div>
-
                 <ConteudoClinico versao={versaoAtual} />
               </div>
             ) : (
-              <p className="text-sm text-outline">
-                Este prontuário ainda não tem versão registrada.
-              </p>
+              <p className="text-sm text-outline">Este prontuário ainda não tem versão registrada.</p>
             )}
           </CardCorpo>
         </Card>
 
-        <aside className="flex flex-col gap-6">
+        <aside className="flex flex-col gap-6 xl:sticky xl:top-28 xl:self-start">
           <Card as="div">
             <CardCabecalho titulo="Resumo" />
             <CardCorpo>
-              <dl className="flex flex-col gap-4">
-                <Metadado
-                  icone={UserRound}
-                  rotulo="Paciente"
-                  valor={prontuario.paciente}
-                />
+              <dl className="grid gap-3">
+                <Metadado icone={UserRound} rotulo="Paciente" valor={prontuario.paciente} />
                 <Metadado
                   icone={CalendarDays}
                   rotulo="Data do registro"
@@ -177,14 +183,14 @@ export function DetalheProntuario({
               </dl>
 
               {prontuario.pacienteContato ? (
-                <p className="mt-4 border-t border-card-border pt-4 text-sm text-outline">
+                <p className="mt-4 rounded-[var(--radius-controle)] bg-surface-container-low/70 px-3 py-2 text-sm text-outline">
                   {prontuario.pacienteContato}
                 </p>
               ) : null}
 
               <Link
                 href={`/pacientes/${prontuario.pacienteId}`}
-                className="mt-4 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+                className="mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] px-3 text-sm font-medium text-primary transition-colors hover:bg-primary-fixed/40"
               >
                 Abrir ficha da paciente
               </Link>
@@ -193,29 +199,26 @@ export function DetalheProntuario({
 
           {prontuario.atendimento ? (
             <Card as="div">
-              <CardCabecalho titulo="Atendimento" />
+              <CardCabecalho titulo="Atendimento de origem" />
               <CardCorpo>
-                <p className="text-sm font-medium text-on-surface">
+                <p className="text-sm font-semibold text-on-surface">
                   {prontuario.atendimento.procedimento ?? "Atendimento"}
                 </p>
-                <p className="mt-1 text-sm text-outline">
-                  {formatarData(prontuario.atendimento.inicio)} às{" "}
-                  {formatarHora(prontuario.atendimento.inicio)}
+                <p className="mt-1.5 text-sm text-outline">
+                  {formatarData(prontuario.atendimento.inicio)} às {formatarHora(prontuario.atendimento.inicio)}
                 </p>
                 {prontuario.atendimento.profissional ? (
-                  <p className="mt-1 text-sm text-outline">
-                    {prontuario.atendimento.profissional}
-                  </p>
+                  <p className="mt-1 text-sm text-outline">{prontuario.atendimento.profissional}</p>
                 ) : null}
               </CardCorpo>
             </Card>
           ) : null}
 
           <Card as="div">
-            <CardCabecalho titulo="Versões" />
+            <CardCabecalho titulo="Histórico de versões" />
             <CardCorpo>
               {prontuario.versoes.length > 0 ? (
-                <div>
+                <div className="flex flex-col gap-2.5">
                   {prontuario.versoes.map((versao) => (
                     <VersaoHistorico key={versao.id} versao={versao} />
                   ))}
@@ -228,8 +231,6 @@ export function DetalheProntuario({
         </aside>
       </div>
 
-      {/* Fora da grade de duas colunas de propósito: comparar antes e depois
-          pede a largura inteira da página, não a coluna do texto. */}
       <FotosDeEvolucao
         fotos={fotos}
         prontuarioId={prontuario.id}
