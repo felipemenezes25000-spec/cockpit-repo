@@ -12,6 +12,7 @@ type Enums = Database["public"]["Enums"];
 export type SituacaoAtendimento = Enums["situacao_atendimento"];
 export type Prioridade = Enums["prioridade"];
 export type TipoPendencia = Enums["tipo_pendencia"];
+export type OrigemPendencia = Enums["origem_pendencia"];
 export type SituacaoAcompanhamento = Enums["situacao_acompanhamento"];
 export type SituacaoRecebimento = Enums["situacao_recebimento"];
 export type FormaPagamento = Enums["forma_pagamento"];

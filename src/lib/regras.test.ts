@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { lerDuracao, PROXIMAS_SITUACOES, SITUACOES_VALIDAS, situacaoValida, VERBO_SITUACAO } from "./atendimento";
 import { dataDaBusca, termoDeBusca } from "./busca";
-import { despesaVencida, validarDespesa, DESPESA_EM_BRANCO } from "./despesa";
+import {
+  competenciaDoVencimento,
+  despesaVencida,
+  validarDespesa,
+  DESPESA_EM_BRANCO,
+} from "./despesa";
 import { lerRetorno, validarProcedimento } from "./procedimento";
 import { campoTexto, uuidValido, valoresDigitados } from "./formulario";
 import {
@@ -76,6 +81,17 @@ describe("despesa", () => {
       vencimento: "Data de vencimento inválida.",
       valor: expect.any(String),
     });
+  });
+
+  it("competência é o mês do vencimento (regra provisória, AGENTS.md §13)", () => {
+    expect(competenciaDoVencimento("2026-09-30")).toBe("2026-09-01");
+    expect(competenciaDoVencimento("2026-01-01")).toBe("2026-01-01");
+    expect(competenciaDoVencimento("2025-12-31")).toBe("2025-12-01");
+  });
+
+  it("valor vazio não vira despesa de R$ 0,00", () => {
+    const r = validarDespesa({ ...base, valor: "" });
+    expect("erros" in r && r.erros.valor).toBeTruthy();
   });
 
   it("vencida é derivada: pendente com prazo no passado", () => {

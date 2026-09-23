@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleAlert, FileText, LoaderCircle, Replace, Snowflake } from "lucide-react";
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
@@ -149,6 +150,9 @@ export function FormularioEmissao({
 
         <CardRodape className="flex flex-wrap items-center gap-3">
           <Emitir />
+          <Link href="/formularios" className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary">
+            Cancelar
+          </Link>
           <span className="text-xs text-outline">
             Depois de emitido, o texto não pode mais ser alterado.
           </span>

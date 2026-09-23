@@ -52,6 +52,10 @@ export function BotaoLink({
 /**
  * Ação que ainda não existe. Fica visivelmente indisponível e explica o porquê,
  * em vez de fingir que concluiu alguma coisa.
+ *
+ * O motivo vai no `title` (dica ao passar o mouse) e também no nome acessível,
+ * em texto só para leitor de tela: `title` sozinho não é lido de forma
+ * confiável e não aparece no toque.
  */
 export function BotaoIndisponivel({
   children,
@@ -78,6 +82,7 @@ export function BotaoIndisponivel({
       )}
     >
       {children}
+      <span className="sr-only"> — {motivo}</span>
     </span>
   );
 }

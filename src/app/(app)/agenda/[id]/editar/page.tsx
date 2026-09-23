@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BotoesSituacao } from "@/components/agenda/botoes-situacao";
+import { enderecoDaAgenda, lerProfissional } from "@/components/agenda/parametros-agenda";
+import { FocoAposAcao } from "@/components/agenda/foco-apos-acao";
 import { FormularioAtendimento } from "@/components/agenda/formulario-atendimento";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { SituacaoChip } from "@/components/ui/status-chip";
@@ -20,10 +22,15 @@ function horaDoInput(instante: Date): string {
 
 export default async function PaginaEditarAtendimento({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  // O filtro de profissional da agenda de onde se veio: o "voltar" e o
+  // redirect depois de salvar devolvem a mesma agenda.
+  const filtro = lerProfissional((await searchParams).profissional);
   const atendimento = await atendimentoPorId(id);
 
   // Inexistente e sem permissão caem na mesma tela, como na ficha da paciente.
@@ -37,12 +44,13 @@ export default async function PaginaEditarAtendimento({
   });
 
   const dia = chaveDoDia(atendimento.inicio);
+  const voltarPara = enderecoDaAgenda(dia, filtro);
 
   return (
     <div className="mx-auto max-w-3xl">
       <Link
-        href={`/agenda?dia=${dia}`}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        href={voltarPara}
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
       >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         Voltar para o dia {formatarData(atendimento.inicio)}
@@ -63,10 +71,12 @@ export default async function PaginaEditarAtendimento({
             }
           />
           <CardCorpo className="flex flex-col gap-6">
-            <BotoesSituacao
-              atendimentoId={atendimento.id}
-              situacao={atendimento.situacao}
-            />
+            <FocoAposAcao situacao={atendimento.situacao} className="rounded-[var(--radius-cartao)]">
+              <BotoesSituacao
+                atendimentoId={atendimento.id}
+                situacao={atendimento.situacao}
+              />
+            </FocoAposAcao>
 
             <div className="border-t border-card-border pt-6">
               <FormularioAtendimento
@@ -91,7 +101,8 @@ export default async function PaginaEditarAtendimento({
                   observacoes: atendimento.observacoes ?? "",
                 }}
                 rotuloSalvar="Salvar alterações"
-                cancelarPara={`/agenda?dia=${dia}`}
+                cancelarPara={voltarPara}
+                filtroProfissional={filtro}
               />
             </div>
           </CardCorpo>

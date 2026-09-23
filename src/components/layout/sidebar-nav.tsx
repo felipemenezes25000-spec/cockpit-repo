@@ -29,7 +29,7 @@ export function MenuNavegacao({
                 href={item.href}
                 onClick={aoNavegar}
                 aria-current={estaAtivo ? "page" : undefined}
-                title={recolhido ? item.rotulo : undefined}
+                title={recolhido ? `${item.rotulo}${item.emConstrucao ? " (em breve)" : ""}` : undefined}
                 className={cn(
                   "flex items-center rounded-[var(--radius-cartao)] py-3 transition-colors duration-200",
                   recolhido ? "justify-center px-0" : "px-4",
@@ -45,9 +45,19 @@ export function MenuNavegacao({
                   className={cn("shrink-0", !recolhido && "mr-3")}
                 />
                 {recolhido ? (
-                  <span className="sr-only">{item.rotulo}</span>
+                  <span className="sr-only">
+                    {item.rotulo}
+                    {item.emConstrucao ? " (em breve)" : ""}
+                  </span>
                 ) : (
-                  <span className="text-sm leading-snug">{item.rotulo}</span>
+                  <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                    <span className="text-sm leading-snug">{item.rotulo}</span>
+                    {item.emConstrucao ? (
+                      <span className="shrink-0 rounded-[var(--radius-tag)] border border-dashed border-outline px-1.5 py-0.5 text-[0.6875rem] font-normal text-on-surface-variant">
+                        em breve
+                      </span>
+                    ) : null}
+                  </span>
                 )}
               </Link>
             </li>

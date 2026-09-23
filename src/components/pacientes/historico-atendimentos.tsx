@@ -49,7 +49,7 @@ export function HistoricoAtendimentos({
           <EstadoVazio
             icone={History}
             titulo="Nenhum atendimento ainda"
-            descricao="Quando o módulo Agenda estiver pronto, os atendimentos desta paciente aparecem aqui."
+            descricao="Os atendimentos marcados para esta paciente aparecem aqui, do mais recente para o mais antigo."
           />
         ) : (
           <ol className="relative flex flex-col gap-6 border-l border-outline-variant pl-6">
@@ -77,7 +77,7 @@ export function HistoricoAtendimentos({
                   <span className="tabular">
                     {formatarMoeda(atendimento.valor)}
                     {exemplo ? (
-                      <span className="ml-1 text-outline-variant">
+                      <span className="ml-1 text-outline">
                         (demonstrativo)
                       </span>
                     ) : null}

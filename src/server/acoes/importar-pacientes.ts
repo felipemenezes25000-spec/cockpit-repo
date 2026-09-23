@@ -217,13 +217,18 @@ export async function importarPacientes(
         .insert({ ...paraOBanco(linha.valores), criado_por: usuario.id });
 
       if (erroDaLinha) {
+        // Nada do Postgres chega à tela: a mensagem crua traria o nome da
+        // tabela, da constraint e o valor digitado ("Key (cpf)=(…)"). O log
+        // leva a versão sanitizada, com o número da linha para achar no arquivo.
+        registrarFalha(`importação: gravar linha ${linha.numero}`, erroDaLinha);
         recusadas.push({
           numero: linha.numero,
           nome: linha.valores.nome,
-          motivo:
-            erroDaLinha.code === "23505"
-              ? "CPF já cadastrado (alguém cadastrou durante a importação)."
-              : erroDaLinha.message,
+          motivo: mensagemDoBanco(
+            erroDaLinha,
+            "O banco recusou esta linha. Revise os dados e importe de novo.",
+            { "23505": "CPF já cadastrado (alguém cadastrou durante a importação)." },
+          ),
         });
       } else {
         gravadas += 1;

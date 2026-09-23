@@ -35,6 +35,8 @@ function BotaoEntrar() {
 export function FormularioLogin({ proximo }: { proximo: string }) {
   const [estado, acao] = useActionState(entrar, INICIAL);
   const comErro = Boolean(estado.erro);
+  const emailInvalido = estado.invalidos?.includes("email") ?? false;
+  const senhaInvalida = estado.invalidos?.includes("senha") ?? false;
 
   return (
     <form action={acao} className="flex flex-col gap-4" noValidate>
@@ -58,9 +60,9 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           spellCheck={false}
           required
           defaultValue={estado.email ?? ""}
-          aria-invalid={comErro || undefined}
+          aria-invalid={emailInvalido || undefined}
           aria-describedby={comErro ? "erro-login" : undefined}
-          className={cn(ENTRADA, comErro && ENTRADA_ERRO)}
+          className={cn(ENTRADA, emailInvalido && ENTRADA_ERRO)}
           placeholder="voce@clinica.com.br"
         />
       </div>
@@ -75,9 +77,9 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           type="password"
           autoComplete="current-password"
           required
-          aria-invalid={comErro || undefined}
+          aria-invalid={senhaInvalida || undefined}
           aria-describedby={comErro ? "erro-login" : undefined}
-          className={cn(ENTRADA, comErro && ENTRADA_ERRO)}
+          className={cn(ENTRADA, senhaInvalida && ENTRADA_ERRO)}
         />
         <Link
           href="/recuperar-senha"

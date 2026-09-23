@@ -251,6 +251,34 @@ export async function emitirDocumento(
   }
 
   const supabase = await clienteServidor();
+
+  // Anamnese é só da administradora (§8.7). A lista da tela já esconde esses
+  // modelos de quem não é, mas esconder a porta não é proteger a rota: quem
+  // envia o formulário por fora chegaria direto ao banco, que recusa com a
+  // frase genérica de permissão. Aqui a recusa sai com a razão.
+  if (!quem.administradora) {
+    const modelo = await supabase
+      .from("modelos_documento")
+      .select("tipo")
+      .eq("id", modeloId)
+      .maybeSingle();
+    if (modelo.error) {
+      return {
+        erros: { geral: erroDoBanco(modelo.error, "Não foi possível conferir o modelo.") },
+        valores: valoresDigitados(dados),
+      };
+    }
+    if (!modelo.data) {
+      return { erros: { tipo: "Modelo não encontrado." }, valores: valoresDigitados(dados) };
+    }
+    if (modelo.data.tipo === "anamnese") {
+      return {
+        erros: { tipo: "Anamnese é emitida só pela administradora." },
+        valores: valoresDigitados(dados),
+      };
+    }
+  }
+
   const { data, error } = await supabase.rpc("documento_emitir", {
     p_paciente_id: pacienteId,
     p_modelo_id: modeloId,
@@ -271,6 +299,8 @@ export async function emitirDocumento(
 
   revalidatePath("/formularios");
   revalidatePath(`/pacientes/${pacienteId}`);
+  // A correção muda o anterior para `substituido` na mesma transação.
+  if (anteriorId) revalidatePath(`/formularios/${anteriorId}`);
   revalidatePath("/");
   redirect(`/formularios/${data}`);
 }
@@ -408,6 +438,7 @@ export async function cancelarDocumento(
 
   revalidatePath("/formularios");
   revalidatePath(`/formularios/${id}`);
+  revalidatePath("/");
   return { erro: null };
 }
 

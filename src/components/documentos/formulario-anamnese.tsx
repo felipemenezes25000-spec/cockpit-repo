@@ -29,50 +29,176 @@ function valorInicial(campo: CampoRespondido): Valor {
   return campo.resposta ?? "";
 }
 
+/**
+ * Pergunta de marcar (sim/não, escolha): um GRUPO de controles, não um campo.
+ *
+ * `Campo` liga o rótulo a um controle só, por `htmlFor`. Aqui há vários, e o
+ * rótulo apontava para um id que não existia: o leitor de tela anunciava
+ * "Sim, botão" sem dizer a que pergunta ele respondia — inclusive para a
+ * paciente, no link. O `fieldset` dá ao grupo o nome (o `legend`, repetido em
+ * `aria-labelledby` para não depender de como cada navegador lê o legend) e a
+ * dica (`aria-describedby`).
+ *
+ * O obrigatório vai em `aria-required` só na escolha única: a ARIA admite o
+ * atributo em `radiogroup`, não em `group`. Na múltipla ele vai por extenso,
+ * escondido da tela e lido pelo leitor — o asterisco visível é `aria-hidden`,
+ * como em `Campo`.
+ *
+ * `disabled` no `fieldset` desativa todas as opções de uma vez: é o modo
+ * somente leitura, sem depender de cada opção lembrar.
+ */
+function GrupoDaPergunta({
+  id,
+  rotulo,
+  obrigatorio,
+  dica,
+  unica,
+  somenteLeitura,
+  children,
+}: {
+  id: string;
+  rotulo: string;
+  obrigatorio: boolean;
+  dica?: string;
+  /** Uma resposta só (sim/não, escolha única): o grupo é um `radiogroup`. */
+  unica: boolean;
+  somenteLeitura: boolean;
+  children: React.ReactNode;
+}) {
+  const idRotulo = `${id}-rotulo`;
+  const idDica = `${id}-dica`;
+  const descricao = dica ? idDica : undefined;
+
+  // Os atributos ficam separados por papel: `aria-required` num `group` é
+  // atributo que a ARIA não reconhece.
+  const papel = unica
+    ? {
+        role: "radiogroup" as const,
+        "aria-required": obrigatorio ? true : undefined,
+      }
+    : {};
+
+  return (
+    <fieldset
+      {...papel}
+      aria-labelledby={idRotulo}
+      aria-describedby={descricao}
+      disabled={somenteLeitura}
+      className="flex min-w-0 flex-col gap-1.5"
+    >
+      <legend id={idRotulo} className="rotulo mb-1.5">
+        {rotulo}
+        {obrigatorio ? (
+          <>
+            <span aria-hidden="true" className="ml-1 text-atencao-acento">
+              *
+            </span>
+            {unica ? null : <span className="sr-only"> (obrigatória)</span>}
+          </>
+        ) : (
+          <span className="ml-2 font-normal tracking-normal text-outline lowercase">
+            opcional
+          </span>
+        )}
+      </legend>
+
+      {children}
+
+      {dica ? (
+        <p id={idDica} className="text-xs text-outline">
+          {dica}
+        </p>
+      ) : null}
+    </fieldset>
+  );
+}
+
+/**
+ * Aparência de cada opção. O estado marcado não depende só da cor: o controle
+ * nativo (bolinha ou caixa preenchida) muda de forma junto com o fundo, e é
+ * ele que o leitor de tela anuncia como "marcado".
+ */
+function classeDaOpcao(marcada: boolean, somenteLeitura: boolean): string {
+  return cn(
+    "rounded-[var(--radius-cartao)] border text-sm text-on-surface transition-colors",
+    somenteLeitura ? "cursor-not-allowed" : "cursor-pointer",
+    marcada
+      ? "border-primary bg-secondary-fixed"
+      : cn("border-outline-variant bg-surface", !somenteLeitura && "hover:border-primary"),
+  );
+}
+
+const CONTROLE_DA_OPCAO =
+  "size-4 shrink-0 accent-[var(--color-primary-container)] disabled:cursor-not-allowed";
+
+const SIM_NAO = [
+  { valor: "sim", rotulo: "Sim" },
+  { valor: "nao", rotulo: "Não" },
+] as const;
+
 function PerguntaSimNao({
+  nome,
   valor,
   aoMudar,
+  somenteLeitura,
 }: {
+  nome: string;
   valor: string;
   aoMudar: (v: string) => void;
+  somenteLeitura: boolean;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {[
-        { v: "sim", r: "Sim" },
-        { v: "nao", r: "Não" },
-      ].map((opcao) => (
-        <button
-          key={opcao.v}
-          type="button"
-          // Clicar de novo no que já está marcado limpa a resposta: sem isso,
-          // uma pergunta não obrigatória marcada por engano ficaria marcada
-          // para sempre.
-          onClick={() => aoMudar(valor === opcao.v ? "" : opcao.v)}
-          className={cn(
-            "inline-flex h-10 min-w-20 items-center justify-center rounded-[var(--radius-cartao)] border px-4 text-sm font-medium transition-colors",
-            valor === opcao.v
-              ? "border-primary bg-primary-container text-on-primary"
-              : "border-outline-variant bg-surface text-on-surface hover:border-primary hover:text-primary",
-          )}
-        >
-          {opcao.r}
-        </button>
-      ))}
+      {SIM_NAO.map((opcao) => {
+        const marcada = valor === opcao.valor;
+
+        return (
+          <label
+            key={opcao.valor}
+            className={cn(
+              "inline-flex h-10 min-w-20 items-center justify-center gap-2 px-4 font-medium",
+              classeDaOpcao(marcada, somenteLeitura),
+            )}
+          >
+            {/* Rádio nativo, e não botão: o estado "marcado" e a navegação por
+                setas vêm do navegador, sem ARIA para manter à mão. */}
+            <input
+              type="radio"
+              name={nome}
+              value={opcao.valor}
+              checked={marcada}
+              onChange={() => aoMudar(opcao.valor)}
+              // Clicar de novo no que já está marcado limpa a resposta: sem
+              // isso, uma pergunta não obrigatória marcada por engano ficaria
+              // marcada para sempre. O rádio já marcado não dispara `change`,
+              // por isso o clique.
+              onClick={() => {
+                if (marcada) aoMudar("");
+              }}
+              className={CONTROLE_DA_OPCAO}
+            />
+            {opcao.rotulo}
+          </label>
+        );
+      })}
     </div>
   );
 }
 
 function PerguntaEscolha({
   campo,
+  nome,
   valor,
   aoMudar,
   multipla,
+  somenteLeitura,
 }: {
   campo: CampoRespondido;
+  nome: string;
   valor: Valor;
   aoMudar: (v: Valor) => void;
   multipla: boolean;
+  somenteLeitura: boolean;
 }) {
   const marcadas = multipla
     ? Array.isArray(valor)
@@ -91,29 +217,39 @@ function PerguntaEscolha({
           <label
             key={opcao}
             className={cn(
-              "flex cursor-pointer items-start gap-2.5 rounded-[var(--radius-cartao)] border px-3.5 py-2.5 text-sm transition-colors",
-              marcada
-                ? "border-primary bg-secondary-fixed text-on-surface"
-                : "border-outline-variant bg-surface text-on-surface hover:border-primary",
+              "flex items-start gap-2.5 px-3.5 py-2.5",
+              classeDaOpcao(marcada, somenteLeitura),
             )}
           >
-            <input
-              type={multipla ? "checkbox" : "radio"}
-              name={campo.chave}
-              checked={marcada}
-              onChange={() => {
-                if (multipla) {
+            {multipla ? (
+              <input
+                type="checkbox"
+                name={nome}
+                value={opcao}
+                checked={marcada}
+                onChange={() =>
                   aoMudar(
                     marcada
                       ? marcadas.filter((m) => m !== opcao)
                       : [...marcadas, opcao],
-                  );
-                } else {
-                  aoMudar(marcada ? "" : opcao);
+                  )
                 }
-              }}
-              className="mt-0.5 size-4 shrink-0 accent-[var(--color-primary-container)]"
-            />
+                className={cn("mt-0.5", CONTROLE_DA_OPCAO)}
+              />
+            ) : (
+              <input
+                type="radio"
+                name={nome}
+                value={opcao}
+                checked={marcada}
+                onChange={() => aoMudar(opcao)}
+                // Mesmo gesto do sim/não: clicar na marcada limpa a resposta.
+                onClick={() => {
+                  if (marcada) aoMudar("");
+                }}
+                className={cn("mt-0.5", CONTROLE_DA_OPCAO)}
+              />
+            )}
             {opcao}
           </label>
         );
@@ -235,14 +371,61 @@ export function FormularioAnamnese({
         {campos.map((campo, indice) => {
           const valor = valores[campo.chave];
           const idCampo = `campo-${campo.chave}`;
+          const rotulo = `${indice + 1}. ${campo.rotulo}`;
+          const dica = campo.ajuda || undefined;
+
+          if (campo.tipo === "sim_nao") {
+            return (
+              <GrupoDaPergunta
+                key={campo.chave}
+                id={idCampo}
+                rotulo={rotulo}
+                obrigatorio={campo.obrigatorio}
+                dica={dica}
+                unica
+                somenteLeitura={somenteLeitura}
+              >
+                <PerguntaSimNao
+                  nome={idCampo}
+                  valor={typeof valor === "string" ? valor : ""}
+                  aoMudar={(v) => mudar(campo.chave, v)}
+                  somenteLeitura={somenteLeitura}
+                />
+              </GrupoDaPergunta>
+            );
+          }
+
+          if (campo.tipo === "escolha_unica" || campo.tipo === "escolha_multipla") {
+            const multipla = campo.tipo === "escolha_multipla";
+            return (
+              <GrupoDaPergunta
+                key={campo.chave}
+                id={idCampo}
+                rotulo={rotulo}
+                obrigatorio={campo.obrigatorio}
+                dica={dica}
+                unica={!multipla}
+                somenteLeitura={somenteLeitura}
+              >
+                <PerguntaEscolha
+                  campo={campo}
+                  nome={idCampo}
+                  valor={valor ?? ""}
+                  multipla={multipla}
+                  aoMudar={(v) => mudar(campo.chave, v)}
+                  somenteLeitura={somenteLeitura}
+                />
+              </GrupoDaPergunta>
+            );
+          }
 
           return (
             <Campo
               key={campo.chave}
               id={idCampo}
-              rotulo={`${indice + 1}. ${campo.rotulo}`}
+              rotulo={rotulo}
               obrigatorio={campo.obrigatorio}
-              dica={campo.ajuda || undefined}
+              dica={dica}
             >
               {campo.tipo === "texto_longo" ? (
                 <textarea
@@ -254,29 +437,10 @@ export function FormularioAnamnese({
                   onChange={(evento) => mudar(campo.chave, evento.target.value)}
                   className={AREA_TEXTO}
                 />
-              ) : campo.tipo === "sim_nao" ? (
-                <PerguntaSimNao
-                  valor={typeof valor === "string" ? valor : ""}
-                  aoMudar={(v) => mudar(campo.chave, v)}
-                />
-              ) : campo.tipo === "escolha_unica" ||
-                campo.tipo === "escolha_multipla" ? (
-                <PerguntaEscolha
-                  campo={campo}
-                  valor={valor ?? ""}
-                  multipla={campo.tipo === "escolha_multipla"}
-                  aoMudar={(v) => mudar(campo.chave, v)}
-                />
               ) : (
                 <input
                   id={idCampo}
-                  type={
-                    campo.tipo === "data"
-                      ? "date"
-                      : campo.tipo === "numero"
-                        ? "text"
-                        : "text"
-                  }
+                  type={campo.tipo === "data" ? "date" : "text"}
                   inputMode={campo.tipo === "numero" ? "decimal" : undefined}
                   value={typeof valor === "string" ? valor : ""}
                   maxLength={campo.tipo === "numero" ? 20 : 4000}

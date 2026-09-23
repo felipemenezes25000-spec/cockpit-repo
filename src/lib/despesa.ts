@@ -91,6 +91,19 @@ export function validarDespesa(
   };
 }
 
+/**
+ * Competência da despesa = primeiro dia do mês do vencimento ("AAAA-MM-01").
+ *
+ * Regra que a aplicação adotou por falta de outra: a clínica ainda não
+ * definiu a competência (AGENTS.md §13). Fica isolada aqui para mudar num
+ * lugar só quando a decisão vier. Consequência conhecida: editar o
+ * vencimento de uma despesa já paga muda a competência — e o número de um
+ * mês fechado na Visão Geral.
+ */
+export function competenciaDoVencimento(vencimento: string): string {
+  return `${vencimento.slice(0, 7)}-01`;
+}
+
 /** "Vencida" é derivada: pendente com vencimento no passado. */
 export function despesaVencida(situacao: SituacaoDespesa, venceEmDias: number): boolean {
   return situacao === "pendente" && venceEmDias < 0;

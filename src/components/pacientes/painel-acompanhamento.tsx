@@ -56,7 +56,7 @@ export function ResumoDaPaciente({
         ))}
 
         {exemplo ? (
-          <p className="border-t border-card-border pt-3 text-[0.625rem] text-outline-variant uppercase">
+          <p className="border-t border-card-border pt-3 text-[0.625rem] text-outline uppercase">
             Valores demonstrativos
           </p>
         ) : null}

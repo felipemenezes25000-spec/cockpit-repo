@@ -21,6 +21,7 @@ import { FormularioAnamnese } from "./formulario-anamnese";
 import { MarcaSituacao, MarcaTipo } from "./marca-situacao";
 import { PainelAssinatura } from "./painel-assinatura";
 import { PainelLink } from "./painel-link";
+import { LinkDaVia } from "./link-da-via";
 
 function Metadado({
   icone: Icone,
@@ -68,6 +69,8 @@ export function DetalheDocumento({
   const assinatura = documento.assinatura;
   const anamnese = !seAssina(documento.tipo);
   const preenchimento = situacaoDaAnamnese(documento.campos);
+  // Só a anamnese em vigor aceita resposta; é a mesma condição do banco.
+  const aceitaResposta = documento.situacao === "emitido";
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,7 +103,7 @@ export function DetalheDocumento({
                   <MarcaTipo tipo={documento.tipo} />
                   <MarcaSituacao situacao={documento.situacao} tipo={documento.tipo} />
                   {documento.exemplo ? (
-                    <span className="text-xs text-outline-variant">exemplo</span>
+                    <span className="text-xs text-outline">exemplo</span>
                   ) : null}
                 </span>
               }
@@ -140,17 +143,28 @@ export function DetalheDocumento({
           </Card>
 
           {/* Anamnese não se assina: ela se preenche, e a resposta pode ser
-              corrigida depois. Conteúdo que evolui, ao contrário do contrato. */}
+              corrigida depois. Conteúdo que evolui, ao contrário do contrato —
+              mas só enquanto está `emitido`. Cancelada ou substituída, o banco
+              recusa toda resposta (`documento_campos_responder`), e um botão
+              Salvar que sempre falha é pior do que botão nenhum (§5): as
+              respostas ficam à vista, só para leitura. */}
           {anamnese ? (
             <Card>
               <CardCabecalho
-                titulo="Preencher na consulta"
-                descricao={`${ROTULO_ANAMNESE[preenchimento]} · as respostas podem ser corrigidas quando for preciso.`}
+                titulo={aceitaResposta ? "Preencher na consulta" : "Respostas registradas"}
+                descricao={`${ROTULO_ANAMNESE[preenchimento]} · ${
+                  aceitaResposta
+                    ? "as respostas podem ser corrigidas quando for preciso."
+                    : documento.situacao === "substituido"
+                      ? "substituída por uma correção, não aceita mais respostas."
+                      : "cancelada, não aceita mais respostas."
+                }`}
               />
               <CardCorpo>
                 <FormularioAnamnese
                   campos={documento.campos}
                   destino={{ tipo: "consulta", documentoId: documento.id }}
+                  somenteLeitura={!aceitaResposta}
                 />
               </CardCorpo>
             </Card>
@@ -177,6 +191,10 @@ export function DetalheDocumento({
                 pacienteTelefone={documento.pacienteTelefone}
               />
             </Card>
+          ) : null}
+
+          {documento.situacao === "assinado" ? (
+            <LinkDaVia documentoId={documento.id} links={links} />
           ) : null}
 
           {documento.situacao === "emitido" && !anamnese ? (
@@ -225,9 +243,24 @@ export function DetalheDocumento({
                       valor={assinatura.operador ?? "não registrado"}
                     />
                   ) : null}
-                  <Evidencia rotulo="Endereço IP" valor={assinatura.ip ?? "não informado"} />
+                  {/* Pelo link, IP e dispositivo chegam na requisição e o banco
+                      não os confere (0028 os comenta como declarados). O
+                      rótulo diz isso, para a evidência não parecer mais forte
+                      do que é. */}
                   <Evidencia
-                    rotulo="Dispositivo"
+                    rotulo={
+                      assinatura.canal === "link"
+                        ? "Endereço IP (informado pelo navegador)"
+                        : "Endereço IP"
+                    }
+                    valor={assinatura.ip ?? "não informado"}
+                  />
+                  <Evidencia
+                    rotulo={
+                      assinatura.canal === "link"
+                        ? "Dispositivo (informado pelo navegador)"
+                        : "Dispositivo"
+                    }
                     valor={assinatura.dispositivo ?? "não informado"}
                   />
                   <Evidencia

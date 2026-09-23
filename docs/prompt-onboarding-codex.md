@@ -116,6 +116,19 @@ Estas valem a partir de agora, em toda tarefa:
   em especial para regra de lucro, períodos de retorno e horário de funcionamento.
 - Toda ação de servidor começa com `usuarioAtual()`. O layout não protege server
   action.
+- **Nunca** use `console.*` no código da aplicação: falha técnica sai por
+  `registrarFalha` (`src/lib/registro.ts`), como uma linha JSON sem dado de
+  paciente (AGENTS.md §3). Um teste reprova o `console` solto.
+- **Nunca** afrouxe a CSP (`src/lib/politica-de-conteudo.ts`) para fazer algo
+  funcionar: script só com nonce; domínio externo novo só com o motivo e o meu
+  aval (AGENTS.md §6).
+- **Nunca** instale o CLI da Vercel como dependência nem rode
+  `npm audit fix --force`: o CLI é `npx vercel`, e deploy e variáveis são meus.
+- **Nunca** edite `node_modules` à mão nem remova o `postinstall`
+  (`scripts/corrigir-ping-react.mjs`): ele corrige no React empacotado pelo
+  Next 15.5.x a tela que não se atualizava no build de produção, e
+  `testes/react-ping.test.ts` reprova sem ele. Sai quando o Next subir para
+  16.3 ou mais — rodada própria, que eu decido (AGENTS.md §13).
 
 E o inverso, que também importa: a seção 13 do AGENTS.md registra o que já foi
 corrigido (para ninguém tomar o comportamento antigo por padrão) e as dívidas que
@@ -132,7 +145,11 @@ permissão. Se uma delas atrapalhar sua tarefa, me avise.
   `npm run typecheck` e `npm test` limpos; mexeu em banco ou permissão,
   `npm run test:banco`; mexeu em tela ou fluxo, `npm run test:e2e`. Regra nova
   ou bug corrigido ganha teste junto. Só diga que "os testes passam" se rodou.
-- Não comite nem faça push sem eu pedir, e nunca na `main` sem combinar.
+- Não comite nem faça push sem eu pedir. O repositório tem um único branch,
+  `jamal-do-mal` (o padrão; não existe `main`), e o trabalho entra direto nele:
+  não crie branch nenhum. Rode os gates antes de comitar — a CI só avisa depois
+  do push. O branch recusa force push e exclusão (inclusive de administrador):
+  nada de reescrever histórico.
 - Se encontrar algo que contradiz o `AGENTS.md`, corrija o documento no mesmo
   commit da mudança.
 

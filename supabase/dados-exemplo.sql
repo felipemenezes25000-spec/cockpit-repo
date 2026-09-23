@@ -15,12 +15,27 @@ do $$
 declare
   ha_dado_real boolean;
 begin
+  -- Qualquer linha real que possa apontar para a paciente de exemplo conta:
+  -- uma venda, uma tarefa ou um documento reais impediriam a recarga logo
+  -- abaixo de apagar o exemplo anterior — ou seriam apagados em CASCADE.
   select exists (
     select 1 from public.pacientes where not exemplo
     union all
     select 1 from public.atendimentos where not exemplo
     union all
     select 1 from public.recebimentos where not exemplo
+    union all
+    select 1 from public.vendas where not exemplo
+    union all
+    select 1 from public.ajustes_financeiros where not exemplo
+    union all
+    select 1 from public.pendencias where not exemplo
+    union all
+    select 1 from public.retornos where not exemplo
+    union all
+    select 1 from public.prontuarios where not exemplo
+    union all
+    select 1 from public.documentos where not exemplo
   ) into ha_dado_real;
 
   if ha_dado_real then
@@ -39,10 +54,14 @@ end $$;
 -- not exist". Escrita por extenso, ela roda igual no psql, no
 -- `supabase db query` e no seed local.
 
--- Recarregar é idempotente: limpa o exemplo anterior antes de semear.
+-- Recarregar é idempotente: limpa o exemplo anterior antes de semear. A
+-- trava acima garante que aqui só há exemplo; a ordem é a das FKs (filhas
+-- antes das mães), a mesma de `dados-exemplo-limpar.sql`.
+delete from public.ajustes_financeiros where exemplo;
 delete from public.pendencias    where exemplo;
 delete from public.retornos      where exemplo;
 delete from public.recebimentos  where exemplo;
+delete from public.vendas        where exemplo;
 delete from public.despesas      where exemplo;
 delete from public.atendimentos  where exemplo;
 delete from public.pacientes     where exemplo;

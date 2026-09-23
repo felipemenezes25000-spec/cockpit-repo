@@ -1,3 +1,5 @@
+import { expect } from "vitest";
+
 /**
  * Cliente do Supabase falso, para testar ação de servidor sem banco.
  *
@@ -29,6 +31,8 @@ type Construtor = {
 
 export function supabaseFalso(respostas: Record<string, RespostaFalsa | RespostaFalsa[]> = {}) {
   const chamadas: ChamadaFalsa[] = [];
+  /** Chamadas ao Storage (`storage:<balde>:<método>`), separadas das de tabela e função. */
+  const chamadasStorage: { alvo: string; argumentos: unknown[] }[] = [];
   const filas = new Map<string, RespostaFalsa[]>(
     Object.entries(respostas).map(([alvo, r]) => [alvo, Array.isArray(r) ? [...r] : [r]]),
   );
@@ -68,11 +72,19 @@ export function supabaseFalso(respostas: Record<string, RespostaFalsa | Resposta
       return c;
     },
     storage: {
-      from: (balde: string) => ({
-        list: () => Promise.resolve(proxima(`storage:${balde}:list`)),
-        remove: () => Promise.resolve(proxima(`storage:${balde}:remove`)),
-        createSignedUrls: () => Promise.resolve(proxima(`storage:${balde}:createSignedUrls`)),
-      }),
+      from: (balde: string) => {
+        const anotar = (metodo: string, argumentos: unknown[]) => {
+          chamadasStorage.push({ alvo: `storage:${balde}:${metodo}`, argumentos });
+          return proxima(`storage:${balde}:${metodo}`);
+        };
+        return {
+          list: (...argumentos: unknown[]) => Promise.resolve(anotar("list", argumentos)),
+          remove: (...argumentos: unknown[]) => Promise.resolve(anotar("remove", argumentos)),
+          createSignedUrls: (...argumentos: unknown[]) =>
+            Promise.resolve(anotar("createSignedUrls", argumentos)),
+          download: (...argumentos: unknown[]) => Promise.resolve(anotar("download", argumentos)),
+        };
+      },
     },
   };
 
@@ -81,7 +93,7 @@ export function supabaseFalso(respostas: Record<string, RespostaFalsa | Resposta
     return chamadas.filter((c) => c.alvo === alvo)[indice]?.passos ?? [];
   }
 
-  return { cliente, chamadas, passosDe };
+  return { cliente, chamadas, passosDe, chamadasStorage };
 }
 
 /** O que o `redirect` falso lança — a ação para ali, como no Next. */
@@ -89,4 +101,16 @@ export class Redirecionou extends Error {
   constructor(public readonly destino: string) {
     super(`redirect(${destino})`);
   }
+}
+
+/**
+ * Casa com a linha que `registrarFalha` emite (`src/lib/registro.ts`): um
+ * JSON numa linha só, com o contexto contendo `trecho` e aquele `codigo`.
+ * Uso: `expect(console.error).toHaveBeenCalledWith(linhaDeRegistro("consulta x", "XX000"))`.
+ */
+export function linhaDeRegistro(trecho: string, codigo: string) {
+  const escapar = (texto: string) => texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return expect.stringMatching(
+    new RegExp(`"contexto":"[^"]*${escapar(trecho)}[^"]*","codigo":"${escapar(codigo)}"`),
+  );
 }

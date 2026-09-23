@@ -8,6 +8,7 @@ import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
 import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO, GrupoDeCampos } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import {
+  LIMITES_PRONTUARIO,
   PRONTUARIO_EM_BRANCO,
   type ErrosProntuario,
   type ValoresProntuario,
@@ -172,7 +173,7 @@ export function FormularioProntuario({
               name="titulo"
               type="text"
               required
-              maxLength={160}
+              maxLength={LIMITES_PRONTUARIO.titulo}
               defaultValue={de("titulo")}
               placeholder="Avaliação inicial"
               className={cn(ENTRADA, erros.titulo && ENTRADA_ERRO)}
@@ -199,7 +200,7 @@ export function FormularioProntuario({
               name="motivo"
               type="text"
               required
-              maxLength={240}
+              maxLength={LIMITES_PRONTUARIO.motivo}
               defaultValue={de("motivo")}
               placeholder="Evolução após retorno"
               className={cn(ENTRADA, erros.motivo && ENTRADA_ERRO)}
@@ -218,7 +219,7 @@ export function FormularioProntuario({
             <textarea
               id="queixa"
               name="queixa"
-              maxLength={6000}
+              maxLength={LIMITES_PRONTUARIO.conteudo}
               defaultValue={de("queixa")}
               className={cn(AREA_TEXTO, erros.queixa && ENTRADA_ERRO)}
               {...marcar("queixa")}
@@ -229,7 +230,7 @@ export function FormularioProntuario({
             <textarea
               id="avaliacao"
               name="avaliacao"
-              maxLength={6000}
+              maxLength={LIMITES_PRONTUARIO.conteudo}
               defaultValue={de("avaliacao")}
               className={cn(AREA_TEXTO, erros.avaliacao && ENTRADA_ERRO)}
               {...marcar("avaliacao")}
@@ -240,7 +241,7 @@ export function FormularioProntuario({
             <textarea
               id="conduta"
               name="conduta"
-              maxLength={6000}
+              maxLength={LIMITES_PRONTUARIO.conteudo}
               defaultValue={de("conduta")}
               className={cn(AREA_TEXTO, erros.conduta && ENTRADA_ERRO)}
               {...marcar("conduta")}
@@ -251,7 +252,7 @@ export function FormularioProntuario({
             <textarea
               id="evolucao"
               name="evolucao"
-              maxLength={6000}
+              maxLength={LIMITES_PRONTUARIO.conteudo}
               defaultValue={de("evolucao")}
               className={cn(AREA_TEXTO, erros.evolucao && ENTRADA_ERRO)}
               {...marcar("evolucao")}
@@ -262,7 +263,7 @@ export function FormularioProntuario({
             <textarea
               id="orientacoes"
               name="orientacoes"
-              maxLength={6000}
+              maxLength={LIMITES_PRONTUARIO.conteudo}
               defaultValue={de("orientacoes")}
               className={cn(AREA_TEXTO, erros.orientacoes && ENTRADA_ERRO)}
               {...marcar("orientacoes")}
@@ -273,7 +274,7 @@ export function FormularioProntuario({
             <textarea
               id="observacoes"
               name="observacoes"
-              maxLength={6000}
+              maxLength={LIMITES_PRONTUARIO.conteudo}
               defaultValue={de("observacoes")}
               className={cn(AREA_TEXTO, erros.observacoes && ENTRADA_ERRO)}
               {...marcar("observacoes")}

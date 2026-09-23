@@ -28,7 +28,7 @@ export default async function PaginaEditarDespesa({ params }: Props) {
     <div className="mx-auto max-w-3xl">
       <Link
         href="/financeiro/despesas"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
       >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         Voltar para as despesas

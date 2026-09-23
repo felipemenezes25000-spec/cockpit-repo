@@ -11,7 +11,14 @@ import { SENHA_LOCAL, USUARIOS_LOCAIS, arquivoDaSessao } from "./contas";
  * 2. Entra com cada uma das três contas locais pela tela de login e guarda a
  *    sessão, para cada teste já começar logado no perfil que precisa.
  *    As contas existem só no Docker (`npm run local:usuarios`).
+ * 3. Só no `next dev` (fora da CI): aquece as telas com o seletor de
+ *    paciente. A primeira visita compila a página e a busca; sem isso, o
+ *    primeiro teste que digita no seletor gastava o prazo do `expect` na
+ *    compilação. No build (CI) não há o que compilar e o passo é pulado.
  */
+
+/** Telas com o seletor de paciente (as que `digitarNoSeletorDePaciente` usa). */
+const TELAS_COM_SELETOR = ["/agenda/novo", "/financeiro/vendas/nova", "/prontuarios/novo"];
 export default async function preparar(config: FullConfig) {
   const env = readFileSync(join(__dirname, "..", ".env.local"), "utf8");
   const url = /^NEXT_PUBLIC_SUPABASE_URL=(.+)$/m.exec(env)?.[1]?.trim() ?? "";
@@ -36,6 +43,13 @@ export default async function preparar(config: FullConfig) {
       await pagina.getByRole("button", { name: "Entrar" }).click();
       await pagina.waitForURL((u) => !u.pathname.startsWith("/entrar"), { timeout: 60_000 });
       await contexto.storageState({ path: arquivoDaSessao(conta.papel) });
+      if (!process.env.CI && conta.papel === "administradora") {
+        for (const tela of TELAS_COM_SELETOR) {
+          await pagina.goto(tela, { timeout: 120_000 });
+          await pagina.getByRole("combobox", { name: /Paciente/ }).fill("Aline");
+          await pagina.getByRole("listbox").waitFor({ timeout: 120_000 });
+        }
+      }
       await contexto.close();
     }
   } finally {

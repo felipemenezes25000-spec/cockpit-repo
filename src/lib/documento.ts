@@ -60,22 +60,6 @@ export const ROTULO_SITUACAO: Record<SituacaoDocumento, string> = {
   substituido: "Substituído",
 };
 
-/**
- * O tom de cada situação, na convenção do projeto: vermelho é o que deu
- * errado, laranja é o que falta fazer. Documento aguardando assinatura não é
- * erro — é tarefa. Cancelado também não é erro do sistema, e por isso fica em
- * neutro, não em vermelho.
- */
-export const TOM_SITUACAO: Record<
-  SituacaoDocumento,
-  "positivo" | "atencao" | "neutro"
-> = {
-  emitido: "atencao",
-  assinado: "positivo",
-  cancelado: "neutro",
-  substituido: "neutro",
-};
-
 export const LIMITE = {
   nome: 160,
   descricao: 400,
@@ -110,14 +94,6 @@ export type ValoresModelo = {
 };
 
 export type ErrosModelo = Partial<Record<keyof ValoresModelo | "geral", string>>;
-
-export const MODELO_EM_BRANCO: ValoresModelo = {
-  tipo: "contrato",
-  nome: "",
-  descricao: "",
-  corpo: "",
-  motivo: "",
-};
 
 export function normalizarModelo(valores: ValoresModelo): ValoresModelo {
   return {
@@ -226,6 +202,122 @@ export const VERIFICACOES_SUGERIDAS = [
 export function hashCurto(hash: string): string {
   if (hash.length <= 20) return hash;
   return `${hash.slice(0, 8)}…${hash.slice(-8)}`;
+}
+
+// ---------------------------------------------------------------------
+// Link público de assinatura
+// ---------------------------------------------------------------------
+
+/**
+ * Token no formato que `criarLinkAssinatura` gera (base64url de 32 bytes:
+ * 43 caracteres), com folga para outro tamanho. Nada fora disso chega ao
+ * banco: nem `%`, nem barra, nem texto de 10 mil caracteres.
+ */
+export function tokenPlausivel(token: unknown): token is string {
+  return typeof token === "string" && /^[A-Za-z0-9_-]{32,128}$/.test(token);
+}
+
+/** Host sem usuário, senha, caminho nem espaço: `dominio.com.br` ou `localhost:3000`. */
+const HOST_SEGURO = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?::\d{1,5})?$/i;
+
+function hostLocal(host: string): boolean {
+  const semPorta = host.replace(/:\d+$/, "").toLowerCase();
+  return semPorta === "localhost" || semPorta === "127.0.0.1";
+}
+
+export type OrigemPublica = { ok: true; origem: string } | { ok: false; motivo: string };
+
+/**
+ * A origem (`https://dominio`) que forma o endereço público do link.
+ *
+ * O endereço vai para o WhatsApp da paciente e é a chave da porta: se ele
+ * apontar para outro domínio, quem recebe entrega a data de nascimento a
+ * quem não devia. Por isso a origem canônica vem de `ORIGEM_PUBLICA`, e os
+ * cabeçalhos da requisição (`host`, `x-forwarded-proto`) só entram quando
+ * ela não está configurada — e mesmo assim conferidos.
+ *
+ * Configurada e inválida é erro de configuração, não motivo para cair no
+ * cabeçalho: quem configurou quis fixar a origem.
+ */
+export function origemPublica(entrada: {
+  configurada: string | undefined;
+  host: string | null;
+  protocolo: string | null;
+  /**
+   * Em produção, o Host só é conferido na forma: atrás de um proxy que não o
+   * reescreve, ou num domínio de preview, o link sairia com a origem errada
+   * sem sinal. Por isso, em produção, sem `ORIGEM_PUBLICA` o link é recusado
+   * (o computador local segue aceito, para o build testado no CI).
+   */
+  producao?: boolean;
+}): OrigemPublica {
+  const configurada = (entrada.configurada ?? "").trim();
+
+  if (configurada) {
+    let url: URL;
+    try {
+      url = new URL(configurada);
+    } catch {
+      return { ok: false, motivo: "ORIGEM_PUBLICA não é um endereço válido." };
+    }
+
+    const soOrigem =
+      !url.username &&
+      !url.password &&
+      (url.pathname === "/" || url.pathname === "") &&
+      !url.search &&
+      !url.hash;
+    if (!soOrigem) {
+      return {
+        ok: false,
+        motivo: "ORIGEM_PUBLICA deve ter só protocolo, domínio e porta, sem caminho.",
+      };
+    }
+    if (url.protocol !== "https:" && !(url.protocol === "http:" && hostLocal(url.host))) {
+      return { ok: false, motivo: "ORIGEM_PUBLICA precisa de https (http só em localhost)." };
+    }
+    return { ok: true, origem: url.origin };
+  }
+
+  const host = (entrada.host ?? "").trim();
+  if (!host || !HOST_SEGURO.test(host)) {
+    return { ok: false, motivo: "Host da requisição ausente ou malformado." };
+  }
+  if (entrada.producao && !hostLocal(host)) {
+    return {
+      ok: false,
+      motivo: "ORIGEM_PUBLICA não configurada em produção: o link não usa o Host da requisição.",
+    };
+  }
+
+  // `x-forwarded-proto` pode chegar como lista ("https,http"): vale o primeiro.
+  const informado = (entrada.protocolo ?? "").split(",")[0]?.trim().toLowerCase();
+  const protocolo =
+    informado === "https" || informado === "http"
+      ? informado
+      : hostLocal(host)
+        ? "http"
+        : "https";
+
+  // Fora do computador local, link de dado de saúde não sai em http.
+  if (protocolo === "http" && !hostLocal(host)) {
+    return { ok: true, origem: `https://${host.toLowerCase()}` };
+  }
+  return { ok: true, origem: `${protocolo}://${host.toLowerCase()}` };
+}
+
+/** O endereço que vai para a paciente. Só aceita token no formato gerado. */
+export function enderecoDoLink(origem: string, token: string): string | null {
+  if (!tokenPlausivel(token)) return null;
+  return `${origem}/assinar/${token}`;
+}
+
+/**
+ * Espelha a CHECK `documento_links_canal_formato` (0022): vazio ou
+ * `WhatsApp (11) 91234-5678`. Canal novo exige migração que amplie a CHECK.
+ */
+export function canalDeEnvioValido(canal: string): boolean {
+  return canal === "" || /^WhatsApp[ 0-9()+.-]{0,30}$/.test(canal);
 }
 
 // ---------------------------------------------------------------------

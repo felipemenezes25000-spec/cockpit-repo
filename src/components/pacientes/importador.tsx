@@ -10,8 +10,7 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { ENTRADA } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
@@ -47,14 +46,19 @@ function Enviar({
   valor,
   variante,
   ocupadoRotulo,
+  pending,
 }: {
   rotulo: string;
   valor: "nao" | "sim";
   variante: "primaria" | "contorno";
   ocupadoRotulo: string;
+  /**
+   * Vem do `useActionState`, não do `useFormStatus`: o formulário é enviado
+   * pelo `onSubmit` (ver `Importador`), e o `useFormStatus` só enxerga envio
+   * feito pela prop `action` do `<form>`.
+   */
+  pending: boolean;
 }) {
-  const { pending } = useFormStatus();
-
   return (
     <button
       type="submit"
@@ -121,7 +125,7 @@ function LinhaDaPrevia({ linha }: { linha: LinhaAnalisada }) {
   return (
     <li className="flex flex-col gap-2 border-b border-card-border px-4 py-3 last:border-b-0">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="tabular w-10 shrink-0 text-xs text-outline-variant">
+        <span className="tabular w-10 shrink-0 text-xs text-outline">
           {linha.numero}
         </span>
         <span className="font-medium text-on-surface">{v.nome || "(sem nome)"}</span>
@@ -182,21 +186,60 @@ function LinhaDaPrevia({ linha }: { linha: LinhaAnalisada }) {
   );
 }
 
+/**
+ * Monta o que o formulário envia, com o valor do botão que o enviou.
+ *
+ * `new FormData(form)` não inclui o botão de envio; é o nome/valor dele
+ * ("confirmar" = "nao" | "sim") que separa analisar de gravar.
+ */
+function dadosDoEnvio(form: HTMLFormElement, botao: unknown): FormData {
+  const dados = new FormData(form);
+  if (botao instanceof HTMLButtonElement && botao.name) {
+    dados.set(botao.name, botao.value);
+  }
+  return dados;
+}
+
 export function Importador({ modeloCsv }: { modeloCsv: string }) {
-  const [estado, enviar] = useActionState(importarPacientes, INICIAL);
+  const [estado, enviar, enviando] = useActionState(importarPacientes, INICIAL);
+
+  // O arquivo precisa sobreviver entre "Analisar" e "Importar": o servidor
+  // lê de novo o mesmo arquivo na segunda etapa. Com `<form action={...}>`,
+  // o React 19 reinicia o formulário quando a ação termina — o campo de
+  // arquivo (obrigatório) voltava vazio e "Importar" era barrado pela
+  // validação do navegador, sem aviso nenhum. Enviando pelo `onSubmit`, o
+  // formulário não é reiniciado. A validação nativa (`required`) continua
+  // valendo: ela roda antes do evento de envio.
+  function aoEnviar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    const nativo = evento.nativeEvent;
+    const botao = "submitter" in nativo ? nativo.submitter : null;
+    const dados = dadosDoEnvio(evento.currentTarget, botao);
+    startTransition(() => enviar(dados));
+  }
+
+  // Trocar o arquivo depois da análise invalida a prévia: "Importar" gravaria
+  // o arquivo novo, que ninguém conferiu. Guarda-se o estado em que a troca
+  // aconteceu; quando chega uma análise nova, o estado é outro e o aviso some.
+  const [trocadoEm, setTrocadoEm] = useState<EstadoImportacao | null>(null);
+  const arquivoTrocado = trocadoEm !== null && trocadoEm === estado;
 
   const analisado = estado.etapa === "analisado";
   const concluido = estado.etapa === "concluido";
 
   // Só o que precisa de atenção aparece por padrão; o resto fica atrás do
   // "mostrar todas", para uma planilha de 800 linhas não virar uma parede.
+  // Linha pronta com aviso também precisa de atenção: o aviso conta o que a
+  // importação interpretou nela (data de dois dígitos, só o primeiro nome).
   const [mostrarTodas, setMostrarTodas] = useState(false);
-  const comProblema = estado.linhas.filter((l) => l.situacao !== "pronta");
+  const comProblema = estado.linhas.filter(
+    (l) => l.situacao !== "pronta" || l.avisos.length > 0,
+  );
   const visiveis = mostrarTodas ? estado.linhas : comProblema;
 
   return (
     <div className="flex flex-col gap-8">
-      <form action={enviar} className="flex flex-col gap-6">
+      <form onSubmit={aoEnviar} className="flex flex-col gap-6">
         <Card>
           <CardCabecalho
             titulo="Escolher a planilha"
@@ -214,6 +257,9 @@ export function Importador({ modeloCsv }: { modeloCsv: string }) {
                 type="file"
                 accept=".csv,text/csv,text/plain"
                 required
+                onChange={() => {
+                  if (estado.etapa === "analisado") setTrocadoEm(estado);
+                }}
                 className={cn(
                   ENTRADA,
                   "h-auto py-2.5 file:mr-3 file:cursor-pointer file:rounded-[var(--radius-tag)] file:border-0 file:bg-secondary-fixed file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary",
@@ -233,6 +279,7 @@ export function Importador({ modeloCsv }: { modeloCsv: string }) {
                 valor="nao"
                 variante={analisado ? "contorno" : "primaria"}
                 ocupadoRotulo="Lendo…"
+                pending={enviando}
               />
 
               <a
@@ -349,7 +396,11 @@ export function Importador({ modeloCsv }: { modeloCsv: string }) {
             </CardCorpo>
 
             <CardRodape className="flex flex-wrap items-center gap-3">
-              {estado.resumo.prontas > 0 ? (
+              {arquivoTrocado ? (
+                <span role="status" className="text-sm text-on-surface-variant">
+                  O arquivo foi trocado depois da análise. Analise de novo antes de importar.
+                </span>
+              ) : estado.resumo.prontas > 0 ? (
                 <>
                   <Enviar
                     rotulo={`Importar ${estado.resumo.prontas} ${
@@ -358,6 +409,7 @@ export function Importador({ modeloCsv }: { modeloCsv: string }) {
                     valor="sim"
                     variante="primaria"
                     ocupadoRotulo="Gravando…"
+                    pending={enviando}
                   />
                   <span className="text-xs text-outline">
                     As linhas com erro e as já cadastradas não serão gravadas.

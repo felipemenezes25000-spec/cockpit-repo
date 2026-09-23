@@ -62,7 +62,7 @@ export default async function PaginaModelos() {
           }
         />
 
-        <CardCorpo className="px-0 sm:px-0">
+        <CardCorpo>
           <ListaModelos modelos={modelos} administradora={administradora} />
         </CardCorpo>
 

@@ -22,6 +22,10 @@ import {
  * Segue o padrão de combobox do WAI-ARIA: setas percorrem as opções sem tirar
  * o foco do campo (`aria-activedescendant`), Enter escolhe, Esc fecha a lista.
  * Quem usa teclado ou leitor de tela escolhe a paciente sem precisar do mouse.
+ * Sair do campo (Tab) fecha a lista, para ela não ficar por cima do resto do
+ * formulário; voltar a ele reabre. Escolhida a paciente, o campo dá lugar ao
+ * cartão, e o foco vai para "Trocar a paciente" — não se perde no `<body>`.
+ * Quantas foram encontradas é anunciado ao leitor de tela.
  */
 export function SeletorPaciente({
   inicial,
@@ -44,6 +48,8 @@ export function SeletorPaciente({
   const idLista = useId();
   const ultimaBusca = useRef(0);
   const campo = useRef<HTMLInputElement>(null);
+  const oculto = useRef<HTMLInputElement>(null);
+  const trocar = useRef<HTMLButtonElement>(null);
 
   const listaAberta = opcoes.length > 0 && !listaFechada;
 
@@ -52,6 +58,8 @@ export function SeletorPaciente({
     setOpcoes([]);
     setDestacada(-1);
     aoEscolher?.(opcao);
+    // O campo some junto com a lista; o foco vai para o cartão da escolhida.
+    requestAnimationFrame(() => trocar.current?.focus());
   }
 
   function aoTeclar(evento: KeyboardEvent<HTMLInputElement>) {
@@ -73,6 +81,32 @@ export function SeletorPaciente({
       setDestacada(-1);
     }
   }
+
+  // O campo de busca é NÃO controlado de propósito. Antes da hidratação ele é
+  // HTML puro, e num aparelho lento a pessoa já digita nele; um campo
+  // controlado (`value={termo}`) seria zerado pelo React ao hidratar, e a
+  // digitação sumia (acontecia sempre no WebKit em dev). Não controlado, o
+  // texto fica no campo, e aqui o estado o adota na montagem.
+  useEffect(() => {
+    const digitado = campo.current?.value ?? "";
+    if (digitado) setTermo(digitado);
+  }, []);
+
+  // Não controlado também quer dizer que o reset do formulário apaga o campo
+  // sem passar por `onChange` — e o React 19 reseta o `<form action>` ao fim
+  // de toda ação, inclusive a que recusou ("Escolha a paciente"). Sem isto, o
+  // campo ficava vazio com a lista do termo antigo aberta embaixo.
+  useEffect(() => {
+    const formulario = oculto.current?.form;
+    if (!formulario) return;
+    function aoResetar() {
+      setTermo("");
+      setOpcoes([]);
+      setDestacada(-1);
+    }
+    formulario.addEventListener("reset", aoResetar);
+    return () => formulario.removeEventListener("reset", aoResetar);
+  }, []);
 
   useEffect(() => {
     if (escolhida || termo.trim().length < 2) {
@@ -112,7 +146,7 @@ export function SeletorPaciente({
   return (
     <Campo id="busca-paciente" rotulo="Paciente" obrigatorio={obrigatorio} erro={erro}>
       {/* O que a ação de servidor lê. Vazio enquanto ninguém foi escolhida. */}
-      <input type="hidden" name="paciente_id" value={escolhida?.id ?? ""} />
+      <input ref={oculto} type="hidden" name="paciente_id" value={escolhida?.id ?? ""} />
 
       {escolhida ? (
         <div className="flex items-center justify-between gap-3 rounded-[var(--radius-cartao)] border border-positivo-borda bg-positivo-fundo px-3.5 py-2.5">
@@ -126,6 +160,7 @@ export function SeletorPaciente({
             </span>
           </span>
           <button
+            ref={trocar}
             type="button"
             onClick={() => {
               setEscolhida(null);
@@ -135,7 +170,7 @@ export function SeletorPaciente({
               requestAnimationFrame(() => campo.current?.focus());
             }}
             className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-tag)] text-outline transition-colors hover:bg-surface hover:text-primary"
-            aria-label="Trocar a paciente"
+            aria-label={`Trocar a paciente (${escolhida.nome})`}
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
@@ -158,9 +193,15 @@ export function SeletorPaciente({
             aria-autocomplete="list"
             aria-activedescendant={listaAberta && destacada >= 0 ? `${idLista}-${destacada}` : undefined}
             autoComplete="off"
-            value={termo}
+            defaultValue=""
             onChange={(e) => setTermo(e.target.value)}
             onKeyDown={aoTeclar}
+            onBlur={() => {
+              setListaFechada(true);
+              setDestacada(-1);
+            }}
+            onFocus={() => setListaFechada(false)}
+            aria-describedby={erro ? "busca-paciente-erro" : undefined}
             placeholder="Buscar por nome, telefone ou CPF"
             className={cn(classeDeEntrada({ recuo: "icone" }), erro && ENTRADA_ERRO)}
             {...(erro ? { "aria-invalid": true as const } : {})}
@@ -211,15 +252,27 @@ export function SeletorPaciente({
             </p>
           ) : null}
 
-          {!buscando && !falhouBusca && termo.trim().length >= 2 && opcoes.length === 0 ? (
-            <p className="mt-1.5 text-xs text-outline">
-              Nenhuma paciente encontrada. Confira a escrita ou{" "}
-              <Link href="/pacientes/novo" className="text-primary underline">
-                cadastre primeiro
-              </Link>
-              .
-            </p>
-          ) : null}
+          {/* Região viva sempre montada: leitor de tela só anuncia mudança
+              dentro de uma região que já existia. */}
+          <div role="status">
+            {buscando ? <span className="sr-only">Buscando…</span> : null}
+            {!buscando && listaAberta ? (
+              <span className="sr-only">
+                {opcoes.length === 1
+                  ? "1 paciente encontrada. Use as setas para escolher."
+                  : `${opcoes.length} pacientes encontradas. Use as setas para escolher.`}
+              </span>
+            ) : null}
+            {!buscando && !falhouBusca && termo.trim().length >= 2 && opcoes.length === 0 ? (
+              <p className="mt-1.5 text-xs text-outline">
+                Nenhuma paciente encontrada. Confira a escrita ou{" "}
+                <Link href="/pacientes/novo" className="text-primary underline">
+                  cadastre primeiro
+                </Link>
+                .
+              </p>
+            ) : null}
+          </div>
         </div>
       )}
     </Campo>

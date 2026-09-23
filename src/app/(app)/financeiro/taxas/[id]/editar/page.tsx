@@ -2,8 +2,11 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  EXPLICACAO_TAXAS,
+  SomenteAdministradora,
+} from "@/components/configuracoes/somente-administradora";
 import { FormularioTaxa } from "@/components/financeiro/formulario-taxa";
-import { SomenteFinanceiro } from "@/components/financeiro/somente-financeiro";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { ehAdministradora } from "@/lib/auth";
 import { atualizarTaxa } from "@/server/acoes/taxas-cartao";
@@ -15,7 +18,10 @@ type Props = { params: Promise<{ id: string }> };
 
 export default async function PaginaEditarTaxa({ params }: Props) {
   if (!(await ehAdministradora())) {
-    return <SomenteFinanceiro voltarPara="/financeiro/taxas" />;
+    return <SomenteAdministradora
+        voltarPara="/financeiro/taxas"
+        explicacao={EXPLICACAO_TAXAS}
+      />;
   }
 
   const { id } = await params;
@@ -26,7 +32,7 @@ export default async function PaginaEditarTaxa({ params }: Props) {
     <div className="mx-auto max-w-3xl">
       <Link
         href="/financeiro/taxas"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
       >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         Voltar para a tabela

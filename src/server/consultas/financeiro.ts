@@ -1,7 +1,5 @@
 import "server-only";
 
-import { falhaDeConsulta } from "@/lib/registro";
-
 import { cache } from "react";
 import { ehFinanceira } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
@@ -12,6 +10,9 @@ import {
   inicioDoMes,
   partesDoDia,
 } from "@/lib/dates";
+import { centavosDoBanco, centavosParaReais, somaEmCentavos } from "@/lib/moeda";
+import { dataParaColuna } from "@/lib/periodo";
+import { todasAsLinhas } from "./todas-as-linhas";
 
 export type ResumoFinanceiro = {
   recebidoNoMes: number;
@@ -31,6 +32,10 @@ export type PontoMensal = { data: Date; recebido: number };
  * Movimento financeiro do mês corrente.
  *
  * Lucro não entra: a regra de cálculo ainda não foi definida pela clínica.
+ *
+ * As linhas somadas aqui são lidas inteiras, em blocos (`todasAsLinhas`): o
+ * PostgREST corta cada resposta em 1000 linhas sem erro, e "A receber" e
+ * "Vencido" são estoque de qualquer período — o total sairia menor calado.
  */
 export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
   const supabase = await clienteServidor();
@@ -41,48 +46,66 @@ export const resumoFinanceiro = cache(async (): Promise<ResumoFinanceiro> => {
 
   const veDespesas = await ehFinanceira();
 
-  const [quitados, emAberto, despesas] = await Promise.all([
+  const contexto = "consulta financeiro: resumo";
+  const frase = "Não foi possível carregar o financeiro.";
+
+  const [quitados, abertos, despesas] = await Promise.all([
     // O que de fato entrou: o valor efetivo, líquido de taxa de cartão.
-    supabase
-      .from("recebimentos")
-      .select("valor_recebido")
-      .in("situacao", ["recebido", "recebido_divergencia"])
-      .gte("recebido_em", dataParaColuna(inicioMes))
-      .lt("recebido_em", dataParaColuna(inicioProximoMes)),
+    todasAsLinhas(
+      (inicio, fim) =>
+        supabase
+          .from("recebimentos")
+          .select("valor_recebido")
+          .in("situacao", ["recebido", "recebido_divergencia"])
+          .gte("recebido_em", dataParaColuna(inicioMes))
+          .lt("recebido_em", dataParaColuna(inicioProximoMes))
+          .order("id")
+          .range(inicio, fim),
+      contexto,
+      frase,
+    ),
     // Em aberto = previsto ou pendente, pelo líquido previsto.
-    supabase
-      .from("recebimentos")
-      .select("valor_liquido, vencimento")
-      .in("situacao", ["previsto", "pendente"]),
+    todasAsLinhas(
+      (inicio, fim) =>
+        supabase
+          .from("recebimentos")
+          .select("valor_liquido, vencimento")
+          .in("situacao", ["previsto", "pendente"])
+          .order("id")
+          .range(inicio, fim),
+      contexto,
+      frase,
+    ),
     veDespesas
-      ? supabase
-          .from("despesas")
-          .select("valor")
-          .neq("situacao", "cancelada")
-          .gte("competencia", dataParaColuna(inicioMes))
-          .lt("competencia", dataParaColuna(inicioProximoMes))
+      ? todasAsLinhas(
+          (inicio, fim) =>
+            supabase
+              .from("despesas")
+              .select("valor")
+              .neq("situacao", "cancelada")
+              .gte("competencia", dataParaColuna(inicioMes))
+              .lt("competencia", dataParaColuna(inicioProximoMes))
+              .order("id")
+              .range(inicio, fim),
+          contexto,
+          frase,
+        )
       : Promise.resolve(null),
   ]);
 
-  const erro = quitados.error ?? emAberto.error ?? despesas?.error;
-  if (erro) falhaDeConsulta("consulta financeiro", erro, "Não foi possível carregar o financeiro.");
-
-  const vencido = (emAberto.data ?? [])
-    .filter((l) => dataDoBanco(l.vencimento).getTime() < hoje.getTime())
-    .reduce((total, l) => total + Number(l.valor_liquido ?? 0), 0);
+  // Somas em centavos inteiros; reais só na saída (lib/moeda.ts).
+  const vencido = somaEmCentavos(
+    abertos
+      .filter((l) => dataDoBanco(l.vencimento).getTime() < hoje.getTime())
+      .map((l) => l.valor_liquido),
+  );
 
   return {
-    recebidoNoMes: (quitados.data ?? []).reduce(
-      (total, l) => total + Number(l.valor_recebido ?? 0),
-      0,
-    ),
-    aReceber: (emAberto.data ?? []).reduce(
-      (total, l) => total + Number(l.valor_liquido ?? 0),
-      0,
-    ),
-    vencido,
+    recebidoNoMes: centavosParaReais(somaEmCentavos(quitados.map((l) => l.valor_recebido))),
+    aReceber: centavosParaReais(somaEmCentavos(abertos.map((l) => l.valor_liquido))),
+    vencido: centavosParaReais(vencido),
     despesasDoMes: despesas
-      ? (despesas.data ?? []).reduce((total, l) => total + Number(l.valor), 0)
+      ? centavosParaReais(somaEmCentavos(despesas.map((l) => l.valor)))
       : null,
   };
 });
@@ -94,40 +117,40 @@ export const serieMensalRecebimentos = cache(async (): Promise<PontoMensal[]> =>
   const inicio = inicioDeMesRelativo(-5);
   const fim = inicioDeMesRelativo(1);
 
-  const { data, error } = await supabase
-    .from("recebimentos")
-    .select("valor_recebido, recebido_em")
-    .in("situacao", ["recebido", "recebido_divergencia"])
-    .gte("recebido_em", dataParaColuna(inicio))
-    .lt("recebido_em", dataParaColuna(fim));
-
-  if (error) {
-    falhaDeConsulta("consulta financeiro", error, "Não foi possível carregar a evolução mensal.");
-  }
+  // Seis meses de recebimentos confirmados passam das 1000 linhas do
+  // `max_rows` com umas 170 vendas por mês: lidos em blocos, não cortados.
+  const linhas = await todasAsLinhas(
+    (de, ate) =>
+      supabase
+        .from("recebimentos")
+        .select("valor_recebido, recebido_em")
+        .in("situacao", ["recebido", "recebido_divergencia"])
+        .gte("recebido_em", dataParaColuna(inicio))
+        .lt("recebido_em", dataParaColuna(fim))
+        .order("id")
+        .range(de, ate),
+    "consulta financeiro: série mensal",
+    "Não foi possível carregar a evolução mensal.",
+  );
 
   // Um balde por mês, na ordem, para meses sem movimento aparecerem zerados.
-  const baldes: PontoMensal[] = [];
+  // A soma de cada balde é em centavos inteiros; reais só na saída.
+  const baldes: { data: Date; centavos: number }[] = [];
   const indicePorChave = new Map<string, number>();
 
   for (let i = -5; i <= 0; i++) {
     const inicioDoBalde = inicioDeMesRelativo(i);
     const { ano, mes } = partesDoDia(inicioDoBalde);
     indicePorChave.set(`${ano}-${mes}`, baldes.length);
-    baldes.push({ data: inicioDoBalde, recebido: 0 });
+    baldes.push({ data: inicioDoBalde, centavos: 0 });
   }
 
-  for (const linha of data ?? []) {
-    if (!linha.recebido_em) continue;
+  for (const linha of linhas) {
+    if (!linha.recebido_em || linha.valor_recebido === null) continue;
     const { ano, mes } = partesDoDia(dataDoBanco(linha.recebido_em));
     const indice = indicePorChave.get(`${ano}-${mes}`);
-    if (indice !== undefined) baldes[indice].recebido += Number(linha.valor_recebido ?? 0);
+    if (indice !== undefined) baldes[indice].centavos += centavosDoBanco(Number(linha.valor_recebido));
   }
 
-  return baldes;
+  return baldes.map((b) => ({ data: b.data, recebido: centavosParaReais(b.centavos) }));
 });
-
-/** Colunas `date` do Postgres comparam com texto "AAAA-MM-DD". */
-function dataParaColuna(instante: Date): string {
-  const { ano, mes, dia } = partesDoDia(instante);
-  return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
-}

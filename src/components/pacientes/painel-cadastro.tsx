@@ -39,7 +39,7 @@ export function PainelCadastro({ paciente }: { paciente: PacienteCompleto }) {
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href={`tel:+55${paciente.telefone}`}
-                className="tabular hover:text-primary hover:underline"
+                className="tabular inline-flex min-h-6 items-center hover:text-primary hover:underline"
               >
                 {formatarTelefone(paciente.telefone)}
               </a>
@@ -49,7 +49,7 @@ export function PainelCadastro({ paciente }: { paciente: PacienteCompleto }) {
                   href={whatsapp}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] bg-secondary-fixed px-2 py-0.5 text-xs font-medium text-primary transition-opacity hover:opacity-80"
+                  className="inline-flex min-h-6 items-center gap-1.5 rounded-[var(--radius-tag)] bg-secondary-fixed px-2 py-0.5 text-xs font-medium text-primary transition-opacity hover:opacity-80"
                 >
                   <MessageCircle aria-hidden="true" size={12} strokeWidth={1.75} />
                   WhatsApp
@@ -65,7 +65,7 @@ export function PainelCadastro({ paciente }: { paciente: PacienteCompleto }) {
           {paciente.email ? (
             <a
               href={`mailto:${paciente.email}`}
-              className="hover:text-primary hover:underline"
+              className="inline-block py-0.5 break-all hover:text-primary hover:underline"
             >
               {paciente.email}
             </a>

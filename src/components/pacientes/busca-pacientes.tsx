@@ -36,15 +36,45 @@ export function BuscaPacientes({
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
 
-  // A URL pode mudar por fora (voltar no navegador, clicar num filtro).
-  useEffect(() => setTermo(busca), [busca]);
+  // O último termo que esta caixa mandou para a URL. Quando a URL responde com
+  // ele, nada muda na caixa: a pessoa pode ter seguido digitando enquanto a
+  // consulta rodava, e a URL chega sem o espaço final ("ana " vira "ana") —
+  // sobrescrever apagaria o que ela acabou de digitar.
+  const [enviada, setEnviada] = useState(busca);
+  const [buscaAnterior, setBuscaAnterior] = useState(busca);
 
-  const primeiraRenderizacao = useRef(true);
+  // A URL pode mudar por fora (voltar no navegador, link colado): aí sim a
+  // caixa acompanha. Ajuste feito na renderização, como o React recomenda
+  // para estado derivado de prop.
+  if (busca !== buscaAnterior) {
+    setBuscaAnterior(busca);
+    if (busca !== enviada) {
+      setTermo(busca);
+      setEnviada(busca);
+    }
+  }
+
+  const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function cancelarEspera() {
+    if (relogio.current) clearTimeout(relogio.current);
+    relogio.current = null;
+  }
+
+  // Saiu da tela com uma busca agendada: ela não deve navegar depois.
+  useEffect(() => {
+    const espera = relogio;
+    return () => {
+      if (espera.current) clearTimeout(espera.current);
+    };
+  }, []);
 
   function navegar(novoTermo: string, novaSituacao: FiltroSituacao) {
+    cancelarEspera();
     const query = new URLSearchParams(parametros?.toString() ?? "");
+    const limpo = novoTermo.trim();
 
-    if (novoTermo.trim()) query.set("busca", novoTermo.trim());
+    if (limpo) query.set("busca", limpo);
     else query.delete("busca");
 
     if (novaSituacao !== "ativas") query.set("situacao", novaSituacao);
@@ -53,22 +83,18 @@ export function BuscaPacientes({
     // Mudou o critério: a página 3 do resultado anterior não quer dizer nada.
     query.delete("pagina");
 
+    setEnviada(limpo);
     const texto = query.toString();
     iniciar(() => router.replace(texto ? `/pacientes?${texto}` : "/pacientes"));
   }
 
   // Espera a pessoa parar de digitar antes de consultar o banco.
-  useEffect(() => {
-    if (primeiraRenderizacao.current) {
-      primeiraRenderizacao.current = false;
-      return;
-    }
-    if (termo === busca) return;
-
-    const relogio = setTimeout(() => navegar(termo, situacao), 350);
-    return () => clearTimeout(relogio);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [termo]);
+  function digitar(valor: string) {
+    setTermo(valor);
+    cancelarEspera();
+    if (valor.trim() === enviada) return;
+    relogio.current = setTimeout(() => navegar(valor, situacao), 350);
+  }
 
   return (
     <form
@@ -78,9 +104,9 @@ export function BuscaPacientes({
         evento.preventDefault();
         navegar(termo, situacao);
       }}
-      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
     >
-      <div className="relative w-full sm:max-w-md">
+      <div className="relative w-full lg:max-w-md">
         <Search
           aria-hidden="true"
           size={18}
@@ -91,14 +117,22 @@ export function BuscaPacientes({
           type="search"
           name="busca"
           value={termo}
-          onChange={(evento) => setTermo(evento.target.value)}
+          onChange={(evento) => digitar(evento.target.value)}
           maxLength={80}
           aria-label="Buscar paciente por nome, telefone, e-mail ou CPF"
           placeholder="Buscar por nome, telefone, e-mail ou CPF"
           className={classeDeEntrada({ recuo: "busca" })}
         />
 
-        {termo ? (
+        {/* Carregando ocupa o lugar do "limpar", dentro da caixa: fora dela,
+            a 360 px o ícone passava da borda do cartão. */}
+        {pendente ? (
+          <LoaderCircle
+            aria-hidden="true"
+            size={16}
+            className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 animate-spin text-outline"
+          />
+        ) : termo ? (
           <button
             type="button"
             onClick={() => {
@@ -111,18 +145,12 @@ export function BuscaPacientes({
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
         ) : null}
-
-        {pendente ? (
-          <LoaderCircle
-            aria-hidden="true"
-            size={16}
-            className="absolute top-1/2 -right-6 -translate-y-1/2 animate-spin text-outline"
-          />
-        ) : null}
       </div>
 
-      <div className="flex items-center gap-3">
-        <span aria-live="polite" className="text-xs text-outline tabular">
+      {/* Contador e segmento quebram entre si, nunca por dentro: a 320 px o
+          segmento cortava "Todas" e, a 768, "33 pacientes" ia para duas linhas. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span aria-live="polite" className="text-xs whitespace-nowrap text-outline tabular">
           {total === 1 ? "1 paciente" : `${total} pacientes`}
         </span>
 

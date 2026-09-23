@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { CABECALHO_ID_REQUISICAO, idDeCorrelacao } from "@/lib/erros-banco";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
 
 /**
@@ -28,6 +29,11 @@ function ehPublica(caminho: string): boolean {
  * rota, a RLS do banco continua decidindo quais dados aparecem.
  */
 export async function atualizarSessao(request: NextRequest) {
+  // Id da requisição, para ligar o que a pessoa viu à linha do log. Sempre
+  // gerado aqui: um valor vindo do navegador poderia forjar a correlação.
+  const idRequisicao = idDeCorrelacao();
+  request.headers.set(CABECALHO_ID_REQUISICAO, idRequisicao);
+
   let resposta = NextResponse.next({ request });
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -58,17 +64,41 @@ export async function atualizarSessao(request: NextRequest) {
   if (!user && !ehPublica(caminho)) {
     const destino = request.nextUrl.clone();
     destino.pathname = "/entrar";
-    // Guarda para onde a pessoa queria ir, e devolve depois do login.
+    // Guarda para onde a pessoa queria ir, e devolve depois do login. Só o
+    // caminho: a query de outra rota não vaza para a tela de login.
+    destino.search = "";
     if (caminho !== "/") destino.searchParams.set("proximo", caminho);
-    return NextResponse.redirect(destino);
+    return comId(redirecionarComCookies(destino, resposta), idRequisicao);
   }
 
   if (user && caminho === "/entrar") {
     const destino = request.nextUrl.clone();
     destino.pathname = "/";
     destino.search = "";
-    return NextResponse.redirect(destino);
+    return comId(redirecionarComCookies(destino, resposta), idRequisicao);
   }
 
+  return comId(resposta, idRequisicao);
+}
+
+/**
+ * Redireciona levando os cookies que o `getUser` acabou de gravar.
+ *
+ * Quando o access token venceu, o `getUser` troca o refresh token e grava o
+ * par novo em `resposta`. Um redirect criado do zero perderia esses cookies:
+ * o navegador reenviaria o refresh token antigo, já trocado, e a sessão
+ * poderia ser revogada — a pessoa seria deslogada sem motivo.
+ */
+function redirecionarComCookies(destino: URL, resposta: NextResponse): NextResponse {
+  const redirecionamento = NextResponse.redirect(destino);
+  for (const cookie of resposta.cookies.getAll()) {
+    redirecionamento.cookies.set(cookie);
+  }
+  return redirecionamento;
+}
+
+/** O mesmo id volta na resposta: quem abre o DevTools consegue citá-lo. */
+function comId(resposta: NextResponse, idRequisicao: string): NextResponse {
+  resposta.headers.set(CABECALHO_ID_REQUISICAO, idRequisicao);
   return resposta;
 }

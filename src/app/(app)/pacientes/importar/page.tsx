@@ -2,7 +2,9 @@ import { ArrowLeft, ShieldAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Importador } from "@/components/pacientes/importador";
-import { Card, CardCorpo } from "@/components/ui/card";
+import { BotaoLink } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EstadoVazio } from "@/components/ui/empty-state";
 import { gerarCsv } from "@/lib/csv";
 import { COLUNAS_DO_MODELO } from "@/lib/importacao";
 import { ehAdministradora } from "@/lib/auth";
@@ -52,27 +54,17 @@ export default async function PaginaImportarPacientes() {
     return (
       <div className="mx-auto max-w-2xl">
         <Card>
-          <CardCorpo className="flex flex-col items-center gap-4 py-12 text-center">
-            <span className="flex size-12 items-center justify-center rounded-[var(--radius-controle)] bg-surface-container text-outline">
-              <ShieldAlert aria-hidden="true" size={20} strokeWidth={1.5} />
-            </span>
-            <div>
-              <p className="font-medium text-on-surface">
-                Importação restrita à administradora
-              </p>
-              <p className="mt-1 max-w-sm text-sm text-outline">
-                Trazer uma base inteira de uma vez é decisão de quem responde
-                pelo cadastro. Cadastrar paciente uma a uma continua liberado.
-              </p>
-            </div>
-            <Link
-              href="/pacientes"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary px-6 text-sm font-medium text-primary transition-colors hover:bg-surface-container-low"
-            >
-              <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-              Voltar para a lista
-            </Link>
-          </CardCorpo>
+          <EstadoVazio
+            icone={ShieldAlert}
+            titulo="Importação restrita à administradora"
+            descricao="Trazer uma base inteira de uma vez é decisão de quem responde pelo cadastro. Cadastrar pacientes uma a uma continua liberado."
+            acao={
+              <BotaoLink href="/pacientes" variante="secundaria">
+                <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
+                Voltar para a lista
+              </BotaoLink>
+            }
+          />
         </Card>
       </div>
     );
@@ -82,7 +74,7 @@ export default async function PaginaImportarPacientes() {
     <div className="mx-auto max-w-4xl">
       <Link
         href="/pacientes"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
       >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         Voltar para a lista

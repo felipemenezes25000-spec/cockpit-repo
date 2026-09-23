@@ -9,6 +9,7 @@ import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
 import { registrarFalha } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import {
+  lerEndereco,
   normalizarPaciente,
   paraOBanco,
   validarPaciente,
@@ -40,6 +41,7 @@ export type EstadoPaciente = {
 /** Valida e normaliza. Devolve os erros ou os campos prontos para o banco. */
 function validar(
   dados: FormData,
+  cepGravado?: string | null,
 ):
   | { erros: ErrosDoFormulario; valores: Record<string, string> }
   | { campos: CamposDoBanco } {
@@ -61,7 +63,7 @@ function validar(
     uf: campoTexto(dados, "uf"),
   });
 
-  const erros = validarPaciente(valores);
+  const erros = validarPaciente(valores, { cepGravado });
 
   if (Object.keys(erros).length > 0) {
     return { erros, valores: valoresDigitados(dados) };
@@ -121,10 +123,29 @@ export async function atualizarPaciente(
   const id = campoTexto(dados, "id", 36);
   if (!uuidValido(id)) return { erros: { geral: "Paciente não identificada." } };
 
-  const resultado = validar(dados);
+  const supabase = await clienteServidor();
+
+  // CEP incompleto gravado antes da regra dos 8 dígitos não trava a edição
+  // dos outros campos — ver `validarPaciente`.
+  // Leitura que falha não pode virar "CEP inválido": a ficha seria recusada
+  // por um defeito nos dados que não existe.
+  const { data: atual, error: erroLeitura } = await supabase
+    .from("pacientes")
+    .select("endereco")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (erroLeitura) {
+    registrarFalha("pacientes: ler ficha para editar", erroLeitura);
+    return {
+      erros: { geral: mensagemDoBanco(erroLeitura, "Não foi possível salvar. Tente de novo.") },
+      valores: valoresDigitados(dados),
+    };
+  }
+
+  const resultado = validar(dados, atual ? lerEndereco(atual.endereco).cep : null);
   if ("erros" in resultado) return resultado;
 
-  const supabase = await clienteServidor();
   const { data, error } = await supabase
     .from("pacientes")
     .update(resultado.campos)

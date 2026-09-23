@@ -15,6 +15,7 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
+import { garantirVersaoPostgrest } from "./versao-postgrest.mjs";
 
 const alvo = process.argv.includes("--local") ? "--local" : process.argv.includes("--linked") ? "--linked" : null;
 if (!alvo) {
@@ -41,6 +42,9 @@ if (!saida.includes("export type Database") || saida.trimStart().startsWith("{")
   console.error(saida.slice(0, 500));
   process.exit(1);
 }
+
+// O `--local` não traz o `__InternalSupabase`; sem ele o cliente vira PostgREST 12.
+saida = garantirVersaoPostgrest(saida);
 
 const atual = readFileSync(destino, "utf8");
 if (atual === saida) {

@@ -9,7 +9,7 @@ import {
   PenLine,
   Printer,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import {
@@ -40,9 +40,11 @@ const FALHA_DE_CONEXAO =
 /**
  * Explica cada recusa sem ensinar nada a quem não deveria estar ali.
  *
- * "Data incorreta" é a única que diz o que houve, porque quem errou a própria
- * data precisa saber para corrigir. As demais ficam propositalmente iguais:
- * link inexistente e link revogado dão a mesma resposta.
+ * "Data incorreta" é a única que diz o que houve depois da data, porque quem
+ * errou a própria data precisa saber para corrigir. Inexistente, cancelado,
+ * vencido e bloqueado têm respostas distintas de propósito (AGENTS.md §8.7):
+ * isso só revela que um token existe a quem já o tem, e 256 bits não se
+ * adivinham. Nenhuma delas diz de quem é o documento nem o que ele contém.
  */
 const RECUSA: Record<string, { titulo: string; texto: string }> = {
   nao_encontrado: {
@@ -68,10 +70,27 @@ const RECUSA: Record<string, { titulo: string; texto: string }> = {
     titulo: "Documento indisponível",
     texto: "Este documento não está mais disponível.",
   },
+  // Só chega aqui se a via não pôde ser mostrada; o caminho normal de
+  // `ja_assinado` é a própria via. Pedir "um novo link" seria errado duas
+  // vezes: o link vale, e a clínica nem consegue gerar outro para documento
+  // assinado.
+  ja_assinado: {
+    titulo: "Documento já assinado",
+    texto:
+      "Este documento já está assinado. Recarregue a página e confirme sua data de nascimento para ver e salvar a sua via.",
+  },
+  data_incorreta: {
+    titulo: "Data de nascimento não confere",
+    texto:
+      "A data de nascimento não confere mais com o cadastro da clínica. Recarregue a página e confirme a data de novo.",
+  },
   falhou: {
     titulo: "Não foi possível abrir agora",
     texto:
-      "A página não conseguiu falar com a clínica. Confira sua internet e recarregue em instantes — o link continua valendo.",
+      // A página chegou, então a internet da paciente funciona: quem não
+      // respondeu foi a clínica. E a situação do link é desconhecida — não dá
+      // para prometer que ele continua valendo.
+      "A clínica não respondeu agora. Recarregue a página em instantes; se continuar assim, ligue para a clínica.",
   },
 };
 
@@ -101,6 +120,22 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
 }
 
 /**
+ * A forma impressa na via. O link também serve para a paciente guardar a cópia
+ * do que assinou no balcão; dizer "à distância" ali seria falso. O canal vem
+ * do banco (`documento_para_assinatura`, 0027) — sem ele, a via não afirma
+ * por onde foi.
+ */
+export function formaDaAssinatura(canal: string | null): string {
+  if (canal === "balcao") {
+    return "Assinatura eletrônica simples, presencial, na clínica (Lei 14.063/2020)";
+  }
+  if (canal === "link") {
+    return "Assinatura eletrônica simples, à distância (Lei 14.063/2020)";
+  }
+  return "Assinatura eletrônica simples (Lei 14.063/2020)";
+}
+
+/**
  * A via da paciente: o documento assinado, pronto para salvar.
  *
  * O botão usa a impressão do navegador em vez de uma biblioteca de PDF. Não é
@@ -111,14 +146,43 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
  * As classes `folha`, `folha-texto` e `sem-impressao` são lidas pelo bloco
  * `@media print` do `globals.css`.
  */
+/**
+ * O que a via diz no topo quando se chega a ela assinando. `registrada`: a
+ * assinatura desta página foi gravada. `ja_estava`: o banco respondeu
+ * `ja_assinado` — outra aba, outro aparelho ou o balcão assinou antes. Em
+ * nenhum dos dois há o que refazer, e a via é a mesma.
+ */
+type AvisoDaVia = "registrada" | "ja_estava" | null;
+
+const AVISO_DA_VIA = {
+  registrada: {
+    titulo: "Assinatura registrada",
+    texto:
+      "Guarde a sua via: use o botão abaixo para salvar em PDF ou imprimir. Você também pode voltar a este link enquanto ele valer.",
+  },
+  ja_estava: {
+    titulo: "Este documento já estava assinado",
+    texto:
+      "A assinatura já tinha sido registrada antes — em outra aba, em outro aparelho ou na clínica. Não é preciso assinar de novo: guarde a sua via com o botão abaixo.",
+  },
+} as const;
+
 function ViaAssinada({
   documento,
-  recemAssinado,
+  aviso,
 }: {
   documento: DocumentoParaAssinar;
-  recemAssinado: boolean;
+  aviso: AvisoDaVia;
 }) {
   const assinadoEm = documento.assinadoEm ? new Date(documento.assinadoEm) : null;
+
+  // Assinar desmonta o formulário e leva junto o botão que tinha o foco: sem
+  // isto, o foco caía no <body> e o leitor de tela não dizia que a
+  // assinatura foi registrada. O aviso recebe o foco e é lido inteiro.
+  const refAviso = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (aviso) refAviso.current?.focus();
+  }, [aviso]);
 
   const quando = assinadoEm
     ? assinadoEm.toLocaleString("pt-BR", {
@@ -133,8 +197,13 @@ function ViaAssinada({
 
   return (
     <div className="flex flex-col gap-6">
-      {recemAssinado ? (
-        <div className="sem-impressao flex items-start gap-3 rounded-[var(--radius-painel)] border border-positivo-borda bg-positivo-fundo px-5 py-4">
+      {aviso ? (
+        <div
+          ref={refAviso}
+          tabIndex={-1}
+          role="status"
+          className="sem-impressao flex items-start gap-3 rounded-[var(--radius-painel)] border border-positivo-borda bg-positivo-fundo px-5 py-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
           <CircleCheck
             aria-hidden="true"
             size={20}
@@ -142,11 +211,8 @@ function ViaAssinada({
             className="mt-0.5 shrink-0 text-positivo"
           />
           <div>
-            <p className="font-medium text-positivo">Assinatura registrada</p>
-            <p className="mt-1 text-sm text-on-surface">
-              Guarde a sua via: use o botão abaixo para salvar em PDF ou
-              imprimir. Você também pode voltar a este link enquanto ele valer.
-            </p>
+            <p className="font-medium text-positivo">{AVISO_DA_VIA[aviso].titulo}</p>
+            <p className="mt-1 text-sm text-on-surface">{AVISO_DA_VIA[aviso].texto}</p>
           </div>
         </div>
       ) : null}
@@ -187,10 +253,7 @@ function ViaAssinada({
               <Linha rotulo="Assinado por" valor={documento.assinadoPor} />
             ) : null}
             {quando ? <Linha rotulo="Data e hora" valor={quando} /> : null}
-            <Linha
-              rotulo="Forma"
-              valor="Assinatura eletrônica simples, à distância (Lei 14.063/2020)"
-            />
+            <Linha rotulo="Forma" valor={formaDaAssinatura(documento.assinadoCanal)} />
             {documento.hash ? (
               <Linha
                 rotulo="Identificação do texto"
@@ -236,7 +299,7 @@ export function AssinarPorLink({
   const [confirmou, setConfirmou] = useState(false);
   const [assinando, setAssinando] = useState(false);
   const [estado, setEstado] = useState<EstadoAssinaturaLink | null>(null);
-  const [recemAssinado, setRecemAssinado] = useState(false);
+  const [aviso, setAviso] = useState<AvisoDaVia>(null);
 
   const jaAssinado = situacaoInicial === "ja_assinado";
 
@@ -282,18 +345,25 @@ export function AssinarPorLink({
       });
       setEstado(resposta);
 
-      if (resposta.situacao === "ok") {
+      // `ja_assinado` numa tentativa de assinar não é recusa: o documento está
+      // assinado (outra aba, outro aparelho, o balcão) e o link continua
+      // valendo em modo leitura (0016). O destino é o mesmo do sucesso — a via
+      // —, só o aviso muda.
+      const jaEstava = resposta.situacao === "ja_assinado";
+
+      if (resposta.situacao === "ok" || jaEstava) {
         // Recarrega do banco em vez de montar a via com o que está na tela: o
         // que ela vai guardar precisa ser o que ficou gravado, não o que foi
         // digitado aqui.
-        setRecemAssinado(true);
+        setAviso(jaEstava ? "ja_estava" : "registrada");
         const via = await abrirDocumentoParaAssinatura(token, nascimento);
         if (via.situacao === "falhou") {
           setEstado({
             situacao: null,
             erros: {
-              geral:
-                "Sua assinatura foi registrada. Não conseguimos carregar a via agora — recarregue a página para salvá-la.",
+              geral: jaEstava
+                ? "Este documento já está assinado. Não conseguimos carregar a via agora — recarregue a página para salvá-la."
+                : "Sua assinatura foi registrada. Não conseguimos carregar a via agora — recarregue a página para salvá-la.",
             },
           });
         } else {
@@ -341,6 +411,9 @@ export function AssinarPorLink({
             <input
               id="nascimento"
               type="date"
+              // `bday`: o navegador sugere a data da própria pessoa, que é
+              // exatamente a que se pede aqui.
+              autoComplete="bday"
               value={nascimento}
               onChange={(evento) => setNascimento(evento.target.value)}
               required
@@ -379,7 +452,7 @@ export function AssinarPorLink({
 
   // ----- já assinado: a via dela -----
   if (documento.situacao === "ja_assinado" && documento.corpo) {
-    return <ViaAssinada documento={documento} recemAssinado={recemAssinado} />;
+    return <ViaAssinada documento={documento} aviso={aviso} />;
   }
 
   if (documento.situacao !== "ok" || !documento.corpo) {
@@ -492,6 +565,9 @@ export function AssinarPorLink({
               id="cpf"
               type="text"
               inputMode="numeric"
+              // Não há token de autocompletar para CPF; `off` evita que o
+              // navegador ofereça um número qualquer já digitado neste campo.
+              autoComplete="off"
               value={cpf}
               maxLength={14}
               onChange={(evento) => setCpf(evento.target.value)}
@@ -528,13 +604,16 @@ export function AssinarPorLink({
           </p>
         ) : null}
 
-        {estado?.situacao && estado.situacao !== "ok" ? (
+        {estado?.situacao && estado.situacao !== "ok" && estado.situacao !== "ja_assinado" ? (
           <p
             role="alert"
             className="mt-4 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
           >
+            {/* O que sobra sem frase própria é recusa de campo que escapou da
+                conferência daqui (`nome_invalido`, `cpf_invalido`): o link
+                vale, e mandar pedir outro não resolveria nada. */}
             {RECUSA[estado.situacao]?.texto ??
-              "Não foi possível registrar a assinatura. Peça um novo link à clínica."}
+              "Não foi possível registrar a assinatura. Confira o nome e o CPF e tente de novo."}
           </p>
         ) : null}
 

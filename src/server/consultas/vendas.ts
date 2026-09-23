@@ -3,6 +3,7 @@ import "server-only";
 import { falhaDeConsulta } from "@/lib/registro";
 
 import { cache } from "react";
+import { uuidValido } from "@/lib/formulario";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco } from "@/lib/dates";
 import { dataParaColuna, type Periodo } from "@/lib/periodo";
@@ -11,6 +12,7 @@ import type {
   SituacaoRecebimento,
   TipoCartao,
 } from "@/lib/venda";
+import { todasAsLinhas } from "./todas-as-linhas";
 
 export type VendaDaLista = {
   id: string;
@@ -27,28 +29,41 @@ export type VendaDaLista = {
   exemplo: boolean;
 };
 
-/** Vendas do período, da mais recente para a mais antiga. */
+/**
+ * Vendas do período, da mais recente para a mais antiga.
+ *
+ * A tela conta e soma esta lista ("N vendas · R$ X") e filtra por situação,
+ * forma e busca aqui, na aplicação. Por isso as linhas são lidas inteiras, em
+ * blocos (`todasAsLinhas`): o PostgREST corta cada resposta em 1000 linhas
+ * sem erro, e o total do mês sairia menor, calado.
+ */
 export const listarVendas = cache(
   async (periodo: Periodo): Promise<VendaDaLista[]> => {
     const supabase = await clienteServidor();
 
-    const { data, error } = await supabase
-      .from("vendas")
-      .select(
-        `id, data_venda, valor_final, forma, parcelas, taxa_valor, valor_liquido,
-         taxa_manual, exemplo,
-         pacientes ( nome, nome_social ),
-         procedimentos ( nome ),
-         recebimentos ( situacao, criado_em )`,
-      )
-      .gte("data_venda", dataParaColuna(periodo.de))
-      .lt("data_venda", dataParaColuna(periodo.ate))
-      .order("data_venda", { ascending: false })
-      .order("criado_em", { ascending: false });
+    const linhas = await todasAsLinhas(
+      (inicio, fim) =>
+        supabase
+          .from("vendas")
+          .select(
+            `id, data_venda, valor_final, forma, parcelas, taxa_valor, valor_liquido,
+             taxa_manual, exemplo,
+             pacientes ( nome, nome_social ),
+             procedimentos ( nome ),
+             recebimentos ( situacao, criado_em )`,
+          )
+          .gte("data_venda", dataParaColuna(periodo.de))
+          .lt("data_venda", dataParaColuna(periodo.ate))
+          .order("data_venda", { ascending: false })
+          .order("criado_em", { ascending: false })
+          // O `id` desempata: sem ordem única, blocos repetem ou pulam linhas.
+          .order("id")
+          .range(inicio, fim),
+      "consulta vendas",
+      "Não foi possível carregar as vendas.",
+    );
 
-    if (error) falhaDeConsulta("consulta vendas", error, "Não foi possível carregar as vendas.");
-
-    return (data ?? []).map((v) => {
+    return linhas.map((v) => {
       // O recebimento vivo da venda: o primeiro não cancelado.
       const vivo = (v.recebimentos ?? [])
         .filter((r) => r.situacao !== "cancelado")
@@ -149,13 +164,20 @@ function lerFotografia(bruto: unknown): FotografiaGravada {
 }
 
 export const vendaPorId = cache(async (id: string): Promise<VendaCompleta | null> => {
+  // Endereço digitado à mão com id torto é "não existe" (404), não falha
+  // do banco — o Postgres recusaria o texto como uuid.
+  if (!uuidValido(id)) return null;
+
   const supabase = await clienteServidor();
 
   const [venda, ajustes, alteracoes] = await Promise.all([
     supabase
       .from("vendas")
       .select(
-        `*, pacientes ( nome, nome_social ), procedimentos ( nome ),
+        `id, paciente_id, data_venda, valor_original, desconto, valor_final, forma,
+         parcelas, taxa_cartao_id, taxa_percentual, taxa_valor, valor_liquido,
+         taxa_manual, taxa_justificativa, observacoes, exemplo,
+         pacientes ( nome, nome_social ), procedimentos ( nome ),
          recebimentos ( id, valor, taxa_valor, valor_liquido, valor_recebido,
                         situacao, vencimento, recebido_em, criado_em )`,
       )
@@ -173,7 +195,12 @@ export const vendaPorId = cache(async (id: string): Promise<VendaCompleta | null
       .order("em", { ascending: false }),
   ]);
 
-  if (venda.error || !venda.data) return null;
+  // Falha de leitura não é "venda não existe", e histórico que não carregou
+  // não é "sem histórico": ajuste e alteração escondidos mudam a leitura do
+  // dinheiro. Qualquer erro vira tela de erro.
+  const erro = venda.error ?? ajustes.error ?? alteracoes.error;
+  if (erro) falhaDeConsulta("consulta vendas", erro, "Não foi possível carregar a venda.");
+  if (!venda.data) return null;
   const v = venda.data;
 
   return {

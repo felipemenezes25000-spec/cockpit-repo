@@ -3,6 +3,7 @@ import "server-only";
 import { falhaDeConsulta } from "@/lib/registro";
 
 import { cache } from "react";
+import { uuidValido } from "@/lib/formulario";
 import { clienteServidor } from "@/lib/supabase/server";
 import type { TipoCartao } from "@/lib/venda";
 
@@ -17,42 +18,43 @@ export type TaxaCartao = {
   usos: number;
 };
 
-/** A tabela inteira: ativas primeiro, por operadora, tipo e parcelas. */
+/**
+ * A tabela inteira: ativas primeiro, por operadora, tipo e parcelas.
+ *
+ * O "aplicada em N vendas" é contado pelo banco (`vendas(count)`), numa
+ * consulta só: antes a tela baixava a coluna `taxa_cartao_id` de todas as
+ * vendas da clínica para contar em memória — e ignorava o erro dessa leitura,
+ * mostrando "0 vendas" quando ela falhava.
+ */
 export const listarTaxas = cache(async (): Promise<TaxaCartao[]> => {
   const supabase = await clienteServidor();
 
-  const [taxas, vendas] = await Promise.all([
-    supabase
-      .from("taxas_cartao")
-      .select("id, operadora, tipo, parcelas, percentual, ativa")
-      .order("ativa", { ascending: false })
-      .order("operadora")
-      .order("tipo")
-      .order("parcelas"),
-    supabase.from("vendas").select("taxa_cartao_id").not("taxa_cartao_id", "is", null),
-  ]);
+  const { data, error } = await supabase
+    .from("taxas_cartao")
+    .select("id, operadora, tipo, parcelas, percentual, ativa, vendas(count)")
+    .order("ativa", { ascending: false })
+    .order("operadora")
+    .order("tipo")
+    .order("parcelas");
 
-  if (taxas.error) {
-    falhaDeConsulta("consulta taxas", taxas.error, "Não foi possível carregar as taxas.");
-  }
+  if (error) falhaDeConsulta("consulta taxas", error, "Não foi possível carregar as taxas.");
 
-  const usos = new Map<string, number>();
-  for (const v of vendas.data ?? []) {
-    if (v.taxa_cartao_id) usos.set(v.taxa_cartao_id, (usos.get(v.taxa_cartao_id) ?? 0) + 1);
-  }
-
-  return (taxas.data ?? []).map((t) => ({
+  return (data ?? []).map((t) => ({
     id: t.id,
     operadora: t.operadora,
     tipo: t.tipo,
     parcelas: t.parcelas,
     percentual: Number(t.percentual),
     ativa: t.ativa,
-    usos: usos.get(t.id) ?? 0,
+    usos: t.vendas[0]?.count ?? 0,
   }));
 });
 
 export const taxaPorId = cache(async (id: string): Promise<TaxaCartao | null> => {
+  // Endereço digitado à mão com id torto é "não existe" (404), não falha
+  // do banco — o Postgres recusaria o texto como uuid.
+  if (!uuidValido(id)) return null;
+
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase
@@ -61,7 +63,9 @@ export const taxaPorId = cache(async (id: string): Promise<TaxaCartao | null> =>
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) return null;
+  // Falha de leitura não é "taxa não existe": vira tela de erro, não 404.
+  if (error) falhaDeConsulta("consulta taxas", error, "Não foi possível carregar a taxa.");
+  if (!data) return null;
 
   return {
     id: data.id,

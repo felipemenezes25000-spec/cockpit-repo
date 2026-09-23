@@ -11,10 +11,14 @@ import {
   BUCKET_IMAGENS,
   caminhoCoerente,
   dimensoesSanas,
+  extensaoDoTipo,
   legendaNormalizada,
   mensagemDoStorage,
   motivoDaRecusa,
   motivoDataInvalida,
+  motivoDoConteudoDivergente,
+  tipoAceito,
+  tipoPeloConteudo,
 } from "@/lib/prontuario-imagens";
 import { clienteServidor } from "@/lib/supabase/server";
 
@@ -79,6 +83,60 @@ async function administradoraOuErro(): Promise<{ id: string } | string> {
   return { id: usuario.id };
 }
 
+type ErroDoStorage = { message?: string; statusCode?: string | number; status?: number } | null;
+
+/**
+ * Falha do Storage no log, no mesmo formato sanitizado das do banco.
+ *
+ * O caminho pode entrar no contexto: ele é feito só de UUIDs, de propósito
+ * (§8.5), e é o que permite achar o objeto depois. Nome original, legenda e
+ * qualquer outro dado da paciente ficam fora.
+ */
+function registrarFalhaDoStorage(contexto: string, erro: ErroDoStorage): void {
+  if (!erro) return;
+  registrarFalha(contexto, {
+    code: `storage-${erro.statusCode ?? erro.status ?? "sem-status"}`,
+    message: erro.message ?? "",
+  });
+}
+
+/**
+ * Tira do bucket o arquivo que não vai ganhar linha.
+ *
+ * Se a remoção também falhar, sobra exatamente o que a 0011 manda evitar:
+ * dado de saúde no bucket sem linha que o explique. Isso não pode acontecer
+ * em silêncio — vai para o log com o caminho, para a reconciliação achar.
+ */
+async function descartarArquivo(
+  supabase: Awaited<ReturnType<typeof clienteServidor>>,
+  caminho: string,
+  motivo: string,
+): Promise<boolean> {
+  // Reconfere a linha IMEDIATAMENTE antes de remover. A conferência do começo
+  // da ação não basta: outra chamada com o mesmo caminho (POST reenviado pelo
+  // navegador) pode ter gravado a linha depois dela, e um INSERT desta pode ter
+  // chegado ao banco com a resposta perdida na rede. Com linha — ou sem
+  // conseguir saber — o arquivo fica: apagar o de uma foto registrada é perda
+  // sem volta, e um órfão ainda aparece na Conferência das fotos.
+  const { data: linha, error: erroLinha } = await supabase
+    .from("prontuario_imagens")
+    .select("id")
+    .eq("caminho", caminho)
+    .maybeSingle();
+  if (erroLinha) {
+    registrarFalha(`fotos: arquivo órfão no bucket (${motivo}; registro não conferido) ${caminho}`, erroLinha);
+    return false;
+  }
+  if (linha) return false;
+
+  const { error } = await supabase.storage.from(BUCKET_IMAGENS).remove([caminho]);
+  if (error) {
+    registrarFalhaDoStorage(`fotos: arquivo órfão no bucket (${motivo}) ${caminho}`, error);
+    return false;
+  }
+  return true;
+}
+
 function pastaEArquivo(caminho: string): { pasta: string; arquivo: string } {
   const corte = caminho.indexOf("/");
   return { pasta: caminho.slice(0, corte), arquivo: caminho.slice(corte + 1) };
@@ -91,10 +149,18 @@ function pastaEArquivo(caminho: string): { pasta: string; arquivo: string } {
  * navegador poderia declarar qualquer coisa, e uma linha que descreve um
  * arquivo diferente do que está lá é pior do que nenhuma linha. A ida ao
  * Storage também confirma que o upload de fato chegou.
+ *
+ * Quando esta ação roda, o arquivo JÁ está no bucket: o navegador sobe antes
+ * de chamar. Por isso toda recusa depois de o caminho ser conferido tira o
+ * arquivo de lá (`descartarArquivo`) — senão cada tentativa recusada deixaria
+ * uma foto sem linha, que não aparece na galeria e não sai pela eliminação.
  */
 export async function registrarImagem(
   entrada: RegistroDeImagem,
 ): Promise<ResultadoDoEnvio> {
+  // Estas três recusas não tocam no Storage. Sem sessão de administradora, a
+  // política do bucket nem deixaria remover; e um caminho que não é deste
+  // prontuário não é nosso para apagar — poderia ser a foto de outra paciente.
   const quem = await administradoraOuErro();
   if (typeof quem === "string") return { ok: false, erro: quem };
 
@@ -110,28 +176,74 @@ export async function registrarImagem(
   }
 
   const dataCaptura = String(entrada.dataCaptura ?? "").slice(0, 10);
-  const erroData = motivoDataInvalida(dataCaptura, chaveDoDia());
-  if (erroData) return { ok: false, erro: erroData };
-
   const supabase = await clienteServidor();
   const { pasta, arquivo } = pastaEArquivo(caminho);
+
+  // Caminho que já tem linha é de foto registrada: um replay desta ação, ou
+  // um erro transitório depois, não pode tirar do bucket o arquivo dela (a
+  // saída de foto registrada só existe com motivo, em `eliminarImagem`).
+  // Mesmo prontuário: já está feito. Outro: recusa sem tocar no Storage.
+  const { data: jaRegistrada, error: erroExistente } = await supabase
+    .from("prontuario_imagens")
+    .select("prontuario_id")
+    .eq("caminho", caminho)
+    .maybeSingle();
+
+  if (erroExistente) {
+    // Sem saber se o caminho já tem linha, o arquivo NÃO é removido: apagar o
+    // de uma foto registrada é perda sem volta, e um órfão ainda aparece na
+    // Conferência das fotos. Quase sempre é o primeiro registro deste
+    // arquivo, então ele fica para trás — e o caminho vai para o log.
+    return {
+      ok: false,
+      erro: erroDoBanco(
+        erroExistente,
+        "Não foi possível registrar a foto. Tente de novo.",
+        `fotos: arquivo órfão no bucket (registro não conferido) ${caminho}`,
+      ),
+    };
+  }
+  if (jaRegistrada) {
+    return jaRegistrada.prontuario_id === prontuarioId
+      ? { ok: true }
+      : { ok: false, erro: "Caminho do arquivo inválido." };
+  }
+
+  // Daqui em diante o caminho é deste prontuário e nenhuma linha o aponta: o
+  // arquivo, se está no bucket, só existe por causa deste envio. Toda recusa
+  // abaixo o remove antes de responder (AGENTS.md §8.5, "Se a linha falha, o
+  // arquivo sai junto"). A data é conferida só agora, e não lá em cima, pela
+  // mesma razão: antes daqui, remover poderia levar o arquivo de uma foto já
+  // registrada, num replay desta ação.
+  const erroData = motivoDataInvalida(dataCaptura, chaveDoDia());
+  if (erroData) {
+    await descartarArquivo(supabase, caminho, "data inválida");
+    return { ok: false, erro: erroData };
+  }
 
   const { data: objetos, error: erroLista } = await supabase.storage
     .from(BUCKET_IMAGENS)
     .list(pasta, { limit: 1, search: arquivo });
 
   if (erroLista) {
+    // Sem conferir, não há linha. O arquivo sai mesmo assim: a pessoa vai
+    // reenviar com outro nome, e este ficaria para trás.
+    registrarFalhaDoStorage("fotos: conferir o arquivo enviado", erroLista);
+    await descartarArquivo(supabase, caminho, "não conferido");
     return {
       ok: false,
       erro: mensagemDoStorage(
         erroLista,
-        "Não foi possível confirmar o arquivo no armazenamento.",
+        "Não foi possível confirmar o arquivo no armazenamento. Envie de novo.",
       ),
     };
   }
 
   const objeto = (objetos ?? []).find((item) => item.name === arquivo);
   if (!objeto?.metadata) {
+    // Quase sempre não há o que remover. A tentativa cobre o objeto que
+    // exista sem os metadados que a conferência precisa.
+    await descartarArquivo(supabase, caminho, "não encontrado");
     return {
       ok: false,
       erro: "O arquivo não chegou ao armazenamento. Envie de novo.",
@@ -145,8 +257,36 @@ export async function registrarImagem(
   if (recusa) {
     // Chegou e não serve. Sai agora, antes de existir linha que o aponte —
     // senão fica órfão no bucket para sempre.
-    await supabase.storage.from(BUCKET_IMAGENS).remove([caminho]);
+    await descartarArquivo(supabase, caminho, "recusado");
     return { ok: false, erro: recusa };
+  }
+
+  // O tipo acima é o declarado no envio. O conteúdo é conferido pelos
+  // primeiros bytes do objeto que de fato chegou, e a extensão do caminho
+  // precisa bater com ele: "foto.jpg" que é outra coisa não entra.
+  const { data: conteudo, error: erroConteudo } = await supabase.storage
+    .from(BUCKET_IMAGENS)
+    .download(caminho);
+
+  if (erroConteudo || !conteudo) {
+    registrarFalhaDoStorage("fotos: reler o arquivo enviado", erroConteudo);
+    await descartarArquivo(supabase, caminho, "não relido");
+    return {
+      ok: false,
+      erro: "Não foi possível conferir o arquivo enviado. Ele foi removido; envie de novo.",
+    };
+  }
+
+  const inicio = new Uint8Array(await conteudo.slice(0, 12).arrayBuffer());
+  const tipoReal = tipoPeloConteudo(inicio);
+  if (
+    !tipoAceito(tipo) ||
+    tipoReal !== tipo ||
+    !caminho.endsWith(`.${extensaoDoTipo(tipo)}`) ||
+    conteudo.size !== tamanho
+  ) {
+    await descartarArquivo(supabase, caminho, "conteúdo divergente");
+    return { ok: false, erro: motivoDoConteudoDivergente(tipo, tipoReal) };
   }
 
   // A `ordem` só desempata fotos do mesmo dia; o eixo continua sendo a data de
@@ -160,7 +300,7 @@ export async function registrarImagem(
     .maybeSingle();
 
   if (erroOrdem) {
-    await supabase.storage.from(BUCKET_IMAGENS).remove([caminho]);
+    await descartarArquivo(supabase, caminho, "ordem não lida");
     return {
       ok: false,
       erro: erroDoBanco(erroOrdem, "Não foi possível registrar a foto. O arquivo foi removido."),
@@ -185,12 +325,22 @@ export async function registrarImagem(
   });
 
   if (error) {
-    await supabase.storage.from(BUCKET_IMAGENS).remove([caminho]);
+    // 23505 no `caminho` (unique): outra chamada registrou este arquivo entre
+    // a conferência acima e aqui. O arquivo é de uma linha válida e fica.
+    if (error.code === "23505") {
+      revalidatePath(`/prontuarios/${prontuarioId}`);
+      return { ok: false, erro: "Esta foto já estava registrada. Atualize a página." };
+    }
+    // Falha parcial: o arquivo chegou, a linha não. `erroDoBanco` registra a
+    // causa; `descartarArquivo` registra se o arquivo também ficar para trás.
+    const removido = await descartarArquivo(supabase, caminho, "linha não gravada");
     return {
       ok: false,
       erro: erroDoBanco(
         error,
-        "Não foi possível registrar a foto. O arquivo foi removido.",
+        removido
+          ? "Não foi possível registrar a foto. O arquivo foi removido."
+          : "Não foi possível confirmar o registro da foto. Atualize a página antes de enviar de novo.",
       ),
     };
   }
@@ -218,17 +368,23 @@ export async function atualizarImagem(
   if (erroData) return { erro: erroData };
 
   const supabase = await clienteServidor();
-  const { error } = await supabase
+  // O prontuário vai na condição: a foto só se corrige na página a que
+  // pertence. E zero linhas (RLS ou id de outro prontuário) não é sucesso.
+  const { data, error } = await supabase
     .from("prontuario_imagens")
     .update({
       legenda: legendaNormalizada(texto(dados, "legenda")),
       data_captura: dataCaptura,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("prontuario_id", prontuarioId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
-    return { erro: erroDoBanco(error, "Não foi possível salvar a alteração.") };
+    return { erro: erroDoBanco(error, "Não foi possível salvar a alteração.", "fotos: atualizar") };
   }
+  if (!data) return { erro: "Foto não encontrada neste prontuário." };
 
   revalidatePath(`/prontuarios/${prontuarioId}`);
   return { erro: null };
@@ -335,6 +491,7 @@ export async function eliminarImagem(
     .remove([imagem.caminho]);
 
   if (erroArquivo) {
+    registrarFalhaDoStorage("fotos: remover o arquivo na eliminação", erroArquivo);
     // A linha fica. Ela é o que ainda liga o arquivo a um dono: apagá-la agora
     // deixaria a imagem no bucket sem ninguém saber que está lá.
     return {
@@ -353,6 +510,12 @@ export async function eliminarImagem(
   if (error) {
     // O arquivo já saiu. A linha sobrou apontando para o vazio — aparece na
     // galeria como foto sem imagem, e é assim que se descobre para resolver.
+    // Registrado mesmo quando a recusa é nossa (P0001), que `registrarFalha`
+    // não loga: aqui o que importa é a inconsistência, não a causa.
+    registrarFalha(`fotos: linha sem arquivo após eliminação ${id}`, {
+      code: "inconsistencia",
+      message: "arquivo removido do bucket; registro da eliminação falhou",
+    });
     return {
       erro: erroDoBanco(
         error,

@@ -41,20 +41,25 @@ export function ListaVendas({
       {vendas.map((venda) => (
         <li
           key={venda.id}
-          className="relative flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow focus-within:border-primary hover:shadow-[var(--shadow-realce)]"
+          className="relative flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow focus-within:border-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary hover:shadow-[var(--shadow-realce)]"
         >
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Link
                 href={`/financeiro/vendas/${venda.id}`}
-                className="font-medium text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
+                className="inline-flex min-h-6 items-center font-medium text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
               >
                 {venda.paciente}
               </Link>
-              <span className="text-sm text-outline">· {venda.procedimento}</span>
-              {venda.situacaoRecebimento ? (
-                <ChipRecebimento situacao={venda.situacaoRecebimento} />
-              ) : null}
+              {/* O separador é borda, não texto: quando a linha quebra, o
+                  procedimento não começa com "·" solto. */}
+              <span className="border-l border-outline-variant pl-2 text-sm text-outline">
+                {venda.procedimento}
+              </span>
+              {/* Sem recebimento vivo, o único foi cancelado (o mesmo critério
+                  do filtro "Canceladas"): sem chip, a venda cancelada parecia
+                  igual às outras. */}
+              <ChipRecebimento situacao={venda.situacaoRecebimento ?? "cancelado"} />
               {venda.taxaManual ? <MarcaTaxaManual /> : null}
               {venda.exemplo ? (
                 <span className="rounded-[var(--radius-tag)] border border-dashed border-outline-variant px-1.5 py-0.5 text-[0.6875rem] text-outline">

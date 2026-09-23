@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehFinanceira, usuarioAtual } from "@/lib/auth";
 import { chaveDoDia, dataValida } from "@/lib/dates";
-import { validarDespesa, type ErrosDespesa } from "@/lib/despesa";
+import { competenciaDoVencimento, validarDespesa, type ErrosDespesa } from "@/lib/despesa";
 import { mensagemDoBanco } from "@/lib/erros-banco";
 import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
 import { centavosParaBanco } from "@/lib/moeda";
@@ -44,15 +44,6 @@ function lerFormulario(dados: FormData) {
     vencimento: campoTexto(dados, "vencimento", 10),
     observacoes: campoTexto(dados, "observacoes", 2000),
   });
-}
-
-/**
- * Competência é o mês do vencimento. Regra simples que a aplicação adotou
- * enquanto a clínica não define outra (AGENTS.md §13) — isolada aqui para
- * mudar num lugar só quando a decisão vier.
- */
-function competenciaDoVencimento(vencimento: string): string {
-  return `${vencimento.slice(0, 7)}-01`;
 }
 
 function revalidar() {

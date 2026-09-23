@@ -2,6 +2,11 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FormularioAtendimento } from "@/components/agenda/formulario-atendimento";
+import {
+  enderecoDaAgenda,
+  lerChaveDoDia,
+  lerProfissional,
+} from "@/components/agenda/parametros-agenda";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { chaveDoDia, hoje } from "@/lib/dates";
 import { formatarTelefone } from "@/lib/paciente";
@@ -25,7 +30,11 @@ export default async function PaginaNovoAtendimento({
 }) {
   const parametros = await searchParams;
 
-  const diaSugerido = lerTexto(parametros.dia);
+  // Dia e profissional vêm da agenda (o dia e o filtro que estavam na tela).
+  // O que não é data de verdade nem id cai no padrão, e nunca vai cru para o
+  // link de voltar.
+  const diaSugerido = lerChaveDoDia(parametros.dia);
+  const profissionalSugerida = lerProfissional(parametros.profissional);
   const pacienteId = lerTexto(parametros.paciente);
 
   // Marcado a partir da ficha: a paciente já vem escolhida.
@@ -48,13 +57,16 @@ export default async function PaginaNovoAtendimento({
   }
 
   const catalogo = await catalogoAgenda();
-  const voltarPara = diaSugerido ? `/agenda?dia=${diaSugerido}` : "/agenda";
+  const profissionalInicial = catalogo.profissionais.some((p) => p.id === profissionalSugerida)
+    ? (profissionalSugerida ?? "")
+    : "";
+  const voltarPara = enderecoDaAgenda(diaSugerido, profissionalInicial || null);
 
   return (
     <div className="mx-auto max-w-3xl">
       <Link
         href={voltarPara}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
       >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         Voltar para a agenda
@@ -71,11 +83,9 @@ export default async function PaginaNovoAtendimento({
             catalogo={catalogo}
             pacienteInicial={pacienteInicial}
             inicial={{
-              data: /^\d{4}-\d{2}-\d{2}$/.test(diaSugerido)
-                ? diaSugerido
-                : chaveDoDia(hoje()),
+              data: diaSugerido ?? chaveDoDia(hoje()),
               hora: "",
-              profissional_id: "",
+              profissional_id: profissionalInicial,
               procedimento_id: "",
               duracao_min: "60",
               valor: "",
@@ -83,6 +93,7 @@ export default async function PaginaNovoAtendimento({
             }}
             rotuloSalvar="Marcar atendimento"
             cancelarPara={voltarPara}
+            filtroProfissional={profissionalInicial || null}
           />
         </CardCorpo>
       </Card>

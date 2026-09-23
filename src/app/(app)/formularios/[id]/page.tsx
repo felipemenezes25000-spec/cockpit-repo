@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetalheDocumento } from "@/components/documentos/detalhe-documento";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
+import { uuidValido } from "@/lib/formulario";
 import {
   documentoPorId,
   EstruturaDocumentoPendenteError,
@@ -19,6 +20,9 @@ export default async function PaginaDocumento({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // Id sem forma de uuid é 404, sem ir ao banco: o Postgres o recusaria com
+  // 22P02 e a tela viraria erro em vez de "não encontrado".
+  if (!uuidValido(id)) notFound();
 
   const documento = await documentoPorId(id).catch((erro: unknown) => {
     if (erro instanceof EstruturaDocumentoPendenteError) return undefined;

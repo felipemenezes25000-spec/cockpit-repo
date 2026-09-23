@@ -10,6 +10,7 @@ import { mensagemDoBanco } from "@/lib/erros-banco";
 import { formatarHora } from "@/lib/format";
 import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
 import { registrarFalha } from "@/lib/registro";
+import { enderecoDaAgenda } from "@/components/agenda/parametros-agenda";
 import {
   lerDuracao,
   lerValorEmReais,
@@ -50,6 +51,13 @@ export type EstadoAtendimento = {
 
 const CHOQUE_NO_BANCO =
   "Este horário acabou de ser ocupado para este profissional. Atualize a agenda e escolha outro horário.";
+
+/**
+ * Situações que liberam a vaga — as mesmas que o gatilho da 0021 deixa passar
+ * sem comparar intervalo. Uma lista só, para a conferência da ação e a do
+ * banco não divergirem.
+ */
+const NAO_OCUPAM_A_VAGA: readonly string[] = ["cancelado", "ausente"];
 
 type Campos = {
   paciente_id: string;
@@ -128,7 +136,7 @@ async function conflitoDeHorario(
     .from("atendimentos")
     .select("id, inicio, duracao_min, pacientes ( nome, nome_social )")
     .eq("profissional_id", campos.profissional_id)
-    .not("situacao", "in", "(cancelado,ausente)")
+    .not("situacao", "in", `(${NAO_OCUPAM_A_VAGA.join(",")})`)
     .gte("inicio", new Date(campos.inicio.getTime() - 8 * 3_600_000).toISOString())
     .lt("inicio", fim.toISOString());
 
@@ -156,6 +164,17 @@ function revalidarAgenda(id?: string) {
   revalidatePath("/relacionamento");
   revalidatePath("/");
   if (id) revalidatePath(`/agenda/${id}/editar`);
+}
+
+/**
+ * Depois de salvar, a agenda do dia do atendimento, com o filtro de
+ * profissional que estava na tela de onde se veio (campo oculto
+ * `filtro_profissional`). Filtro que não é id cai fora, e a agenda abre com
+ * todas.
+ */
+function destinoDepoisDeSalvar(dados: FormData, inicio: Date): string {
+  const filtro = campoTexto(dados, "filtro_profissional", 36);
+  return enderecoDaAgenda(chaveDoDia(inicio), uuidValido(filtro) ? filtro : null);
 }
 
 export async function marcarAtendimento(
@@ -191,7 +210,7 @@ export async function marcarAtendimento(
   }
 
   revalidarAgenda();
-  redirect(`/agenda?dia=${chaveDoDia(resultado.campos.inicio)}`);
+  redirect(destinoDepoisDeSalvar(dados, resultado.campos.inicio));
 }
 
 export async function atualizarAtendimento(
@@ -207,10 +226,48 @@ export async function atualizarAtendimento(
   const resultado = validar(dados);
   if ("erros" in resultado) return resultado;
 
-  const choque = await conflitoDeHorario(resultado.campos, id);
-  if (choque) return { erros: { hora: choque }, valores: valoresDigitados(dados) };
-
   const supabase = await clienteServidor();
+
+  // A ação confere choque só quando o gatilho da 0021 conferiria — senão
+  // recusaria o que o banco aceita:
+  // - cancelado e ausente não ocupam a vaga. Editar um atendimento que
+  //   CONTINUA cancelado (anotar o motivo, corrigir o valor) não pode ser
+  //   barrado porque a vaga foi reaproveitada. Este formulário não muda a
+  //   situação; reabrir é `mudarSituacao`, que o gatilho confere;
+  // - sem mudar horário, duração nem profissional, o intervalo ocupado é o
+  //   mesmo. Um choque antigo (de antes da 0021) não pode travar a edição de
+  //   uma observação.
+  // Se alguém reabrir ou remarcar entre esta leitura e o UPDATE, o gatilho
+  // confere a linha nova e o choque volta como 23P01, tratado abaixo.
+  const { data: atual, error: erroAtual } = await supabase
+    .from("atendimentos")
+    .select("situacao, inicio, duracao_min, profissional_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (erroAtual) {
+    registrarFalha("agenda: ler atendimento para editar", erroAtual);
+    return {
+      erros: {
+        geral: mensagemDoBanco(erroAtual, "Não foi possível salvar as alterações. Tente de novo."),
+      },
+      valores: valoresDigitados(dados),
+    };
+  }
+  if (!atual) {
+    return { erros: { geral: "Atendimento não encontrado." }, valores: valoresDigitados(dados) };
+  }
+
+  const mesmoIntervalo =
+    new Date(atual.inicio).getTime() === resultado.campos.inicio.getTime() &&
+    atual.duracao_min === resultado.campos.duracao_min &&
+    atual.profissional_id === resultado.campos.profissional_id;
+
+  if (!NAO_OCUPAM_A_VAGA.includes(atual.situacao) && !mesmoIntervalo) {
+    const choque = await conflitoDeHorario(resultado.campos, id);
+    if (choque) return { erros: { hora: choque }, valores: valoresDigitados(dados) };
+  }
+
   const { data, error } = await supabase
     .from("atendimentos")
     .update({
@@ -238,7 +295,7 @@ export async function atualizarAtendimento(
   }
 
   revalidarAgenda(id);
-  redirect(`/agenda?dia=${chaveDoDia(resultado.campos.inicio)}`);
+  redirect(destinoDepoisDeSalvar(dados, resultado.campos.inicio));
 }
 
 export type PacienteParaSelecao = { id: string; nome: string; detalhe: string; telefone?: string | null };

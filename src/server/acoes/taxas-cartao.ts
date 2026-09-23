@@ -6,7 +6,7 @@ import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehAdministradora, usuarioAtual } from "@/lib/auth";
 import { mensagemDoBanco } from "@/lib/erros-banco";
 import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
-import { bpParaBanco, lerPercentual } from "@/lib/moeda";
+import { bpParaBanco, lerPercentual, percentualInformado } from "@/lib/moeda";
 import { registrarFalha } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import type { TipoCartao } from "@/lib/venda";
@@ -44,7 +44,8 @@ function validar(dados: FormData):
 
   const operadora = campoTexto(dados, "operadora", 60);
   const tipo = campoTexto(dados, "tipo", 10);
-  const bp = lerPercentual(campoTexto(dados, "percentual", 10));
+  const textoPercentual = campoTexto(dados, "percentual", 10);
+  const bp = lerPercentual(textoPercentual);
   const parcelas = tipo === "debito" ? 1 : Number(campoTexto(dados, "parcelas", 3) || "1");
 
   if (operadora.length < 2) erros.operadora = "Informe a operadora ou maquininha.";
@@ -52,7 +53,13 @@ function validar(dados: FormData):
   if (!Number.isInteger(parcelas) || parcelas < 1 || parcelas > 24) {
     erros.parcelas = "Parcelas de 1 a 24.";
   }
-  if (bp === null) erros.percentual = "Percentual inválido. Use 6 ou 6,5.";
+  // Vazio não é 0%: uma linha da tabela sem percentual viraria "taxa zero"
+  // em toda venda que a usasse. Taxa zero de verdade se digita 0.
+  if (!percentualInformado(textoPercentual)) {
+    erros.percentual = "Informe o percentual. Para taxa zero, digite 0.";
+  } else if (bp === null) {
+    erros.percentual = "Percentual inválido. Use 6 ou 6,5.";
+  }
 
   if (Object.keys(erros).length > 0) return { erros };
 

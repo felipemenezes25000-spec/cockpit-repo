@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { registrarFalha } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 
 /**
@@ -17,7 +18,11 @@ export const temDadosDeExemplo = cache(async (): Promise<boolean> => {
     .select("id", { count: "exact", head: true })
     .eq("exemplo", true);
 
-  // Se a checagem falhar, é mais seguro avisar do que esconder.
-  if (error) return true;
+  // Se a checagem falhar, é mais seguro avisar do que esconder: a faixa
+  // continua na tela e a falha vai para o log, em vez de sumir calada.
+  if (error) {
+    registrarFalha("consulta exemplo: há dados de demonstração", error);
+    return true;
+  }
   return (count ?? 0) > 0;
 });

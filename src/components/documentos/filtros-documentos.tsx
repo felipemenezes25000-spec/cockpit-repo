@@ -42,11 +42,21 @@ export function FiltrosDocumentos({
   const parametros = useSearchParams();
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
-  const primeiraRenderizacao = useRef(true);
+  const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // A URL pode mudar por fora (voltar no navegador, link da paginação).
   useEffect(() => setTermo(busca), [busca]);
 
+  function cancelarEspera() {
+    if (relogio.current) clearTimeout(relogio.current);
+    relogio.current = null;
+  }
+
+  // Sair da tela no meio da pausa não pode navegar depois.
+  useEffect(() => cancelarEspera, []);
+
   function navegar(mudancas: Record<string, string>) {
+    cancelarEspera();
     const query = new URLSearchParams(parametros?.toString() ?? "");
 
     for (const [chave, valor] of Object.entries(mudancas)) {
@@ -60,23 +70,31 @@ export function FiltrosDocumentos({
     iniciar(() => router.replace(texto ? `/formularios?${texto}` : "/formularios"));
   }
 
-  useEffect(() => {
-    if (primeiraRenderizacao.current) {
-      primeiraRenderizacao.current = false;
-      return;
-    }
-    if (termo === busca) return;
+  // A espera vive no evento de digitação, e não num efeito que observa
+  // `termo`: só a pessoa digitando dispara a busca, nunca a sincronização
+  // com a URL acima. Cada tecla reinicia a espera.
+  function aoDigitar(valor: string) {
+    setTermo(valor);
+    cancelarEspera();
+    if (valor.trim() === busca) return;
+    relogio.current = setTimeout(() => navegar({ busca: valor.trim() }), 350);
+  }
 
-    const relogio = setTimeout(() => navegar({ busca: termo.trim() }), 350);
-    return () => clearTimeout(relogio);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [termo]);
-
-  const seletor =
-    "h-11 rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3 text-sm text-on-surface outline-none transition-colors focus-visible:border-primary";
+  // Os selects usam a mesma aparência dos outros controles (com o anel de
+  // foco de `classeDeEntrada`), e o bloco é um <form method="get">: Enter na
+  // busca navega na hora e, sem JavaScript, o envio monta a mesma URL.
+  const seletor = classeDeEntrada({ largura: "auto" });
 
   return (
-    <div className="flex flex-col gap-4">
+    <form
+      method="get"
+      action="/formularios"
+      onSubmit={(evento) => {
+        evento.preventDefault();
+        navegar({ busca: termo.trim() });
+      }}
+      className="flex flex-col gap-4"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative w-full sm:max-w-sm">
           <Search
@@ -87,8 +105,9 @@ export function FiltrosDocumentos({
           />
           <input
             type="search"
+            name="busca"
             value={termo}
-            onChange={(evento) => setTermo(evento.target.value)}
+            onChange={(evento) => aoDigitar(evento.target.value)}
             maxLength={80}
             aria-label="Buscar documento por paciente ou título"
             placeholder="Buscar por paciente ou título"
@@ -110,6 +129,7 @@ export function FiltrosDocumentos({
         </div>
 
         <select
+          name="situacao"
           value={situacao}
           onChange={(evento) => navegar({ situacao: evento.target.value })}
           aria-label="Filtrar por situação"
@@ -124,6 +144,7 @@ export function FiltrosDocumentos({
         </select>
 
         <select
+          name="tipo"
           value={tipo}
           onChange={(evento) => navegar({ tipo: evento.target.value })}
           aria-label="Filtrar por tipo"
@@ -149,6 +170,6 @@ export function FiltrosDocumentos({
       <span aria-live="polite" className="tabular text-xs text-outline">
         {total === 1 ? "1 documento" : `${total} documentos`}
       </span>
-    </div>
+    </form>
   );
 }

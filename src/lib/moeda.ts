@@ -28,15 +28,51 @@ export function centavosParaBanco(centavos: number): number {
   return centavos / 100;
 }
 
-/** "6", "6,5" ou "6.5" → 650 bp. `null` quando inválido ou fora de 0–100%. */
+/**
+ * Soma valores `numeric` vindos do banco sem acumular erro de ponto
+ * flutuante: cada parcela vira centavos inteiros antes de somar. Nulo conta
+ * como zero. Devolve centavos.
+ */
+export function somaEmCentavos(valores: Iterable<number | string | null | undefined>): number {
+  let total = 0;
+  for (const valor of valores) {
+    if (valor === null || valor === undefined) continue;
+    total += centavosDoBanco(Number(valor));
+  }
+  return total;
+}
+
+/** Centavos → reais, para as telas que formatam em reais. Divide uma vez só, no fim. */
+export function centavosParaReais(centavos: number): number {
+  return centavos / 100;
+}
+
+/**
+ * "6", "6,5" ou "6.5" → 650 bp. `null` quando inválido ou fora de 0–100%.
+ *
+ * Vazio vira 0 — quem exige o campo preenchido confere antes com
+ * `percentualInformado`. A leitura é feita nos dígitos, sem passar por
+ * ponto flutuante: "6,55" é 6 × 100 + 55, e não `Number("6.55") × 100`.
+ */
 export function lerPercentual(texto: string): number | null {
   const limpo = texto.trim().replace("%", "").trim();
   if (limpo === "") return 0;
-  if (!/^\d{1,3}([.,]\d{1,2})?$/.test(limpo)) return null;
 
-  const bp = Math.round(Number(limpo.replace(",", ".")) * 100);
-  if (!Number.isInteger(bp) || bp < 0 || bp > 10000) return null;
+  const partes = /^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec(limpo);
+  if (!partes) return null;
+
+  const bp = Number(partes[1]) * 100 + Number((partes[2] ?? "").padEnd(2, "0"));
+  if (bp > 10000) return null;
   return bp;
+}
+
+/**
+ * O campo de percentual veio preenchido? Vazio não é "0%": quem quer taxa
+ * zero digita 0. Sem isso, esquecer o campo gravaria uma taxa que ninguém
+ * escolheu.
+ */
+export function percentualInformado(texto: string): boolean {
+  return texto.trim().replace("%", "").trim() !== "";
 }
 
 /** Percentual `numeric(5,2)` do banco (6.5) → 650 bp. */

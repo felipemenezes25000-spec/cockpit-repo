@@ -19,7 +19,7 @@
 begin;
 
 create schema testes;
-grant usage on schema testes to authenticated, anon;
+grant usage on schema testes to authenticated, anon, service_role;
 
 create table testes.resultado (
   n serial primary key,
@@ -27,12 +27,12 @@ create table testes.resultado (
   ok boolean not null,
   detalhe text
 );
-grant select, insert on testes.resultado to authenticated, anon;
-grant usage on sequence testes.resultado_n_seq to authenticated, anon;
+grant select, insert on testes.resultado to authenticated, anon, service_role;
+grant usage on sequence testes.resultado_n_seq to authenticated, anon, service_role;
 
 -- Estado compartilhado entre os passos (ids criados no caminho).
 create table testes.valor (chave text primary key, valor text);
-grant select, insert, update on testes.valor to authenticated, anon;
+grant select, insert, update on testes.valor to authenticated, anon, service_role;
 
 create function testes.guardar(p_chave text, p_valor text) returns void
 language sql as $$
@@ -124,6 +124,23 @@ select testes.igual('anon consulta estado de link inexistente',
 select testes.falha('anon não chama venda_registrar',
   $q$ select public.venda_registrar(null,null,null,0,0,'pix',1,null,0,0,false,null,null,'previsto',null,null,null) $q$, '42501');
 
+-- A superfície anônima é a das quatro funções do link, e só ela (§9). Pega a
+-- função nova criada sem `revoke ... from public` e o drop + create que
+-- esquecer de refazer o EXECUTE (como o da 0027).
+select testes.igual('anon executa só as quatro funções do link',
+  $q$ select string_agg(n.nspname || '.' || p.proname, ',' order by n.nspname, p.proname)
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname in ('public', 'private') and has_function_privilege('anon', p.oid, 'execute') $q$,
+  'public.documento_assinar_por_link,public.documento_link_estado,public.documento_para_assinatura,public.documento_responder_por_link');
+select testes.igual('nenhuma função de gatilho é executável pela API',
+  $q$ select count(*)::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname in ('public', 'private') and p.prorettype = 'trigger'::regtype
+       and (has_function_privilege('anon', p.oid, 'execute')
+            or has_function_privilege('authenticated', p.oid, 'execute')) $q$, '0');
+select testes.igual('a sessão ainda abre a via pelo link',
+  $q$ select has_function_privilege('authenticated', 'public.documento_para_assinatura(text,date)', 'execute')::text $q$,
+  'true');
+
 -- ---------------------------------------------------------------------
 -- Administradora prepara o que os outros testes usam
 -- ---------------------------------------------------------------------
@@ -163,6 +180,30 @@ select testes.falha('modelo com 121 perguntas é recusado',
         (select jsonb_agg(jsonb_build_object('chave', 'p' || i, 'rotulo', 'Pergunta ' || i, 'tipo', 'texto'))
            from generate_series(1, 121) i)) $q$);
 
+-- 0027: versão de modelo pela API é conferida como a da função.
+select testes.guardar('modelo_versoes', public.modelo_documento_criar(
+  'termo', 'Termo de versões', '', 'Texto da versão 1.', '[]'::jsonb)::text);
+select testes.falha('versão de modelo fora de sequência é recusada',
+  format($q$ insert into public.modelo_documento_versoes (modelo_id, versao, corpo, motivo)
+      values (%L, 99, 'Versão pulada.', 'teste de sequência') $q$, testes.lido('modelo_versoes')), 'P0001');
+select testes.falha('versão de modelo com pergunta sem tipo é recusada',
+  format($q$ insert into public.modelo_documento_versoes (modelo_id, versao, corpo, motivo, campos)
+      values (%L, 2, 'Texto.', 'teste de pergunta', '[{"chave":"x","rotulo":"Sem tipo"}]'::jsonb) $q$,
+    testes.lido('modelo_versoes')), 'P0001');
+select testes.linhas('versão de modelo pela API, na sequência',
+  format($q$ insert into public.modelo_documento_versoes (modelo_id, versao, corpo, motivo, criado_por, criado_em)
+      values (%L, 2, 'Texto da versão 2.', 'teste de autor', null, '2000-01-01') $q$, testes.lido('modelo_versoes')), 1);
+select testes.igual('autor e hora da versão são os do banco',
+  format($q$ select (criado_por = auth.uid()) || ':' || (criado_em > now() - interval '1 minute')
+      from public.modelo_documento_versoes where modelo_id = %L and versao = 2 $q$, testes.lido('modelo_versoes')),
+  'true:true');
+select testes.falha('o tipo do modelo não muda',
+  format($q$ update public.modelos_documento set tipo = 'contrato' where id = %L $q$, testes.lido('modelo_anamnese')),
+  '42501');
+select testes.linhas('nome do modelo ainda muda',
+  format($q$ update public.modelos_documento set nome = 'Termo de versões renomeado' where id = %L $q$,
+    testes.lido('modelo_versoes')), 1);
+
 -- ---------------------------------------------------------------------
 -- Recepção
 -- ---------------------------------------------------------------------
@@ -181,8 +222,12 @@ select testes.linhas('recepção não vê despesas',
   $q$ select * from public.despesas $q$, 0);
 select testes.linhas('recepção não vê auditoria',
   $q$ select * from public.auditoria $q$, 0);
+-- Coluna que o grant alcança: a RLS (só financeiro) filtra tudo.
 select testes.linhas('recepção não altera recebimento',
-  $q$ update public.recebimentos set descricao = 'alterado' $q$, 0);
+  $q$ update public.recebimentos set situacao = 'cancelado' $q$, 0);
+-- Coluna fora do grant de UPDATE (0023): recusada antes da RLS.
+select testes.falha('ninguém reescreve a descrição do recebimento pela API',
+  $q$ update public.recebimentos set descricao = 'alterado' $q$, '42501');
 select testes.falha('recepção não insere recebimento solto',
   $q$ insert into public.recebimentos (paciente_id, valor, vencimento, situacao, recebido_em, valor_recebido)
       values ('c0000000-0000-4000-8000-000000000001', 100, current_date, 'recebido', current_date, 100) $q$, '42501');
@@ -237,11 +282,30 @@ select testes.igual('venda já recebida no balcão entra recebida pelo líquido'
   $q$ select situacao::text || ':' || valor_recebido from public.recebimentos where venda_id = testes.lido('venda_balcao')::uuid $q$,
   'recebido:280.00');
 
+-- Desde a 0023 a venda só nasce pela função: o INSERT direto é recusado
+-- pelo grant (42501) antes de chegar ao gatilho da taxa.
 select testes.falha('recepção não insere venda com taxa manual pela API',
   format($q$ insert into public.vendas (paciente_id, procedimento_id, data_venda, valor_original, desconto, valor_final,
         forma, parcelas, taxa_cartao_id, taxa_percentual, taxa_valor, valor_liquido, taxa_manual, taxa_justificativa)
       values ('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',current_date,1000,0,1000,
-        'credito',3,%L,0,0,1000,true,'sem taxa') $q$, testes.lido('taxa_credito_3x')), 'P0001');
+        'credito',3,%L,0,0,1000,true,'sem taxa') $q$, testes.lido('taxa_credito_3x')), '42501');
+select testes.falha('recepção não insere venda sem recebimento pela API (0023)',
+  $q$ insert into public.vendas (paciente_id, procedimento_id, data_venda, valor_original, desconto, valor_final,
+        forma, parcelas, taxa_percentual, taxa_valor, valor_liquido)
+      values ('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',current_date,100,0,100,
+        'pix',1,0,0,100) $q$, '42501');
+select testes.igual('venda pela função nasce com exatamente um recebimento',
+  format($q$ select count(*)::text from public.recebimentos where venda_id = %L $q$, testes.lido('venda_pix')), '1');
+select testes.igual('venda pela função guarda quem registrou',
+  format($q$ select (criado_por = auth.uid())::text from public.vendas where id = %L $q$, testes.lido('venda_pix')), 'true');
+select testes.falha('recepção não registra venda recebida no futuro',
+  $q$ select public.venda_registrar('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',current_date,
+        100,0,'pix',1,null,0,0,false,null,null,'recebido',null,current_date + 30,null) $q$, 'P0001');
+select testes.falha('recepção não insere ajuste pela API',
+  format($q$ insert into public.ajustes_financeiros (venda_id, valor, motivo) values (%L, 10, 'falso') $q$,
+    testes.lido('venda_pix')), '42501');
+select testes.falha('recepção não gera id de auditoria',
+  $q$ select nextval('public.auditoria_id_seq') $q$, '42501');
 select testes.falha('recepção não altera venda',
   format($q$ select public.venda_alterar_pagamento(%L, 'forma_pagamento', 'pix', 1, null, 0, 0, false, 'teste') $q$,
     testes.lido('venda_credito')), '42501');
@@ -307,6 +371,22 @@ select testes.falha('link não aceita token fora do formato',
 select testes.falha('recepção não reescreve o token do link',
   $q$ update public.documento_links set token_hash = repeat('0', 64) $q$, '42501');
 
+-- 0027: o link foi gerado, mas a paciente assinou no balcão — a via pelo
+-- link diz balcão.
+select testes.guardar('contrato_balcao', public.documento_emitir(
+  'c0000000-0000-4000-8000-000000000002', testes.lido('modelo_contrato')::uuid, 'Contrato no balcão', null)::text);
+select public.documento_link_criar(testes.lido('contrato_balcao')::uuid,
+  'tokenDoBalcaoComQuarentaETresCaracteresXYZ_', 7, '');
+select public.documento_assinar(testes.lido('contrato_balcao')::uuid, 'Beatriz Nogueira', null,
+  'Documento com foto conferido', null, null);
+
+-- A data de nascimento vem do seed, não de uma constante: `dados-exemplo.sql`
+-- põe o aniversário de Beatriz no dia 11 do mês em que o `db reset` rodou.
+-- Com a data fixa, estes testes só passavam em setembro. Lida aqui, ainda com
+-- a sessão da recepção, porque o visitante anônimo não lê `pacientes`.
+select testes.guardar('nasc_beatriz', (select data_nascimento::text from public.pacientes
+  where id = 'c0000000-0000-4000-8000-000000000002'));
+
 -- ---------------------------------------------------------------------
 -- Visitante com o link
 -- ---------------------------------------------------------------------
@@ -323,14 +403,23 @@ select testes.igual('data errada não revela o texto',
   $q$ select coalesce(corpo, 'sem corpo') from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '2000-01-02') $q$,
   'sem corpo');
 select testes.igual('data certa abre o documento',
-  $q$ select situacao || ':' || corpo from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '1992-09-11') $q$,
+  format($q$ select situacao || ':' || corpo from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L) $q$,
+    testes.lido('nasc_beatriz')),
   'ok:Texto do contrato de teste.');
 select testes.igual('assinar pelo link',
-  $q$ select public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', '1992-09-11',
-        'Beatriz Nogueira', null, 'isto não é um ip', 'Navegador de teste') $q$, 'ok');
+  format($q$ select public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L,
+        'Beatriz Nogueira', null, 'isto não é um ip', 'Navegador de teste') $q$, testes.lido('nasc_beatriz')), 'ok');
 select testes.igual('segunda assinatura devolve ja_assinado',
-  $q$ select public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', '1992-09-11',
-        'Beatriz Nogueira', null, null, null) $q$, 'ja_assinado');
+  format($q$ select public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L,
+        'Beatriz Nogueira', null, null, null) $q$, testes.lido('nasc_beatriz')), 'ja_assinado');
+select testes.igual('a via diz que a assinatura veio pelo link',
+  format($q$ select situacao || ':' || assinado_canal
+      from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L) $q$,
+    testes.lido('nasc_beatriz')), 'ja_assinado:link');
+select testes.igual('a via diz que a assinatura foi no balcão',
+  format($q$ select situacao || ':' || assinado_canal
+      from public.documento_para_assinatura('tokenDoBalcaoComQuarentaETresCaracteresXYZ_', %L) $q$,
+    testes.lido('nasc_beatriz')), 'ja_assinado:balcao');
 
 do $$
 begin
@@ -341,7 +430,8 @@ end $$;
 select testes.igual('décima tentativa errada bloqueia o link',
   $q$ select situacao from public.documento_link_estado('tokenDeTesteComQuarentaETresCaracteres_abcd') $q$, 'bloqueado');
 select testes.igual('bloqueado não abre nem com a data certa',
-  $q$ select situacao from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '1992-09-11') $q$,
+  format($q$ select situacao from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L) $q$,
+    testes.lido('nasc_beatriz')),
   'bloqueado');
 
 -- ---------------------------------------------------------------------
@@ -369,6 +459,57 @@ select testes.igual('alteração entrou no histórico e reescreveu o previsto',
   format($q$ select (select count(*) from public.venda_alteracoes where venda_id = %1$L) || ':' ||
         (select taxa_valor from public.recebimentos where venda_id = %1$L) $q$, testes.lido('venda_credito')),
   '1:50.00');
+
+-- 0023: as tabelas da venda só mudam pelas funções, nem para o financeiro.
+select testes.falha('financeiro não insere venda direto pela API',
+  $q$ insert into public.vendas (paciente_id, procedimento_id, data_venda, valor_original, desconto, valor_final,
+        forma, parcelas, taxa_percentual, taxa_valor, valor_liquido)
+      values ('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',current_date,100,0,100,
+        'pix',1,0,0,100) $q$, '42501');
+select testes.falha('financeiro não altera venda direto pela API',
+  format($q$ update public.vendas set forma = 'dinheiro' where id = %L $q$, testes.lido('venda_pix')), '42501');
+select testes.falha('financeiro não insere histórico de alteração solto',
+  format($q$ insert into public.venda_alteracoes (venda_id, tipo, de, para, motivo)
+      values (%L, 'forma_pagamento', '{}', '{}', 'alteração que não aconteceu') $q$, testes.lido('venda_pix')), '42501');
+select testes.falha('financeiro não insere ajuste solto',
+  format($q$ insert into public.ajustes_financeiros (venda_id, valor, motivo) values (%L, 10, 'ajuste solto') $q$,
+    testes.lido('venda_pix')), '42501');
+select testes.falha('financeiro não insere segundo recebimento para a venda',
+  format($q$ insert into public.recebimentos (paciente_id, venda_id, valor, vencimento, situacao)
+      values ('c0000000-0000-4000-8000-000000000001', %L, 100, current_date, 'previsto') $q$, testes.lido('venda_pix')), '42501');
+select testes.linhas('financeiro ainda insere recebimento solto, sem venda',
+  $q$ insert into public.recebimentos (paciente_id, descricao, valor, vencimento, situacao)
+      values ('c0000000-0000-4000-8000-000000000001', 'Teste solto', 100, current_date, 'previsto') $q$, 1);
+select testes.falha('recebimento solto não tem taxa maior que o valor',
+  $q$ insert into public.recebimentos (paciente_id, descricao, valor, taxa_valor, vencimento, situacao)
+      values ('c0000000-0000-4000-8000-000000000001', 'Taxa demais', 100, 150, current_date, 'previsto') $q$, '23514');
+select testes.falha('financeiro não reescreve o valor do recebimento previsto',
+  format($q$ update public.recebimentos set valor = 1 where venda_id = %L $q$, testes.lido('venda_credito')), '42501');
+
+-- 0023: a confirmação confere data e divergência como a tela.
+select testes.falha('confirmação com data no futuro é recusada',
+  format($q$ update public.recebimentos set situacao = 'recebido', recebido_em = current_date + 30,
+        valor_recebido = valor - taxa_valor where venda_id = %L $q$, testes.lido('venda_credito')), 'P0001');
+select testes.falha('valor diferente do líquido não entra como recebido',
+  format($q$ update public.recebimentos set situacao = 'recebido', recebido_em = current_date,
+        valor_recebido = 1 where venda_id = %L $q$, testes.lido('venda_credito')), 'P0001');
+select testes.falha('valor igual ao líquido não entra como divergência',
+  format($q$ update public.recebimentos set situacao = 'recebido_divergencia', recebido_em = current_date,
+        valor_recebido = valor - taxa_valor where venda_id = %L $q$, testes.lido('venda_credito')), 'P0001');
+select testes.linhas('financeiro confirma com divergência',
+  format($q$ update public.recebimentos set situacao = 'recebido_divergencia', recebido_em = current_date,
+        valor_recebido = 900 where venda_id = %L and situacao = 'previsto' $q$, testes.lido('venda_credito')), 1);
+
+-- Alterar depois de confirmado: a função (DEFINER desde a 0023) grava o
+-- histórico e o ajuste que a sessão não grava direto.
+select testes.linhas('financeiro altera taxa depois da confirmação',
+  format($q$ select public.venda_alterar_pagamento(%L, 'taxa_manual', 'credito', 3, %L, 4.00, 40.00, true, 'renegociado') $q$,
+    testes.lido('venda_credito'), testes.lido('taxa_credito_3x')), 1);
+select testes.igual('a diferença para o que entrou virou ajuste, e o confirmado ficou intacto',
+  format($q$ select (select count(*) from public.venda_alteracoes where venda_id = %1$L) || ':' ||
+        (select string_agg(valor::text, ',') from public.ajustes_financeiros where venda_id = %1$L) || ':' ||
+        (select valor_recebido from public.recebimentos where venda_id = %1$L) $q$, testes.lido('venda_credito')),
+  '2:60.01:900.00');
 select testes.linhas('financeiro vê despesas',
   $q$ select * from public.despesas where exemplo $q$, 7);
 
@@ -394,6 +535,49 @@ select testes.igual('nada da resposta inválida foi gravado',
 select testes.linhas('resposta válida é gravada',
   format($q$ select public.documento_campos_responder(%L, '{"alergia":"nao","areas":["Rosto"]}'::jsonb) $q$,
     testes.lido('anamnese')), 1);
+
+-- 0027: quem respondeu e quando são escritos pelo banco.
+select testes.igual('resposta na consulta leva a autora e a hora do banco',
+  format($q$ select (respondido_por = auth.uid()) || ':' || (respondido_em > now() - interval '1 minute')
+      from public.documento_campos where documento_id = %L and chave = 'alergia' $q$, testes.lido('anamnese')),
+  'true:true');
+select testes.linhas('resposta mudada à mão, com autor e hora forjados',
+  format($q$ update public.documento_campos set resposta = 'sim', respondido_por = null, respondido_em = '2000-01-01'
+      where documento_id = %L and chave = 'alergia' $q$, testes.lido('anamnese')), 1);
+select testes.igual('autor e hora continuam os do banco',
+  format($q$ select (respondido_por = auth.uid()) || ':' || (respondido_em > now() - interval '1 minute')
+      from public.documento_campos where documento_id = %L and chave = 'alergia' $q$, testes.lido('anamnese')),
+  'true:true');
+
+-- A paciente corrige pelo link o que a administradora respondeu na consulta:
+-- a resposta passa a ser dela, e `respondido_por` fica nulo.
+select testes.guardar('anamnese_link', public.documento_emitir(
+  'c0000000-0000-4000-8000-000000000002', testes.lido('modelo_anamnese')::uuid, 'Anamnese pelo link', null)::text);
+select public.documento_campos_responder(testes.lido('anamnese_link')::uuid, '{"alergia":"nao"}'::jsonb);
+select public.documento_link_criar(testes.lido('anamnese_link')::uuid,
+  'tokenDaAnamneseComQuarentaETresCaracteres_z', 7, '');
+select testes.como(null);
+select testes.igual('paciente responde pelo link',
+  format($q$ select public.documento_responder_por_link('tokenDaAnamneseComQuarentaETresCaracteres_z', %L,
+        '{"alergia":"sim"}'::jsonb) $q$, testes.lido('nasc_beatriz')), 'ok');
+select testes.como('admin@cockpit.local');
+select testes.igual('resposta pelo link fica sem autor de perfil',
+  format($q$ select resposta || ':' || coalesce(respondido_por::text, 'nulo')
+      from public.documento_campos where documento_id = %L and chave = 'alergia' $q$, testes.lido('anamnese_link')),
+  'sim:nulo');
+
+-- A paciente responde no tablet do balcão, com a recepção logada: a chamada
+-- chega como `authenticated`, com o JWT da recepção. A resposta continua sendo
+-- dela — `auth.uid()` devolveria a recepcionista; o gatilho olha `current_user`.
+select testes.como('recepcao@cockpit.local');
+select testes.igual('paciente responde pelo link num navegador com sessão da equipe',
+  format($q$ select public.documento_responder_por_link('tokenDaAnamneseComQuarentaETresCaracteres_z', %L,
+        '{"alergia":"nao"}'::jsonb) $q$, testes.lido('nasc_beatriz')), 'ok');
+select testes.como('admin@cockpit.local');
+select testes.igual('resposta pelo link com sessão da equipe também fica sem autor',
+  format($q$ select resposta || ':' || coalesce(respondido_por::text, 'nulo')
+      from public.documento_campos where documento_id = %L and chave = 'alergia' $q$, testes.lido('anamnese_link')),
+  'nao:nulo');
 select testes.falha('anamnese não se assina no balcão',
   format($q$ select public.documento_assinar(%L, 'Carolina Meireles', null, 'Documento conferido', null, null) $q$,
     testes.lido('anamnese')), 'P0001');
@@ -422,11 +606,516 @@ select testes.falha('versão de prontuário não se altera',
   format($q$ update public.prontuario_versoes set queixa = 'reescrita' where prontuario_id = %L $q$, testes.lido('prontuario')),
   '42501');
 
+-- Fotos (0024): a linha sem arquivo e o arquivo sem linha aparecem na
+-- reconciliação, que não apaga nada.
+select testes.guardar('foto_sem_arquivo', testes.lido('prontuario') || '/aaaaaaaa-0000-4000-8000-000000000001.jpg');
+select testes.guardar('arquivo_sem_foto', testes.lido('prontuario') || '/bbbbbbbb-0000-4000-8000-000000000002.jpg');
+-- Desde a 0028 a linha só nasce com o arquivo no bucket: o envio entra pelo
+-- SQL do projeto, com os metadados que o Storage grava. Mais abaixo o
+-- arquivo sai e a linha fica — a "linha sem arquivo" da reconciliação.
+select set_config('role', 'postgres', true);
+insert into storage.objects (bucket_id, name, metadata)
+values ('prontuario-imagens', testes.lido('foto_sem_arquivo'), '{"mimetype":"image/jpeg","size":2048}'::jsonb);
+select testes.como('admin@cockpit.local');
+select testes.linhas('administradora registra a linha de uma foto',
+  format($q$ insert into public.prontuario_imagens (prontuario_id, caminho, nome_original, tipo_mime, tamanho_bytes,
+        data_captura, criado_por, criado_em)
+      values (%L, %L, 'foto.jpg', 'image/jpeg', 10, (now() at time zone 'America/Sao_Paulo')::date,
+        null, '2000-01-01') $q$,
+    testes.lido('prontuario'), testes.lido('foto_sem_arquivo')), 1);
+select testes.igual('autor, hora e marca da foto são os do banco (0027)',
+  format($q$ select (criado_por = auth.uid()) || ':' || (criado_em > now() - interval '1 minute') || ':' || exemplo
+      from public.prontuario_imagens where caminho = %L $q$, testes.lido('foto_sem_arquivo')), 'true:true:false');
+-- O arquivo está no bucket (senão a 0028 recusaria pelo arquivo, e o teste
+-- não provaria nada sobre a data); sai logo depois, para não virar sobra na
+-- reconciliação lá embaixo.
+select testes.guardar('foto_do_futuro', testes.lido('prontuario') || '/cccccccc-0000-4000-8000-000000000003.jpg');
+select set_config('role', 'postgres', true);
+insert into storage.objects (bucket_id, name, metadata)
+values ('prontuario-imagens', testes.lido('foto_do_futuro'), '{"mimetype":"image/jpeg","size":2048}'::jsonb);
+select testes.como('admin@cockpit.local');
+select testes.falha('foto com data de captura no futuro é recusada (0027)',
+  format($q$ insert into public.prontuario_imagens (prontuario_id, caminho, nome_original, tipo_mime, tamanho_bytes, data_captura)
+      values (%L, %L, 'foto.jpg', 'image/jpeg', 10, current_date + 30) $q$,
+    testes.lido('prontuario'), testes.lido('foto_do_futuro')), 'P0001');
+select set_config('role', 'postgres', true);
+select set_config('storage.allow_delete_query', 'true', true);
+delete from storage.objects where bucket_id = 'prontuario-imagens' and name = testes.lido('foto_do_futuro');
+select set_config('storage.allow_delete_query', 'false', true);
+select testes.como('admin@cockpit.local');
+select testes.falha('data da foto não vai para o futuro depois (0027)',
+  format($q$ update public.prontuario_imagens set data_captura = current_date + 30 where caminho = %L $q$,
+    testes.lido('foto_sem_arquivo')), 'P0001');
+select testes.linhas('administradora muda a legenda da foto',
+  format($q$ update public.prontuario_imagens set legenda = 'Antes' where caminho = %L $q$, testes.lido('foto_sem_arquivo')), 1);
+select testes.falha('administradora não troca o arquivo da foto pela API',
+  format($q$ update public.prontuario_imagens set caminho = %L where caminho = %L $q$,
+    testes.lido('arquivo_sem_foto'), testes.lido('foto_sem_arquivo')), '42501');
+
+-- O arquivo órfão entra pelo SQL do projeto, como um envio cuja linha
+-- nunca foi gravada. E o arquivo da foto registrada sai do bucket, como na
+-- eliminação que caiu entre o arquivo e a linha.
+select set_config('role', 'postgres', true);
+insert into storage.objects (bucket_id, name) values ('prontuario-imagens', testes.lido('arquivo_sem_foto'));
+select set_config('storage.allow_delete_query', 'true', true);
+delete from storage.objects where bucket_id = 'prontuario-imagens' and name = testes.lido('foto_sem_arquivo');
+select set_config('storage.allow_delete_query', 'false', true);
+select testes.como('admin@cockpit.local');
+
+select testes.igual('reconciliação acha a linha sem arquivo e o arquivo sem linha',
+  format($q$ select string_agg(situacao || ':' || caminho, ',' order by situacao)
+        from public.prontuario_imagens_reconciliar() where prontuario_id = %L $q$, testes.lido('prontuario')),
+  'arquivo_sem_metadado:' || testes.lido('arquivo_sem_foto') || ',metadado_sem_arquivo:' || testes.lido('foto_sem_arquivo'));
+select testes.igual('reconciliação não apaga nada',
+  format($q$ select (select count(*) from public.prontuario_imagens where prontuario_id = %1$L) || ':' ||
+        (select count(*) from storage.objects where bucket_id = 'prontuario-imagens' and name like %2$L) $q$,
+    testes.lido('prontuario'), testes.lido('prontuario') || '/%'),
+  '1:1');
+
+select testes.como('financeiro@cockpit.local');
+select testes.falha('financeiro não chama a reconciliação das fotos',
+  $q$ select * from public.prontuario_imagens_reconciliar() $q$, '42501');
+
+select testes.como(null);
+select testes.falha('anon não chama a reconciliação das fotos',
+  $q$ select * from public.prontuario_imagens_reconciliar() $q$, '42501');
+select testes.falha('anon não gera id de sequência nenhuma',
+  $q$ select nextval('public.prontuario_versoes_id_seq') $q$, '42501');
+
 select testes.como('recepcao@cockpit.local');
 select testes.linhas('recepção não vê prontuário',
   $q$ select * from public.prontuarios $q$, 0);
 select testes.linhas('recepção não vê anamnese',
   format($q$ select * from public.documentos where id = %L $q$, testes.lido('anamnese')), 0);
+select testes.falha('recepção não chama a reconciliação das fotos',
+  $q$ select * from public.prontuario_imagens_reconciliar() $q$, '42501');
+
+-- ---------------------------------------------------------------------
+-- 0025: busca sem acento, registro de contato com origem própria,
+-- teto do título do prontuário e recebimento só pela função
+-- ---------------------------------------------------------------------
+
+-- Pacientes reais só destes testes: nada aponta para o seed, e a
+-- limpeza dos dados de exemplo lá embaixo não muda de resultado.
+select testes.como('recepcao@cockpit.local');
+with n as (
+  insert into public.pacientes (nome, nome_social) values ('Maria da Conceição Ávila', 'Ção')
+  returning id
+) select testes.guardar('paciente_0025', id::text) from n;
+with n as (
+  insert into public.pacientes (nome) values ('Joana Teste Contato')
+  returning id
+) select testes.guardar('paciente_0025_b', id::text) from n;
+
+select testes.igual('busca: nome e nome social sem acento e em minúsculas',
+  format($q$ select busca from public.pacientes where id = %L $q$, testes.lido('paciente_0025')),
+  'maria da conceicao avila cao');
+select testes.igual('busca: "Conceicao" acha "Conceição"',
+  format($q$ select count(*)::text from public.pacientes where id = %L and busca ilike '%%conceicao%%' $q$,
+    testes.lido('paciente_0025')), '1');
+select testes.falha('busca é gerada: não se escreve',
+  format($q$ update public.pacientes set busca = 'x' where id = %L $q$, testes.lido('paciente_0025')), '428C9');
+
+-- A regra de texto de antes, só para linha com forma de registro.
+select set_config('role', 'postgres', true);
+select testes.igual('transição: convite antigo vira contato_avaliacao',
+  $q$ select private.pendencia_origem_pelo_texto('pesquisa', 'Convite para avaliação no Google enviado pela equipe',
+        'resolvida', gen_random_uuid(), now())::text $q$, 'contato_avaliacao');
+select testes.igual('transição: variação antiga pelo prefixo também',
+  $q$ select private.pendencia_origem_pelo_texto('pesquisa', 'Convite para avaliação no Google enviado',
+        'resolvida', gen_random_uuid(), now())::text $q$, 'contato_avaliacao');
+select testes.igual('transição: aniversário antigo vira contato_aniversario',
+  $q$ select private.pendencia_origem_pelo_texto('outro', 'Mensagem de aniversário enviada pela equipe',
+        'resolvida', gen_random_uuid(), now())::text $q$, 'contato_aniversario');
+select testes.igual('transição: texto de convite com tipo errado continua tarefa',
+  $q$ select private.pendencia_origem_pelo_texto('outro', 'Convite para avaliação no Google enviado pela equipe',
+        'resolvida', gen_random_uuid(), now())::text $q$, 'tarefa');
+select testes.igual('transição: registro reaberto continua tarefa',
+  $q$ select private.pendencia_origem_pelo_texto('pesquisa', 'Convite para avaliação no Google enviado pela equipe',
+        'aberta', gen_random_uuid(), null)::text $q$, 'tarefa');
+select testes.igual('transição: sem paciente continua tarefa',
+  $q$ select private.pendencia_origem_pelo_texto('pesquisa', 'Convite para avaliação no Google enviado pela equipe',
+        'resolvida', null, now())::text $q$, 'tarefa');
+select testes.igual('transição: tarefa que só menciona o convite continua tarefa',
+  $q$ select private.pendencia_origem_pelo_texto('pesquisa', 'Enviar convite para avaliação',
+        'resolvida', gen_random_uuid(), now())::text $q$, 'tarefa');
+select testes.igual('transição: nenhuma linha com forma de registro ficou como tarefa',
+  $q$ select count(*)::text from public.pendencias
+       where origem = 'tarefa'
+         and private.pendencia_origem_pelo_texto(tipo, descricao, situacao, paciente_id, resolvida_em) <> 'tarefa' $q$,
+  '0');
+select testes.igual('um contato por dia: o índice único existe',
+  $q$ select count(*)::text from pg_indexes where indexname = 'pendencias_contato_um_por_dia' $q$, '1');
+select testes.igual('teto do título do prontuário validado',
+  $q$ select convalidated::text from pg_constraint where conname = 'prontuarios_titulo_maximo' $q$, 'true');
+
+-- O backfill da migração, repetido sobre um registro gravado do jeito
+-- antigo (sem origem): vira contato e passa na constraint e no índice.
+select testes.linhas('legado: registro antigo gravado sem origem',
+  format($q$ insert into public.pendencias (tipo, paciente_id, descricao, prioridade, situacao, resolvida_em)
+      values ('pesquisa', %L, 'Convite para avaliação no Google enviado pela equipe', 'baixa', 'resolvida', now()) $q$,
+    testes.lido('paciente_0025')), 1);
+select testes.linhas('legado: o backfill da 0025 reconhece e passa na constraint',
+  $q$ update public.pendencias
+        set origem = private.pendencia_origem_pelo_texto(tipo, descricao, situacao, paciente_id, resolvida_em)
+      where origem = 'tarefa'
+        and private.pendencia_origem_pelo_texto(tipo, descricao, situacao, paciente_id, resolvida_em) <> 'tarefa' $q$,
+  1);
+select testes.falha('prontuário: título acima de 160 é recusado pelo banco',
+  format($q$ update public.prontuarios set titulo = repeat('x', 161) where id = %L $q$, testes.lido('prontuario')),
+  '23514');
+
+-- Pela API, como a aplicação grava.
+select testes.como('recepcao@cockpit.local');
+select testes.falha('um contato por dia: o segundo convite no mesmo dia é recusado',
+  format($q$ insert into public.pendencias (tipo, origem, paciente_id, descricao, prioridade, situacao, resolvida_em)
+      values ('pesquisa', 'contato_avaliacao', %L, 'Convite para avaliação no Google enviado pela equipe', 'baixa', 'resolvida', now()) $q$,
+    testes.lido('paciente_0025')), '23505');
+select testes.linhas('outra origem no mesmo dia entra',
+  format($q$ insert into public.pendencias (tipo, origem, paciente_id, descricao, prioridade, situacao, resolvida_em)
+      values ('outro', 'contato_aniversario', %L, 'Mensagem de aniversário enviada pela equipe', 'baixa', 'resolvida', now()) $q$,
+    testes.lido('paciente_0025')), 1);
+select testes.linhas('recepção registra convite com origem',
+  format($q$ insert into public.pendencias (tipo, origem, paciente_id, descricao, prioridade, situacao, resolvida_em)
+      values ('pesquisa', 'contato_avaliacao', %L, 'Convite para avaliação no Google enviado pela equipe', 'baixa', 'resolvida', now()) $q$,
+    testes.lido('paciente_0025_b')), 1);
+select testes.guardar('contato_0025',
+  (select id::text from public.pendencias where paciente_id = testes.lido('paciente_0025_b')::uuid and origem = 'contato_avaliacao'));
+select testes.falha('registro de contato não nasce aberto',
+  format($q$ insert into public.pendencias (tipo, origem, paciente_id, descricao)
+      values ('pesquisa', 'contato_avaliacao', %L, 'Convite') $q$, testes.lido('paciente_0025_b')), '23514');
+select testes.falha('registro de contato não nasce sem paciente',
+  $q$ insert into public.pendencias (tipo, origem, descricao, situacao, resolvida_em)
+      values ('pesquisa', 'contato_avaliacao', 'Convite', 'resolvida', now()) $q$, '23514');
+select testes.falha('origem e tipo precisam combinar',
+  format($q$ insert into public.pendencias (tipo, origem, paciente_id, descricao, situacao, resolvida_em)
+      values ('outro', 'contato_avaliacao', %L, 'Convite', 'resolvida', now()) $q$, testes.lido('paciente_0025_b')), '23514');
+select testes.falha('registro de contato não se reabre',
+  format($q$ update public.pendencias set situacao = 'aberta', resolvida_em = null where id = %L $q$,
+    testes.lido('contato_0025')), '23514');
+select testes.falha('origem não muda depois de gravada',
+  format($q$ update public.pendencias set origem = 'tarefa' where id = %L $q$, testes.lido('contato_0025')), '42501');
+select testes.linhas('tarefa pode ter o texto do convite',
+  format($q$ insert into public.pendencias (tipo, paciente_id, descricao)
+      values ('pesquisa', %L, 'Convite para avaliação no Google enviado pela equipe') $q$,
+    testes.lido('paciente_0025_b')), 1);
+select testes.guardar('tarefa_0025',
+  (select id::text from public.pendencias
+    where paciente_id = testes.lido('paciente_0025_b')::uuid and situacao = 'aberta'));
+select testes.igual('tarefa com o texto do convite continua tarefa',
+  format($q$ select origem::text from public.pendencias where id = %L $q$, testes.lido('tarefa_0025')),
+  'tarefa');
+select testes.linhas('tarefa continua concluída pela coluna do grant',
+  format($q$ update public.pendencias set situacao = 'resolvida', resolvida_em = now() where id = %L $q$,
+    testes.lido('tarefa_0025')), 1);
+
+-- Recebimento: só `venda_registrar` (DEFINER) cria; a data futura é
+-- recusada também quando a venda já nasce recebida.
+select testes.como('financeiro@cockpit.local');
+select testes.falha('financeiro não chama recebimento_da_venda_criar direto',
+  format($q$ select private.recebimento_da_venda_criar(%L, 'previsto', current_date, null, null) $q$,
+    testes.lido('venda_pix')), '42501');
+select testes.falha('venda que nasce recebida não aceita data no futuro',
+  $q$ select public.venda_registrar('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',current_date,
+        500,0,'pix',1,null,0,0,false,null,null,'recebido',current_date,current_date + 1,null) $q$, 'P0001');
+
+-- ---------------------------------------------------------------------
+-- Funções DEFINER: sem a RLS, a checagem de perfil na entrada é a única
+-- barreira para sessão autenticada sem perfil ativo
+-- ---------------------------------------------------------------------
+
+-- Sessão autenticada de alguém que não tem perfil.
+select set_config('role', 'postgres', true);
+select set_config('request.jwt.claims',
+  json_build_object('sub', gen_random_uuid(), 'role', 'authenticated')::text, true);
+select set_config('role', 'authenticated', true);
+select testes.falha('sem perfil: venda_registrar recusa',
+  $q$ select public.venda_registrar('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',current_date,
+        500,0,'pix',1,null,0,0,false,null,null,'previsto',current_date,null,null) $q$, '42501');
+select testes.falha('sem perfil: venda_alterar_pagamento recusa',
+  format($q$ select public.venda_alterar_pagamento(%L, 'forma_pagamento', 'pix', 1, null, 0, 0, false, 'sem perfil') $q$,
+    testes.lido('venda_credito')), '42501');
+
+-- Perfil inativo: o financeiro desligado não vende nem altera.
+select testes.como(null);
+select set_config('role', 'postgres', true);
+select set_config('request.jwt.claims', '', true);
+update public.perfis set ativo = false
+ where id = (select id from auth.users where email = 'financeiro@cockpit.local');
+select testes.como('financeiro@cockpit.local');
+select testes.falha('perfil inativo: venda_registrar recusa',
+  $q$ select public.venda_registrar('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',current_date,
+        500,0,'pix',1,null,0,0,false,null,null,'previsto',current_date,null,null) $q$, '42501');
+select testes.falha('perfil inativo: venda_alterar_pagamento recusa',
+  format($q$ select public.venda_alterar_pagamento(%L, 'forma_pagamento', 'pix', 1, null, 0, 0, false, 'perfil inativo') $q$,
+    testes.lido('venda_credito')), '42501');
+select testes.como(null);
+select set_config('role', 'postgres', true);
+select set_config('request.jwt.claims', '', true);
+update public.perfis set ativo = true
+ where id = (select id from auth.users where email = 'financeiro@cockpit.local');
+
+-- ---------------------------------------------------------------------
+-- 0026: a marca de exemplo não muda pela API; busca com a chave de
+-- serviço; sequência nova sem setval para a sessão
+-- ---------------------------------------------------------------------
+
+select testes.como('recepcao@cockpit.local');
+select testes.falha('recepção não marca paciente real como exemplo',
+  format($q$ update public.pacientes set exemplo = true where id = %L $q$, testes.lido('paciente_0025')), '42501');
+select testes.falha('recepção não desmarca paciente de exemplo',
+  $q$ update public.pacientes set exemplo = false where id = 'c0000000-0000-4000-8000-000000000005' $q$, '42501');
+select testes.falha('recepção não troca a marca de um atendimento',
+  $q$ update public.atendimentos set exemplo = not exemplo
+       where id = (select id from public.atendimentos order by inicio, id limit 1) $q$, '42501');
+select testes.falha('recepção não cadastra paciente já marcado como exemplo',
+  $q$ insert into public.pacientes (nome, exemplo) values ('Paciente Marcada', true) $q$, '42501');
+select testes.falha('recepção não cria tarefa marcada como exemplo',
+  $q$ insert into public.pendencias (tipo, descricao, exemplo) values ('outro', 'Tarefa marcada', true) $q$, '42501');
+select testes.linhas('mesma marca no UPDATE passa (a aplicação não escreve a coluna)',
+  format($q$ update public.pacientes set nome = nome, exemplo = exemplo where id = %L $q$, testes.lido('paciente_0025')), 1);
+select testes.como('financeiro@cockpit.local');
+select testes.falha('financeiro não marca despesa como exemplo',
+  $q$ update public.despesas set exemplo = not exemplo where id = (select id from public.despesas limit 1) $q$, '42501');
+
+-- Sem sessão (seed, dados:exemplo, dados:limpar) a marca continua livre.
+select testes.como(null);
+select set_config('role', 'postgres', true);
+select set_config('request.jwt.claims', '', true);
+select testes.linhas('sem sessão a marca muda (manutenção pelo SQL do projeto)',
+  format($q$ update public.pacientes set exemplo = true where id = %L $q$, testes.lido('paciente_0025')), 1);
+select testes.linhas('sem sessão a marca volta',
+  format($q$ update public.pacientes set exemplo = false where id = %L $q$, testes.lido('paciente_0025')), 1);
+
+-- A coluna gerada `pacientes.busca` chama `private.sem_acento`.
+select set_config('role', 'service_role', true);
+select testes.linhas('chave de serviço grava paciente (busca gerada)',
+  format($q$ update public.pacientes set nome = nome where id = %L $q$, testes.lido('paciente_0025')), 1);
+select set_config('role', 'postgres', true);
+
+-- Sequência criada depois da 0026: a sessão só pede o próximo número.
+create table public.teste_sequencia_nova (id bigint generated always as identity primary key);
+select testes.igual('sequência nova: authenticated sem UPDATE (setval) nem SELECT, com USAGE',
+  $q$ select concat_ws(':',
+        has_sequence_privilege('authenticated', 'public.teste_sequencia_nova_id_seq', 'UPDATE'),
+        has_sequence_privilege('authenticated', 'public.teste_sequencia_nova_id_seq', 'SELECT'),
+        has_sequence_privilege('authenticated', 'public.teste_sequencia_nova_id_seq', 'USAGE')) $q$,
+  'f:f:t');
+drop table public.teste_sequencia_nova;
+
+-- ---------------------------------------------------------------------
+-- 0028: venda idempotente pela chave do envio; foto só com o arquivo no
+-- bucket, com tipo e tamanho do Storage
+-- ---------------------------------------------------------------------
+
+select testes.como('recepcao@cockpit.local');
+select testes.guardar('chave_0028', 'f0000000-0000-4000-8000-000000000028');
+select testes.guardar('venda_chave', public.venda_registrar(
+  'c0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', current_date,
+  250, 0, 'pix', 1, null, 0, 0, false, null, null, 'previsto', current_date + 7, null, 'Teste chave',
+  testes.lido('chave_0028')::uuid)::text);
+select testes.igual('mesma chave do mesmo perfil devolve a mesma venda',
+  format($q$ select (public.venda_registrar(
+        'c0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', current_date,
+        250, 0, 'pix', 1, null, 0, 0, false, null, null, 'previsto', current_date + 7, null, 'Teste chave',
+        %L::uuid) = %L::uuid)::text $q$, testes.lido('chave_0028'), testes.lido('venda_chave')), 'true');
+select testes.igual('duplo envio grava uma venda e um recebimento',
+  format($q$ select (select count(*) from public.vendas where chave_envio = %1$L::uuid) || ':' ||
+        (select count(*) from public.recebimentos where venda_id = %2$L::uuid) $q$,
+    testes.lido('chave_0028'), testes.lido('venda_chave')), '1:1');
+select testes.igual('a venda guarda a chave do envio',
+  format($q$ select chave_envio::text from public.vendas where id = %L $q$, testes.lido('venda_chave')),
+  testes.lido('chave_0028'));
+select testes.falha('recepção não reescreve a chave do envio pela API',
+  format($q$ update public.vendas set chave_envio = gen_random_uuid() where id = %L $q$, testes.lido('venda_chave')),
+  '42501');
+select testes.igual('sem chave, dois envios iguais continuam sendo duas vendas (como antes)',
+  $q$ select (public.venda_registrar('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',
+        current_date,250,0,'pix',1,null,0,0,false,null,null,'previsto',current_date + 7,null,'Sem chave')
+      <> public.venda_registrar('c0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000001',
+        current_date,250,0,'pix',1,null,0,0,false,null,null,'previsto',current_date + 7,null,'Sem chave'))::text $q$,
+  'true');
+
+select testes.como('financeiro@cockpit.local');
+select testes.falha('a chave de outro perfil é recusada',
+  format($q$ select public.venda_registrar(
+        'c0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', current_date,
+        250, 0, 'pix', 1, null, 0, 0, false, null, null, 'previsto', current_date + 7, null, 'Outro perfil',
+        %L::uuid) $q$, testes.lido('chave_0028')), 'P0001');
+
+-- Fotos: os objetos entram pelo SQL do projeto, como o Storage os grava
+-- (com `metadata`), num prontuário só destes testes.
+select testes.como('admin@cockpit.local');
+select testes.guardar('prontuario_0028', public.prontuario_registrar(
+  'c0000000-0000-4000-8000-000000000001', null, current_date, 'Fotos da 0028',
+  'Queixa de teste', '', '', '', '', '')::text);
+select testes.guardar('foto_0028', testes.lido('prontuario_0028') || '/aaaaaaaa-0000-4000-8000-000000000028.jpg');
+select testes.guardar('foto_0028_png', testes.lido('prontuario_0028') || '/bbbbbbbb-0000-4000-8000-000000000028.png');
+select testes.guardar('foto_0028_crua', testes.lido('prontuario_0028') || '/cccccccc-0000-4000-8000-000000000028.webp');
+select set_config('role', 'postgres', true);
+insert into storage.objects (bucket_id, name, metadata) values
+  ('prontuario-imagens', testes.lido('foto_0028'), '{"mimetype":"image/jpeg","size":3000}'::jsonb),
+  ('prontuario-imagens', testes.lido('foto_0028_png'), '{"mimetype":"image/jpeg","size":3000}'::jsonb),
+  ('prontuario-imagens', testes.lido('foto_0028_crua'), null);
+select testes.como('admin@cockpit.local');
+
+select testes.falha('foto sem o arquivo no bucket é recusada',
+  format($q$ insert into public.prontuario_imagens (prontuario_id, caminho, nome_original, tipo_mime, tamanho_bytes, data_captura)
+      values (%L, %L, 'foto.jpg', 'image/jpeg', 10, current_date) $q$,
+    testes.lido('prontuario_0028'), testes.lido('prontuario_0028') || '/dddddddd-0000-4000-8000-000000000028.jpg'), 'P0001');
+select testes.linhas('foto com o arquivo no bucket é registrada',
+  format($q$ insert into public.prontuario_imagens (prontuario_id, caminho, nome_original, tipo_mime, tamanho_bytes, data_captura)
+      values (%L, %L, 'foto.jpg', 'image/png', 1, current_date) $q$,
+    testes.lido('prontuario_0028'), testes.lido('foto_0028')), 1);
+select testes.igual('tipo e tamanho da foto são os do arquivo, não os declarados',
+  format($q$ select tipo_mime || ':' || tamanho_bytes from public.prontuario_imagens where caminho = %L $q$,
+    testes.lido('foto_0028')), 'image/jpeg:3000');
+select testes.falha('extensão que não confere com o arquivo é recusada',
+  format($q$ insert into public.prontuario_imagens (prontuario_id, caminho, nome_original, tipo_mime, tamanho_bytes, data_captura)
+      values (%L, %L, 'foto.png', 'image/png', 3000, current_date) $q$,
+    testes.lido('prontuario_0028'), testes.lido('foto_0028_png')), 'P0001');
+select testes.falha('arquivo sem os metadados do Storage é recusado',
+  format($q$ insert into public.prontuario_imagens (prontuario_id, caminho, nome_original, tipo_mime, tamanho_bytes, data_captura)
+      values (%L, %L, 'foto.webp', 'image/webp', 3000, current_date) $q$,
+    testes.lido('prontuario_0028'), testes.lido('foto_0028_crua')), 'P0001');
+
+select testes.como('recepcao@cockpit.local');
+select testes.falha('recepção não registra foto (a RLS recusa antes do arquivo)',
+  format($q$ insert into public.prontuario_imagens (prontuario_id, caminho, nome_original, tipo_mime, tamanho_bytes, data_captura)
+      values (%L, %L, 'foto.png', 'image/png', 3000, current_date) $q$,
+    testes.lido('prontuario_0028'), testes.lido('foto_0028_png')), '42501');
+
+-- ---------------------------------------------------------------------
+-- Limpeza dos dados de exemplo (`supabase/dados-exemplo-limpar.sql`)
+--
+-- Por último, porque apaga o seed — e tudo volta no ROLLBACK. O
+-- `npm run test:banco` injeta o script de limpeza duas vezes no lugar das
+-- marcas abaixo, e roda como o SQL do projeto (sem sessão), que é como o
+-- `npm run dados:limpar` roda. Até aqui os testes já deixaram dado real
+-- apontando para o exemplo: vendas, documentos e o prontuário.
+-- ---------------------------------------------------------------------
+
+-- Uma tarefa real presa a um atendimento de exemplo.
+select testes.como('recepcao@cockpit.local');
+select testes.guardar('atendimento_exemplo_com_tarefa',
+  (select id::text from public.atendimentos where exemplo order by inicio, id limit 1));
+select testes.linhas('recepção cria tarefa real num atendimento de exemplo',
+  format($q$ insert into public.pendencias (tipo, paciente_id, atendimento_id, descricao)
+      select 'confirmacao', paciente_id, id, 'Tarefa real (teste da limpeza)' from public.atendimentos where id = %L $q$,
+    testes.lido('atendimento_exemplo_com_tarefa')), 1);
+
+select testes.como(null);
+select set_config('role', 'postgres', true);
+select set_config('request.jwt.claims', '', true);
+
+-- Uma venda de exemplo inteira: venda, recebimento, histórico e ajuste.
+with v as (
+  insert into public.vendas (paciente_id, procedimento_id, data_venda, valor_original, desconto, valor_final,
+    forma, parcelas, taxa_percentual, taxa_valor, valor_liquido, exemplo)
+  values ('c0000000-0000-4000-8000-000000000005', 'b0000000-0000-4000-8000-000000000002', current_date,
+    200, 0, 200, 'pix', 1, 0, 0, 200, true)
+  returning id
+), r as (
+  insert into public.recebimentos (venda_id, paciente_id, valor, forma, situacao, vencimento, recebido_em, valor_recebido, exemplo)
+  select id, 'c0000000-0000-4000-8000-000000000005', 200, 'pix', 'recebido', current_date, current_date, 200, true from v
+  returning id, venda_id
+), h as (
+  insert into public.venda_alteracoes (venda_id, tipo, de, para, motivo)
+  select venda_id, 'forma_pagamento', '{}', '{}', 'exemplo' from r
+)
+insert into public.ajustes_financeiros (venda_id, recebimento_id, valor, motivo, exemplo)
+select venda_id, id, 5, 'exemplo', true from r;
+select testes.guardar('venda_exemplo',
+  (select id::text from public.vendas where exemplo and paciente_id = 'c0000000-0000-4000-8000-000000000005'));
+
+create function testes.reais() returns text
+language sql stable as $$
+  select concat_ws(':',
+    (select count(*) from public.pacientes where not exemplo),
+    (select count(*) from public.atendimentos where not exemplo),
+    (select count(*) from public.pendencias where not exemplo),
+    (select count(*) from public.retornos where not exemplo),
+    (select count(*) from public.recebimentos where not exemplo),
+    (select count(*) from public.vendas where not exemplo),
+    (select count(*) from public.venda_alteracoes h join public.vendas v on v.id = h.venda_id where not v.exemplo),
+    (select count(*) from public.ajustes_financeiros where not exemplo),
+    (select count(*) from public.despesas where not exemplo),
+    (select count(*) from public.prontuarios),
+    (select count(*) from public.prontuario_imagens),
+    (select count(*) from public.documentos),
+    (select count(*) from public.auditoria where (dados ->> 'exemplo')::boolean is not true))
+$$;
+
+create function testes.retrato() returns text
+language sql stable as $$
+  select concat_ws(':', testes.reais(),
+    (select count(*) from public.pacientes where exemplo),
+    (select count(*) from public.atendimentos where exemplo),
+    (select count(*) from public.recebimentos where exemplo),
+    (select count(*) from public.vendas where exemplo),
+    (select count(*) from public.procedimentos where exemplo),
+    (select count(*) from public.profissionais where exemplo),
+    (select count(*) from public.auditoria))
+$$;
+
+select testes.guardar('reais_antes', testes.reais());
+
+-- @@dados-exemplo-limpar.sql@@
+
+select set_config('role', 'postgres', true);
+select testes.guardar('retrato_1', testes.retrato());
+
+-- @@dados-exemplo-limpar.sql@@
+
+select set_config('role', 'postgres', true);
+
+select testes.igual('limpeza: nenhum dado real sumiu',
+  $q$ select testes.reais() $q$, testes.lido('reais_antes'));
+select testes.igual('limpeza: rodar de novo não apaga mais nada',
+  $q$ select testes.retrato() $q$, testes.lido('retrato_1'));
+select testes.igual('limpeza: venda de exemplo sai com recebimento, histórico e ajuste',
+  format($q$ select concat_ws(':',
+        (select count(*) from public.vendas where exemplo),
+        (select count(*) from public.ajustes_financeiros where exemplo),
+        (select count(*) from public.venda_alteracoes where venda_id = %L),
+        (select count(*) from public.despesas where exemplo),
+        (select count(*) from public.pendencias where exemplo),
+        (select count(*) from public.retornos where exemplo)) $q$, testes.lido('venda_exemplo')),
+  '0:0:0:0:0:0');
+select testes.igual('limpeza: só fica paciente de exemplo que um dado real aponta',
+  $q$ select count(*)::text from public.pacientes p
+       where p.exemplo
+         and not exists (select 1 from public.atendimentos x where x.paciente_id = p.id)
+         and not exists (select 1 from public.pendencias x where x.paciente_id = p.id)
+         and not exists (select 1 from public.retornos x where x.paciente_id = p.id)
+         and not exists (select 1 from public.recebimentos x where x.paciente_id = p.id)
+         and not exists (select 1 from public.vendas x where x.paciente_id = p.id)
+         and not exists (select 1 from public.prontuarios x where x.paciente_id = p.id)
+         and not exists (select 1 from public.documentos x where x.paciente_id = p.id) $q$,
+  '0');
+select testes.igual('limpeza: paciente de exemplo com venda real fica',
+  $q$ select count(*)::text from public.pacientes where id = 'c0000000-0000-4000-8000-000000000001' $q$, '1');
+select testes.igual('limpeza: atendimento de exemplo com tarefa real fica',
+  format($q$ select count(*)::text from public.atendimentos where id = %L $q$, testes.lido('atendimento_exemplo_com_tarefa')),
+  '1');
+select testes.igual('limpeza: sobra de exemplo só onde há dado real (atendimentos e profissionais)',
+  $q$ select (select count(*) from public.atendimentos a where a.exemplo
+               and not exists (select 1 from public.pendencias x where x.atendimento_id = a.id and not x.exemplo)
+               and not exists (select 1 from public.retornos x where x.atendimento_origem_id = a.id and not x.exemplo)
+               and not exists (select 1 from public.recebimentos x where x.atendimento_id = a.id and not x.exemplo)
+               and not exists (select 1 from public.prontuarios x where x.atendimento_id = a.id))
+          || ':' ||
+          (select count(*) from public.profissionais p where p.exemplo
+               and not exists (select 1 from public.atendimentos x where x.profissional_id = p.id)) $q$,
+  '0:0');
+select testes.igual('limpeza: auditoria de exemplo só sai com a linha',
+  $q$ select (select count(*) from public.auditoria a
+               where a.tabela = 'pacientes' and (a.dados ->> 'exemplo')::boolean is true
+                 and not exists (select 1 from public.pacientes p where p.id::text = a.registro_id))
+          || ':' ||
+          ((select count(*) from public.auditoria
+             where tabela = 'pacientes' and registro_id = 'c0000000-0000-4000-8000-000000000001') > 0) $q$,
+  '0:true');
 
 -- ---------------------------------------------------------------------
 -- Resultado

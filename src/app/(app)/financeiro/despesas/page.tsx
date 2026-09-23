@@ -15,6 +15,7 @@ import {
   ROTULO_CATEGORIA,
 } from "@/lib/despesa";
 import { formatarMoeda } from "@/lib/format";
+import { centavosParaReais, somaEmCentavos } from "@/lib/moeda";
 import { lerMes } from "@/lib/periodo";
 import { listarDespesas, type Despesa } from "@/server/consultas/despesas";
 
@@ -71,7 +72,8 @@ export default async function PaginaDespesas({
   const filtrada = despesas.length !== todas.length;
 
   const pendentes = despesas.filter((d) => d.situacao === "pendente");
-  const totalPendente = pendentes.reduce((soma, d) => soma + d.valor, 0);
+  // Em centavos (§7.1): somar reais em ponto flutuante deixa resto de 1e-12.
+  const totalPendente = centavosParaReais(somaEmCentavos(pendentes.map((d) => d.valor)));
 
   const grupos: GrupoDeFiltro[] = [
     {
@@ -122,7 +124,7 @@ export default async function PaginaDespesas({
         <CardCorpo className="flex flex-col gap-5">
           <NavegacaoMes periodo={periodo} />
           <FiltrosFinanceiro grupos={grupos} />
-          <ListaDespesas despesas={despesas} dataPadrao={chaveDoDia(hoje())} />
+          <ListaDespesas despesas={despesas} dataPadrao={chaveDoDia(hoje())} filtrada={filtrada} />
         </CardCorpo>
         <CardRodape className="text-outline">
           A taxa de cartão não entra aqui: ela já é descontada no líquido dos

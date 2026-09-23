@@ -14,7 +14,7 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { CardCorpo } from "@/components/ui/card";
 import { FormularioDeAcao } from "@/components/ui/formulario-acao";
-import { Campo, ENTRADA } from "@/components/ui/field";
+import { Campo, classeDeEntrada, ENTRADA } from "@/components/ui/field";
 import {
   enderecoWhatsapp,
   mensagemDoConvite,
@@ -88,14 +88,24 @@ export function PainelLink({
   const [erro, setErro] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [dias, setDias] = useState(15);
+  // Prazo do link GERADO, guardado no momento da criação. O select continua
+  // editável depois (serve ao próximo link), e a mensagem não pode seguir ele:
+  // gerar com 7 dias e trocar para 30 prometia à paciente um prazo que o banco
+  // não gravou.
+  const [validadeGerada, setValidadeGerada] = useState<Date | null>(null);
 
   const ativo = links.find((link) => link.ativo) ?? null;
   const numero = numeroWhatsapp(pacienteTelefone);
 
-  const validade = new Date(Date.now() + dias * 24 * 60 * 60 * 1000);
+  // A ação não devolve o `expira_em`, mas revalida a página: quando a lista de
+  // links chega com o link recém-criado, vale a data do banco. Até lá, a
+  // conta feita na criação, com os dias que foram de fato pedidos.
+  const validade =
+    (linkId ? links.find((link) => link.id === linkId)?.expiraEm : undefined) ??
+    validadeGerada;
 
   const enderecoDaConversa =
-    endereco && numero
+    endereco && numero && validade
       ? enderecoWhatsapp(
           numero,
           mensagemDoConvite({
@@ -113,13 +123,19 @@ export function PainelLink({
     setErro(null);
     setEndereco(null);
     setLinkId(null);
+    setValidadeGerada(null);
+
+    // Os dias deste pedido, lidos antes de esperar a resposta: o select pode
+    // mudar enquanto o servidor trabalha.
+    const diasPedidos = dias;
 
     try {
-      const resposta = await criarLinkAssinatura({ documentoId, dias });
+      const resposta = await criarLinkAssinatura({ documentoId, dias: diasPedidos });
 
       if (resposta.ok) {
         setEndereco(resposta.endereco);
         setLinkId(resposta.linkId);
+        setValidadeGerada(new Date(Date.now() + diasPedidos * 24 * 60 * 60 * 1000));
       } else {
         setErro(resposta.erro);
       }
@@ -174,6 +190,11 @@ export function PainelLink({
             <Check aria-hidden="true" size={16} strokeWidth={1.75} />
             Link gerado. Envie ou copie agora — ele não aparece de novo.
           </p>
+          {validade ? (
+            <p className="tabular -mt-1 text-xs text-positivo">
+              Vale até {formatarData(validade)}.
+            </p>
+          ) : null}
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
@@ -181,7 +202,7 @@ export function PainelLink({
               value={endereco}
               onFocus={(evento) => evento.currentTarget.select()}
               aria-label="Endereço do link de assinatura"
-              className="h-11 w-full min-w-0 rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3 text-xs text-on-surface outline-none"
+              className={`${classeDeEntrada({ texto: "xs" })} min-w-0`}
             />
             <button
               type="button"
@@ -270,7 +291,7 @@ export function PainelLink({
             >
               <Revogar />
             </FormularioDeAcao>
-            <span className="text-xs text-outline-variant">
+            <span className="text-xs text-outline">
               O endereço não pode ser mostrado de novo — só substituído.
             </span>
           </div>

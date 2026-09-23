@@ -194,12 +194,14 @@ que as separa é o ícone, o rótulo e o preenchimento.
 
 #### Acessibilidade da cor
 
-O par mais apertado é o texto terciário (`#72767C`): 4.57:1 sobre branco, logo
-acima do mínimo de 4.5:1 do WCAG AA. **Sobre o painel `#F9F9FA` ele cai para
-4.34:1, e sobre `#F4F6F8` para 4.22:1, abaixo do AA**, e hoje aparece assim em
-metadados, contagens e descrições dentro dos painéis de quase todas as telas
-(o cabeçalho dos cartões já passou para `#43474D`, 8.88:1). Entre os estados,
-o mais apertado é o verde positivo sobre o próprio fundo, em 4.60:1. As bordas
+O par mais apertado é o texto terciário (`#5F6369`, escurecido em 23/09/2026 —
+era `#72767C`, que caía para 4.22:1 dentro dos painéis): de 4.74:1 a 6.04:1 em
+todos os fundos do sistema, acima do mínimo de 4.5:1 do WCAG AA. O texto
+secundário relevante usa `#43474D` (8.88:1). O verde positivo passou de
+`#107E3E` para `#0E7639`, que dá 4.97:1 no fundo mais escuro dos painéis. O
+cinza-claro `#C1C6CD` é só borda, divisória e ícone — nunca texto. Item
+indisponível não usa opacidade sobre texto: fundo mais claro, borda tracejada
+e um selo escrito ("em breve", no menu). As bordas
 ficam entre 1.5:1 e
 2.1:1, abaixo do mínimo de 3:1 para elemento não-textual — **aceitável porque nenhuma borda
 carrega significado sozinha**: todo estado é identificado por texto, ícone
@@ -669,8 +671,10 @@ de mês limpa os filtros.
 - **A taxa nunca conta duas vezes.** Ela é dedução do líquido; não existe como
   despesa. Resultado de caixa = líquido recebido − despesas pagas.
 - **Gravação composta é função do banco.** `venda_registrar` e
-  `venda_alterar_pagamento` fazem tudo ou nada, SECURITY INVOKER — a RLS de
-  quem chama continua valendo.
+  `venda_alterar_pagamento` fazem tudo ou nada. Desde a 0023 são as únicas
+  portas de venda, histórico e ajuste (`SECURITY DEFINER`, com o perfil de
+  quem chama conferido na entrada), e desde a 0028 o mesmo envio do
+  formulário não cria uma segunda venda.
 - **Registro financeiro não se apaga.** Desde a 0019 (seção 20), nenhuma
   tabela do Financeiro tem política de DELETE. Corrigir é cancelar, ajustar ou
   reabrir.
@@ -1144,9 +1148,7 @@ registro do que depende da clínica. O detalhe de cada regra está no
 
 O sistema passou a ter suíte automatizada: regras de dinheiro, datas,
 validações, CSV e erros; ações de servidor e componentes; permissões do banco
-por perfil; e fluxos de ponta a ponta, com 35 das 47 telas conferidas em três
-larguras. Ficam fora dessa varredura as páginas de detalhe e edição por id
-(menos as da paciente) e `/sem-acesso`.
+por perfil; e fluxos de ponta a ponta. Os números atualizados estão na seção 21.
 Nada roda contra produção — tudo usa o Supabase local.
 
 ### Segurança da hospedagem
@@ -1155,12 +1157,173 @@ Nada roda contra produção — tudo usa o Supabase local.
   indexado por buscadores. Na tela de assinatura, o endereço com o token não
   vaza para links externos.
 - O Next.js subiu de 15.5.22 para 15.5.26, que fecha dois alertas críticos de
-  execução remota. Os alertas que sobram só fecham no Next 16 (AGENTS.md §13).
+  execução remota. Os alertas que sobravam foram fechados na rodada final de
+  23/09/2026 (seção 22).
 
 ### Pendente de aplicação em produção
 
 As migrações 0019 a 0022 foram escritas e testadas no banco local, **não
-aplicadas em produção**. O dono do projeto aplica com `npm run db:push` e
-confere com `npm run db:tipos` (os tipos públicos não mudam). Ver
-[`supabase/README.md`](../supabase/README.md).
+aplicadas em produção**. Depois vieram a 0023 a 0025 (seção 21) e a 0026 a
+0028 (seção 22), na mesma situação. O roteiro de aplicação, só para o dono do projeto, está em
+[`supabase/README.md`](../supabase/README.md#pendente-de-aplicação-em-produção).
+
+## 21. Rodada de 23/09/2026 — o que mudou para quem usa
+
+### O banco fecha as últimas portas
+
+- **Venda só nasce pela tela** (0023): ninguém consegue gravar venda, histórico
+  de alteração ou ajuste por fora; toda venda nasce com exatamente um
+  recebimento, e o recebimento previsto não diverge da venda. Confirmar com data
+  futura ou marcar "recebido" com valor diferente do previsto é recusado.
+- **Foto não troca de arquivo nem de prontuário** (0024). A administradora tem
+  uma conferência entre o que está guardado no Storage e o que está na tabela:
+  mostra foto sem arquivo e arquivo sem registro. Só mostra — o destino de uma
+  sobra (é dado de saúde) ainda é decisão da clínica.
+- **Registro de contato do Relacionamento** (convite de avaliação,
+  aniversário) passa a ser reconhecido por um campo próprio, não pelo começo do
+  texto; uma tarefa escrita à mão nunca mais some da aba por coincidência de
+  palavras, e o contato vale um por paciente e dia (0025).
+- **Busca de paciente ignora acento** (0025).
+- `dados:limpar` roda de uma vez só: ou limpa tudo o que pode, ou nada; nunca
+  apaga dado real nem dado clínico.
+
+### Na tela
+
+- Confirmação de recebimento com o valor em branco é recusada ("Informe o valor
+  que entrou"); zero digitado ainda é aceito como divergência (decisão pendente).
+- As telas Alterar forma e Alterar taxa mostram o ajuste que o banco vai gravar.
+- Importação de planilha: `.xlsx`, `.xls` e UTF-16 são recusados com
+  instrução; aspa sem fechar diz a linha; CEP precisa de 8 dígitos; o erro do
+  banco aparece em português. E a importação voltou a gravar (o formulário
+  perdia o arquivo depois da análise).
+- Documento assinado ganhou o cartão "Revogar link da via".
+- O endereço do link de assinatura é fixado por `ORIGEM_PUBLICA`
+  (obrigatória na Vercel: em produção, vazia, o link é recusado).
+- Relacionamento: os botões de situação e de confirmação usam o padrão do
+  sistema; número com DDD 55 não perde mais o DDD no WhatsApp.
+- Contraste: texto terciário e verde escurecidos (seção de acessibilidade da
+  cor); a varredura de telas passou a conferir 320 px (Visão Geral e Despesas
+  transbordavam e foram corrigidas).
+
+### Segurança
+
+- Política de segurança de conteúdo completa; na tela de assinatura, nada de
+  cache nem de referência de origem.
+- Redirecionamento depois do login só para dentro do sistema, com as variações
+  de endereço malicioso testadas.
+- Log sem e-mail, token, CPF, telefone ou data, e com um id de correlação por
+  requisição.
+
+### Testes e CI (contados em 23/09/2026)
+
+- Números da época: 730 testes de unidade e componente, 177 asserções no
+  banco e 208 testes de navegador. Os atuais estão na seção 22.
+- Navegador: Chromium (fluxos e todos os endereços em 320, 768 e 1440 px),
+  Safari de desktop (WebKit) nos fluxos e iPhone 13 na assinatura por link. Entraram importação, Relacionamento, procedimentos,
+  fotos, busca, permissões por endereço, página 404 e CSP.
+- **CI** (`.github/workflows/ci.yml`): qualidade, banco, E2E e build, tudo
+  contra banco local. Ainda não rodou no GitHub.
+
+### O repositório
+
+Um único branch, `jamal-do-mal`, que é o padrão — não existe `main` — e o
+trabalho entra direto nele, sem outros branches (decisão do dono). A CI roda a
+cada push e avisa, mas não bloqueia a entrada. Desde 23/09/2026 o branch
+recusa force push e exclusão, inclusive de administradores (`AGENTS.md` §2).
+
+### Continua em aberto (decisão da clínica)
+
+Correção de confirmação errada e zero digitado; ajustes repetidos e o mês em
+que o ajuste entra; competência da despesa; regra de lucro; vendas antigas sem
+recebimento em produção; destino das sobras de fotos; data de venda no futuro;
+CEP ruim na base antiga importada; trilha dos retornos. Lista completa no
+`AGENTS.md` §10 e §13. (O duplo envio de venda foi resolvido na seção 22.)
+
+## 22. Rodada final de 23/09/2026 — o que mudou para quem usa
+
+### O banco escreve o que antes vinha de fora
+
+- **Marca de exemplo** (0026): com sessão, ninguém marca nem desmarca um
+  registro como dado de demonstração — o `dados:limpar` só apaga o que o seed
+  marcou.
+- **Evidência escrita pelo banco** (0027): a versão nova de um modelo de
+  documento entra na sequência, com autor e hora do banco; quem respondeu a
+  anamnese e quando também (pelo link, fica em branco — foi a paciente); a foto
+  tem autor e hora do banco e não pode ter data de captura no futuro. A via da
+  paciente diz se a assinatura foi no balcão ou pelo link.
+- **Venda não duplica** (0028): dois cliques no "Registrar venda", ou a
+  página reenviada, devolvem a mesma venda — sem segunda venda e sem segundo
+  recebimento.
+- **Foto só com o arquivo** (0028): o registro de uma foto só nasce se o
+  arquivo estiver guardado, e o tipo e o tamanho são os do arquivo, não os
+  informados.
+- IP e aparelho da assinatura continuam sendo os informados pelo servidor;
+  o banco registra isso por escrito. Conferir de verdade depende de decisão do
+  dono (`AGENTS.md` §10).
+
+### Na tela
+
+- **Agenda:** a data digitada no campo navega uma vez só; data inválida no
+  endereço abre hoje; o filtro "Filtrar por quem atende" fica no endereço e
+  sobrevive às setas e ao "Voltar para hoje"; depois de confirmar pelo
+  teclado, o foco vai para o próximo botão do cartão e o leitor de tela anuncia
+  a situação nova. Sem JavaScript, o botão "Ver" leva ao dia escolhido.
+- A recuperação de senha ficou mais leve (o componente do Supabase carrega
+  só no envio).
+
+### Segurança e operação
+
+- **Scripts só com permissão por requisição** (CSP com nonce): um script
+  injetado na página não roda. O único resíduo liberado é o atributo `style`,
+  que não executa código.
+- **Log estruturado:** cada falha técnica vira uma linha JSON com o módulo,
+  o código do erro e o id que aparece na frase da tela — é por ele que se acha
+  o que aconteceu a partir do relato da clínica. Nunca leva dado de paciente.
+  Para guardar os logs por mais tempo, o dono configura um log drain na
+  Vercel (`AGENTS.md` §3).
+- **Dependências sem alerta** no `npm audit`.
+- **Desempenho medido**, com orçamento: as telas internas respondem em cerca
+  de 110 ms quando há uma pessoa por vez; o gargalo sob carga é a conferência
+  da sessão no Supabase, feita duas vezes por tela (decisão de segurança em
+  aberto).
+
+### Testes (contados em 23/09/2026)
+
+- **800 testes de unidade e componente** em 76 arquivos; 44 das 47 ações de
+  servidor com teste (os 12 arquivos de ação têm teste).
+- **194 asserções** de permissão no banco.
+- **298 testes de navegador**: Chromium 251 (43 de fluxo, 41 endereços em
+  três larguras e a auditoria de acessibilidade WCAG 2.2 A/AA com axe nos
+  mesmos 41 endereços, em 360 e 1440 px), WebKit 43 e iPhone 13 4.
+- **Gates finais** numa cópia limpa: lint e tipos sem erro nem aviso,
+  800/800 no Vitest, build sem aviso, zero vulnerabilidades no `npm audit`,
+  194/194 no banco depois de recriá-lo do zero com as 28 migrações, e 142/142
+  testes de navegador (fluxos, telas e segurança) contra o build de produção.
+
+### Continua em aberto
+
+Além da lista da seção 21: o que conta como "atendimento do dia" (a Visão
+Geral e a Agenda mostram números diferentes); se o prontuário pode ser
+registrado antes do dia do atendimento; se a agenda abre filtrada pela
+profissional logada; qual número mostrar em "Convites de avaliação"; qual dos
+três estilos de cartão-indicador vira o padrão. Lista completa, com o motivo,
+no `AGENTS.md` §10.
+
+### Tela que não se atualizava depois de uma ação — resolvido
+
+No build de produção, no Chromium, algumas telas (Visão Geral, Financeiro,
+Despesas, Fluxo, Busca e o prontuário) ficavam na versão anterior depois de
+salvar, até recarregar. A causa foi achada numa peça do React que vem dentro
+do Next 15.5: um aviso de "dado pronto" se perdia no meio da montagem da
+tela. Uma correção pequena é aplicada automaticamente na instalação
+(`scripts/corrigir-ping-react.mjs`, conferida por um teste) e o problema não
+aparece mais — o teste de segurança que falhava no build passou.
+
+### Próximo passo técnico
+
+Subir para o Next 16.3 ou mais novo, que já traz essa correção de fábrica e
+permite apagá-la. É uma rodada própria, decidida pelo dono: muda o nome do
+arquivo que protege as rotas (`middleware` vira `proxy`), a configuração de
+verificação de código (com 7 avisos novos a tratar), o compilador do build e
+a forma de medir o tamanho das telas. Detalhes no `AGENTS.md` §13.
 

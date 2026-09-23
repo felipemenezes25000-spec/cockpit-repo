@@ -7,7 +7,15 @@ import { useFormStatus } from "react-dom";
 import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
-import { bpDoBanco, custoDaTaxa, formatarPercentual, lerPercentual } from "@/lib/moeda";
+import {
+  bpDoBanco,
+  centavosDoBanco,
+  custoDaTaxa,
+  formatarPercentual,
+  lerPercentual,
+  percentualInformado,
+} from "@/lib/moeda";
+import { decidirEfeito } from "@/lib/venda";
 import type { VendaCompleta } from "@/server/consultas/vendas";
 import { alterarTaxaManual, type EstadoVenda } from "@/server/acoes/vendas";
 
@@ -52,12 +60,19 @@ export function AlterarTaxa({
 
   const finalCent = Math.round(venda.valorFinal * 100);
   const bpAtual = bpDoBanco(venda.taxaPercentual);
-  const bpNovo = lerPercentual(percentual);
+  // Vazio não é 0%: a ação recusa, e a prévia não finge uma taxa zero.
+  const bpNovo = percentualInformado(percentual) ? lerPercentual(percentual) : null;
 
   const taxaNovaCent = bpNovo !== null ? custoDaTaxa(finalCent, bpNovo) : null;
   const liquidoNovoCent = taxaNovaCent !== null ? finalCent - taxaNovaCent : null;
 
   const erros = estado.erros;
+
+  // O ajuste que o banco grava é `novo líquido − valor que entrou` (§8.4).
+  const efeito =
+    recebimentoConfirmado !== null && liquidoNovoCent !== null
+      ? decidirEfeito("recebido", centavosDoBanco(recebimentoConfirmado), liquidoNovoCent)
+      : null;
 
   return (
     <form action={enviar} className="flex flex-col gap-6" noValidate>
@@ -133,10 +148,22 @@ export function AlterarTaxa({
         </div>
       </div>
 
-      {recebimentoConfirmado !== null && liquidoNovoCent !== null ? (
+      {efeito && recebimentoConfirmado !== null ? (
         <p className="rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-2.5 text-xs text-atencao">
-          O recebimento já foi confirmado. O registro original fica intacto e a
-          diferença vira um ajuste financeiro.
+          O recebimento já foi confirmado. O registro original fica intacto
+          {efeito.tipo === "ajuste" ? (
+            <>
+              {" "}e entra um ajuste de{" "}
+              <strong className="tabular">
+                {efeito.valorCent < 0 ? "− " : "+ "}
+                {formatarMoeda(Math.abs(efeito.valorCent) / 100)}
+              </strong>
+              : o novo líquido menos o valor que de fato entrou (
+              {formatarMoeda(recebimentoConfirmado)}).
+            </>
+          ) : (
+            ": o novo líquido é igual ao valor que entrou, e nenhum ajuste é lançado."
+          )}
         </p>
       ) : null}
 
@@ -151,6 +178,7 @@ export function AlterarTaxa({
           id="motivo"
           name="motivo"
           maxLength={500}
+          defaultValue={estado.valores?.motivo ?? ""}
           placeholder="Taxa renegociada com a operadora para esta transação"
           className={AREA_TEXTO}
         />

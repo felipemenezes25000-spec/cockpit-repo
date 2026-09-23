@@ -7,6 +7,27 @@ import { ROTULO_TIPO } from "@/lib/documento";
 import type { ModeloDaLista } from "@/server/consultas/documentos";
 import { BotaoModeloAtivo } from "./botao-modelo-ativo";
 
+/** Razão à vista, no lugar do número — mesma postura do botão indisponível. */
+const RESTRITO = "restrito à administradora";
+
+/**
+ * `null` não é zero: é a anamnese, que a RLS esconde de quem não é
+ * administradora (AGENTS.md §5). Dizer "nenhum documento emitido" seria
+ * afirmar como fato o que este perfil simplesmente não enxerga.
+ */
+function Emitidos({ quantos }: { quantos: number | null }) {
+  if (quantos === null) {
+    return (
+      <span title="A anamnese é restrita à administradora; este perfil não vê os documentos emitidos.">
+        documentos emitidos: — ({RESTRITO})
+      </span>
+    );
+  }
+  if (quantos === 0) return <>nenhum documento emitido</>;
+  if (quantos === 1) return <>1 documento emitido</>;
+  return <>{quantos} documentos emitidos</>;
+}
+
 function Linha({
   modelo,
   administradora,
@@ -15,7 +36,7 @@ function Linha({
   administradora: boolean;
 }) {
   return (
-    <li className="flex flex-col gap-3 border-b border-card-border px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+    <li className="-mx-3 flex flex-col gap-3 border-b border-card-border px-3 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-on-surface">{modelo.nome}</span>
@@ -37,7 +58,7 @@ function Linha({
             </span>
           ) : null}
           {modelo.exemplo ? (
-            <span className="text-xs text-outline-variant">exemplo</span>
+            <span className="text-xs text-outline">exemplo</span>
           ) : null}
         </div>
 
@@ -45,13 +66,9 @@ function Linha({
           <p className="mt-1 text-sm text-outline">{modelo.descricao}</p>
         ) : null}
 
-        <p className="tabular mt-1 text-xs text-outline-variant">
+        <p className="tabular mt-1 text-xs text-outline">
           Atualizado em {formatarData(modelo.atualizadoEm)} ·{" "}
-          {modelo.emitidos === 0
-            ? "nenhum documento emitido"
-            : modelo.emitidos === 1
-              ? "1 documento emitido"
-              : `${modelo.emitidos} documentos emitidos`}
+          <Emitidos quantos={modelo.emitidos} />
         </p>
       </div>
 
@@ -59,7 +76,7 @@ function Linha({
         <div className="flex shrink-0 items-center gap-1">
           <Link
             href={`/formularios/modelos/${modelo.id}/editar`}
-            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-tag)] px-2.5 text-xs font-medium text-outline transition-colors hover:bg-surface-container-low hover:text-primary"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-tag)] px-2.5 text-xs font-medium whitespace-nowrap text-outline transition-colors hover:bg-surface-container-low hover:text-primary"
           >
             <PencilLine aria-hidden="true" size={14} strokeWidth={1.75} />
             Nova versão

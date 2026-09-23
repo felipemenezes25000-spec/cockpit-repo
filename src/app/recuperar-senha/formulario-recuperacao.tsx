@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from "react";
 import { CircleAlert, LoaderCircle } from "lucide-react";
 import { ENTRADA } from "@/components/ui/field";
-import { clienteNavegador } from "@/lib/supabase/client";
 
 export function FormularioRecuperacao() {
   const [email, definirEmail] = useState("");
@@ -17,6 +16,11 @@ export function FormularioRecuperacao() {
     definirEnviando(true);
 
     try {
+      // O cliente do Supabase no navegador pesa ~70 kB e só serve no envio:
+      // carregado aqui, a tela abre com o JS da base (o `next build` media
+      // 178 kB de First Load contra ~105 kB das outras telas públicas). Se o
+      // pedaço não baixar, cai no mesmo aviso de falha de conexão.
+      const { clienteNavegador } = await import("@/lib/supabase/client");
       const { error } = await clienteNavegador().auth.resetPasswordForEmail(
         email.trim(),
         { redirectTo: `${window.location.origin}/redefinir-senha` },
@@ -58,13 +62,16 @@ export function FormularioRecuperacao() {
           type="email"
           autoComplete="email"
           required
+          // Os erros daqui são do serviço (limite, conexão), não do e-mail
+          // digitado: o aviso fica ligado ao campo sem marcá-lo inválido.
+          aria-describedby={erro ? "erro-recuperacao" : undefined}
           value={email}
           onChange={(evento) => definirEmail(evento.target.value)}
           className={ENTRADA}
         />
       </div>
       {erro ? (
-        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
+        <p id="erro-recuperacao" role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-sm text-on-error-container">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erro}
         </p>

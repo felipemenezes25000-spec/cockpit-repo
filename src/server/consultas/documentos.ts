@@ -3,6 +3,7 @@ import "server-only";
 import { falhaDeConsulta, registrarFalha } from "@/lib/registro";
 
 import { cache } from "react";
+import { ehAdministradora } from "@/lib/auth";
 import type {
   CampoDoModelo,
   CampoRespondido,
@@ -10,8 +11,13 @@ import type {
   TipoCampo,
   TipoDocumento,
 } from "@/lib/documento";
+import { termoDeBusca } from "@/lib/busca";
+import { tokenPlausivel } from "@/lib/documento";
+import { estruturaAusente } from "@/lib/erros-banco";
+import { uuidValido } from "@/lib/formulario";
 import { nomeExibido } from "@/lib/paciente";
 import { clienteServidor } from "@/lib/supabase/server";
+import { paginaAlemDoFim } from "./todas-as-linhas";
 
 export const POR_PAGINA_DOCUMENTOS = 20;
 
@@ -22,18 +28,11 @@ export class EstruturaDocumentoPendenteError extends Error {
   }
 }
 
-function estruturaPendente(
-  error: { code?: string; message?: string } | null,
-): boolean {
-  if (!error) return false;
-  return Boolean(
-    error.code === "PGRST205" ||
-      error.message?.includes("schema cache") ||
-      error.message?.includes("public.documentos") ||
-      error.message?.includes("public.documento_links") ||
-      error.message?.includes("public.modelos_documento"),
-  );
-}
+// A regra é a de `lib/erros-banco.ts`. A antiga checagem pelo nome da tabela
+// na mensagem sobrava: tabela ausente chega como PGRST205 ou 42P01, que a
+// regra comum já reconhece — e um texto qualquer que citasse a tabela virava
+// "migração pendente" por engano.
+const estruturaPendente = estruturaAusente;
 
 function aoFalhar(
   error: { code?: string; message?: string } | null,
@@ -74,15 +73,6 @@ function camposDoModelo(valor: unknown): CampoDoModelo[] {
   });
 }
 
-function termoSeguro(bruto: string): string {
-  return bruto
-    .trim()
-    .slice(0, 80)
-    .replace(/[,()"\\*%]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 // ---------------------------------------------------------------------
 // Modelos
 // ---------------------------------------------------------------------
@@ -106,8 +96,14 @@ export type ModeloDaLista = {
   atualizadoEm: Date;
   exemplo: boolean;
   versaoAtual: number;
-  /** Quantos documentos já saíram deste modelo. Zero permite despreocupação. */
-  emitidos: number;
+  /**
+   * Quantos documentos já saíram deste modelo. Zero permite despreocupação.
+   *
+   * `null` é "não visível para este perfil", nunca zero: a RLS de `documentos`
+   * esconde a anamnese de quem não é administradora, e contar o que sobra
+   * mostraria "nenhum documento emitido" num modelo já usado (AGENTS.md §5).
+   */
+  emitidos: number | null;
 };
 
 export type ModeloCompleto = {
@@ -169,18 +165,29 @@ export const listarModelos = cache(
       if (!vigente.has(versao.modelo_id)) vigente.set(versao.modelo_id, versao.versao);
     }
 
-    const { data: emitidos, error: erroEmitidos } = await supabase
-      .from("documentos")
-      .select("modelo_id")
-      .in("modelo_id", ids);
+    // A tela é aberta à recepção, e a RLS de `documentos` esconde dela as
+    // anamneses em silêncio. Para quem não é administradora, a contagem de um
+    // modelo de anamnese é `null` — e nem se pergunta ao banco.
+    const administradora = await ehAdministradora();
 
-    if (erroEmitidos) aoFalhar(erroEmitidos, "a contagem de documentos");
+    // Conta no banco, um `count` por modelo, sem trazer linha nenhuma: baixar
+    // as linhas e contar aqui travava no `max_rows` do PostgREST (1000), que
+    // corta sem erro. Os modelos são poucos; os documentos crescem sem teto.
+    const contagem = new Map<string, number | null>(
+      await Promise.all(
+        modelos.map(async (modelo): Promise<[string, number | null]> => {
+          if (modelo.tipo === "anamnese" && !administradora) return [modelo.id, null];
 
-    const contagem = new Map<string, number>();
-    for (const documento of emitidos ?? []) {
-      if (!documento.modelo_id) continue;
-      contagem.set(documento.modelo_id, (contagem.get(documento.modelo_id) ?? 0) + 1);
-    }
+          const { count, error: erroContagem } = await supabase
+            .from("documentos")
+            .select("id", { count: "exact", head: true })
+            .eq("modelo_id", modelo.id);
+
+          if (erroContagem) aoFalhar(erroContagem, "a contagem de documentos");
+          return [modelo.id, count ?? 0];
+        }),
+      ),
+    );
 
     return modelos.map((modelo) => ({
       id: modelo.id,
@@ -191,13 +198,16 @@ export const listarModelos = cache(
       atualizadoEm: new Date(modelo.atualizado_em),
       exemplo: modelo.exemplo,
       versaoAtual: vigente.get(modelo.id) ?? 0,
-      emitidos: contagem.get(modelo.id) ?? 0,
+      emitidos: contagem.get(modelo.id) ?? null,
     }));
   },
 );
 
 export const modeloPorId = cache(
   async (id: string): Promise<ModeloCompleto | null> => {
+    // Id malformado não é "falha de consulta": o Postgres recusaria o cast
+    // para uuid (22P02) e a tela viraria erro em vez de 404.
+    if (!uuidValido(id)) return null;
     const supabase = await clienteServidor();
 
     const { data, error } = await supabase
@@ -248,15 +258,25 @@ export const modeloPorId = cache(
  *
  * A prévia é só para os olhos de quem emite. O que congela no documento é o
  * texto que `documento_emitir` lê do banco — nunca este, que veio pela tela.
+ *
+ * Anamnese só a administradora emite (§8.7). A RLS deixa todo perfil LER os
+ * modelos — a recepção consulta o catálogo —, então o filtro de quem pode
+ * EMITIR é daqui: oferecer "Anamnese · …" à recepção era oferecer uma porta
+ * que o banco sempre fecha ("Apenas a administradora emite anamnese").
  */
 export const modelosParaEmissao = cache(
   async (): Promise<ModeloParaEmissao[]> => {
     const supabase = await clienteServidor();
+    const administradora = await ehAdministradora();
 
-    const { data, error } = await supabase
+    let consulta = supabase
       .from("modelos_documento")
       .select("id, tipo, nome, descricao")
-      .eq("ativo", true)
+      .eq("ativo", true);
+
+    if (!administradora) consulta = consulta.neq("tipo", "anamnese");
+
+    const { data, error } = await consulta
       .order("tipo", { ascending: true })
       .order("nome", { ascending: true });
 
@@ -386,7 +406,7 @@ export const listarDocumentos = cache(
   ): Promise<PaginaDeDocumentos> => {
     const supabase = await clienteServidor();
     const pagina = Math.max(1, Math.trunc(opcoes.pagina ?? 1));
-    const termo = termoSeguro(opcoes.busca ?? "");
+    const termo = termoDeBusca(opcoes.busca ?? "");
 
     let pacientesEncontradas: string[] = [];
 
@@ -408,36 +428,62 @@ export const listarDocumentos = cache(
       pacientesEncontradas = (data ?? []).map((paciente) => paciente.id);
     }
 
-    let consulta = supabase
-      .from("documentos")
-      .select(
-        `id, tipo, titulo, situacao, paciente_id, emitido_em, exemplo,
-         pacientes ( nome, nome_social ),
-         perfis ( nome ),
-         documento_assinaturas ( assinado_em )`,
-        { count: "exact" },
-      );
+    // Uma função monta a consulta e aplica os filtros, para que a contagem de
+    // socorro (abaixo) conte exatamente o que a lista mostraria.
+    const filtrada = (somenteContagem: boolean) => {
+      let consulta = supabase
+        .from("documentos")
+        .select(
+          `id, tipo, titulo, situacao, paciente_id, emitido_em, exemplo,
+           pacientes ( nome, nome_social ),
+           perfis ( nome ),
+           documento_assinaturas ( assinado_em )`,
+          { count: "exact", head: somenteContagem },
+        );
 
-    if (opcoes.situacao && opcoes.situacao !== "todas") {
-      consulta = consulta.eq("situacao", opcoes.situacao);
-    }
-
-    if (opcoes.tipo && opcoes.tipo !== "todos") {
-      consulta = consulta.eq("tipo", opcoes.tipo);
-    }
-
-    if (termo) {
-      const alvos = [`titulo.ilike.%${termo}%`];
-      if (pacientesEncontradas.length > 0) {
-        alvos.push(`paciente_id.in.(${pacientesEncontradas.join(",")})`);
+      if (opcoes.situacao && opcoes.situacao !== "todas") {
+        consulta = consulta.eq("situacao", opcoes.situacao);
       }
-      consulta = consulta.or(alvos.join(","));
-    }
+
+      if (opcoes.tipo && opcoes.tipo !== "todos") {
+        consulta = consulta.eq("tipo", opcoes.tipo);
+      }
+
+      if (termo) {
+        const alvos = [`titulo.ilike.%${termo}%`];
+        if (pacientesEncontradas.length > 0) {
+          alvos.push(`paciente_id.in.(${pacientesEncontradas.join(",")})`);
+        }
+        consulta = consulta.or(alvos.join(","));
+      }
+
+      return consulta;
+    };
 
     const de = (pagina - 1) * POR_PAGINA_DOCUMENTOS;
-    const { data, count, error } = await consulta
+    const { data, count, error } = await filtrada(false)
       .order("emitido_em", { ascending: false })
+      // Desempate único: documentos emitidos na mesma transação (o seed, uma
+      // correção) têm o mesmo `emitido_em` e trocariam de página.
+      .order("id", { ascending: false })
       .range(de, de + POR_PAGINA_DOCUMENTOS - 1);
+
+    // Página além da última (link antigo, favorito, lista que encolheu): o
+    // PostgREST responde 416 e não manda o total junto. Não é falha — a lista
+    // responde vazia, com o total contado de novo, e a tela oferece o caminho
+    // de volta em vez da tela de erro.
+    if (error && paginaAlemDoFim(error)) {
+      const { count: totalReal, error: erroContagem } = await filtrada(true);
+      if (erroContagem) aoFalhar(erroContagem, "os documentos");
+
+      const total = totalReal ?? 0;
+      return {
+        itens: [],
+        total,
+        pagina,
+        paginas: Math.max(1, Math.ceil(total / POR_PAGINA_DOCUMENTOS)),
+      };
+    }
 
     if (error) aoFalhar(error, "os documentos");
 
@@ -467,6 +513,7 @@ export const listarDocumentos = cache(
 
 export const documentoPorId = cache(
   async (id: string): Promise<DocumentoCompleto | null> => {
+    if (!uuidValido(id)) return null;
     const supabase = await clienteServidor();
 
     const { data, error } = await supabase
@@ -583,6 +630,7 @@ export type LinkDeAssinatura = {
  */
 export const linksDoDocumento = cache(
   async (documentoId: string): Promise<LinkDeAssinatura[]> => {
+    if (!uuidValido(documentoId)) return [];
     const supabase = await clienteServidor();
 
     const { data, error } = await supabase
@@ -634,7 +682,7 @@ export const linksDoDocumento = cache(
 export async function estadoDoLinkPublico(
   token: string,
 ): Promise<{ situacao: string; tipo: string | null }> {
-  if (!/^[A-Za-z0-9_-]{32,128}$/.test(token)) return { situacao: "nao_encontrado", tipo: null };
+  if (!tokenPlausivel(token)) return { situacao: "nao_encontrado", tipo: null };
 
   const supabase = await clienteServidor();
   const { data, error } = await supabase.rpc("documento_link_estado", { p_token: token });

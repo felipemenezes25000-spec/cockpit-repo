@@ -1,6 +1,7 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
+import { ClipboardPlus, LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
@@ -12,7 +13,7 @@ import { criarTarefa } from "@/server/acoes/relacionamento";
 function Enviar() {
   const { pending } = useFormStatus();
   return <button type="submit" disabled={pending} className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary hover:bg-primary disabled:opacity-60">
-    {pending && <LoaderCircle aria-hidden="true" size={16} className="animate-spin" />}
+    {pending ? <LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> : <ClipboardPlus aria-hidden="true" size={18} strokeWidth={1.75} />}
     {pending ? "Salvando…" : "Criar tarefa"}
   </button>;
 }
@@ -42,6 +43,12 @@ export function FormularioTarefa() {
     <Campo id="prazo" rotulo="Prazo" erro={erros.prazo}>
       <input id="prazo" name="prazo" type="date" defaultValue={valores.prazo} className={cn(ENTRADA, erros.prazo && ENTRADA_ERRO)} />
     </Campo>
-    <Enviar />
+    {/* Rodapé de todo formulário: divisória, envio com ícone e a saída sem salvar. */}
+    <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
+      <Enviar />
+      <Link href="/relacionamento?aba=tarefas" className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary">
+        Cancelar
+      </Link>
+    </div>
   </form>;
 }

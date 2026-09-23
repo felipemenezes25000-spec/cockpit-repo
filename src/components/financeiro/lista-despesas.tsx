@@ -6,21 +6,54 @@ import { BotaoLink } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
 import { ROTULO_CATEGORIA } from "@/lib/despesa";
-import { descreverPrazo, formatarData, formatarMoeda } from "@/lib/format";
+import { descreverPrazo, formatarData, formatarMesAno, formatarMoeda } from "@/lib/format";
 import { ROTULO_FORMA } from "@/lib/venda";
 import { mudarSituacaoDespesa } from "@/server/acoes/despesas";
 import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import type { Despesa } from "@/server/consultas/despesas";
 
+/**
+ * Pergunta antes de reabrir, no mesmo padrão de Cancelar.
+ *
+ * Reabrir uma paga é o mais destrutivo dos botões da lista: a ação grava
+ * `pago_em` e `forma` nulos, a despesa sai das pagas e do resultado de caixa
+ * do mês em que foi paga — mesmo que esse mês já esteja fechado — e volta a
+ * pendente. A data e a forma só ficam na auditoria, que nenhuma tela lê; por
+ * isso a pergunta diz quais eram, para quem quiser desfazer pagando de novo.
+ */
+function confirmacaoDeReabrir(despesa: Despesa): string {
+  const pergunta = `Reabrir a despesa "${despesa.descricao}"?`;
+
+  if (despesa.situacao === "paga" && despesa.pagoEm) {
+    const forma = despesa.forma ? `, ${ROTULO_FORMA[despesa.forma]}` : "";
+    return (
+      `${pergunta} O pagamento de ${formatarData(despesa.pagoEm)}${forma} será apagado: ` +
+      `ela sai das despesas pagas e do resultado de caixa de ${formatarMesAno(despesa.pagoEm)} ` +
+      "e volta a pendente. Para desfazer, será preciso pagar de novo com a mesma data."
+    );
+  }
+
+  return `${pergunta} Ela deixa de ser cancelada e volta para o que falta pagar.`;
+}
+
 export function ListaDespesas({
   despesas,
   dataPadrao,
+  filtrada = false,
 }: {
   despesas: Despesa[];
   dataPadrao: string;
+  /** A lista está vazia por causa dos filtros, não por falta de despesa. */
+  filtrada?: boolean;
 }) {
   if (despesas.length === 0) {
-    return (
+    return filtrada ? (
+      <EstadoVazio
+        icone={ReceiptText}
+        titulo="Nada com estes filtros"
+        descricao="Afrouxe os filtros ou troque o mês para encontrar a despesa."
+      />
+    ) : (
       <EstadoVazio
         icone={ReceiptText}
         titulo="Nenhuma despesa neste mês"
@@ -40,8 +73,13 @@ export function ListaDespesas({
         <li
           key={despesa.id}
           className={cn(
-            "flex flex-col gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)]",
-            despesa.situacao === "cancelada" && "opacity-60",
+            "flex flex-col gap-3 rounded-[var(--radius-cartao)] border p-4",
+            // Cancelada não usa opacidade: derrubaria o texto terciário para
+            // 2,6:1. O estado vem do selo "Cancelada", do fundo recuado e da
+            // borda tracejada, como em Configurações.
+            despesa.situacao === "cancelada"
+              ? "border-dashed border-outline-variant bg-surface-container-low"
+              : "border-card-border bg-surface shadow-[var(--shadow-cartao)]",
           )}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -68,12 +106,18 @@ export function ListaDespesas({
               ) : null}
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center gap-3">
+            {/* No celular estreito (320 px) o bloco pode encolher e quebrar em
+                linhas; com `shrink-0` ele passava da tela. Do `sm` para cima
+                não encolhe, para valor e botões ficarem juntos. */}
+            <div className="flex flex-wrap items-center gap-3 sm:shrink-0">
               {/* Saída de dinheiro é vermelha. Cancelada perde a força:
                   o valor não saiu nem vai sair. */}
               <span
+                // Largura fixa e alinhado à direita do `sm` para cima: o valor
+                // fica na mesma coluna em todas as linhas, com "Cancelar" ou
+                // "Reabrir" ao lado (também de largura fixa, abaixo).
                 className={cn(
-                  "tabular text-base font-semibold",
+                  "tabular text-base font-semibold sm:w-36 sm:text-right",
                   despesa.situacao === "cancelada"
                     ? "text-outline line-through"
                     : "text-negativo",
@@ -89,38 +133,41 @@ export function ListaDespesas({
                 Editar
               </Link>
 
-              {despesa.situacao === "pendente" ? (
-                <FormularioDeAcao
-                  acao={mudarSituacaoDespesa}
-                  campos={{ id: despesa.id, acao: "cancelar" }}
-                  confirmacao={`Cancelar a despesa "${despesa.descricao}"? Ela sai do que falta pagar e pode ser reaberta depois.`}
-                  alinhamento="fim"
-                >
-                  <BotaoDeAcao
-                    tom="silencioso"
-                    tamanho="xs"
-                    icone={<Ban strokeWidth={1.75} />}
-                    rotuloAcessivel={`Cancelar a despesa ${despesa.descricao}`}
+              <div className="flex sm:w-28 sm:justify-end">
+                {despesa.situacao === "pendente" ? (
+                  <FormularioDeAcao
+                    acao={mudarSituacaoDespesa}
+                    campos={{ id: despesa.id, acao: "cancelar" }}
+                    confirmacao={`Cancelar a despesa "${despesa.descricao}"? Ela sai do que falta pagar e pode ser reaberta depois.`}
+                    alinhamento="fim"
                   >
-                    Cancelar
-                  </BotaoDeAcao>
-                </FormularioDeAcao>
-              ) : (
-                <FormularioDeAcao
-                  acao={mudarSituacaoDespesa}
-                  campos={{ id: despesa.id, acao: "reabrir" }}
-                  alinhamento="fim"
-                >
-                  <BotaoDeAcao
-                    tom="silencioso"
-                    tamanho="xs"
-                    icone={<RotateCcw strokeWidth={1.75} />}
-                    rotuloAcessivel={`Reabrir a despesa ${despesa.descricao}`}
+                    <BotaoDeAcao
+                      tom="silencioso"
+                      tamanho="xs"
+                      icone={<Ban strokeWidth={1.75} />}
+                      rotuloAcessivel={`Cancelar a despesa ${despesa.descricao}`}
+                    >
+                      Cancelar
+                    </BotaoDeAcao>
+                  </FormularioDeAcao>
+                ) : (
+                  <FormularioDeAcao
+                    acao={mudarSituacaoDespesa}
+                    campos={{ id: despesa.id, acao: "reabrir" }}
+                    confirmacao={confirmacaoDeReabrir(despesa)}
+                    alinhamento="fim"
                   >
-                    Reabrir
-                  </BotaoDeAcao>
-                </FormularioDeAcao>
-              )}
+                    <BotaoDeAcao
+                      tom="silencioso"
+                      tamanho="xs"
+                      icone={<RotateCcw strokeWidth={1.75} />}
+                      rotuloAcessivel={`Reabrir a despesa ${despesa.descricao}`}
+                    >
+                      Reabrir
+                    </BotaoDeAcao>
+                  </FormularioDeAcao>
+                )}
+              </div>
             </div>
           </div>
 

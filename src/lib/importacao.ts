@@ -1,5 +1,5 @@
 import { partesDoDia } from "./dates";
-import { lerCsv, type PlanilhaLida } from "./csv";
+import { formatoNaoSuportado, lerCsv, type PlanilhaLida } from "./csv";
 import {
   normalizarPaciente,
   validarPaciente,
@@ -192,6 +192,7 @@ const ROTULO_DO_CAMPO: Record<string, string> = {
   data_nascimento: "Data de nascimento",
   telefone: "Telefone",
   email: "E-mail",
+  cep: "CEP",
   uf: "UF",
 };
 
@@ -203,6 +204,17 @@ const ROTULO_DO_CAMPO: Record<string, string> = {
  * importação vira a porta dos fundos das regras.
  */
 export function analisarPlanilha(bytes: Uint8Array): AnaliseDaPlanilha {
+  const formato = formatoNaoSuportado(bytes);
+  if (formato) {
+    return {
+      mapa: { indices: {}, rotulos: {}, ignoradas: [] },
+      linhas: [],
+      separador: ";",
+      codificacao: "utf-8",
+      falha: formato,
+    };
+  }
+
   const planilha = lerCsv(bytes);
 
   const vazia: AnaliseDaPlanilha = {
@@ -212,6 +224,15 @@ export function analisarPlanilha(bytes: Uint8Array): AnaliseDaPlanilha {
     codificacao: planilha.codificacao,
     falha: null,
   };
+
+  if (planilha.aspaSemFechar !== null) {
+    return {
+      ...vazia,
+      falha:
+        `A linha ${planilha.aspaSemFechar} do arquivo abre aspas (") e elas não fecham. ` +
+        "Corrija essa célula na planilha e exporte o CSV de novo.",
+    };
+  }
 
   if (planilha.cabecalho.length === 0) {
     return { ...vazia, falha: "O arquivo está vazio." };
@@ -247,6 +268,18 @@ export function analisarPlanilha(bytes: Uint8Array): AnaliseDaPlanilha {
     const erros: string[] = [];
     const avisos: string[] = [];
 
+    // Célula preenchida além do cabeçalho quase sempre é separador dentro de
+    // um valor sem aspas ("Rua X, 100" num arquivo separado por vírgula): tudo
+    // à direita dela escorregou uma coluna. Gravar isso poria o bairro no
+    // campo da cidade. Célula vazia sobrando é só sobra do Excel.
+    const sobras = celulas.slice(planilha.cabecalho.length).filter((c) => c !== "");
+    if (sobras.length > 0) {
+      erros.push(
+        `A linha tem valores além das ${planilha.cabecalho.length} colunas do cabeçalho. ` +
+          "Confira se algum valor tem o separador sem estar entre aspas.",
+      );
+    }
+
     const bruto = { ...PACIENTE_EM_BRANCO };
     for (const [campo, indice] of Object.entries(mapa.indices)) {
       bruto[campo as CampoDaPlanilha] = celulas[indice as number] ?? "";
@@ -267,6 +300,11 @@ export function analisarPlanilha(bytes: Uint8Array): AnaliseDaPlanilha {
       }
     }
 
+    // CEP fora dos 8 dígitos cai na regra de `validarPaciente` e recusa a
+    // linha, como no cadastro manual. Completar o zero que o Excel come ou
+    // importar sem CEP é decisão da clínica ainda em aberto (AGENTS.md §13,
+    // item 12): completar com zero também inventaria CEP de outro estado
+    // para quem só esqueceu um dígito.
     const valores = normalizarPaciente(bruto);
 
     for (const [campo, mensagem] of Object.entries(validarPaciente(valores))) {

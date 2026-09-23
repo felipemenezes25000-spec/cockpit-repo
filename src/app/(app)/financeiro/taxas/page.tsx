@@ -20,6 +20,7 @@ export default async function PaginaTaxas() {
 
   const [taxas, administradora] = await Promise.all([listarTaxas(), ehAdministradora()]);
   const ativas = taxas.filter((t) => t.ativa).length;
+  const inativas = taxas.length - ativas;
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,10 +33,12 @@ export default async function PaginaTaxas() {
             taxas.length === 0
               ? "A tabela está vazia."
               : `${ativas} ${ativas === 1 ? "ativa" : "ativas"}` +
-                (taxas.length > ativas ? ` · ${taxas.length - ativas} inativas` : "")
+                (inativas > 0 ? ` · ${inativas} ${inativas === 1 ? "inativa" : "inativas"}` : "")
           }
+          // Com a tabela vazia, o convite é o do estado vazio ("Cadastrar a
+          // primeira"): dois botões primários iguais na mesma tela competiam.
           acao={
-            administradora ? (
+            administradora && taxas.length > 0 ? (
               <BotaoLink href="/financeiro/taxas/nova" variante="primaria" tamanho="sm">
                 <Plus aria-hidden="true" size={16} strokeWidth={1.75} />
                 Nova taxa

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dataDoBanco } from "./dates";
 import {
+  alvosDaBuscaDePacientes,
   cpfValido,
   diasAteAniversario,
   formatarCpf,
@@ -56,6 +57,51 @@ describe("telefone", () => {
     expect(linkWhatsapp("(11) 98765-4321")).toContain("5511987654321");
     expect(linkWhatsapp("123")).toBeNull();
     expect(linkWhatsapp(null)).toBeNull();
+  });
+});
+
+describe("normalização e limites", () => {
+  it("espaço repetido vira um nos campos de uma linha; observações ficam como vieram", () => {
+    const v = paciente({
+      nome: "  Ana \t Maria   Souza ",
+      nome_social: "Ana  Mar",
+      cidade: "São   Paulo",
+      observacoes: "linha 1\n\nlinha 2",
+    });
+    expect(v.nome).toBe("Ana Maria Souza");
+    expect(v.nome_social).toBe("Ana Mar");
+    expect(v.cidade).toBe("São Paulo");
+    expect(v.observacoes).toBe("linha 1\n\nlinha 2");
+  });
+
+  it("corta no limite: nome 120, e-mail 160 (minúsculo), UF maiúscula", () => {
+    const v = paciente({ nome: "A".repeat(130), email: " ANA@X.COM ", uf: "sp" });
+    expect(v.nome).toHaveLength(120);
+    expect(v.email).toBe("ana@x.com");
+    expect(v.uf).toBe("SP");
+  });
+
+  it("CEP com número a mais ou a menos é recusado, não cortado em silêncio", () => {
+    expect(paciente({ cep: "01310-1000" }).cep).toBe("013101000");
+    expect(validarPaciente(paciente({ cep: "01310-1000" }))).toEqual({
+      cep: "CEP inválido. Use os 8 números.",
+    });
+    expect(validarPaciente(paciente({ cep: "0131" }))).toHaveProperty("cep");
+    expect(validarPaciente(paciente({ cep: "01310-100" }))).toEqual({});
+    expect(validarPaciente(paciente({ cep: "" }))).toEqual({});
+  });
+
+  it("CEP incompleto já gravado não trava a edição; CEP alterado segue a regra", () => {
+    expect(validarPaciente(paciente({ cep: "0131" }), { cepGravado: "0131" })).toEqual({});
+    expect(validarPaciente(paciente({ cep: "01312" }), { cepGravado: "0131" })).toHaveProperty(
+      "cep",
+    );
+    expect(validarPaciente(paciente({ cep: "0131" }), { cepGravado: null })).toHaveProperty("cep");
+  });
+
+  it("UF fora da lista é recusada", () => {
+    expect(validarPaciente(paciente({ uf: "XX" }))).toHaveProperty("uf");
+    expect(validarPaciente(paciente({ uf: "São Paulo" }))).toHaveProperty("uf");
   });
 });
 
@@ -141,5 +187,25 @@ describe("idade e aniversário no calendário da clínica", () => {
     expect(diasAteAniversario(dataDoBanco("1990-09-22"), hoje)).toBe(0);
     expect(diasAteAniversario(dataDoBanco("1990-09-30"), hoje)).toBe(8);
     expect(diasAteAniversario(dataDoBanco("1990-09-21"), hoje)).toBe(364);
+  });
+});
+
+describe("busca na lista de pacientes", () => {
+  it("e-mail com sublinhado é achado: o _ fica no alvo email", () => {
+    const alvos = alvosDaBuscaDePacientes("ana_silva@gmail.com");
+    expect(alvos).toContain("email.ilike.%ana_silva@gmail.com%");
+    // No nome o _ seria curinga; ali ele continua virando espaço.
+    expect(alvos).toContain("busca.ilike.%ana silva@gmail.com%");
+  });
+
+  it("o que quebra a gramática do PostgREST continua limpo em todos os alvos", () => {
+    const alvos = alvosDaBuscaDePacientes('a,b(c)"d*e%f') ?? [];
+    for (const alvo of alvos) expect(alvo.slice(alvo.indexOf("%"))).not.toMatch(/[,()"*]/);
+    expect(alvos).toContain("email.ilike.%a b c d e f%");
+  });
+
+  it("sem termo não filtra; dígitos buscam CPF e telefone", () => {
+    expect(alvosDaBuscaDePacientes("  _ ")).toBeNull();
+    expect(alvosDaBuscaDePacientes("529.982")).toContain("cpf.ilike.%529982%");
   });
 });

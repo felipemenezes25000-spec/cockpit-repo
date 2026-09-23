@@ -1,11 +1,12 @@
-import { FilePlus2, LayoutList } from "lucide-react";
+import { FilePlus2, FileSignature, LayoutList } from "lucide-react";
 import type { Metadata } from "next";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { FiltrosDocumentos } from "@/components/documentos/filtros-documentos";
 import { ListaDocumentos } from "@/components/documentos/lista-documentos";
-import { PaginacaoDocumentos } from "@/components/documentos/paginacao-documentos";
+import { Paginacao } from "@/components/ui/paginacao";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { estaAlemDoFim, PaginaAlemDoFim } from "@/components/ui/pagina-alem-do-fim";
 import type { SituacaoDocumento, TipoDocumento } from "@/lib/documento";
 import {
   EstruturaDocumentoPendenteError,
@@ -96,15 +97,31 @@ export default async function PaginaDocumentos({
             tipo={tipo}
             total={resultado.total}
           />
-          <ListaDocumentos
-            documentos={resultado.itens}
-            filtrado={Boolean(busca || situacao || tipo)}
-          />
-          <PaginacaoDocumentos
-            pagina={resultado.pagina}
-            paginas={resultado.paginas}
-            parametros={preservar}
-          />
+          {estaAlemDoFim(resultado) ? (
+            <PaginaAlemDoFim
+              icone={FileSignature}
+              total={resultado.total}
+              paginas={resultado.paginas}
+              singular="documento"
+              plural="documentos"
+              caminho="/formularios"
+              parametros={preservar}
+            />
+          ) : (
+            <>
+              <ListaDocumentos
+                documentos={resultado.itens}
+                filtrado={Boolean(busca || situacao || tipo)}
+              />
+              <Paginacao
+                pagina={resultado.pagina}
+                paginas={resultado.paginas}
+                parametros={preservar}
+                caminho="/formularios"
+                rotulo="Paginação dos documentos"
+              />
+            </>
+          )}
         </CardCorpo>
       </Card>
     </div>

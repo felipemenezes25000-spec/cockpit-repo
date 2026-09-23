@@ -24,9 +24,22 @@ const ESTILO: Record<TipoMovimentacao, { icone: LucideIcon; rotulo: string; clas
  * O extrato do período. Venda aparece sem sinal — é o fato gerador; o
  * dinheiro em si entra pela linha de recebimento.
  */
-export function ListaMovimentacoes({ itens }: { itens: Movimentacao[] }) {
+export function ListaMovimentacoes({
+  itens,
+  filtrada = false,
+}: {
+  itens: Movimentacao[];
+  /** A lista está vazia por causa do filtro de tipo, não por falta de movimento. */
+  filtrada?: boolean;
+}) {
   if (itens.length === 0) {
-    return (
+    return filtrada ? (
+      <EstadoVazio
+        icone={History}
+        titulo="Nada com estes filtros"
+        descricao="Afrouxe o filtro de tipo ou troque o mês para encontrar a movimentação."
+      />
+    ) : (
       <EstadoVazio
         icone={History}
         titulo="Nenhuma movimentação neste mês"
@@ -54,10 +67,12 @@ export function ListaMovimentacoes({ itens }: { itens: Movimentacao[] }) {
             </span>
 
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-on-surface">
+              {/* Quebra no celular em vez de truncar: a 320 px sobravam uns 90 px
+                  e "Venda — Car…" não dizia de quem nem o quê. */}
+              <span className="block text-sm font-medium break-words text-on-surface sm:truncate">
                 {item.titulo}
               </span>
-              <span className="block truncate text-xs text-outline">
+              <span className="block text-xs break-words text-outline sm:truncate">
                 {formatarData(item.data)}
                 {item.detalhe ? ` · ${item.detalhe}` : ""}
                 {item.forma ? ` · ${ROTULO_FORMA[item.forma]}` : ""}

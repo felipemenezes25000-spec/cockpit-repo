@@ -84,6 +84,13 @@ export function FormularioPaciente({
   const de = (campo: keyof ValoresPaciente) =>
     estado.valores?.[campo] ?? partida[campo];
 
+  // A importação grava a origem como texto livre ("Facebook", o nome de quem
+  // indicou). Sem uma <option> para esse valor, o <select> cai em "—" e a
+  // próxima edição da ficha — mesmo só do telefone — apagaria a origem.
+  const origem = de("origem");
+  const origemForaDaLista =
+    origem !== "" && !(ORIGENS as readonly string[]).includes(origem);
+
   const [cpf, setCpf] = useState(() => mascararCpf(de("cpf")));
   const [telefone, setTelefone] = useState(() => mascararTelefone(de("telefone")));
   const [cep, setCep] = useState(() => mascararCep(de("cep")));
@@ -217,7 +224,7 @@ export function FormularioPaciente({
       {/* Endereço -------------------------------------------------------- */}
       <GrupoDeCampos titulo="Endereço">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-6">
-          <Campo id="cep" rotulo="CEP" className="sm:col-span-2">
+          <Campo id="cep" rotulo="CEP" erro={erros.cep} className="sm:col-span-2">
             <input
               id="cep"
               name="cep"
@@ -227,7 +234,8 @@ export function FormularioPaciente({
               value={cep}
               onChange={(e) => setCep(mascararCep(e.target.value))}
               placeholder="01310-100"
-              className={cn(ENTRADA, "tabular")}
+              className={cn(ENTRADA, "tabular", erros.cep && ENTRADA_ERRO)}
+              {...marcar("cep")}
             />
           </Campo>
 
@@ -254,7 +262,7 @@ export function FormularioPaciente({
             />
           </Campo>
 
-          <Campo id="complemento" rotulo="Complemento" className="sm:col-span-2">
+          <Campo id="complemento" rotulo="Complemento" className="sm:col-span-3">
             <input
               id="complemento"
               name="complemento"
@@ -266,7 +274,7 @@ export function FormularioPaciente({
             />
           </Campo>
 
-          <Campo id="bairro" rotulo="Bairro" className="sm:col-span-2">
+          <Campo id="bairro" rotulo="Bairro" className="sm:col-span-3">
             <input
               id="bairro"
               name="bairro"
@@ -277,7 +285,7 @@ export function FormularioPaciente({
             />
           </Campo>
 
-          <Campo id="cidade" rotulo="Cidade" className="sm:col-span-1">
+          <Campo id="cidade" rotulo="Cidade" className="sm:col-span-4">
             <input
               id="cidade"
               name="cidade"
@@ -289,7 +297,7 @@ export function FormularioPaciente({
             />
           </Campo>
 
-          <Campo id="uf" rotulo="UF" erro={erros.uf} className="sm:col-span-1">
+          <Campo id="uf" rotulo="UF" erro={erros.uf} className="sm:col-span-2">
             <select
               id="uf"
               name="uf"
@@ -320,10 +328,13 @@ export function FormularioPaciente({
             <select
               id="origem"
               name="origem"
-              defaultValue={de("origem")}
+              defaultValue={origem}
               className={ENTRADA}
             >
               <option value="">—</option>
+              {origemForaDaLista ? (
+                <option value={origem}>{origem} (importada)</option>
+              ) : null}
               {ORIGENS.map((origem) => (
                 <option key={origem} value={origem}>
                   {origem}

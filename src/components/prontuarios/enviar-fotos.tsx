@@ -19,10 +19,11 @@ import {
   MAXIMO_POR_ENVIO,
   mensagemDoStorage,
   motivoDaRecusa,
+  motivoDataInvalida,
   TAMANHO_MAXIMO,
   tipoAceito,
+  tipoPeloConteudo,
 } from "@/lib/prontuario-imagens";
-import { clienteNavegador } from "@/lib/supabase/client";
 import { registrarImagem } from "@/server/acoes/prontuario-imagens";
 
 /**
@@ -38,6 +39,18 @@ import { registrarImagem } from "@/server/acoes/prontuario-imagens";
  * tamanho e tipo lendo o objeto de volta.
  */
 
+/**
+ * O cliente do Supabase no navegador só é carregado quando a primeira foto
+ * vai subir: importado no topo, ele entrava no JavaScript inicial da ficha do
+ * prontuário (uns 75 kB a mais que as rotas vizinhas) para quem só ia ler.
+ * Dentro do `try` de cada foto: se o pedaço de JS não carregar (rede caiu), a
+ * foto é marcada com erro como qualquer outra falha de rede.
+ */
+async function clienteDoStorage() {
+  const { clienteNavegador } = await import("@/lib/supabase/client");
+  return clienteNavegador();
+}
+
 type Estado = "esperando" | "enviando" | "ok" | "erro";
 
 type ItemDaFila = {
@@ -47,6 +60,21 @@ type ItemDaFila = {
   estado: Estado;
   erro?: string;
 };
+
+/**
+ * O tipo pelos primeiros bytes, não pela extensão. O navegador deduz
+ * `arquivo.type` do nome: um PNG salvo como ".jpg" chegaria como JPEG e o
+ * servidor, que confere o conteúdo, o recusaria. Sem conseguir ler, fica o
+ * declarado — o servidor confere de qualquer jeito.
+ */
+async function tipoDoArquivo(arquivo: File): Promise<string> {
+  try {
+    const inicio = new Uint8Array(await arquivo.slice(0, 12).arrayBuffer());
+    return tipoPeloConteudo(inicio) ?? arquivo.type;
+  } catch {
+    return arquivo.type;
+  }
+}
 
 /**
  * Largura e altura reservam o espaço da foto na tela antes de ela chegar. Só o
@@ -117,6 +145,7 @@ export function EnviarFotos({
   const [fila, setFila] = useState<ItemDaFila[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [falha, setFalha] = useState<string | null>(null);
+  const [erroData, setErroData] = useState<string | null>(null);
 
   function aoEscolher(evento: ChangeEvent<HTMLInputElement>) {
     const lista = [...(evento.target.files ?? [])];
@@ -133,6 +162,14 @@ export function EnviarFotos({
     evento.preventDefault();
     if (enviando || escolhidos.length === 0) return;
 
+    // A data é conferida ANTES de qualquer arquivo subir, com a mesma função
+    // que `registrarImagem` usa (AGENTS.md §6, regra 4). O `max` do campo
+    // barra o futuro, mas não um ano digitado errado ("0025"): recusada só no
+    // servidor, cada foto do lote já teria ido ao bucket e voltado.
+    const motivoData = motivoDataInvalida(dataCaptura, hojeNaClinica);
+    setErroData(motivoData);
+    if (motivoData) return;
+
     setFalha(null);
     setEnviando(true);
 
@@ -144,7 +181,6 @@ export function EnviarFotos({
     }));
     setFila(inicial);
 
-    const supabase = clienteNavegador();
     const resultados = [...inicial];
 
     function marcar(indice: number, mudanca: Partial<ItemDaFila>) {
@@ -158,8 +194,9 @@ export function EnviarFotos({
     for (let indice = 0; indice < escolhidos.length; indice += 1) {
       const arquivo = escolhidos[indice];
 
-      const recusa = motivoDaRecusa({ tipo: arquivo.type, tamanho: arquivo.size });
-      if (recusa || !tipoAceito(arquivo.type)) {
+      const tipo = await tipoDoArquivo(arquivo);
+      const recusa = motivoDaRecusa({ tipo, tamanho: arquivo.size });
+      if (recusa || !tipoAceito(tipo)) {
         marcar(indice, { estado: "erro", erro: recusa ?? "Formato não aceito." });
         continue;
       }
@@ -169,12 +206,13 @@ export function EnviarFotos({
       // Uma foto que falha por rede não pode parar a fila nem prender a tela
       // em "enviando": ela é marcada com erro e a próxima segue.
       try {
-        const caminho = caminhoDaImagem(prontuarioId, arquivo.type);
+        const caminho = caminhoDaImagem(prontuarioId, tipo);
         const dimensoes = await dimensoesDoArquivo(arquivo);
+        const supabase = await clienteDoStorage();
 
         const { error: erroEnvio } = await supabase.storage
           .from(BUCKET_IMAGENS)
-          .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
+          .upload(caminho, arquivo, { contentType: tipo, upsert: false });
 
         if (erroEnvio) {
           // Mesma tradução que o servidor usa: o Storage fala inglês, a tela não.
@@ -195,13 +233,23 @@ export function EnviarFotos({
           altura: dimensoes?.altura ?? null,
         });
 
-        // Quando a linha falha, a ação já removeu o arquivo do bucket. Não sobra
-        // nada para limpar aqui.
+        // Quando a ação recusa depois de conferir sessão e caminho, ela mesma
+        // tira o arquivo do bucket (e registra no log se não conseguir); o
+        // navegador não repete a remoção. O arquivo fica em três casos: a
+        // sessão caiu entre o upload e a ação, o caminho já pertence a uma
+        // foto registrada, ou a ação não conseguiu conferir isso. Sobrando
+        // arquivo sem linha, a Conferência das fotos (/configuracoes/fotos) o
+        // mostra.
         marcar(
           indice,
           resposta.ok ? { estado: "ok" } : { estado: "erro", erro: resposta.erro },
         );
       } catch {
+        // Aqui o navegador não sabe o que aconteceu: a conexão pode ter caído
+        // antes do upload, entre ele e a ação, ou depois de a linha já ter
+        // sido gravada. Remover daqui poderia apagar o arquivo de uma foto
+        // registrada, então nada é removido — se sobrar arquivo sem linha,
+        // ele também aparece na Conferência das fotos.
         marcar(indice, {
           estado: "erro",
           erro: "A conexão caiu durante o envio. Confira a galeria e envie de novo se a foto não aparecer.",
@@ -230,13 +278,17 @@ export function EnviarFotos({
           rotulo="Quando a foto foi tirada"
           obrigatorio
           dica="O eixo da evolução é este, não o dia do envio."
+          erro={erroData ?? undefined}
         >
           <input
             id="foto-data-captura"
             type="date"
             value={dataCaptura}
             max={hojeNaClinica}
-            onChange={(evento) => setDataCaptura(evento.target.value)}
+            onChange={(evento) => {
+              setDataCaptura(evento.target.value);
+              setErroData(null);
+            }}
             required
             className={ENTRADA}
           />

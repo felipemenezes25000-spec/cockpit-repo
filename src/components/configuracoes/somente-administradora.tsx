@@ -2,11 +2,27 @@ import { ArrowLeft, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { Card, CardCorpo } from "@/components/ui/card";
 
+export const EXPLICACAO_PROCEDIMENTOS =
+  "A recepção usa os procedimentos na agenda, mas quem define nome, duração e valor é quem responde pela clínica.";
+
+export const EXPLICACAO_MODELOS =
+  "A equipe emite documentos a partir dos modelos, mas quem cria, versiona e aposenta o texto é quem responde pela clínica.";
+
+export const EXPLICACAO_TAXAS =
+  "O financeiro altera a taxa de uma venda, com justificativa, mas a tabela padrão de taxas é definida por quem responde pela clínica.";
+
 /**
  * Tela para quem não é administradora. A ação de servidor repete a checagem —
- * esconder a tela não é proteger a rota.
+ * esconder a tela não é proteger a rota. `explicacao` diz o que os outros
+ * perfis fazem com a tabela, porque isso muda de tabela para tabela.
  */
-export function SomenteAdministradora({ voltarPara }: { voltarPara: string }) {
+export function SomenteAdministradora({
+  voltarPara,
+  explicacao,
+}: {
+  voltarPara: string;
+  explicacao: string;
+}) {
   return (
     <div className="mx-auto max-w-2xl">
       <Card>
@@ -16,10 +32,7 @@ export function SomenteAdministradora({ voltarPara }: { voltarPara: string }) {
           </span>
           <div>
             <p className="font-medium text-on-surface">Só a administradora altera a tabela</p>
-            <p className="mt-1 max-w-sm text-sm text-outline">
-              A recepção usa os procedimentos na agenda, mas quem define nome,
-              duração e valor é quem responde pela clínica.
-            </p>
+            <p className="mt-1 max-w-sm text-sm text-outline">{explicacao}</p>
           </div>
           <Link
             href={voltarPara}

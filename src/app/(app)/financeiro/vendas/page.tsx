@@ -9,6 +9,7 @@ import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { ehFinanceira } from "@/lib/auth";
 import { formatarMoeda } from "@/lib/format";
 import { normalizarRotulo } from "@/lib/importacao";
+import { centavosParaReais, somaEmCentavos } from "@/lib/moeda";
 import { lerMes } from "@/lib/periodo";
 import { FORMAS_EM_ORDEM, ROTULO_FORMA, type FormaPagamento } from "@/lib/venda";
 import { listarVendas, type VendaDaLista } from "@/server/consultas/vendas";
@@ -86,7 +87,8 @@ export default async function PaginaVendas({
   ]);
 
   const vendas = filtrar(todas, situacao, forma, busca);
-  const total = vendas.reduce((soma, v) => soma + v.valorFinal, 0);
+  // Em centavos (§7.1): somar reais em ponto flutuante deixa resto de 1e-12.
+  const total = centavosParaReais(somaEmCentavos(vendas.map((v) => v.valorFinal)));
   const filtrada = vendas.length !== todas.length;
 
   const grupos: GrupoDeFiltro[] = [

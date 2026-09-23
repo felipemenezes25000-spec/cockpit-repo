@@ -1,7 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { AssinarPorLink } from "@/components/documentos/assinar-por-link";
-import type { TipoDocumento } from "@/lib/documento";
+import { tokenPlausivel, type TipoDocumento } from "@/lib/documento";
 import { CLINICA } from "@/lib/nav";
 import { estadoDoLinkPublico } from "@/server/consultas/documentos";
 
@@ -21,6 +21,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/**
+ * Sempre renderizada na hora, nunca guardada em cache (ISR). Hoje a consulta
+ * já lê cookies e isso bastaria; o `force-dynamic` deixa explícito que a
+ * situação de um link (assinado, revogado, vencido) não pode vir de uma
+ * cópia antiga, e garante o `Cache-Control: private, no-store` de produção
+ * mesmo se a consulta um dia deixar de ler cookies.
+ */
+export const dynamic = "force-dynamic";
+
 const TIPOS = ["contrato", "termo", "orientacao", "anamnese"];
 
 export default async function PaginaAssinar({
@@ -29,7 +38,11 @@ export default async function PaginaAssinar({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const limpo = decodeURIComponent(token ?? "").slice(0, 200);
+  // Sem `decodeURIComponent`: o token é base64url e nunca tem `%`. Decodificar
+  // só servia para um endereço malformado ("%E0%A4%A") derrubar a página com
+  // URIError. O que não tem a forma do token vira "link inválido" antes de
+  // qualquer ida ao banco, e não é repassado ao formulário.
+  const limpo = tokenPlausivel(token) ? token : "";
 
   // Só a situação, sem revelar conteúdo: a função devolve o tipo para a tela
   // saber dizer "contrato" ou "termo", e mais nada antes da data de

@@ -30,6 +30,12 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0020_financeiro_conferido_no_banco.sql` | Gatilho `vendas_confere_taxa` (forma, parcelas, tabela padrão, percentual e valor da taxa); `recebimentos_confirmado_imutavel`; `private.recebimento_da_venda_criar` como porta do recebimento; `venda_registrar` e `venda_alterar_pagamento` recriadas com a mesma assinatura. |
 | `0021_agenda_sem_choque.sql` | Gatilho `atendimentos_sem_choque`: sobreposição exata recusada com `23P01`, sob trava por profissional. |
 | `0022_documentos_integridade.sql` | Documento só nasce do modelo e só muda `situacao`/`motivo_cancelamento`; transições só a partir de `emitido`; evidência da assinatura escrita pelo banco e assinatura fecha o documento; pergunta da anamnese congelada (UPDATE só nas colunas de resposta) e resposta só em documento `emitido`; link público com `for update` e `on conflict`; `campos_validos` mais estrita; prontuário sem troca de paciente e versão conferida; foto com caminho exato, eliminação só com motivo e Storage sem UPDATE. |
+| `0023_venda_so_pela_funcao.sql` | Venda, histórico e ajuste só nascem e só mudam por `venda_registrar` e `venda_alterar_pagamento`, que viram `SECURITY DEFINER` e conferem o perfil na entrada (`private.tem_acesso()` / `private.e_financeira()`, 42501). Recebimento de venda só pela porta; o financeiro insere só recebimento solto e altera só `situacao`, `recebido_em` e `valor_recebido`. Gatilho `recebimentos_confirmacao_coerente`: sem data futura (fuso da clínica) e "recebido" só pelo líquido previsto. O cabeçalho traz a consulta que lista vendas antigas sem recebimento — a migração não mexe em dado existente. |
+| `0024_fotos_reconciliacao_e_arestas.sql` | `public.prontuario_imagens_reconciliar()` (INVOKER, só administradora, só leitura): foto sem arquivo e arquivo sem linha. UPDATE de `prontuario_imagens` só em `legenda`, `data_captura`, `arquivada` e `ordem`; sequências sem `anon`; índice `despesas_pagas_no_periodo`. |
+| `0025_contato_estruturado_e_arestas.sql` | `pendencias.origem` (enum `origem_pendencia`) no lugar do prefixo de texto do Relacionamento, com backfill dos registros antigos, constraint `pendencias_origem_coerente` e índice único de um contato por paciente, origem e dia; UPDATE de `pendencias` por coluna; `pacientes.busca` gerada sem acento (`unaccent`); teto de 160 no título do prontuário; `private.recebimento_da_venda_criar` sem EXECUTE para `authenticated`. Com contato repetido no mesmo dia ou título acima de 160 no histórico, a migração **falha** (pré-conferência abaixo) em vez de seguir sem o índice ou com a restrição `NOT VALID`. |
+| `0026_marca_de_exemplo_e_privilegios.sql` | A marca `exemplo` não se grava pela API: com sessão, gatilho recusa INSERT marcado e UPDATE que troque a marca nas dez tabelas que o `dados:limpar` apaga (sem sessão passa); `private.sem_acento` com EXECUTE para `service_role`; privilégio padrão de sequência nova só com USAGE para `authenticated`. |
+| `0027_banco_escreve_a_evidencia.sql` | Com sessão, o banco escreve e confere o que quem chamava dizia: versão de modelo na sequência, com perguntas válidas e autor e hora do banco; `tipo` do modelo fora do grant de UPDATE; quem respondeu a anamnese e quando (nulo pelo link); autor, hora e data de captura não futura da foto. `documento_para_assinatura` é refeita (drop + create) para devolver `assinado_canal`. CHECK `recebimentos_taxa_ate_o_valor`, NOT VALID e validada só sem legado. IP e dispositivo da assinatura ficam de fora (decisão do dono, `AGENTS.md` §13). |
+| `0028_venda_idempotente_e_foto_do_arquivo.sql` | Venda idempotente: `vendas.chave_envio` + índice único parcial; `venda_registrar` ganha `p_chave uuid default null` (mesmo envio do mesmo perfil devolve a venda já criada). Foto só nasce com o objeto no bucket, e tipo e tamanho vêm dos metadados do Storage (`private.imagem_nasce_do_arquivo`). IP e dispositivo da assinatura comentados como declarados. |
 
 ## Projeto
 
@@ -49,6 +55,22 @@ npm run test:banco       # supabase/testes/permissoes.sql, por perfil
 npx supabase db reset    # do zero: migrações + seed (as contas precisam ser recriadas)
 ```
 
+### `dados:limpar` (`dados-exemplo-limpar.sql`)
+
+Roda **num único bloco `do`** — ou sai tudo o que pode sair, ou nada sai. Apaga
+só `exemplo = true`, das filhas para as mães. Linha de exemplo apontada por dado
+real (uma venda real para a paciente de exemplo, um prontuário, um documento)
+**fica**, e o relatório do fim mostra o que ficou, por tabela. Prontuário, fotos
+e documentos **nunca** saem por script, mesmo marcados como exemplo. Rodar de
+novo não apaga nada a mais.
+
+O `test:banco` exercita o script de verdade: `scripts/testes-banco.mjs` troca a
+marca `-- @@dados-exemplo-limpar.sql@@` de `testes/permissoes.sql` pelo
+conteúdo do arquivo, dentro da transação desfeita no fim. Tabela nova com FK
+para `pacientes`, `atendimentos`, `procedimentos` ou `profissionais` precisa
+entrar nas condições do script — senão o bloco falha inteiro (sem apagar nada
+pela metade) e o `test:banco` acusa.
+
 `config.toml` usa as portas 5532x porque o Windows reserva 54286–54385 para o
 Hyper-V. O banco local é onde toda migração nova se testa antes de produção:
 `db reset` precisa passar do zero, e `test:banco` precisa continuar verde.
@@ -67,25 +89,165 @@ API de administração do Auth, como o painel.
 
 ## Pendente de aplicação em produção
 
-As migrações **0019 a 0022** estão escritas e verificadas no banco local (do
-zero, com o seed e com `npm run test:banco`: 78 testes). Não foram aplicadas em
-produção. Para aplicar, na ordem numérica, pelo dono do projeto:
+As migrações **0019 a 0028** estão escritas e verificadas no banco local (do
+zero, com o seed e com `npm run test:banco`: as 194 asserções verdes a
+partir de `db reset` em 23/09/2026, com as 28 migrações e o seed aplicados do
+zero e a auditoria de RLS sem violação). Não
+foram aplicadas em produção. Para aplicar, na ordem numérica, pelo dono do
+projeto — **checklist do dono; nenhum agente executa**.
 
-1. `npx supabase db diff --linked` para conferir o que vai mudar;
-2. `npm run db:push`;
-3. `npm run db:tipos` — os tipos públicos não mudam (as funções novas ficam no
-   schema `private`); o `git diff` deve vir vazio ou só de formatação do CLI.
+> **A ordem é banco primeiro, código depois.** O código desta onda **não
+> funciona contra o banco anterior à 0025**: a busca de pacientes filtra por
+> `pacientes.busca` (`src/server/consultas/pacientes.ts`) e o Relacionamento
+> lê e grava `pendencias.origem` (`src/server/acoes/relacionamento.ts`,
+> `src/server/consultas/relacionamento.ts`) — as duas colunas nascem na 0025.
+> Se o merge/push do branch publicar na Vercel antes do `db:push`, a busca de
+> pacientes e o Relacionamento quebram em produção. Sequência: backup →
+> pré-conferência → `db:push` (0019 → 0028) → `db:tipos` → conferência →
+> **só então** merge/deploy do código → backfill de novo (passo 8).
+>
+> A 0028 também vai **antes** do deploy do app: o formulário de venda manda
+> `chave_envio` e a ação `registrarVenda` passa `p_chave` a `venda_registrar`
+> (`src/server/acoes/vendas.ts`); contra o banco sem a 0028, o PostgREST não
+> acha a função com esse parâmetro e toda venda nova falha.
+
+0. **Antes de qualquer merge ou push deste código:** no painel da Vercel,
+   confira qual branch publica em produção e desligue o deploy automático
+   (ou garanta que nada deste branch chegue lá) até o passo 7.
+1. **Backup antes.** Confira que o PITR (ou um backup manual recente) está
+   disponível no painel do Supabase.
+2. **Pré-conferência, só leitura**, no SQL editor. A 0025 **falha de
+   propósito** (e o `db:push` para nela, sem registrá-la) se o histórico
+   tiver algum destes casos — o schema nunca fica diferente do local sob o
+   mesmo número. As duas consultas precisam voltar **vazias**:
+   - contato repetido na mesma paciente, tipo e dia:
+     ```sql
+     select paciente_id, tipo, (resolvida_em at time zone 'America/Sao_Paulo')::date as dia, count(*)
+       from public.pendencias
+      where situacao = 'resolvida' and paciente_id is not null and resolvida_em is not null
+        and ((tipo = 'pesquisa' and descricao like 'Convite para avaliação no Google enviado%')
+          or (tipo = 'outro' and descricao like 'Mensagem de aniversário enviada%'))
+      group by 1, 2, 3 having count(*) > 1;
+     ```
+   - título de prontuário acima de 160 caracteres:
+     `select id from public.prontuarios where char_length(titulo) > 160;`
+
+   Se alguma voltar linha, **não corrija por script**: é histórico da
+   clínica, e ela decide o que fazer com cada caso antes do push.
+3. `npx supabase db diff --linked` para conferir o que vai mudar;
+4. `npm run db:push` — aplica 0019 → 0028 em ordem. A 0021 é gatilho sem
+   validar o legado, a 0022 usa `NOT VALID` com validação condicional, a
+   0023/0024 são grants, políticas, funções, gatilho e um índice pequeno, a
+   0025 falha só nos casos do passo 2, a 0026 é gatilho e grants e a 0027 é
+   gatilho, grant de coluna, uma função pública refeita e uma CHECK validada
+   só se nenhum recebimento antigo tiver taxa maior que o valor, e a 0028 é
+   uma coluna nula nova com índice único parcial, `venda_registrar` refeita
+   (drop + create) e um gatilho;
+5. `npm run db:tipos` — desde a 0024/0025 os tipos públicos mudam: a função
+   `prontuario_imagens_reconciliar`, o enum `origem_pendencia` e as colunas
+   `pendencias.origem` e `pacientes.busca`; a 0027 acrescenta `assinado_canal`
+   ao retorno de `documento_para_assinatura`; a 0028, a coluna
+   `vendas.chave_envio` e o argumento `p_chave` de `venda_registrar`. O `tipos-banco.ts` do repositório
+   foi gerado do banco LOCAL (`db:tipos:local`), que não traz o bloco
+   `__InternalSupabase`; o `db:tipos` de produção o devolve — confira o diff:
+   além desse bloco, só devem aparecer `vendas.chave_envio`, `p_chave?: string`
+   em `venda_registrar` e `assinado_canal` em `documento_para_assinatura`.
+   Não há dado a migrar: vendas antigas ficam com `chave_envio` nula.
+6. **Conferência só de leitura**, no SQL editor:
+   - `select proname, prosecdef from pg_proc where proname in ('venda_registrar','venda_alterar_pagamento');`
+     → as duas com `true`;
+   - `select privilege_type from information_schema.role_table_grants where grantee = 'authenticated' and table_name = 'vendas';`
+     → só `SELECT`;
+   - `select indexname from pg_indexes where indexname = 'pendencias_contato_um_por_dia';`
+     → uma linha;
+   - `select convalidated from pg_constraint where conname = 'prontuarios_titulo_maximo';`
+     → `true`;
+   - `select count(*) from pg_trigger where tgname like '%\_exemplo\_so\_sem\_sessao';`
+     → `10` (0026);
+   - `select tgname from pg_trigger where tgname in ('modelo_documento_versoes_conferida', 'documento_campos_resposta_autor', 'prontuario_imagens_conferida');`
+     → três linhas (0027);
+   - `select indexname from pg_indexes where indexname = 'vendas_chave_envio_unica';`
+     → uma linha (0028);
+   - `select tgname from pg_trigger where tgname = 'prontuario_imagens_do_arquivo';`
+     → uma linha (0028);
+   - `select pg_get_function_identity_arguments('public.venda_registrar'::regproc);`
+     → termina em `p_chave uuid` (0028);
+   - `select convalidated from pg_constraint where conname = 'recebimentos_taxa_ate_o_valor';`
+     → `true`. Com `false`, há recebimento antigo com taxa maior que o valor
+     (`select id from public.recebimentos where taxa_valor > valor;`). A
+     regra vale para o que entra de novo **e para qualquer alteração dessas
+     linhas antigas**: enquanto valor ou taxa não forem corrigidos no SQL
+     editor, por decisão da clínica, elas não aceitam confirmar, cancelar nem
+     mudar de situação (23514);
+   - `select v.id from public.vendas v where not exists (select 1 from public.recebimentos r where r.venda_id = v.id);`
+     → vendas antigas sem recebimento (entraram pela porta que a 0023
+     fechou). **Não corrija por script:** a clínica decide caso a caso;
+   - `select public.prontuario_imagens_reconciliar();` no SQL editor responde
+     42501 de propósito (sem sessão, ninguém é administradora). A conferência
+     de verdade é a tela da administradora.
+7. **Só agora** o merge/deploy do código desta onda (e religue o deploy
+   automático, se o desligou no passo 0). Na Vercel, preencha
+   `ORIGEM_PUBLICA` (ver `AGENTS.md` §3) antes de mandar link de assinatura
+   em produção.
+8. **Backfill de novo, depois do deploy.** Entre o `db:push` e o deploy, o
+   aplicativo antigo continua gravando convite e aniversário sem `origem`,
+   e eles entram como `tarefa` (apareceriam na aba Tarefas e sumiriam de
+   Avaliações). O UPDATE é o mesmo da 0025, idempotente, e não mexe em
+   `atualizado_em`:
+   ```sql
+   begin;
+   alter table public.pendencias disable trigger pendencias_atualizado_em;
+   update public.pendencias
+      set origem = private.pendencia_origem_pelo_texto(tipo, descricao, situacao, paciente_id, resolvida_em)
+    where origem = 'tarefa'
+      and private.pendencia_origem_pelo_texto(tipo, descricao, situacao, paciente_id, resolvida_em) <> 'tarefa';
+   alter table public.pendencias enable trigger pendencias_atualizado_em;
+   commit;
+   ```
+   Se falhar com `23505` (o app antigo gravou o mesmo contato duas vezes no
+   dia, na janela), nada muda: a consulta do passo 2 acha o par, a clínica
+   decide, e repita.
+9. **Na aplicação:** a recepção registra uma venda e busca uma paciente sem
+   acento; o financeiro confirma o recebimento; a administradora abre as
+   fotos de um prontuário e a tela de reconciliação; o Relacionamento mostra
+   os convites antigos na aba Avaliações. **0028:** um duplo clique no
+   registro de venda cria uma venda só; e o primeiro envio de foto em
+   produção passa (o gatilho depende do `mimetype` e do `size` que o
+   storage-api grava no objeto — no local vale; no hospedado, confira).
+
+O código atual da aplicação é compatível com o banco depois da 0025 (e só
+com ele): grava venda só pelas RPCs e, no recebimento e nas fotos, só as
+colunas concedidas.
 
 Riscos conhecidos e por que são baixos:
 
 - As restrições novas de dados antigos (`documento_links_canal_formato`,
-  `prontuario_versoes_limites`, `prontuario_imagens_caminho_forma`) entram
-  `NOT VALID` e só são validadas se nenhuma linha antiga violar — a migração
-  não falha por causa do passado.
+  `prontuario_versoes_limites`, `prontuario_imagens_caminho_forma`,
+  `recebimentos_taxa_ate_o_valor`) entram `NOT VALID` e só são validadas se
+  nenhuma linha antiga violar — a migração não falha por causa do passado.
+  Mas a linha antiga que viola é recusada no próximo UPDATE dela, como nos
+  gatilhos: corrigir o dado é decisão da clínica, pelo SQL editor.
 - Os gatilhos de regra valem para gravações novas. Um atendimento antigo que
   já choque com outro só é recusado se alguém mexer no horário dele.
 - A 0019 revoga e concede grants: a aplicação continua com exatamente o que
   usa (conferido por `test:banco` e pelo E2E completo).
+- A 0025 cria a extensão `unaccent` no schema `extensions` (disponível no
+  Supabase). O índice `pendencias_contato_um_por_dia` e a validação de
+  `prontuarios_titulo_maximo` são **incondicionais**: com histórico que não
+  cabe neles a migração falha (passo 2), nunca segue pela metade. O backfill
+  de `pendencias.origem` não toca `atualizado_em` (o gatilho fica desligado
+  só durante o UPDATE) e deixa uma linha por registro na auditoria, sem ator
+  — é a trilha da migração.
+- A 0026 só recusa gravação **com sessão** que marque ou desmarque
+  `exemplo`; o seed, o `dados:exemplo`, o `dados:limpar` e o SQL editor
+  rodam sem sessão e seguem iguais. A aplicação nunca escreve essa coluna.
+- A 0028 só **acrescenta**: coluna nula, índice único parcial (só onde há
+  chave) e gatilho de INSERT com sessão de administradora. Sem a chave,
+  `venda_registrar` se comporta como antes. O único risco é de **ordem**: o
+  app novo contra o banco sem a 0028 dá `PGRST202` em toda venda nova.
+- A chave identifica o **envio**, não o conteúdo: um reenvio com outros
+  valores (só uma chamada direta à API faria isso) recebe a venda original.
+  Chave de outro perfil é recusada (`P0001`).
 
 Reverter, se preciso, é escrever a migração inversa (recriar políticas,
 `drop trigger`, `grant`); nenhuma delas apaga dado.
@@ -228,7 +390,8 @@ que a regra vale lá.
 ## Validação executada
 
 Hoje a validação do banco é automática e roda no Supabase local:
-`npm run test:banco` executa as **78 asserções** de
+`npm run test:banco` executa as **194 asserções** (execução completa, do zero,
+verde em 23/09/2026) de
 [`testes/permissoes.sql`](testes/permissoes.sql), por perfil, numa transação
 desfeita no fim.
 

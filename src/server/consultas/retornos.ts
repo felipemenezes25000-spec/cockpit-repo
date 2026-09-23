@@ -6,6 +6,7 @@ import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, diferencaEmDias, somarDias } from "@/lib/dates";
 import type { Database } from "@/lib/supabase/tipos-banco";
+import { todasAsLinhas } from "./todas-as-linhas";
 
 export type SituacaoAcompanhamento =
   Database["public"]["Enums"]["situacao_acompanhamento"];
@@ -54,23 +55,35 @@ function calcularJanela(intervalo: number, decorridos: number): JanelaContato {
   };
 }
 
-/** Mais urgente primeiro: quem passou mais do período sugerido. */
+/**
+ * Mais urgente primeiro: quem passou mais do período sugerido.
+ *
+ * A urgência é calculada aqui, então as linhas são lidas inteiras, em blocos
+ * (`todasAsLinhas`): o PostgREST corta cada resposta em 1000 linhas sem erro,
+ * e o retorno mais atrasado poderia ficar fora do painel, calado.
+ */
 export const retornosEmAberto = cache(async (): Promise<RetornoEmAberto[]> => {
   const supabase = await clienteServidor();
 
-  const { data, error } = await supabase
-    .from("retornos")
-    .select(
-      `id, sugerido_para, situacao,
-       pacientes ( nome, nome_social ),
-       procedimentos ( nome, retorno_sugerido_dias )`,
-    )
-    .not("situacao", "in", "(agendado,recusado)")
-    .order("sugerido_para", { ascending: true });
+  const linhas = await todasAsLinhas(
+    (inicio, fim) =>
+      supabase
+        .from("retornos")
+        .select(
+          `id, sugerido_para, situacao,
+           pacientes ( nome, nome_social ),
+           procedimentos ( nome, retorno_sugerido_dias )`,
+        )
+        .not("situacao", "in", "(agendado,recusado)")
+        // O `id` desempata a data: sem ordem única, blocos repetem ou pulam linhas.
+        .order("sugerido_para", { ascending: true })
+        .order("id")
+        .range(inicio, fim),
+    "consulta retornos",
+    "Não foi possível carregar os retornos.",
+  );
 
-  if (error) falhaDeConsulta("consulta retornos", error, "Não foi possível carregar os retornos.");
-
-  return (data ?? [])
+  return linhas
     .map((linha) => {
       const sugeridoPara = dataDoBanco(linha.sugerido_para);
       const intervalo = linha.procedimentos?.retorno_sugerido_dias ?? 90;

@@ -21,7 +21,17 @@ if (!projeto) {
   process.exit(1);
 }
 
-const sql = readFileSync(new URL("../supabase/testes/permissoes.sql", import.meta.url), "utf8");
+// O teste da limpeza roda o script de verdade, e não uma cópia dele: cada
+// marca `-- @@dados-exemplo-limpar.sql@@` vira o conteúdo do arquivo. Tudo
+// continua dentro da transação que termina em ROLLBACK.
+const MARCA_LIMPEZA = "-- @@dados-exemplo-limpar.sql@@";
+const limpeza = readFileSync(new URL("../supabase/dados-exemplo-limpar.sql", import.meta.url), "utf8");
+const testes = readFileSync(new URL("../supabase/testes/permissoes.sql", import.meta.url), "utf8");
+if (!testes.includes(MARCA_LIMPEZA)) {
+  console.error(`A marca ${MARCA_LIMPEZA} sumiu de supabase/testes/permissoes.sql.`);
+  process.exit(1);
+}
+const sql = testes.split(MARCA_LIMPEZA).join(limpeza);
 
 const execucao = spawnSync(
   "docker",

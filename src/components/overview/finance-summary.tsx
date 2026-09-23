@@ -48,7 +48,7 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       icone: ArrowDownRight,
       cor: resumo.despesasDoMes === null ? "text-outline-variant" : "text-negativo",
       corValor:
-        resumo.despesasDoMes === null ? "text-outline-variant" : "text-negativo",
+        resumo.despesasDoMes === null ? "text-outline" : "text-negativo",
       apoio:
         resumo.despesasDoMes === null
           ? "restrito ao financeiro"

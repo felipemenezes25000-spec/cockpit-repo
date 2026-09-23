@@ -12,7 +12,6 @@ import {
   bpDoBanco,
   custoDaTaxa,
   formatarPercentual,
-  lerPercentual,
   paraCentavos,
 } from "@/lib/moeda";
 import {
@@ -20,6 +19,7 @@ import {
   formaUsaCartao,
   FORMAS_EM_ORDEM,
   ROTULO_FORMA,
+  taxaDaPrevia,
   type FormaPagamento,
 } from "@/lib/venda";
 import type { OpcaoProcedimento } from "@/server/consultas/agenda";
@@ -106,6 +106,17 @@ export function FormularioVenda({
   const [manual, setManual] = useState(false);
   const [percentualManual, setPercentualManual] = useState("");
   const [situacaoInicial, setSituacaoInicial] = useState<"previsto" | "recebido">("previsto");
+  const [procedimentoId, setProcedimentoId] = useState("");
+  // Uma chave por formulário aberto, repetida em todo envio dele: o duplo
+  // clique e o reenvio depois de uma recusa chegam com a mesma, e o banco
+  // devolve a venda que já nasceu em vez de criar outra (0028). Na
+  // hidratação o React grava o valor do cliente no campo escondido.
+  const [chaveEnvio] = useState(() => crypto.randomUUID());
+
+  // Campos não controlados voltam com o que foi digitado quando a ação
+  // recusa: o React 19 limpa o formulário depois do envio, e perder a data
+  // ou a justificativa a cada erro faria a pessoa digitar tudo de novo.
+  const de = (campo: string, padrao = "") => estado.valores?.[campo] ?? padrao;
 
   const usaCartao = formaUsaCartao(forma);
 
@@ -131,16 +142,17 @@ export function FormularioVenda({
     const finalCent = Math.max(0, originalCent - descontoCent);
 
     const bpPadrao = usaCartao && taxaEscolhida ? bpDoBanco(taxaEscolhida.percentual) : 0;
-    const bpManual = manual ? (lerPercentual(percentualManual) ?? bpPadrao) : bpPadrao;
-    const bp = usaCartao ? bpManual : 0;
+    // Taxa manual vazia ou inválida dá `null`: a prévia mostra "—" em vez
+    // de fingir 0% (a ação de servidor recusa esse caso).
+    const bp = usaCartao ? taxaDaPrevia({ manual, textoManual: percentualManual, bpPadrao }) : 0;
 
-    const taxaCent = custoDaTaxa(finalCent, bp);
+    const taxaCent = bp === null ? null : custoDaTaxa(finalCent, bp);
     return {
       finalCent,
       bpPadrao,
       bp,
       taxaCent,
-      liquidoCent: finalCent - taxaCent,
+      liquidoCent: taxaCent === null ? null : finalCent - taxaCent,
     };
   }, [original, desconto, usaCartao, taxaEscolhida, manual, percentualManual]);
 
@@ -162,6 +174,7 @@ export function FormularioVenda({
 
   return (
     <form action={enviar} className="flex flex-col gap-8" noValidate>
+      <input type="hidden" name="chave_envio" value={chaveEnvio} />
       {erros.geral ? (
         <p
           role="alert"
@@ -185,8 +198,9 @@ export function FormularioVenda({
             id="procedimento_id"
             name="procedimento_id"
             required
-            defaultValue=""
+            value={procedimentoId}
             onChange={(e) => {
+              setProcedimentoId(e.target.value);
               const p = procedimentos.find((x) => x.id === e.target.value);
               if (p && p.valorPadrao > 0) {
                 setOriginal(p.valorPadrao.toFixed(2).replace(".", ","));
@@ -209,7 +223,7 @@ export function FormularioVenda({
             name="data_venda"
             type="date"
             required
-            defaultValue={dataPadrao}
+            defaultValue={de("data_venda", dataPadrao)}
             className={cn(ENTRADA, erros.data_venda && ENTRADA_ERRO)}
           />
         </Campo>
@@ -362,6 +376,7 @@ export function FormularioVenda({
                     id="taxa_percentual"
                     rotulo="Nova taxa (%)"
                     obrigatorio
+                    erro={erros.taxa_percentual}
                     dica={`Taxa padrão: ${formatarPercentual(conta.bpPadrao)}. A tabela não muda — só esta venda.`}
                   >
                     <input
@@ -372,7 +387,7 @@ export function FormularioVenda({
                       value={percentualManual}
                       onChange={(e) => setPercentualManual(e.target.value)}
                       placeholder={formatarPercentual(conta.bpPadrao).replace("%", "")}
-                      className={cn(ENTRADA, "tabular")}
+                      className={cn(ENTRADA, "tabular", erros.taxa_percentual && ENTRADA_ERRO)}
                     />
                   </Campo>
 
@@ -380,6 +395,7 @@ export function FormularioVenda({
                     id="taxa_justificativa"
                     rotulo="Justificativa"
                     obrigatorio
+                    erro={erros.taxa_justificativa}
                     dica="Fica registrada com seu nome, data e hora."
                   >
                     <input
@@ -387,8 +403,9 @@ export function FormularioVenda({
                       name="taxa_justificativa"
                       type="text"
                       maxLength={500}
+                      defaultValue={de("taxa_justificativa")}
                       placeholder="Negociação especial com a operadora"
-                      className={ENTRADA}
+                      className={cn(ENTRADA, erros.taxa_justificativa && ENTRADA_ERRO)}
                     />
                   </Campo>
                 </div>
@@ -407,15 +424,19 @@ export function FormularioVenda({
           <LinhaDaConta rotulo="Valor final negociado" valor={formatarMoeda(conta.finalCent / 100)} />
           {usaCartao ? (
             <LinhaDaConta
-              rotulo={`Taxa do cartão (${formatarPercentual(conta.bp)}) — descontada da clínica`}
-              valor={`− ${formatarMoeda(conta.taxaCent / 100)}`}
+              rotulo={
+                conta.bp === null
+                  ? "Taxa do cartão (informe a nova taxa) — descontada da clínica"
+                  : `Taxa do cartão (${formatarPercentual(conta.bp)}) — descontada da clínica`
+              }
+              valor={conta.taxaCent === null ? "—" : `− ${formatarMoeda(conta.taxaCent / 100)}`}
               negativa
             />
           ) : null}
           <div className="border-t border-card-border pt-2">
             <LinhaDaConta
               rotulo="Líquido para a clínica"
-              valor={formatarMoeda(conta.liquidoCent / 100)}
+              valor={conta.liquidoCent === null ? "—" : formatarMoeda(conta.liquidoCent / 100)}
               destaque
             />
           </div>
@@ -435,7 +456,13 @@ export function FormularioVenda({
         descricao="A venda gera um recebimento só, pelo valor líquido."
       >
         <div className="flex flex-col gap-4">
-          <div role="radiogroup" aria-label="Situação do recebimento" className="flex flex-wrap gap-3">
+          <div
+            role="radiogroup"
+            aria-label="Situação do recebimento"
+            aria-invalid={erros.situacao_inicial ? true : undefined}
+            aria-describedby={erros.situacao_inicial ? "situacao_inicial-erro" : undefined}
+            className="flex flex-wrap gap-3"
+          >
             {(
               [
                 ["previsto", "A receber"],
@@ -445,7 +472,8 @@ export function FormularioVenda({
               <label
                 key={valor}
                 className={cn(
-                  "flex cursor-pointer items-center gap-2 rounded-[var(--radius-controle)] border px-4 py-2 text-sm transition-colors",
+                  // O rádio é sr-only: o foco do teclado aparece no rótulo.
+                  "flex cursor-pointer items-center gap-2 rounded-[var(--radius-controle)] border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary",
                   situacaoInicial === valor
                     ? "border-primary bg-secondary-fixed text-primary"
                     : "border-card-border bg-surface text-on-surface-variant hover:border-primary",
@@ -464,6 +492,12 @@ export function FormularioVenda({
             ))}
           </div>
 
+          {erros.situacao_inicial ? (
+            <p id="situacao_inicial-erro" role="alert" className="text-xs text-error">
+              {erros.situacao_inicial}
+            </p>
+          ) : null}
+
           {situacaoInicial === "previsto" ? (
             <Campo
               id="vencimento"
@@ -477,7 +511,7 @@ export function FormularioVenda({
                 id="vencimento"
                 name="vencimento"
                 type="date"
-                defaultValue={dataPadrao}
+                defaultValue={de("vencimento", dataPadrao)}
                 className={cn(ENTRADA, erros.vencimento && ENTRADA_ERRO)}
               />
             </Campo>
@@ -493,7 +527,8 @@ export function FormularioVenda({
                 id="recebido_em"
                 name="recebido_em"
                 type="date"
-                defaultValue={dataPadrao}
+                max={dataPadrao}
+                defaultValue={de("recebido_em", dataPadrao)}
                 className={cn(ENTRADA, erros.recebido_em && ENTRADA_ERRO)}
               />
             </Campo>
@@ -506,6 +541,7 @@ export function FormularioVenda({
           id="observacoes"
           name="observacoes"
           maxLength={2000}
+          defaultValue={de("observacoes")}
           className={AREA_TEXTO}
         />
       </Campo>

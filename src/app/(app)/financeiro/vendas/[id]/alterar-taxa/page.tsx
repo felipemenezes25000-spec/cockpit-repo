@@ -7,7 +7,7 @@ import { SomenteFinanceiro } from "@/components/financeiro/somente-financeiro";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { ehFinanceira } from "@/lib/auth";
 import { formatarData, formatarMoeda } from "@/lib/format";
-import { formaUsaCartao } from "@/lib/venda";
+import { formaUsaCartao, recebimentoConfirmado } from "@/lib/venda";
 import { taxaPorId } from "@/server/consultas/taxas";
 import { vendaPorId } from "@/server/consultas/vendas";
 
@@ -28,16 +28,16 @@ export default async function PaginaAlterarTaxa({ params }: Props) {
   // O percentual atual da tabela para esta linha — só para comparação.
   const taxaPadrao = venda.taxaCartaoId ? await taxaPorId(venda.taxaCartaoId) : null;
 
+  // O mesmo recebimento que `venda_alterar_pagamento` enxerga: o vivo.
+  const vivo = venda.recebimentos.find((r) => r.situacao !== "cancelado") ?? null;
   const confirmado =
-    venda.recebimentos.find(
-      (r) => r.situacao === "recebido" || r.situacao === "recebido_divergencia",
-    )?.valorRecebido ?? null;
+    vivo && recebimentoConfirmado(vivo.situacao) ? vivo.valorRecebido : null;
 
   return (
     <div className="mx-auto max-w-3xl">
       <Link
         href={`/financeiro/vendas/${venda.id}`}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
       >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         Voltar para a venda

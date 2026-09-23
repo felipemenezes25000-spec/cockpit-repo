@@ -29,12 +29,15 @@ export type AtendimentoDoDia = {
  *
  * O recorte usa o calendário de São Paulo: perto da meia-noite o dia do
  * servidor e o da clínica são diferentes.
+ *
+ * `profissionalId` é o filtro da tela (`?profissional=`). Id torto é ignorado,
+ * como se o filtro não existisse — o Postgres recusaria o texto como uuid.
  */
 export const atendimentosDoDia = cache(
-  async (dia: Date): Promise<AtendimentoDoDia[]> => {
+  async (dia: Date, profissionalId?: string | null): Promise<AtendimentoDoDia[]> => {
     const supabase = await clienteServidor();
 
-    const { data, error } = await supabase
+    let consulta = supabase
       .from("atendimentos")
       .select(
         `id, inicio, duracao_min, situacao, valor, observacoes, paciente_id,
@@ -43,8 +46,11 @@ export const atendimentosDoDia = cache(
          procedimentos ( nome )`,
       )
       .gte("inicio", inicioDoDia(dia).toISOString())
-      .lt("inicio", inicioDoDiaSeguinte(dia).toISOString())
-      .order("inicio", { ascending: true });
+      .lt("inicio", inicioDoDiaSeguinte(dia).toISOString());
+
+    if (uuidValido(profissionalId)) consulta = consulta.eq("profissional_id", profissionalId);
+
+    const { data, error } = await consulta.order("inicio", { ascending: true });
 
     if (error) falhaDeConsulta("consulta agenda", error, "Não foi possível carregar a agenda.");
 
@@ -96,6 +102,10 @@ export type AtendimentoCompleto = {
 /** `null` quando não existe ou a RLS não deixa ver — a tela trata igual. */
 export const atendimentoPorId = cache(
   async (id: string): Promise<AtendimentoCompleto | null> => {
+    // Endereço digitado à mão com id torto é "não existe" (404), não falha
+    // do banco — o Postgres recusaria o texto como uuid.
+    if (!uuidValido(id)) return null;
+
     const supabase = await clienteServidor();
 
     const { data, error } = await supabase
@@ -109,7 +119,9 @@ export const atendimentoPorId = cache(
       .eq("id", id)
       .maybeSingle();
 
-    if (error || !data) return null;
+    // Falha de leitura não é "atendimento não existe": vira tela de erro, não 404.
+    if (error) falhaDeConsulta("consulta agenda", error, "Não foi possível carregar o atendimento.");
+    if (!data) return null;
 
     return {
       id: data.id,

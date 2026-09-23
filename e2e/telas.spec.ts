@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { TELAS_DO_SISTEMA, TELAS_PUBLICAS } from "./apoio";
 import { arquivoDaSessao } from "./contas";
 
 /**
@@ -8,51 +9,16 @@ import { arquivoDaSessao } from "./contas";
  * Confere o que dá para conferir sem olho humano — nenhuma rolagem horizontal
  * na página, nenhum erro no console, um `<h1>` e o `<main>` presentes — e
  * guarda a captura em `e2e/capturas/` para a revisão visual.
+ *
+ * A lista de rotas mora em `apoio.ts` (a mesma do `acessibilidade.spec.ts`).
+ * Para rodar só um grupo: `-g "sistema — celular"` ou `-g "público"` — com
+ * acento, como está no nome do describe (`-g "publico"` não casa com nada).
  */
 
-const PACIENTE = "c0000000-0000-4000-8000-000000000001";
-
-const TELAS_DO_SISTEMA = [
-  "/",
-  "/pacientes",
-  `/pacientes/${PACIENTE}`,
-  `/pacientes/${PACIENTE}/editar`,
-  "/pacientes/novo",
-  "/pacientes/importar",
-  "/agenda",
-  "/agenda/novo",
-  "/financeiro",
-  "/financeiro/vendas",
-  "/financeiro/vendas/nova",
-  "/financeiro/despesas",
-  "/financeiro/despesas/nova",
-  "/financeiro/taxas",
-  "/financeiro/taxas/nova",
-  "/financeiro/movimentacoes",
-  "/financeiro/fluxo",
-  "/prontuarios",
-  "/prontuarios/novo",
-  "/formularios",
-  "/formularios/novo",
-  "/formularios/modelos",
-  "/formularios/modelos/novo",
-  "/relacionamento",
-  "/relacionamento?aba=retornos",
-  "/relacionamento?aba=tarefas",
-  "/relacionamento?aba=avaliacoes",
-  "/relacionamento/retornos/novo",
-  "/relacionamento/tarefas/nova",
-  "/busca?q=ana",
-  "/configuracoes",
-  "/configuracoes/procedimentos",
-  "/configuracoes/procedimentos/novo",
-  "/relatorios",
-];
-
-const TELAS_PUBLICAS = ["/entrar", "/recuperar-senha", "/redefinir-senha", "/assinar/link-que-nao-existe-xxxxxxxxxxxxxxxxxxxxxxxxx", "/nao-existe"];
-
 const LARGURAS = [
-  { nome: "celular", width: 360, height: 800 },
+  // 320 px é a largura do critério de refluxo da WCAG (1.4.10): o que não
+  // rola na horizontal aqui não rola em celular nenhum.
+  { nome: "celular", width: 320, height: 800 },
   { nome: "tablet", width: 768, height: 1024 },
   { nome: "desktop", width: 1440, height: 900 },
 ];
@@ -60,9 +26,19 @@ const LARGURAS = [
 const PASTA = "e2e/capturas";
 mkdirSync(PASTA, { recursive: true });
 
-function nomeDoArquivo(rota: string, largura: string) {
+/**
+ * `logada` separa a mesma rota aberta com e sem sessão: `/nao-existe` sem
+ * sessão é o login, com sessão é a página não encontrada.
+ */
+function nomeDoArquivo(rota: string, largura: string, logada = false) {
   const limpo = rota.replace(/^\//, "").replace(/[^a-z0-9]+/gi, "-").replace(/-$/, "") || "visao-geral";
-  return `${PASTA}/${limpo}--${largura}.png`;
+  const sufixo = logada && rota === "/nao-existe" ? "-logada" : "";
+  return `${PASTA}/${limpo}${sufixo}--${largura}.png`;
+}
+
+/** A rota inexistente responde 404, e o navegador registra isso no console. */
+function semO404Esperado(rota: string, erros: string[]): string[] {
+  return rota === "/nao-existe" ? erros.filter((e) => !/404|Not Found/i.test(e)) : erros;
 }
 
 async function conferir(pagina: Page, rota: string, largura: string, erros: string[]) {
@@ -77,9 +53,9 @@ async function conferir(pagina: Page, rota: string, largura: string, erros: stri
   await expect(pagina.locator("main")).toHaveCount(1);
   await expect(pagina.locator("h1").first()).toBeVisible();
 
-  await pagina.screenshot({ path: nomeDoArquivo(rota, largura), fullPage: true });
+  await pagina.screenshot({ path: nomeDoArquivo(rota, largura, true), fullPage: true });
 
-  expect(erros, `erros de console em ${rota} (${largura})`).toEqual([]);
+  expect(semO404Esperado(rota, erros), `erros de console em ${rota} (${largura})`).toEqual([]);
 }
 
 function vigiarConsole(pagina: Page): string[] {
@@ -115,9 +91,26 @@ for (const { nome, width, height } of LARGURAS) {
         expect(excesso).toBeLessThanOrEqual(0);
         await expect(page.locator("h1").first()).toBeVisible();
         await page.screenshot({ path: nomeDoArquivo(rota, nome), fullPage: true });
-        // A 404 é esperada no console para a rota inexistente.
-        expect(erros.filter((e) => !/404|Not Found/i.test(e))).toEqual([]);
+        expect(semO404Esperado(rota, erros)).toEqual([]);
       });
     }
   });
 }
+
+test.describe("faixa de áreas no celular", () => {
+  test.use({ storageState: arquivoDaSessao("administradora"), viewport: { width: 320, height: 800 } });
+
+  // A faixa rola de lado no celular; a área atual precisa abrir à vista, senão
+  // a pessoa não sabe em que parte do módulo está.
+  for (const [rota, area] of [
+    ["/financeiro/fluxo", "Fluxo mensal"],
+    ["/financeiro/movimentacoes", "Movimentações"],
+    ["/relacionamento?aba=avaliacoes", "Avaliações"],
+  ] as const) {
+    test(`${rota}: "${area}" aparece sem rolar`, async ({ page }) => {
+      await page.goto(rota);
+      const atual = page.locator('nav a[aria-current="page"]', { hasText: area });
+      await expect(atual).toBeInViewport({ ratio: 1 });
+    });
+  }
+});

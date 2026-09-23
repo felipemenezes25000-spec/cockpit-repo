@@ -1,13 +1,13 @@
 import "server-only";
 
-import { falhaDeConsulta } from "@/lib/registro";
-
 import { cache } from "react";
 import { ehFinanceira } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, inicioDeMesRelativo, inicioDoDia, partesDoDia } from "@/lib/dates";
+import { centavosDoBanco, centavosParaReais, somaEmCentavos } from "@/lib/moeda";
 import { dataParaColuna, type Periodo } from "@/lib/periodo";
 import type { FormaPagamento } from "@/lib/venda";
+import { todasAsLinhas } from "./todas-as-linhas";
 
 /**
  * Números do módulo Financeiro.
@@ -25,6 +25,12 @@ import type { FormaPagamento } from "@/lib/venda";
  * fato. Por isso o que depende de despesa é `number | null`: `null` quer dizer
  * "não visível para este perfil", e o tipo obriga quem consome a dizer isso na
  * tela em vez de imprimir um zero mentiroso.
+ *
+ * ATENÇÃO AO `max_rows`. O PostgREST corta cada resposta em 1000 linhas, também
+ * sem erro. Toda consulta daqui que soma, agrupa ou ordena na aplicação lê as
+ * linhas em blocos por `todasAsLinhas` — somar sobre o corte daria um total
+ * menor sem nada avisar (no fluxo de 12 meses, a partir de umas 80 vendas
+ * confirmadas por mês).
  */
 
 export type IndicadoresDoPeriodo = {
@@ -53,78 +59,128 @@ export const indicadoresDoPeriodo = cache(
     // zero linhas em silêncio, e um zero desses é pior que a ausência.
     const veDespesas = await ehFinanceira();
 
-    const [vendas, confirmados, emAberto, ajustes, despesas] = await Promise.all([
-      supabase
-        .from("vendas")
-        .select("valor_final")
-        .gte("data_venda", de)
-        .lt("data_venda", ate),
-      supabase
-        .from("recebimentos")
-        .select("valor, taxa_valor, valor_recebido")
-        .in("situacao", ["recebido", "recebido_divergencia"])
-        .gte("recebido_em", de)
-        .lt("recebido_em", ate),
+    // Cada leitura falha alto sozinha (`todasAsLinhas`), com a mesma frase.
+    const contexto = "consulta painel-financeiro: indicadores";
+    const frase = "Não foi possível carregar os indicadores.";
+
+    const [vendas, confirmadosDoMes, abertos, ajustes, despesas] = await Promise.all([
+      todasAsLinhas(
+        (inicio, fim) =>
+          supabase
+            .from("vendas")
+            .select("valor_final")
+            .gte("data_venda", de)
+            .lt("data_venda", ate)
+            .order("id")
+            .range(inicio, fim),
+        contexto,
+        frase,
+      ),
+      todasAsLinhas(
+        (inicio, fim) =>
+          supabase
+            .from("recebimentos")
+            .select("valor, taxa_valor, valor_recebido")
+            .in("situacao", ["recebido", "recebido_divergencia"])
+            .gte("recebido_em", de)
+            .lt("recebido_em", ate)
+            .order("id")
+            .range(inicio, fim),
+        contexto,
+        frase,
+      ),
       // Em aberto é estoque, não fluxo: tudo que ainda não entrou, de
       // qualquer período — o que importa é que está devido hoje.
-      supabase
-        .from("recebimentos")
-        .select("valor_liquido, vencimento")
-        .in("situacao", ["previsto", "pendente"]),
-      supabase
-        .from("ajustes_financeiros")
-        .select("valor")
-        .gte("criado_em", periodo.de.toISOString())
-        .lt("criado_em", periodo.ate.toISOString()),
+      todasAsLinhas(
+        (inicio, fim) =>
+          supabase
+            .from("recebimentos")
+            .select("valor_liquido, vencimento")
+            .in("situacao", ["previsto", "pendente"])
+            .order("id")
+            .range(inicio, fim),
+        contexto,
+        frase,
+      ),
+      todasAsLinhas(
+        (inicio, fim) =>
+          supabase
+            .from("ajustes_financeiros")
+            .select("valor")
+            .gte("criado_em", periodo.de.toISOString())
+            .lt("criado_em", periodo.ate.toISOString())
+            .order("id")
+            .range(inicio, fim),
+        contexto,
+        frase,
+      ),
       veDespesas
         ? Promise.all([
-            supabase
-              .from("despesas")
-              .select("valor")
-              .eq("situacao", "paga")
-              .gte("pago_em", de)
-              .lt("pago_em", ate),
-            supabase
-              .from("despesas")
-              .select("valor")
-              .eq("situacao", "pendente")
-              .lt("vencimento", ate),
+            todasAsLinhas(
+              (inicio, fim) =>
+                supabase
+                  .from("despesas")
+                  .select("valor")
+                  .eq("situacao", "paga")
+                  .gte("pago_em", de)
+                  .lt("pago_em", ate)
+                  .order("id")
+                  .range(inicio, fim),
+              contexto,
+              frase,
+            ),
+            todasAsLinhas(
+              (inicio, fim) =>
+                supabase
+                  .from("despesas")
+                  .select("valor")
+                  .eq("situacao", "pendente")
+                  .lt("vencimento", ate)
+                  .order("id")
+                  .range(inicio, fim),
+              contexto,
+              frase,
+            ),
           ])
         : Promise.resolve(null),
     ]);
 
-    const erro =
-      vendas.error ?? confirmados.error ?? emAberto.error ?? ajustes.error ??
-      despesas?.[0].error ?? despesas?.[1].error;
-    if (erro) falhaDeConsulta("consulta painel-financeiro", erro, "Não foi possível carregar os indicadores.");
+    // Toda a conta em centavos inteiros (lib/moeda.ts): somar reais em
+    // ponto flutuante deixa resto de 0,01 que aparece no resultado de caixa.
+    // Reais só na saída, com uma divisão por número.
+    const totalRecebidoBruto = somaEmCentavos(confirmadosDoMes.map((l) => l.valor));
+    const taxasDeCartao = somaEmCentavos(confirmadosDoMes.map((l) => l.taxa_valor));
+    const efetivo = somaEmCentavos(confirmadosDoMes.map((l) => l.valor_recebido));
+    // Ajuste entra pelo mês em que foi lançado (`criado_em`), não pelo mês do
+    // recebimento corrigido — dívida contábil em aberto (AGENTS.md §13).
+    const somaAjustes = somaEmCentavos(ajustes.map((l) => l.valor));
+    const despesasPagas = despesas
+      ? somaEmCentavos(despesas[0].map((l) => l.valor))
+      : null;
 
-    const soma = (linhas: Record<string, unknown>[] | null, campo: string) =>
-      (linhas ?? []).reduce((total, l) => total + Number(l[campo] ?? 0), 0);
-
-    const totalRecebidoBruto = soma(confirmados.data, "valor");
-    const taxasDeCartao = soma(confirmados.data, "taxa_valor");
-    const efetivo = soma(confirmados.data, "valor_recebido");
-    const somaAjustes = soma(ajustes.data, "valor");
-    const despesasPagas = despesas ? soma(despesas[0].data, "valor") : null;
-
-    const aReceberVencido = (emAberto.data ?? [])
-      .filter((l) => dataDoBanco(l.vencimento as string).getTime() < hoje.getTime())
-      .reduce((total, l) => total + Number(l.valor_liquido ?? 0), 0);
+    const aReceberVencido = somaEmCentavos(
+      abertos
+        .filter((l) => dataDoBanco(l.vencimento).getTime() < hoje.getTime())
+        .map((l) => l.valor_liquido),
+    );
 
     const liquidoRecebido = efetivo + somaAjustes;
 
     return {
-      totalVendido: soma(vendas.data, "valor_final"),
-      totalRecebidoBruto,
-      taxasDeCartao,
-      liquidoRecebido,
-      ajustes: somaAjustes,
-      aReceber: soma(emAberto.data, "valor_liquido"),
-      aReceberVencido,
-      despesasPagas,
-      despesasPendentes: despesas ? soma(despesas[1].data, "valor") : null,
+      totalVendido: centavosParaReais(somaEmCentavos(vendas.map((l) => l.valor_final))),
+      totalRecebidoBruto: centavosParaReais(totalRecebidoBruto),
+      taxasDeCartao: centavosParaReais(taxasDeCartao),
+      liquidoRecebido: centavosParaReais(liquidoRecebido),
+      ajustes: centavosParaReais(somaAjustes),
+      aReceber: centavosParaReais(somaEmCentavos(abertos.map((l) => l.valor_liquido))),
+      aReceberVencido: centavosParaReais(aReceberVencido),
+      despesasPagas: despesasPagas === null ? null : centavosParaReais(despesasPagas),
+      despesasPendentes: despesas
+        ? centavosParaReais(somaEmCentavos(despesas[1].map((l) => l.valor)))
+        : null,
       // Sem enxergar as saídas não existe resultado de caixa — e não é zero.
-      resultadoDeCaixa: despesasPagas === null ? null : liquidoRecebido - despesasPagas,
+      resultadoDeCaixa:
+        despesasPagas === null ? null : centavosParaReais(liquidoRecebido - despesasPagas),
     };
   },
 );
@@ -162,65 +218,92 @@ export const fluxoMensal = cache(async (): Promise<MesDoFluxo[]> => {
   const inicio = inicioDeMesRelativo(-11);
   const fim = inicioDeMesRelativo(1);
 
+  const contexto = "consulta painel-financeiro: fluxo mensal";
+  const frase = "Não foi possível montar o fluxo de caixa.";
+
   const [recebimentos, ajustes, despesas] = await Promise.all([
-    supabase
-      .from("recebimentos")
-      .select("valor_recebido, recebido_em")
-      .in("situacao", ["recebido", "recebido_divergencia"])
-      .gte("recebido_em", dataParaColuna(inicio))
-      .lt("recebido_em", dataParaColuna(fim)),
-    supabase
-      .from("ajustes_financeiros")
-      .select("valor, criado_em")
-      .gte("criado_em", inicio.toISOString())
-      .lt("criado_em", fim.toISOString()),
-    supabase
-      .from("despesas")
-      .select("valor, pago_em")
-      .eq("situacao", "paga")
-      .gte("pago_em", dataParaColuna(inicio))
-      .lt("pago_em", dataParaColuna(fim)),
+    todasAsLinhas(
+      (de, ate) =>
+        supabase
+          .from("recebimentos")
+          .select("valor_recebido, recebido_em")
+          .in("situacao", ["recebido", "recebido_divergencia"])
+          .gte("recebido_em", dataParaColuna(inicio))
+          .lt("recebido_em", dataParaColuna(fim))
+          .order("id")
+          .range(de, ate),
+      contexto,
+      frase,
+    ),
+    todasAsLinhas(
+      (de, ate) =>
+        supabase
+          .from("ajustes_financeiros")
+          .select("valor, criado_em")
+          .gte("criado_em", inicio.toISOString())
+          .lt("criado_em", fim.toISOString())
+          .order("id")
+          .range(de, ate),
+      contexto,
+      frase,
+    ),
+    todasAsLinhas(
+      (de, ate) =>
+        supabase
+          .from("despesas")
+          .select("valor, pago_em")
+          .eq("situacao", "paga")
+          .gte("pago_em", dataParaColuna(inicio))
+          .lt("pago_em", dataParaColuna(fim))
+          .order("id")
+          .range(de, ate),
+      contexto,
+      frase,
+    ),
   ]);
 
-  const erro = recebimentos.error ?? ajustes.error ?? despesas.error;
-  if (erro) falhaDeConsulta("consulta painel-financeiro", erro, "Não foi possível montar o fluxo de caixa.");
-
-  const baldes: MesDoFluxo[] = [];
+  // Os baldes somam centavos inteiros; reais só na saída (lib/moeda.ts).
+  const baldes: { mes: Date; recebido: number; despesas: number }[] = [];
   const indicePorChave = new Map<string, number>();
 
   for (let i = -11; i <= 0; i++) {
     const mes = inicioDeMesRelativo(i);
     const { ano, mes: numero } = partesDoDia(mes);
     indicePorChave.set(`${ano}-${numero}`, baldes.length);
-    baldes.push({ mes, recebido: 0, despesas: 0, resultado: 0, acumulado: 0 });
+    baldes.push({ mes, recebido: 0, despesas: 0 });
   }
 
   const depositar = (instante: Date, campo: "recebido" | "despesas", valor: number) => {
     const { ano, mes } = partesDoDia(instante);
     const indice = indicePorChave.get(`${ano}-${mes}`);
-    if (indice !== undefined) baldes[indice][campo] += valor;
+    if (indice !== undefined) baldes[indice][campo] += centavosDoBanco(valor);
   };
 
-  for (const r of recebimentos.data ?? []) {
-    if (r.recebido_em) {
-      depositar(dataDoBanco(r.recebido_em), "recebido", Number(r.valor_recebido ?? 0));
+  for (const r of recebimentos) {
+    if (r.recebido_em && r.valor_recebido !== null) {
+      depositar(dataDoBanco(r.recebido_em), "recebido", Number(r.valor_recebido));
     }
   }
-  for (const a of ajustes.data ?? []) {
+  // Ajuste entra no mês do lançamento (`criado_em`) — dívida em aberto, §13.
+  for (const a of ajustes) {
     depositar(new Date(a.criado_em), "recebido", Number(a.valor));
   }
-  for (const d of despesas.data ?? []) {
+  for (const d of despesas) {
     if (d.pago_em) depositar(dataDoBanco(d.pago_em), "despesas", Number(d.valor));
   }
 
   let acumulado = 0;
-  for (const balde of baldes) {
-    balde.resultado = balde.recebido - balde.despesas;
-    acumulado += balde.resultado;
-    balde.acumulado = acumulado;
-  }
-
-  return baldes;
+  return baldes.map((balde) => {
+    const resultado = balde.recebido - balde.despesas;
+    acumulado += resultado;
+    return {
+      mes: balde.mes,
+      recebido: centavosParaReais(balde.recebido),
+      despesas: centavosParaReais(balde.despesas),
+      resultado: centavosParaReais(resultado),
+      acumulado: centavosParaReais(acumulado),
+    };
+  });
 });
 
 // ---------------------------------------------------------------------
@@ -246,39 +329,69 @@ export const movimentacoes = cache(async (periodo: Periodo): Promise<Movimentaca
   const de = dataParaColuna(periodo.de);
   const ate = dataParaColuna(periodo.ate);
 
-  const [vendas, recebidos, despesas, ajustes] = await Promise.all([
-    supabase
-      .from("vendas")
-      .select("id, data_venda, valor_final, forma, parcelas, pacientes(nome, nome_social), procedimentos(nome)")
-      .gte("data_venda", de)
-      .lt("data_venda", ate),
-    supabase
-      .from("recebimentos")
-      .select("venda_id, recebido_em, valor_recebido, forma, descricao, pacientes(nome, nome_social)")
-      .in("situacao", ["recebido", "recebido_divergencia"])
-      .gte("recebido_em", de)
-      .lt("recebido_em", ate),
-    supabase
-      .from("despesas")
-      .select("id, pago_em, valor, descricao, forma")
-      .eq("situacao", "paga")
-      .gte("pago_em", de)
-      .lt("pago_em", ate),
-    supabase
-      .from("ajustes_financeiros")
-      .select("venda_id, criado_em, valor, motivo")
-      .gte("criado_em", periodo.de.toISOString())
-      .lt("criado_em", periodo.ate.toISOString()),
-  ]);
+  // A lista é juntada, ordenada e filtrada aqui: um corte do `max_rows` numa
+  // das quatro leituras tiraria movimentações do extrato sem aviso.
+  const contexto = "consulta painel-financeiro: movimentações";
+  const frase = "Não foi possível carregar as movimentações.";
 
-  const erro = vendas.error ?? recebidos.error ?? despesas.error ?? ajustes.error;
-  if (erro) falhaDeConsulta("consulta painel-financeiro", erro, "Não foi possível carregar as movimentações.");
+  const [vendas, recebidos, despesas, ajustes] = await Promise.all([
+    todasAsLinhas(
+      (inicio, fim) =>
+        supabase
+          .from("vendas")
+          .select("id, data_venda, valor_final, forma, parcelas, pacientes(nome, nome_social), procedimentos(nome)")
+          .gte("data_venda", de)
+          .lt("data_venda", ate)
+          .order("id")
+          .range(inicio, fim),
+      contexto,
+      frase,
+    ),
+    todasAsLinhas(
+      (inicio, fim) =>
+        supabase
+          .from("recebimentos")
+          .select("venda_id, recebido_em, valor_recebido, forma, descricao, pacientes(nome, nome_social)")
+          .in("situacao", ["recebido", "recebido_divergencia"])
+          .gte("recebido_em", de)
+          .lt("recebido_em", ate)
+          .order("id")
+          .range(inicio, fim),
+      contexto,
+      frase,
+    ),
+    todasAsLinhas(
+      (inicio, fim) =>
+        supabase
+          .from("despesas")
+          .select("id, pago_em, valor, descricao, forma")
+          .eq("situacao", "paga")
+          .gte("pago_em", de)
+          .lt("pago_em", ate)
+          .order("id")
+          .range(inicio, fim),
+      contexto,
+      frase,
+    ),
+    todasAsLinhas(
+      (inicio, fim) =>
+        supabase
+          .from("ajustes_financeiros")
+          .select("venda_id, criado_em, valor, motivo")
+          .gte("criado_em", periodo.de.toISOString())
+          .lt("criado_em", periodo.ate.toISOString())
+          .order("id")
+          .range(inicio, fim),
+      contexto,
+      frase,
+    ),
+  ]);
 
   const nome = (p: { nome: string; nome_social: string | null } | null) =>
     p?.nome_social || p?.nome || "Paciente";
 
   const lista: Movimentacao[] = [
-    ...(vendas.data ?? []).map((v): Movimentacao => ({
+    ...vendas.map((v): Movimentacao => ({
       tipo: "venda",
       data: dataDoBanco(v.data_venda),
       titulo: `Venda — ${nome(v.pacientes)}`,
@@ -287,7 +400,7 @@ export const movimentacoes = cache(async (periodo: Periodo): Promise<Movimentaca
       forma: v.forma,
       href: `/financeiro/vendas/${v.id}`,
     })),
-    ...(recebidos.data ?? []).map((r): Movimentacao => ({
+    ...recebidos.map((r): Movimentacao => ({
       tipo: "recebimento",
       data: dataDoBanco(r.recebido_em!),
       titulo: `Recebimento — ${nome(r.pacientes)}`,
@@ -296,7 +409,7 @@ export const movimentacoes = cache(async (periodo: Periodo): Promise<Movimentaca
       forma: r.forma,
       href: r.venda_id ? `/financeiro/vendas/${r.venda_id}` : null,
     })),
-    ...(despesas.data ?? []).map((d): Movimentacao => ({
+    ...despesas.map((d): Movimentacao => ({
       tipo: "despesa",
       data: dataDoBanco(d.pago_em!),
       titulo: `Despesa — ${d.descricao}`,
@@ -305,7 +418,7 @@ export const movimentacoes = cache(async (periodo: Periodo): Promise<Movimentaca
       forma: d.forma,
       href: `/financeiro/despesas/${d.id}/editar`,
     })),
-    ...(ajustes.data ?? []).map((a): Movimentacao => ({
+    ...ajustes.map((a): Movimentacao => ({
       tipo: "ajuste",
       data: new Date(a.criado_em),
       titulo: "Ajuste financeiro",

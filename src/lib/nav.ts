@@ -19,6 +19,11 @@ export type ItemMenu = {
   finalidade: string;
   /** O que este módulo vai passar a fazer nas próximas etapas. */
   proximosPassos: string[];
+  /**
+   * Módulo que ainda é só a página provisória. O menu mostra "em breve" ao
+   * lado, para ninguém clicar esperando uma tela pronta.
+   */
+  emConstrucao?: boolean;
 };
 
 /**
@@ -115,6 +120,7 @@ export const MENU: ItemMenu[] = [
     href: "/relatorios",
     rotulo: "Relatórios",
     icone: ChartNoAxesColumn,
+    emConstrucao: true,
     finalidade:
       "Indicadores de atendimento, faturamento, procedimentos mais realizados e retorno de pacientes.",
     proximosPassos: [

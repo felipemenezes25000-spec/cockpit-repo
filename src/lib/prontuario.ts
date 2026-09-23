@@ -64,8 +64,24 @@ const LIMITE = {
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function cortar(valor: string, limite: number): string {
-  return valor.trim().slice(0, limite);
+/**
+ * Os limites de texto, com o par no banco (0010 e 0022): título com pelo
+ * menos 3 (a tela corta em 160; o banco não tem máximo), motivo de 5 a 240 e
+ * cada campo clínico até 6.000. Exportado para o formulário usar o mesmo
+ * número no `maxLength`.
+ */
+export const LIMITES_PRONTUARIO = LIMITE;
+
+/**
+ * Só apara. Conteúdo clínico acima do limite NÃO é cortado aqui: cortar em
+ * silêncio perderia o fim de uma evolução sem a pessoa saber. Quem recusa,
+ * com mensagem, é `validarProntuario` — como o banco recusaria.
+ */
+function aparar(valor: string): string {
+  // O corpo multipart do formulário chega com CRLF, mas o `maxLength` do
+  // textarea conta cada quebra como 1. Sem normalizar, um texto dentro do
+  // limite visível passaria de 6.000 aqui (e na CHECK da 0022).
+  return valor.replace(/\r\n?/g, "\n").trim();
 }
 
 /** Data no formato do banco (AAAA-MM-DD) que existe de verdade no calendário. */
@@ -79,17 +95,19 @@ export function normalizarProntuario(
   valores: ValoresProntuario,
 ): ValoresProntuario {
   return {
+    // Identificador e data têm forma fixa: o que passa disso já é inválido,
+    // e o corte só impede texto gigante de chegar à validação.
     paciente_id: valores.paciente_id.trim().slice(0, 36),
     atendimento_id: valores.atendimento_id.trim().slice(0, 36),
     data_registro: valores.data_registro.trim().slice(0, 10),
-    titulo: cortar(valores.titulo, LIMITE.titulo),
-    motivo: cortar(valores.motivo, LIMITE.motivo),
-    queixa: cortar(valores.queixa, LIMITE.conteudo),
-    avaliacao: cortar(valores.avaliacao, LIMITE.conteudo),
-    conduta: cortar(valores.conduta, LIMITE.conteudo),
-    evolucao: cortar(valores.evolucao, LIMITE.conteudo),
-    orientacoes: cortar(valores.orientacoes, LIMITE.conteudo),
-    observacoes: cortar(valores.observacoes, LIMITE.conteudo),
+    titulo: aparar(valores.titulo),
+    motivo: aparar(valores.motivo),
+    queixa: aparar(valores.queixa),
+    avaliacao: aparar(valores.avaliacao),
+    conduta: aparar(valores.conduta),
+    evolucao: aparar(valores.evolucao),
+    orientacoes: aparar(valores.orientacoes),
+    observacoes: aparar(valores.observacoes),
   };
 }
 
@@ -119,14 +137,26 @@ export function validarProntuario(
 
   if (valores.titulo.length < 3) {
     erros.titulo = "Informe um título com pelo menos 3 caracteres.";
+  } else if (valores.titulo.length > LIMITE.titulo) {
+    erros.titulo = `O título aceita até ${LIMITE.titulo} caracteres.`;
   }
 
   if (opcoes.exigirMotivo && valores.motivo.length < 5) {
     erros.motivo = "Informe o motivo da nova versão.";
+  } else if (valores.motivo.length > LIMITE.motivo) {
+    erros.motivo = `O motivo aceita até ${LIMITE.motivo} caracteres.`;
   }
 
   if (!conteudoPreenchido(valores)) {
     erros.queixa = "Preencha pelo menos um campo clínico.";
+  }
+
+  // O banco recusa acima de 6.000 (CHECK da 0022). Recusar aqui dá a
+  // mensagem no campo certo, em vez de uma recusa genérica depois de enviar.
+  for (const campo of CAMPOS_DE_CONTEUDO) {
+    if (valores[campo].length > LIMITE.conteudo) {
+      erros[campo] = `Este campo aceita até ${LIMITE.conteudo.toLocaleString("pt-BR")} caracteres.`;
+    }
   }
 
   return erros;

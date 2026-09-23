@@ -18,14 +18,14 @@ function LinhaPaciente({ paciente }: { paciente: PacienteDaLista }) {
   const telefone = paciente.telefone ? formatarTelefone(paciente.telefone) : null;
 
   return (
-    <li className="relative flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow focus-within:border-primary hover:shadow-[var(--shadow-realce)]">
+    <li className="relative flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow focus-within:border-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary hover:shadow-[var(--shadow-realce)]">
       <Avatar nome={paciente.exibicao} tom={paciente.ativo ? "marca" : "neutro"} />
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Link
             href={`/pacientes/${paciente.id}`}
-            className="font-medium text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
+            className="inline-flex min-h-6 items-center font-medium text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
           >
             {paciente.exibicao}
           </Link>

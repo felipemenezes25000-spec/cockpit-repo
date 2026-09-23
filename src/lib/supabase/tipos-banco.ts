@@ -670,6 +670,7 @@ export type Database = {
         Row: {
           ativo: boolean
           atualizado_em: string
+          busca: string | null
           cpf: string | null
           criado_em: string
           criado_por: string | null
@@ -687,6 +688,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           atualizado_em?: string
+          busca?: string | null
           cpf?: string | null
           criado_em?: string
           criado_por?: string | null
@@ -704,6 +706,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           atualizado_em?: string
+          busca?: string | null
           cpf?: string | null
           criado_em?: string
           criado_por?: string | null
@@ -736,6 +739,7 @@ export type Database = {
           descricao: string
           exemplo: boolean
           id: string
+          origem: Database["public"]["Enums"]["origem_pendencia"]
           paciente_id: string | null
           prazo: string | null
           prioridade: Database["public"]["Enums"]["prioridade"]
@@ -751,6 +755,7 @@ export type Database = {
           descricao: string
           exemplo?: boolean
           id?: string
+          origem?: Database["public"]["Enums"]["origem_pendencia"]
           paciente_id?: string | null
           prazo?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade"]
@@ -766,6 +771,7 @@ export type Database = {
           descricao?: string
           exemplo?: boolean
           id?: string
+          origem?: Database["public"]["Enums"]["origem_pendencia"]
           paciente_id?: string | null
           prazo?: string | null
           prioridade?: Database["public"]["Enums"]["prioridade"]
@@ -1392,6 +1398,7 @@ export type Database = {
       vendas: {
         Row: {
           atualizado_em: string
+          chave_envio: string | null
           criado_em: string
           criado_por: string | null
           data_venda: string
@@ -1414,6 +1421,7 @@ export type Database = {
         }
         Insert: {
           atualizado_em?: string
+          chave_envio?: string | null
           criado_em?: string
           criado_por?: string | null
           data_venda: string
@@ -1436,6 +1444,7 @@ export type Database = {
         }
         Update: {
           atualizado_em?: string
+          chave_envio?: string | null
           criado_em?: string
           criado_por?: string | null
           data_venda?: string
@@ -1550,6 +1559,7 @@ export type Database = {
       documento_para_assinatura: {
         Args: { p_nascimento: string; p_token: string }
         Returns: {
+          assinado_canal: string
           assinado_em: string
           assinado_por: string
           campos: Json
@@ -1590,6 +1600,16 @@ export type Database = {
       prontuario_imagem_eliminar: {
         Args: { p_imagem_id: string; p_motivo: string }
         Returns: undefined
+      }
+      prontuario_imagens_reconciliar: {
+        Args: never
+        Returns: {
+          caminho: string
+          desde: string
+          imagem_id: string
+          prontuario_id: string
+          situacao: string
+        }[]
       }
       prontuario_nova_versao: {
         Args: {
@@ -1638,6 +1658,7 @@ export type Database = {
       }
       venda_registrar: {
         Args: {
+          p_chave?: string
           p_data_venda: string
           p_desconto: number
           p_descricao: string
@@ -1675,6 +1696,7 @@ export type Database = {
         | "transferencia"
         | "boleto"
         | "outra"
+      origem_pendencia: "tarefa" | "contato_avaliacao" | "contato_aniversario"
       papel_usuario: "administradora" | "recepcao" | "financeiro"
       prioridade: "alta" | "media" | "baixa"
       situacao_acompanhamento:
@@ -1854,6 +1876,7 @@ export const Constants = {
         "boleto",
         "outra",
       ],
+      origem_pendencia: ["tarefa", "contato_avaliacao", "contato_aniversario"],
       papel_usuario: ["administradora", "recepcao", "financeiro"],
       prioridade: ["alta", "media", "baixa"],
       situacao_acompanhamento: [
@@ -1896,3 +1919,4 @@ export const Constants = {
     },
   },
 } as const
+

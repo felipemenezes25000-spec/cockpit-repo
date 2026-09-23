@@ -21,6 +21,13 @@ export type PlanilhaLida = {
   separador: string;
   /** Codificação usada na leitura, para avisar quando não foi UTF-8. */
   codificacao: "utf-8" | "windows-1252";
+  /**
+   * Linha do arquivo (contando de 1) onde abriu uma aspa que nunca fechou.
+   *
+   * Sem isso, uma aspa solta engole o resto do arquivo numa célula só e a
+   * prévia mostraria "uma linha" onde havia centenas — em silêncio.
+   */
+  aspaSemFechar: number | null;
 };
 
 const SEPARADORES = [";", ",", "\t"] as const;
@@ -92,12 +99,49 @@ export function detectarSeparador(texto: string): string {
   return maior === 0 ? ";" : melhor;
 }
 
+/**
+ * Arquivo que não é texto CSV: planilha do Excel (.xlsx é um ZIP, .xls é um
+ * documento OLE), texto em UTF-16 ou binário qualquer.
+ *
+ * Lido como texto, qualquer um deles vira lixo e a tela diria "não encontrei
+ * a coluna do nome" — verdade, mas sem dizer o que fazer. Aqui a frase já
+ * traz a saída.
+ */
+export function formatoNaoSuportado(bytes: Uint8Array): string | null {
+  const comeca = (...assinatura: number[]) => assinatura.every((b, i) => bytes[i] === b);
+
+  if (comeca(0x50, 0x4b, 0x03, 0x04) || comeca(0xd0, 0xcf, 0x11, 0xe0)) {
+    return (
+      "Este arquivo é uma planilha do Excel, não um CSV. No Excel, use " +
+      '"Salvar como" e escolha "CSV UTF-8 (delimitado por vírgulas)".'
+    );
+  }
+
+  if (comeca(0xff, 0xfe) || comeca(0xfe, 0xff)) {
+    return (
+      'O arquivo foi salvo como "Texto Unicode" (UTF-16). Salve de novo como ' +
+      '"CSV UTF-8 (delimitado por vírgulas)".'
+    );
+  }
+
+  // Texto de planilha não tem byte zero; binário quase sempre tem logo no início.
+  if (bytes.subarray(0, 4096).includes(0)) {
+    return "O arquivo não parece ser um CSV. Exporte a planilha como CSV e tente de novo.";
+  }
+
+  return null;
+}
+
 /** Percorre o texto uma vez, caractere a caractere, montando as células. */
-function separarCelulas(texto: string, separador: string): string[][] {
+function separarCelulas(
+  texto: string,
+  separador: string,
+): { linhas: string[][]; aspaSemFechar: number | null } {
   const linhas: string[][] = [];
   let linha: string[] = [];
   let celula = "";
   let dentroDeAspas = false;
+  let aberturaDaAspa = 0;
 
   const fecharCelula = () => {
     linha.push(celula.trim());
@@ -129,6 +173,7 @@ function separarCelulas(texto: string, separador: string): string[][] {
 
     if (caractere === '"') {
       dentroDeAspas = true;
+      aberturaDaAspa = i;
       continue;
     }
 
@@ -155,7 +200,11 @@ function separarCelulas(texto: string, separador: string): string[][] {
   // Última linha sem quebra no fim do arquivo.
   if (celula !== "" || linha.length > 0) fecharLinha();
 
-  return linhas;
+  const aspaSemFechar = dentroDeAspas
+    ? texto.slice(0, aberturaDaAspa).split(/\r\n|\r|\n/).length
+    : null;
+
+  return { linhas, aspaSemFechar };
 }
 
 function linhaVazia(linha: string[]): boolean {
@@ -171,10 +220,11 @@ function linhaVazia(linha: string[]): boolean {
 export function lerCsv(bytes: Uint8Array): PlanilhaLida {
   const { texto, codificacao } = decodificar(bytes);
   const separador = detectarSeparador(texto);
-  const todas = separarCelulas(texto, separador).filter((l) => !linhaVazia(l));
+  const { linhas, aspaSemFechar } = separarCelulas(texto, separador);
+  const todas = linhas.filter((l) => !linhaVazia(l));
 
   if (todas.length === 0) {
-    return { cabecalho: [], linhas: [], separador, codificacao };
+    return { cabecalho: [], linhas: [], separador, codificacao, aspaSemFechar };
   }
 
   return {
@@ -182,6 +232,7 @@ export function lerCsv(bytes: Uint8Array): PlanilhaLida {
     linhas: todas.slice(1),
     separador,
     codificacao,
+    aspaSemFechar,
   };
 }
 

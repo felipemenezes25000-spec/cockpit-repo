@@ -48,9 +48,11 @@ export function ConfirmarRecebimento({
   const [estado, enviar] = useActionState(confirmarRecebimento, INICIAL);
   const [valor, setValor] = useState(liquidoPrevisto.toFixed(2).replace(".", ","));
 
-  const valorCent = paraCentavos(valor);
+  // Vazio não é R$ 0,00: a ação recusa o campo vazio.
+  const valorCent = valor.trim() ? paraCentavos(valor) : null;
   const divergente =
     valorCent !== null && valorCent !== Math.round(liquidoPrevisto * 100);
+  const zero = valorCent === 0;
 
   const erros = estado.erros;
 
@@ -72,7 +74,8 @@ export function ConfirmarRecebimento({
             id="recebido_em"
             name="recebido_em"
             type="date"
-            defaultValue={dataPadrao}
+            max={dataPadrao}
+            defaultValue={estado.valores?.recebido_em ?? dataPadrao}
             className={cn(ENTRADA, erros.recebido_em && ENTRADA_ERRO)}
           />
         </Campo>
@@ -101,6 +104,9 @@ export function ConfirmarRecebimento({
         <p className="rounded-[var(--radius-cartao)] bg-atencao-fundo px-3 py-2 text-xs text-atencao">
           Valor diferente do previsto: será registrado como{" "}
           <strong>recebido com divergência</strong>.
+          {zero
+            ? " Atenção: você está confirmando que não entrou nada. Recebimento confirmado não se desfaz."
+            : null}
         </p>
       ) : null}
 

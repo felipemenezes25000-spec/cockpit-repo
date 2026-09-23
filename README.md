@@ -12,9 +12,10 @@
 [![PostgreSQL com RLS](https://img.shields.io/badge/PostgreSQL-RLS_em_toda_tabela-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](supabase/migrations)
 [![Vercel gru1](https://img.shields.io/badge/Vercel-gru1_S%C3%A3o_Paulo-000000?style=for-the-badge&logo=vercel&logoColor=white)](vercel.json)
 
-[![Vitest](https://img.shields.io/badge/Vitest-216_testes-6E9F18?style=flat-square&logo=vitest&logoColor=white)](#testes)
-[![Banco](https://img.shields.io/badge/banco-78_asser%C3%A7%C3%B5es_por_perfil-0854A0?style=flat-square&logo=postgresql&logoColor=white)](supabase/testes/permissoes.sql)
-[![Playwright](https://img.shields.io/badge/Playwright-12_fluxos_%C2%B7_39_rotas_%C3%97_3_larguras-2EAD33?style=flat-square)](e2e)
+[![Vitest](https://img.shields.io/badge/Vitest-800_testes-6E9F18?style=flat-square&logo=vitest&logoColor=white)](#testes)
+[![Banco](https://img.shields.io/badge/banco-194_asser%C3%A7%C3%B5es_por_perfil-0854A0?style=flat-square&logo=postgresql&logoColor=white)](supabase/testes/permissoes.sql)
+[![Playwright](https://img.shields.io/badge/Playwright-Chromium_%2B_WebKit_%C2%B7_298_testes-2EAD33?style=flat-square)](e2e)
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![ESLint](https://img.shields.io/badge/ESLint-zero_avisos-4B32C3?style=flat-square&logo=eslint&logoColor=white)](eslint.config.mjs)
 [![LGPD](https://img.shields.io/badge/LGPD-dado_de_sa%C3%BAde-BB0000?style=flat-square)](#seguranca)
 [![pt-BR](https://img.shields.io/badge/tudo_em-portugu%C3%AAs-107E3E?style=flat-square)](AGENTS.md)
@@ -38,24 +39,24 @@ do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como �
 
 <br>
 
-<img src="docs/assets/numeros.svg" width="100%" alt="22 migrações SQL versionadas · 39 rotas testadas em 3 larguras · 216 testes de unidade e componente · 78 asserções de permissão no banco · 12 fluxos E2E · 3 perfis com RLS em toda tabela">
+<img src="docs/assets/numeros.svg" width="100%" alt="28 migrações SQL versionadas · 41 rotas testadas em 3 larguras · 800 testes de unidade e componente · 194 asserções de permissão no banco · 43 testes de fluxo E2E · 3 perfis com RLS em toda tabela">
 
 <details>
-<summary><b>Todos os números</b> — contados no código em 22/09/2026</summary>
+<summary><b>Todos os números</b> — contados no código em 23/09/2026</summary>
 
 | Onde | Quanto |
 |---|---|
-| Páginas (`page.tsx`) | **47** — 42 autenticadas em `(app)` e 5 públicas |
+| Páginas (`page.tsx`) | **48** — 43 autenticadas em `(app)` e 5 públicas |
 | Componentes React | **96**, em 10 pastas (documentos e financeiro são as maiores) |
-| TypeScript em `src/` | ~**31 mil linhas** em 226 arquivos (1.898 delas são os tipos gerados do banco) |
-| Migrações SQL | **22**, somando ~**6,8 mil linhas** (a maior, 0022, tem 1.237) |
+| TypeScript em `src/` | ~**43 mil linhas** em 296 arquivos, testes incluídos (~33 mil em 224 sem eles; 1.922 são os tipos gerados do banco) |
+| Migrações SQL | **28**, somando ~**8,1 mil linhas** (a maior, 0022, tem 1.237) — 0019 a 0028 ainda não aplicadas em produção |
 | Tabelas no schema `public` | **25** — todas com RLS; só uma com DELETE (fotos, pela LGPD) |
-| Políticas de RLS | **67** (64 em `public` + 3 no Storage) |
-| Gatilhos | **52**, dos quais **20** de auditoria |
-| Funções no banco | **41** — 22 em `public`, 19 em `private`; 16 chamadas pela aplicação, **4** alcançáveis por `anon` |
-| Verificações automatizadas | **423** — 216 Vitest · 78 SQL por perfil · 129 Playwright |
+| Políticas de RLS | **63** (60 em `public` + 3 no Storage) — menos que antes porque a 0023 tirou as de escrita direta em venda, histórico e ajuste |
+| Gatilhos | **67**, dos quais **20** de auditoria |
+| Funções no banco | **50** — 23 em `public`, 27 em `private`; 17 chamadas pela aplicação, **4** alcançáveis por `anon` |
+| Verificações automatizadas | **1292** — 800 Vitest · 194 SQL por perfil · 298 Playwright (251 Chromium, 43 WebKit, 4 iPhone 13) |
 | Dependências | **7** de execução, 18 de desenvolvimento |
-| Histórico | **35 commits**, de 01/08/2026 a 22/09/2026 |
+| Histórico | **40 commits**, de 01/08/2026 a 23/09/2026, num único branch (`jamal-do-mal`) |
 
 </details>
 
@@ -152,8 +153,11 @@ Seis princípios atravessam o código inteiro:
 
 ## Perfis e permissões
 
-Três perfis, e toda regra é conferida em **três camadas**: a interface não oferece a porta, a ação de
+Três perfis, e cada regra de acesso é conferida em **três camadas**: a interface não oferece a porta, a ação de
 servidor recusa com uma frase legível e a RLS do banco recusa mesmo que as outras duas sejam contornadas.
+Algumas regras ficam de propósito só na aplicação — a importação de planilha restrita à administradora, a
+data de pagamento de despesa que não pode estar no futuro, o tamanho mínimo do motivo —, e o [`AGENTS.md`](AGENTS.md) (§5, "Onde a
+terceira camada não existe hoje") lista cada uma.
 
 | O que | Recepção | Financeiro | Administradora |
 |---|:-:|:-:|:-:|
@@ -239,15 +243,26 @@ sequenceDiagram
 **O que o banco garante sozinho**, mesmo contra quem chama a API direto com a chave anônima:
 
 > [!NOTE]
-> As migrações **0019 a 0022** estão escritas e verificadas no banco local (do zero, com o seed e com
+> As migrações **0019 a 0028** estão escritas e verificadas no banco local (do zero, com o seed e com
 > `npm run test:banco`), mas **ainda aguardam aplicação em produção** pelo dono do projeto — ver
 > [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção). Até lá, as garantias
-> marcadas com esses números neste README valem só no banco local e nos testes.
+> marcadas com esses números neste README valem só no banco local e nos testes. **Banco primeiro,
+> código depois:** o código atual não funciona contra o banco anterior à 0025, então o merge/deploy
+> só vem depois do `db:push` (roteiro no link acima). O app novo sempre manda a chave do envio para `venda_registrar`:
+> contra um banco sem a 0028, o registro de venda para (`PGRST202`). **Antes do deploy, preencha
+> `ORIGEM_PUBLICA` na Vercel:** em produção, vazia, o link de assinatura à distância é recusado
+> (`AGENTS.md` §3).
 
 - **Privilégio mínimo** (0019): cada tabela declara seus grants; o padrão não concede nada a `authenticated`; políticas separadas por operação, **sem DELETE** em lugar nenhum — exceto fotos de evolução, pela LGPD.
 - **Dinheiro conferido na origem** (0020): a taxa de toda venda precisa vir da tabela padrão (ou ser manual, pelo financeiro) e o valor precisa bater com o arredondamento do sistema; recebimento confirmado não se reescreve.
 - **Agenda sem choque** (0021): sobreposição recusada com `23P01`, sob trava por profissional.
 - **Documento à prova da API** (0022): documento só nasce do texto do modelo e só muda de situação; hash, hora, canal e operador da assinatura são escritos pelo banco; pergunta da anamnese congela.
+- **Venda só pela função** (0023): ninguém insere nem altera venda, histórico ou ajuste pela API; toda venda nasce com exatamente um recebimento; o recebimento previsto não diverge da venda; confirmação sem data futura e "recebido" só pelo líquido previsto.
+- **Fotos sem troca de arquivo** (0024): a API só altera legenda, data, arquivamento e ordem; a administradora vê as sobras entre Storage e tabela (detecta, não apaga); `anon` não gera id de sequência nenhuma.
+- **Contato estruturado** (0025): o Relacionamento reconhece registro de contato por coluna, não por texto, com um registro por paciente, origem e dia.
+- **Marca de exemplo fora da API** (0026): com sessão, ninguém grava nem troca `exemplo = true` — o `dados:limpar` só apaga o que o seed marcou.
+- **O banco escreve a evidência** (0027): versão de modelo na sequência, quem respondeu a anamnese e quando, autor e data da foto; a via diz o canal da assinatura.
+- **Venda idempotente e foto só com arquivo** (0028): o mesmo envio do formulário de venda devolve a venda já criada, sem segunda venda nem segundo recebimento (chave do envio + índice único); a linha da foto só nasce se o objeto existir no bucket, com tipo e tamanho lidos do Storage.
 - **Funções auxiliares no schema `private`**, fora do que o PostgREST publica; funções novas nascem com `search_path` fixo e sem `EXECUTE` para `anon`.
 - **Auditoria por gatilho** em 20 tabelas: toda tabela editável com dado de paciente, de dinheiro ou de acesso.
 
@@ -258,8 +273,11 @@ sequenceDiagram
 | Sessão | `getUser()` — que valida o token no servidor do Supabase — e nunca `getSession()`; middleware renova a sessão a cada requisição |
 | Embutir em outro site | `Content-Security-Policy: frame-ancestors 'none'` + `X-Frame-Options: DENY` |
 | Tipo de arquivo | `X-Content-Type-Options: nosniff` |
+| Scripts e origens | CSP com nonce por requisição (`src/lib/politica-de-conteudo.ts`, enviada pelo middleware); script só com nonce + `'strict-dynamic'`; `'unsafe-inline'` só no atributo `style` |
 | Buscadores | `X-Robots-Tag: noindex, nofollow` em tudo |
-| Token de assinatura | `Referrer-Policy: no-referrer` em `/assinar/*` — o token não vaza para link externo |
+| Token de assinatura | `Referrer-Policy: no-referrer`, `Cache-Control: no-store` e `noarchive` em `/assinar/*`; origem do link fixada por `ORIGEM_PUBLICA` |
+| Login | redirecionamento pós-login só para caminho interno (`destinoSeguro`) |
+| Log | uma linha JSON por falha (`"app":"cockpit"`, código, contexto e id de correlação), sanitizada (e-mail, token, CPF, telefone, data viram marcadores) — pronta para log drain |
 | Recursos do aparelho | câmera, microfone, localização, pagamento e USB desligados por `Permissions-Policy` |
 | Chave `service_role` | **não entra na aplicação** — nem `.env.local`, nem Vercel, nem navegador |
 
@@ -303,10 +321,11 @@ resultado de caixa = líquido recebido − despesas pagas              (lucro n�
 
 Estrutura, tipografia e espaçamento vêm de um mockup do Google Stitch (`docs/redesign`) — **a paleta não**:
 o verde do mockup passou a significar "deu certo" e não podia continuar sendo a cor do menu. Todo token de
-cor, raio e sombra mora em [`src/app/globals.css`](src/app/globals.css); todo par texto/fundo passa no WCAG AA,
-com uma exceção conhecida (o texto terciário sobre o painel, 4.34:1 — [`AGENTS.md`](AGENTS.md) §7.4);
+cor, raio e sombra mora em [`src/app/globals.css`](src/app/globals.css); todo par texto/fundo dos tokens passa
+no WCAG AA (o texto terciário `--color-outline` foi escurecido e dá 4,74:1 no pior fundo — [`AGENTS.md`](AGENTS.md) §7.4);
 foco sempre visível; atalho "Ir para o conteúdo"; `prefers-reduced-motion` respeitado; botão indisponível
-fica visível, com a razão no `title`. 35 das 47 telas são testadas sem rolagem horizontal em 360, 768 e 1440 px.
+fica visível, com a razão no `title`. 41 endereços (36 telas do sistema, com a 404 logada, e 5 públicas) são testados sem rolagem
+horizontal em 320, 768 e 1440 px.
 
 <img src="docs/assets/divisor.svg" width="100%" alt="">
 
@@ -357,7 +376,7 @@ erDiagram
 ```
 
 <details>
-<summary><b>As 22 migrações</b>, da fundação à integridade dos documentos</summary>
+<summary><b>As 28 migrações</b>, da fundação à venda idempotente</summary>
 
 | Arquivo | O que faz |
 |---|---|
@@ -383,6 +402,12 @@ erDiagram
 | `0020_financeiro_conferido_no_banco.sql` | Origem da taxa conferida por gatilho; recebimento confirmado imutável |
 | `0021_agenda_sem_choque.sql` | Choque de horário recusado pelo banco, com trava por profissional |
 | `0022_documentos_integridade.sql` | Documento só nasce do modelo e só muda de situação; evidência escrita pelo banco |
+| `0023_venda_so_pela_funcao.sql` | Venda, histórico e ajuste só pelas funções (agora `SECURITY DEFINER`); recebimento com UPDATE por coluna e confirmação coerente |
+| `0024_fotos_reconciliacao_e_arestas.sql` | Reconciliação das fotos (só leitura); UPDATE por coluna nas fotos; sequências sem `anon` |
+| `0025_contato_estruturado_e_arestas.sql` | `pendencias.origem` no lugar do texto; busca sem acento; teto do título do prontuário |
+| `0026_marca_de_exemplo_e_privilegios.sql` | A marca de dado de exemplo não se grava pela API; sequência nova só com USAGE |
+| `0027_banco_escreve_a_evidencia.sql` | Versão de modelo, autor da resposta e autor e data da foto escritos pelo banco; a via diz o canal da assinatura; recebimento sem taxa maior que o valor |
+| `0028_venda_idempotente_e_foto_do_arquivo.sql` | Venda idempotente pela chave do envio (`vendas.chave_envio`, `p_chave` em `venda_registrar`); foto só com o objeto no bucket, tipo e tamanho do Storage; IP e dispositivo da assinatura marcados como declarados |
 
 O detalhe de cada uma está em [`supabase/README.md`](supabase/README.md) e no [`AGENTS.md`](AGENTS.md) §4.
 
@@ -395,12 +420,12 @@ O detalhe de cada uma está em [`supabase/README.md`](supabase/README.md) e no [
 ## Rodando localmente
 
 > [!NOTE]
-> Precisa de **Node 22+** (o `@supabase/supabase-js` 2.112 declara `engines: node >=22`; com Node 20 o `npm ci`
+> Precisa de **Node 22+** (o `@supabase/supabase-js` 2.117 declara `engines: node >=22`; com Node 20 o `npm ci`
 > avisa `EBADENGINE`) e **Docker** (para o Supabase local, com Postgres 17). Nada aqui toca o banco de produção.
 
 ```bash
 npm ci
-npx supabase start          # Postgres local: aplica as 22 migrações e os dados de exemplo
+npx supabase start          # Postgres local: aplica as 28 migrações e os dados de exemplo
 npm run local:usuarios      # cria as contas de teste: administradora, financeiro e recepção
 cp .env.local.example .env.local
 npm run dev                 # http://localhost:3000
@@ -430,23 +455,41 @@ aplicação não sobe — de propósito.
 
 ## Testes
 
-Três camadas, **423 verificações automatizadas** — e nenhuma toca produção.
+Três camadas, **1292 verificações automatizadas** — e nenhuma toca produção.
 
 | Camada | Comando | Quanto | O que confere |
 |---|---|---|---|
-| Unidade e componente | `npm test` | **216 testes** em 10 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, ações de servidor com um Supabase falso e componentes (jsdom + Testing Library) |
-| Banco | `npm run test:banco` | **78 asserções** | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim |
-| Navegador | `npm run test:e2e` | **12 fluxos** + **39 rotas × 3 larguras** (129 testes) | Login, paciente, agenda, venda, despesa, prontuário, documento e assinatura por link; 39 endereços (35 das 47 telas — ficam fora as de detalhe e edição por id, exceto as da paciente, e `/sem-acesso`) em 360, 768 e 1440 px, sem rolagem horizontal nem erro de console |
+| Unidade e componente | `npm test` | **800 testes** em 76 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, login e redirecionamento, middleware, cabeçalhos de segurança, **44 das 47 ações de servidor** com um Supabase falso e componentes (jsdom + Testing Library) |
+| Banco | `npm run test:banco` | **194 asserções**, todas verdes do zero (`db reset` + seed, 23/09/2026) | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim |
+| Navegador | `npm run test:e2e` | **298 testes**: Chromium 251 (43 de fluxo + 126 de telas: 41 endereços × 3 larguras + 3 + 82 de acessibilidade com axe: 41 endereços × 2 larguras), WebKit 43, iPhone 13 4 | Login e redirecionamento seguro, permissões por perfil pela URL, paciente, agenda, venda, despesa, prontuário, fotos, importação, Relacionamento, procedimentos, busca, 404, CSP, documento e assinatura por link (também no WebKit e no celular); 41 endereços em 320, 768 e 1440 px, sem rolagem horizontal nem erro de console, e sem violação WCAG 2.2 A/AA (axe) em 360 e 1440 px |
 
 Os dois últimos precisam do Supabase local no ar com as contas de teste; o E2E recusa rodar se o `.env.local`
-não apontar para `127.0.0.1`. Na primeira vez: `npx playwright install chromium`.
+não apontar para `127.0.0.1`. Na primeira vez: `npx playwright install chromium webkit`. Um projeto só:
+`npx playwright test --project=webkit`.
 
 **Antes de dar qualquer trabalho por concluído:** `npm run lint`, `npm run typecheck` e `npm test` limpos —
 mudou banco ou permissão, `npm run test:banco` também; mexeu em tela ou fluxo, `npm run test:e2e`.
 
+**Gates finais (23/09/2026, cópia limpa com `npm ci`):** lint 0 erros e 0 avisos · tipos 0 erros · Vitest
+800/800 · build sem aviso · `npm audit` 0 vulnerabilidades (com e sem `--omit=dev`) · `db reset` 0001–0028 +
+`test:banco` 194/194 · Playwright Chromium (fluxos, telas e segurança) **contra o build de produção**: 142/142,
+sem nova tentativa. O E2E completo contra o `next dev` compartilhado fechou 280/298 na primeira passada e as 18
+restantes passaram repetidas — todas por lentidão do dev, nenhuma com erro de negócio.
+
 > [!NOTE]
-> **Não há CI.** O repositório não tem `.github/` nem outro pipeline: as suítes rodam à mão, na máquina de quem
-> altera. Os números deste README são a contagem do estado atual (setembro de 2026), não um selo de build.
+> **CI em [`.github/workflows/ci.yml`](.github/workflows/ci.yml)**: qualidade (lint, tipos, Vitest), banco
+> (migrações, seed e `test:banco` num Supabase local dentro do runner), E2E (Chromium e WebKit sobre o build de
+> produção) e build. Nenhum job usa banco real nem segredo da clínica. **Ainda não rodou no GitHub.** O branch
+> `jamal-do-mal` está protegido desde 23/09/2026 contra force push e exclusão, inclusive para administradores; o
+> push direto continua, então a CI avisa mas não barra (ver [`AGENTS.md`](AGENTS.md) §2). Os números deste README
+> são a contagem do estado atual (23/09/2026), não um selo de build.
+
+**Desempenho** ([`scripts/desempenho.mjs`](scripts/desempenho.mjs), medido num `next start` de cópia em 23/09/2026):
+First Load JS compartilhado de 102–103 kB e rotas entre 103 e 121 kB — as exceções são `/prontuarios/[id]` (185 kB)
+e `/redefinir-senha` (179 kB), que carregam o cliente do Supabase no navegador. O orçamento reprova acima de 110 kB
+compartilhado, 130 kB por rota (195 e 190 kB nas duas exceções) e TTFB p95 de 150 ms nas telas públicas e 1,5 s
+nas internas, com 200 requisições e 10 simultâneas no Supabase local. O gargalo medido é o `getUser()` do Auth,
+feito duas vezes por tela interna (ver [`AGENTS.md`](AGENTS.md) §10).
 
 <details>
 <summary><b>Todos os comandos</b></summary>
@@ -462,6 +505,8 @@ mudou banco ou permissão, `npm run test:banco` também; mexeu em tela ou fluxo,
 | `npm run test:e2e` | Playwright contra o Supabase local |
 | `npm run local:usuarios` | Cria ou confere as contas de teste locais |
 | `npm run db:tipos:local` | Regenera `src/lib/supabase/tipos-banco.ts` a partir do banco local |
+| `node scripts/desempenho.mjs orcamento <build.log>` · `carga` | Orçamento de First Load JS sobre a saída do `next build` · carga com TTFB p50/p95 contra um `next start` (nunca contra o `dev`) |
+| `npx vercel` | CLI da Vercel sob demanda — não é dependência do projeto; deploy e variáveis são do dono |
 | `npm run db:push` · `db:tipos` | ⚠️ Produção: aplica migrações e regenera os tipos (só o dono do projeto) |
 | `npm run dados:exemplo` · `dados:limpar` | ⚠️ Produção: semeia ou apaga só o que tem `exemplo = true` |
 
@@ -472,7 +517,7 @@ mudou banco ou permissão, `npm run test:banco` também; mexeu em tela ou fluxo,
 
 ```text
 src/
-  middleware.ts              renova a sessão e barra rota protegida
+  middleware.ts              renova a sessão, barra rota protegida e envia a CSP com nonce
   app/
     (app)/                   tudo que exige sessão: Visão Geral, agenda, pacientes, prontuarios,
                              financeiro, formularios (documentos), relacionamento, busca,
@@ -488,11 +533,11 @@ src/
     acoes/                   ESCRITA — "use server", validação de verdade
   lib/                       regras compartilhadas: moeda, datas, CPF, CSV, venda, documento…
 supabase/
-  migrations/                0001 → 0022: a estrutura inteira do banco
+  migrations/                0001 → 0028: a estrutura inteira do banco
   testes/permissoes.sql      as asserções do banco por perfil
 testes/                      preparação do Vitest e o Supabase falso das ações
 e2e/                         Playwright: fluxos e telas
-scripts/                     contas locais, testes do banco, geração segura de tipos
+scripts/                     contas locais, testes do banco, geração segura de tipos, desempenho
 docs/                        produto, onboarding de agente, mockup e as imagens deste README
 ```
 
@@ -503,12 +548,23 @@ docs/                        produto, onboarding de agente, mockup e as imagens 
 <img src="docs/assets/jornada.svg" width="100%" alt="Linha do tempo do projeto, de agosto a setembro de 2026">
 
 **Próximos passos** (sem data, e sem inventar regra): Relatórios de verdade · perfil Profissional ·
-o resto de Configurações (clínica, equipe, horário, permissões) · PDF montado pelo sistema · migração para o
-Next 16, que fecha os alertas restantes do `npm audit`.
+o resto de Configurações (clínica, equipe, horário, permissões) · PDF montado pelo sistema · **migração para
+o Next >= 16.3.0**: `middleware.ts` vira `proxy.ts`, ESLint flat nativo (com 7 avisos
+`react-hooks/set-state-in-effect` a tratar), Turbopack no build, orçamento de bundle de
+`scripts/desempenho.mjs` revisto — e sai a correção local do React descrita abaixo (`AGENTS.md` §13).
+
+> [!NOTE]
+> **A tela que não se atualizava no build de produção do Chromium está corrigida.** Causa provada: o
+> `react-dom` empacotado no Next 15.5.x perdia o "ping" de um dado que chegava no meio do render de uma
+> transição suspensa (`router.refresh()` ou revalidação de ação), e a tela ficava na versão anterior.
+> [`scripts/corrigir-ping-react.mjs`](scripts/corrigir-ping-react.mjs) aplica a linha que o Next 16.3.0 já traz,
+> no `postinstall` (CI e Vercel), e [`testes/react-ping.test.ts`](testes/react-ping.test.ts) reprova sem ela.
 
 **Decisões que dependem da clínica** — pergunte, não invente: regra de lucro · períodos de retorno por
 procedimento · o que conta como "atendimento do dia" · canal de contato preferencial · horário de
-funcionamento · se as sete situações cobrem a rotina · como corrigir uma confirmação de recebimento digitada errado.
+funcionamento · se as sete situações cobrem a rotina · como corrigir uma confirmação de recebimento digitada errado ·
+o destino de arquivo de foto sem registro · data de venda no futuro · coletor e retenção dos logs. A lista
+completa, com o motivo de cada uma, está no [`AGENTS.md`](AGENTS.md) §10.
 
 **Fora de escopo hoje:** integração com Google Calendar ou WhatsApp · envio de e-mails · nota fiscal ·
 processamento de pagamentos · automações · inteligência artificial · **qualquer recomendação clínica automática**.
@@ -530,8 +586,8 @@ processamento de pagamentos · automações · inteligência artificial · **qua
 - Leia o [`AGENTS.md`](AGENTS.md) inteiro antes da primeira alteração; se ele divergir do código, **o código vence** e o documento é corrigido no mesmo commit.
 - Português em tudo. Comentário explica o **porquê**, não o quê.
 - Commits em português, título curto e concreto (sem `feat:`), corpo com a decisão e o motivo.
-- `main` é produção: trabalho em branch própria. Migração aplicada é imutável — correção vira arquivo novo.
-- Antes de abrir um PR, passe pelo checklist de invariantes do [`AGENTS.md`](AGENTS.md) §9.
+- O repositório tem um único branch, `jamal-do-mal` (o padrão); não existe `main`. O trabalho entra direto nele, sem criar outros branches (decisão do dono); a CI roda a cada push, então os gates rodam antes do commit. Migração aplicada é imutável — correção vira arquivo novo.
+- Antes de comitar, passe pelo checklist de invariantes do [`AGENTS.md`](AGENTS.md) §9.
 - Agente de IA não se autentica no Supabase nem roda nada em produção: escreve a migração, testa no banco local e para (§2).
 
 **Licença:** não há arquivo `LICENSE` e o `package.json` é `private` — o código é da clínica, com todos os direitos reservados.

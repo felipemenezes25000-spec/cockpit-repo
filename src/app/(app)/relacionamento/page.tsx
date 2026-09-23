@@ -1,17 +1,19 @@
 import { Cake, CalendarCheck, ClipboardList, Repeat2, Star, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AcaoInline } from "@/components/relacionamento/acao-inline";
 import { BuscarConvite } from "@/components/relacionamento/buscar-convite";
 import { ConviteContato } from "@/components/relacionamento/convite-contato";
 import { NavegacaoEmAbas } from "@/components/ui/abas";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { recortarFila } from "@/components/relacionamento/fila";
+import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { classeDeEntrada } from "@/components/ui/field";
 import { SituacaoChip } from "@/components/ui/status-chip";
 import { diferencaEmDias, partesDoDia } from "@/lib/dates";
 import { descreverPrazo, formatarData, formatarHora } from "@/lib/format";
+import type { SituacaoAcompanhamento } from "@/lib/dominio";
 import { ROTULO_TAREFA } from "@/lib/relacionamento";
 import {
   confirmarPelaLista,
@@ -89,13 +91,29 @@ function Tarefa({ tarefa }: { tarefa: TarefaRelacionamento }) {
     <Linha
       acoes={
         <>
-          <AcaoInline
+          <FormularioDeAcao
             acao={mudarSituacaoTarefa}
             campos={{ id: tarefa.id, para: aberta ? "resolvida" : "aberta" }}
-            rotulo={aberta ? "Concluir" : "Reabrir"}
-          />
+            alinhamento="fim"
+          >
+            <BotaoDeAcao
+              tamanho="xs"
+              tom={aberta ? "positivo" : "neutro"}
+              rotuloAcessivel={`${aberta ? "Concluir" : "Reabrir"} tarefa: ${tarefa.descricao}`}
+            >
+              {aberta ? "Concluir" : "Reabrir"}
+            </BotaoDeAcao>
+          </FormularioDeAcao>
           {aberta ? (
-            <AcaoInline acao={mudarSituacaoTarefa} campos={{ id: tarefa.id, para: "cancelada" }} rotulo="Cancelar" />
+            <FormularioDeAcao
+              acao={mudarSituacaoTarefa}
+              campos={{ id: tarefa.id, para: "cancelada" }}
+              alinhamento="fim"
+            >
+              <BotaoDeAcao tamanho="xs" tom="negativo" rotuloAcessivel={`Cancelar tarefa: ${tarefa.descricao}`}>
+                Cancelar
+              </BotaoDeAcao>
+            </FormularioDeAcao>
           ) : null}
         </>
       }
@@ -110,6 +128,27 @@ function Tarefa({ tarefa }: { tarefa: TarefaRelacionamento }) {
   );
 }
 
+/** Um botão de passo do retorno; o nome da paciente vai para o leitor de tela. */
+function PassoRetorno({
+  retorno,
+  para,
+  rotulo,
+  tom = "neutro",
+}: {
+  retorno: RetornoRelacionamento;
+  para: SituacaoAcompanhamento;
+  rotulo: string;
+  tom?: "neutro" | "positivo" | "negativo" | "informativo";
+}) {
+  return (
+    <FormularioDeAcao acao={mudarSituacaoRetorno} campos={{ id: retorno.id, para }} alinhamento="fim">
+      <BotaoDeAcao tamanho="xs" tom={tom} rotuloAcessivel={`${rotulo}: retorno de ${retorno.paciente}`}>
+        {rotulo}
+      </BotaoDeAcao>
+    </FormularioDeAcao>
+  );
+}
+
 function Retorno({ retorno }: { retorno: RetornoRelacionamento }) {
   const aberto = retorno.situacao !== "agendado" && retorno.situacao !== "recusado";
 
@@ -119,24 +158,20 @@ function Retorno({ retorno }: { retorno: RetornoRelacionamento }) {
         aberto ? (
           <>
             {retorno.situacao !== "em_contato" ? (
-              <AcaoInline acao={mudarSituacaoRetorno} campos={{ id: retorno.id, para: "em_contato" }} rotulo="Em contato" />
+              <PassoRetorno retorno={retorno} para="em_contato" rotulo="Em contato" tom="informativo" />
             ) : null}
             {retorno.situacao !== "aguardando_resposta" ? (
-              <AcaoInline
-                acao={mudarSituacaoRetorno}
-                campos={{ id: retorno.id, para: "aguardando_resposta" }}
-                rotulo="Aguardar resposta"
-              />
+              <PassoRetorno retorno={retorno} para="aguardando_resposta" rotulo="Aguardar resposta" />
             ) : null}
-            <AcaoInline acao={mudarSituacaoRetorno} campos={{ id: retorno.id, para: "agendado" }} rotulo="Agendado" />
-            <AcaoInline acao={mudarSituacaoRetorno} campos={{ id: retorno.id, para: "recusado" }} rotulo="Recusou" />
+            <PassoRetorno retorno={retorno} para="agendado" rotulo="Agendado" tom="positivo" />
+            <PassoRetorno retorno={retorno} para="recusado" rotulo="Recusou" tom="negativo" />
           </>
         ) : (
-          <AcaoInline acao={mudarSituacaoRetorno} campos={{ id: retorno.id, para: "em_contato" }} rotulo="Reabrir" />
+          <PassoRetorno retorno={retorno} para="em_contato" rotulo="Reabrir" />
         )
       }
     >
-      <Link href={`/pacientes/${retorno.pacienteId}`} className="text-sm font-medium text-primary hover:underline">
+      <Link href={`/pacientes/${retorno.pacienteId}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
         {retorno.paciente}
       </Link>
       <p className="mt-1 text-xs text-outline">
@@ -182,16 +217,19 @@ export default async function PaginaRelacionamento({
 }) {
   const parametros = await searchParams;
   const aba = abaDaUrl(parametros.aba);
-  const [confirmacoes, retornos, tarefas] = await Promise.all([
+  const [confirmacoes, retornos, tarefas, candidatas] = await Promise.all([
     confirmacoesParaContato(),
     retornosParaContato(),
     tarefasDeContato(),
+    // Só a visão geral mostra o total; a aba de avaliações busca a lista dela.
+    aba === "visao" ? candidatasAAvaliacao() : Promise.resolve([]),
   ]);
 
   const abertas = tarefas.filter((t) => t.situacao === "aberta");
   const retornosNoPrazo = retornos.filter(
     (r) => r.situacao !== "agendado" && r.situacao !== "recusado" && diferencaEmDias(r.sugeridoPara) <= 0,
   );
+  const fila = recortarFila(abertas, retornosNoPrazo);
 
   const contagens: Partial<Record<AbaDoModulo, number>> = {
     confirmacoes: confirmacoes.length,
@@ -231,7 +269,7 @@ export default async function PaginaRelacionamento({
             <Indicador href="/relacionamento?aba=confirmacoes" titulo="A confirmar" valor={confirmacoes.length} icone={CalendarCheck} />
             <Indicador href="/relacionamento?aba=retornos" titulo="Retornos na data" valor={retornosNoPrazo.length} icone={Repeat2} />
             <Indicador href="/relacionamento?aba=tarefas" titulo="Tarefas abertas" valor={abertas.length} icone={ClipboardList} />
-            <Indicador href="/relacionamento?aba=avaliacoes" titulo="Convites de avaliação" valor="Google" icone={Star} />
+            <Indicador href="/relacionamento?aba=avaliacoes" titulo="Convites de avaliação" valor={candidatas.length} icone={Star} />
           </div>
 
           <Card>
@@ -248,15 +286,29 @@ export default async function PaginaRelacionamento({
                 />
               ) : (
                 <ul>
-                  {abertas.slice(0, 5).map((t) => (
+                  {fila.tarefas.map((t) => (
                     <Tarefa key={t.id} tarefa={t} />
                   ))}
-                  {retornosNoPrazo.slice(0, 5).map((r) => (
+                  {fila.retornos.map((r) => (
                     <Retorno key={r.id} retorno={r} />
                   ))}
                 </ul>
               )}
             </CardCorpo>
+            {fila.tarefasOcultas + fila.retornosOcultos > 0 ? (
+              <CardRodape className="flex flex-wrap gap-x-4 gap-y-2 text-on-surface-variant">
+                {fila.tarefasOcultas > 0 ? (
+                  <Link href="/relacionamento?aba=tarefas" className="inline-flex min-h-6 items-center font-medium text-primary hover:underline">
+                    Ver mais {fila.tarefasOcultas} {fila.tarefasOcultas === 1 ? "tarefa aberta" : "tarefas abertas"}
+                  </Link>
+                ) : null}
+                {fila.retornosOcultos > 0 ? (
+                  <Link href="/relacionamento?aba=retornos" className="inline-flex min-h-6 items-center font-medium text-primary hover:underline">
+                    Ver mais {fila.retornosOcultos} {fila.retornosOcultos === 1 ? "retorno na data" : "retornos na data"}
+                  </Link>
+                ) : null}
+              </CardRodape>
+            ) : null}
           </Card>
         </>
       ) : null}
@@ -276,17 +328,25 @@ export default async function PaginaRelacionamento({
                       <>
                         <SituacaoChip situacao={item.situacao} compacto />
                         {item.situacao === "agendado" ? (
-                          <AcaoInline
+                          <FormularioDeAcao
                             acao={confirmarPelaLista}
                             campos={{ id: item.id, para: "aguardando_confirmacao" }}
-                            rotulo="Aguardando resposta"
-                          />
+                            alinhamento="fim"
+                          >
+                            <BotaoDeAcao tamanho="xs" rotuloAcessivel={`Aguardando resposta: ${item.paciente}`}>
+                              Aguardando resposta
+                            </BotaoDeAcao>
+                          </FormularioDeAcao>
                         ) : null}
-                        <AcaoInline acao={confirmarPelaLista} campos={{ id: item.id, para: "confirmado" }} rotulo="Confirmar" />
+                        <FormularioDeAcao acao={confirmarPelaLista} campos={{ id: item.id, para: "confirmado" }} alinhamento="fim">
+                          <BotaoDeAcao tamanho="xs" tom="positivo" rotuloAcessivel={`Confirmar: ${item.paciente}`}>
+                            Confirmar
+                          </BotaoDeAcao>
+                        </FormularioDeAcao>
                       </>
                     }
                   >
-                    <Link href={`/pacientes/${item.pacienteId}`} className="text-sm font-medium text-primary hover:underline">
+                    <Link href={`/pacientes/${item.pacienteId}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
                       {item.paciente}
                     </Link>
                     <p className="mt-1 text-xs text-outline">
@@ -306,11 +366,6 @@ export default async function PaginaRelacionamento({
           <CardCabecalho
             titulo="Retornos"
             descricao="Datas combinadas pela equipe e situação de cada contato."
-            acao={
-              <BotaoLink href="/relacionamento/retornos/novo" tamanho="sm">
-                Novo retorno
-              </BotaoLink>
-            }
           />
           <CardCorpo>
             {retornos.length === 0 ? (
@@ -330,12 +385,7 @@ export default async function PaginaRelacionamento({
         <Card>
           <CardCabecalho
             titulo="Tarefas de contato"
-            descricao={`${abertas.length} em aberto · ${tarefas.length - abertas.length} concluídas ou canceladas`}
-            acao={
-              <BotaoLink href="/relacionamento/tarefas/nova" tamanho="sm">
-                Criar tarefa
-              </BotaoLink>
-            }
+            descricao={`${abertas.length} em aberto · ${tarefas.length - abertas.length} resolvidas ou canceladas`}
           />
           <CardCorpo>
             {tarefas.length === 0 ? (
@@ -398,11 +448,12 @@ async function Aniversarios({ mes }: { mes: number }) {
                 key={p.id}
                 acoes={<ConviteContato pacienteId={p.id} nome={p.nome} telefone={p.telefone} tipo="aniversario" />}
               >
-                <Link href={`/pacientes/${p.id}`} className="text-sm font-medium text-primary hover:underline">
+                <Link href={`/pacientes/${p.id}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
                   {p.nome}
                 </Link>
                 <p className="mt-1 text-xs text-outline">
-                  Dia {p.dia} de {MESES[mes - 1]} · {p.telefone || "Sem telefone cadastrado"}
+                  Dia {p.dia} de {MESES[mes - 1]} ·{" "}
+                  <span className="whitespace-nowrap">{p.telefone || "Sem telefone cadastrado"}</span>
                 </p>
               </Linha>
             ))}
@@ -415,7 +466,7 @@ async function Aniversarios({ mes }: { mes: number }) {
 
 async function Avaliacoes() {
   const [pessoas, contatos] = await Promise.all([candidatasAAvaliacao(), contatosRegistrados()]);
-  const convites = contatos.filter((c) => c.descricao.startsWith("Convite"));
+  const convites = contatos.filter((c) => c.tipo === "avaliacao");
 
   return (
     <div className="flex flex-col gap-6">
@@ -441,11 +492,12 @@ async function Avaliacoes() {
                   key={p.id}
                   acoes={<ConviteContato pacienteId={p.id} nome={p.nome} telefone={p.telefone} tipo="avaliacao" />}
                 >
-                  <Link href={`/pacientes/${p.id}`} className="text-sm font-medium text-primary hover:underline">
+                  <Link href={`/pacientes/${p.id}`} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:underline">
                     {p.nome}
                   </Link>
                   <p className="mt-1 text-xs text-outline">
-                    Último atendimento em {formatarData(p.ultimoAtendimento)} · {p.telefone || "Sem telefone cadastrado"}
+                    Último atendimento em {formatarData(p.ultimoAtendimento)} ·{" "}
+                    <span className="whitespace-nowrap">{p.telefone || "Sem telefone cadastrado"}</span>
                   </p>
                 </Linha>
               ))}
@@ -466,7 +518,9 @@ async function Avaliacoes() {
             <ul>
               {convites.map((c) => (
                 <li key={c.id} className="flex flex-wrap justify-between gap-2 border-b border-card-border py-3 text-sm last:border-0">
-                  <span>{c.paciente}</span>
+                  <Link href={`/pacientes/${c.pacienteId}`} className="inline-flex min-h-6 items-center font-medium text-primary hover:underline">
+                    {c.paciente}
+                  </Link>
                   <time dateTime={c.quando.toISOString()} className="text-xs text-outline">
                     {formatarData(c.quando)} às {formatarHora(c.quando)}
                   </time>

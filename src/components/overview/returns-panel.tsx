@@ -36,6 +36,19 @@ const FASE = {
 } as const;
 
 /**
+ * O texto ao lado da fase. Dentro do período com a data sugerida já passada,
+ * é "sugerido há N dias": "N dias além do sugerido" ao lado de "No período"
+ * dizia duas coisas opostas. "Além do sugerido" fica só para quem passou do
+ * período.
+ */
+export function descreverSugerido(fase: JanelaContato["fase"], diasAteSugerido: number): string {
+  const dias = (n: number) => (n === 1 ? "1 dia" : `${n} dias`);
+  if (diasAteSugerido >= 0) return `sugerido em ${dias(diasAteSugerido)}`;
+  const passados = Math.abs(diasAteSugerido);
+  return fase === "passou" ? `${dias(passados)} além do sugerido` : `sugerido há ${dias(passados)}`;
+}
+
+/**
  * Barra da janela de contato: mostra onde a paciente está dentro do intervalo
  * sugerido para o retorno. Os prazos são demonstrativos e ainda precisam ser
  * definidos pela equipe — não são recomendação clínica.
@@ -66,9 +79,7 @@ function BarraJanela({ janela }: { janela: JanelaContato }) {
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
         <span className={cn("text-xs font-medium", fase.texto)}>{fase.rotulo}</span>
         <span className="tabular text-xs text-outline">
-          {janela.diasAteSugerido >= 0
-            ? `sugerido em ${janela.diasAteSugerido} dias`
-            : `${Math.abs(janela.diasAteSugerido)} dias além do sugerido`}
+          {descreverSugerido(janela.fase, janela.diasAteSugerido)}
         </span>
       </div>
     </div>

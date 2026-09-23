@@ -5,10 +5,13 @@ import {
   bpParaBanco,
   centavosDoBanco,
   centavosParaBanco,
+  centavosParaReais,
   custoDaTaxa,
   formatarPercentual,
   lerPercentual,
   paraCentavos,
+  percentualInformado,
+  somaEmCentavos,
 } from "./moeda";
 
 describe("lerCentavos — o que a recepção digita", () => {
@@ -132,5 +135,52 @@ describe("formatarPercentual", () => {
     [0, "0%"],
   ])("%i bp é %s", (bp, texto) => {
     expect(formatarPercentual(bp)).toBe(texto);
+  });
+});
+
+describe("lerPercentual lê dígitos, sem ponto flutuante", () => {
+  it.each([
+    ["0,07", 7],
+    ["1,1", 110],
+    ["4,35", 435],
+    ["100,00", 10_000],
+    [" 2,49 % ", 249],
+  ])("%j vira %i bp", (texto, bp) => {
+    expect(lerPercentual(texto)).toBe(bp);
+  });
+
+  it("todo percentual de duas casas entre 0 e 100 volta exato", () => {
+    for (let bp = 0; bp <= 10_000; bp++) {
+      const texto = `${Math.floor(bp / 100)},${String(bp % 100).padStart(2, "0")}`;
+      expect(lerPercentual(texto)).toBe(bp);
+    }
+  });
+
+  it("vazio é 0 bp, mas não conta como informado", () => {
+    expect(lerPercentual("")).toBe(0);
+    expect(percentualInformado("")).toBe(false);
+    expect(percentualInformado(" % ")).toBe(false);
+    expect(percentualInformado("0")).toBe(true);
+  });
+});
+
+describe("somaEmCentavos — somar o que vem do banco sem resto de float", () => {
+  it("0,10 + 0,20 é 30 centavos, não 30,000000000000004", () => {
+    expect(0.1 + 0.2).not.toBe(0.3);
+    expect(somaEmCentavos([0.1, 0.2])).toBe(30);
+  });
+
+  it("mil parcelas de R$ 0,01 fecham R$ 10,00 exatos", () => {
+    const total = somaEmCentavos(Array.from({ length: 1000 }, () => 0.01));
+    expect(total).toBe(1000);
+    expect(centavosParaReais(total)).toBe(10);
+  });
+
+  it("aceita texto do numeric, ignora nulo e soma negativo (ajuste)", () => {
+    expect(somaEmCentavos(["1500.50", null, undefined, -30, 0.01])).toBe(147_051);
+  });
+
+  it("lista vazia é zero", () => {
+    expect(somaEmCentavos([])).toBe(0);
   });
 });

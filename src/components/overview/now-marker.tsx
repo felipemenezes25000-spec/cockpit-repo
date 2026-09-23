@@ -29,12 +29,16 @@ export function MarcadorAgora({ de, ate }: { de: number; ate: number }) {
   if (!visivel) return null;
 
   return (
-    <div className="relative my-2 flex items-center" aria-label={`Agora, ${rotulo}`}>
-      <span className="tabular w-12 shrink-0 text-right text-xs font-bold text-primary">
+    // Sem `aria-label` num `div` genérico (o leitor de tela o ignora): o texto
+    // visível já diz "09:27 agora".
+    <div className="relative my-2 flex items-center pl-[13px] sm:pl-[17px]">
+      <span className="tabular w-10 shrink-0 text-right text-xs font-bold text-primary sm:w-12">
         {rotulo}
       </span>
-      {/* Mesma geometria dos atendimentos: o ponto cai sobre a linha do tempo */}
-      <span className="ml-4 flex w-3 shrink-0 justify-center sm:ml-6">
+      {/* Mesma geometria dos atendimentos (`day-rail-item.tsx`): borda e
+          recuo do cartão (13/17 px), hora (40/48 px) e espaço (12/24 px) —
+          o ponto cai sobre a linha do tempo de `day-rail.tsx`. */}
+      <span className="ml-3 flex w-3 shrink-0 justify-center sm:ml-6">
         <span
           aria-hidden="true"
           className="z-10 size-2 rounded-full bg-primary ring-4 ring-card"

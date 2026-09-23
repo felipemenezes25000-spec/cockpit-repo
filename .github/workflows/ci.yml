@@ -1,0 +1,175 @@
+# CI do Cockpit — tudo contra o Supabase LOCAL, dentro do runner.
+#
+# Nenhum job usa banco real, `--linked`, service_role de produção ou segredo
+# da clínica. As únicas chaves que aparecem são as de demonstração que o
+# `supabase start` gera para o contêiner local, lidas de `supabase status`.
+#
+# Jobs:
+#   qualidade → lint, typecheck e testes unitários (Vitest)
+#   banco     → migrações + seed num Postgres local, contas locais, test:banco,
+#               tipos gerados conferidos contra as migrações
+#   e2e       → mesmo banco local + build de produção + Playwright (Chromium e WebKit)
+#   build     → `next build` com variáveis de mentira (build não consulta banco)
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    # Branch principal do repositório (origin/HEAD).
+    branches: [jamal-do-mal]
+  workflow_dispatch:
+
+# Uma execução por branch: push novo cancela a anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# O token do GitHub só lê o repositório. Nada aqui publica ou escreve.
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+  # O Next não manda telemetria da CI.
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  qualidade:
+    name: Qualidade (lint, tipos, unitários)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # Cache só do download do npm, chaveado pelo package-lock.json.
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  banco:
+    name: Banco (migrações, seed, permissões)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # `supabase start` aplica as migrações e o seed (supabase/dados-exemplo.sql)
+      # num banco novo. Só os serviços que os testes usam, para subir mais rápido.
+      - name: Subir o Supabase local
+        run: npx supabase start -x realtime,edge-runtime,logflare,vector,studio,supavisor,postgres-meta,imgproxy,mailpit
+      - name: Contas locais (recepção, financeiro, administradora)
+        run: npm run local:usuarios
+      - name: Testes de permissão no banco
+        run: npm run test:banco
+      # Os tipos do cliente precisam bater com as migrações: se uma migração
+      # mudar uma assinatura (ex.: `p_chave` em `venda_registrar`) e o
+      # tipos-banco.ts ficar para trás, o typecheck seguiria verde contra
+      # tipos velhos. O script é o local (nunca --linked).
+      - name: Tipos gerados batem com as migrações
+        run: |
+          npm run db:tipos:local
+          git diff --exit-code -- src/lib/supabase/tipos-banco.ts
+      - name: Derrubar o Supabase local
+        if: always()
+        run: npx supabase stop --no-backup
+
+  e2e:
+    name: E2E (Chromium e WebKit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # Storage fica no ar: as fotos de evolução passam por ele.
+      - name: Subir o Supabase local
+        run: npx supabase start -x realtime,edge-runtime,logflare,vector,studio,supavisor,postgres-meta,imgproxy,mailpit
+      - name: Contas locais
+        run: npm run local:usuarios
+      # O `.env.local` é gerado a partir do Supabase local do runner e recusa
+      # qualquer URL que não seja 127.0.0.1/localhost — mesma trava de
+      # e2e/preparar.ts. A chave anônima local é a de demonstração.
+      - name: Gerar .env.local apontando para o banco local
+        run: |
+          npx supabase status -o json > "$RUNNER_TEMP/supabase.json"
+          node -e '
+            const fs = require("node:fs");
+            const texto = fs.readFileSync(process.argv[1], "utf8");
+            const s = JSON.parse(texto.slice(texto.indexOf("{")));
+            const url = new URL(s.API_URL);
+            if (!["127.0.0.1", "localhost"].includes(url.hostname)) {
+              console.error("Recusado: a URL do Supabase não é local.");
+              process.exit(1);
+            }
+            const anon = s.ANON_KEY || s.PUBLISHABLE_KEY;
+            if (!anon) { console.error("Chave anônima local não encontrada."); process.exit(1); }
+            fs.writeFileSync(".env.local",
+              `NEXT_PUBLIC_SUPABASE_URL=${url.origin}\nNEXT_PUBLIC_SUPABASE_ANON_KEY=${anon}\n`);
+          ' "$RUNNER_TEMP/supabase.json"
+      # Navegadores do Playwright: cache pela versão instalada no lock.
+      - name: Versão do Playwright
+        id: playwright
+        run: echo "versao=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache dos navegadores do Playwright
+        id: cache-navegadores
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.versao }}-chromium-webkit
+      - name: Instalar Chromium e WebKit
+        if: steps.cache-navegadores.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium webkit
+      - name: Dependências de sistema dos navegadores
+        if: steps.cache-navegadores.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium webkit
+      # Build de produção uma vez; o Playwright sobe `npm run start` sobre ele
+      # (ver webServer em playwright.config.ts). Lê o .env.local gerado acima.
+      - name: Build para o E2E
+        run: npm run build
+      # Uma execução só, com os três projetos (chromium, webkit, webkit-celular):
+      # um relatório e um test-results, sem uma rodada apagar a outra.
+      - name: Playwright — Chromium e WebKit
+        run: npx playwright test
+      # Relatório e traces só sobem quando algo falhou.
+      - name: Relatório do Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-relatorio
+          path: |
+            e2e/relatorio/
+            test-results/
+          retention-days: 7
+      - name: Derrubar o Supabase local
+        if: always()
+        run: npx supabase stop --no-backup
+
+  build:
+    name: Build de produção
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # O build não consulta banco; as variáveis públicas só precisam existir.
+      # Valores locais e inofensivos, nunca os de produção.
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: chave-de-build-sem-banco

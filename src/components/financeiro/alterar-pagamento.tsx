@@ -7,8 +7,9 @@ import { useFormStatus } from "react-dom";
 import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
-import { bpDoBanco, custoDaTaxa, formatarPercentual } from "@/lib/moeda";
+import { bpDoBanco, centavosDoBanco, custoDaTaxa, formatarPercentual } from "@/lib/moeda";
 import {
+  decidirEfeito,
   formaParcela,
   formaUsaCartao,
   FORMAS_EM_ORDEM,
@@ -80,11 +81,14 @@ export function AlterarPagamento({
   venda,
   taxas,
   recebimentoConfirmado,
+  semRecebimentoVivo = false,
 }: {
   venda: VendaCompleta;
   taxas: TaxaParaVenda[];
-  /** O líquido já confirmado, quando houver — muda o aviso do rodapé. */
+  /** O valor que de fato entrou, quando confirmado — muda o aviso do rodapé. */
   recebimentoConfirmado: number | null;
+  /** Sem recebimento ativo (cancelado): a função do banco muda só a venda. */
+  semRecebimentoVivo?: boolean;
 }) {
   const [estado, enviar] = useActionState(alterarFormaPagamento, INICIAL);
 
@@ -129,6 +133,20 @@ export function AlterarPagamento({
 
   const pronto = !usaCartao || taxaEscolhida !== null;
   const erros = estado.erros;
+
+  // O ajuste que o banco vai gravar é `novo líquido − valor que entrou`, não a
+  // diferença de líquidos do comparativo (AGENTS.md §8.4). A tela mostra o
+  // número que será gravado — com divergência ou ajuste anterior, os dois
+  // não batem, e a pessoa precisa ver isso antes de confirmar.
+  const efeito =
+    recebimentoConfirmado === null
+      ? null
+      : decidirEfeito(
+          "recebido",
+          centavosDoBanco(recebimentoConfirmado),
+          comparativo.depois.liquidoCent,
+        );
+  const ajusteCent = efeito?.tipo === "ajuste" ? efeito.valorCent : 0;
 
   return (
     <form action={enviar} className="flex flex-col gap-6" noValidate>
@@ -245,21 +263,42 @@ export function AlterarPagamento({
           depois={pronto ? formatarMoeda(comparativo.depois.liquidoCent / 100) : "—"}
         />
 
-        {pronto && comparativo.diferencaCent !== 0 ? (
+        {pronto && (comparativo.diferencaCent !== 0 || ajusteCent !== 0) ? (
           <p
             className={cn(
               "border-t border-card-border pt-3 text-xs",
-              comparativo.diferencaCent < 0 ? "text-atencao" : "text-positivo",
+              comparativo.diferencaCent < 0 || ajusteCent < 0 ? "text-atencao" : "text-positivo",
             )}
           >
-            A clínica passa a receber{" "}
-            <strong className="tabular">
-              {formatarMoeda(Math.abs(comparativo.diferencaCent) / 100)}
-            </strong>{" "}
-            {comparativo.diferencaCent < 0 ? "a menos" : "a mais"}.
-            {recebimentoConfirmado !== null
-              ? " Como o recebimento já foi confirmado, o registro original fica intacto e a diferença vira um ajuste financeiro."
-              : " O recebimento previsto será atualizado."}
+            {comparativo.diferencaCent !== 0 ? (
+              <>
+                A clínica passa a receber{" "}
+                <strong className="tabular">
+                  {formatarMoeda(Math.abs(comparativo.diferencaCent) / 100)}
+                </strong>{" "}
+                {comparativo.diferencaCent < 0 ? "a menos" : "a mais"}.{" "}
+              </>
+            ) : null}
+            {semRecebimentoVivo ? (
+              "Esta venda não tem recebimento ativo (foi cancelado): só a venda muda, nenhum recebimento é tocado."
+            ) : recebimentoConfirmado !== null ? (
+              ajusteCent !== 0 ? (
+                <>
+                  Como o recebimento já foi confirmado, o registro original fica intacto e
+                  entra um ajuste de{" "}
+                  <strong className="tabular">
+                    {ajusteCent < 0 ? "− " : "+ "}
+                    {formatarMoeda(Math.abs(ajusteCent) / 100)}
+                  </strong>
+                  : o novo líquido menos o valor que de fato entrou (
+                  {formatarMoeda(recebimentoConfirmado)}).
+                </>
+              ) : (
+                "Como o recebimento já foi confirmado e o novo líquido é igual ao valor que entrou, nenhum ajuste é lançado."
+              )
+            ) : (
+              "O recebimento previsto será atualizado."
+            )}
           </p>
         ) : null}
       </div>
@@ -275,6 +314,7 @@ export function AlterarPagamento({
           id="motivo"
           name="motivo"
           maxLength={500}
+          defaultValue={estado.valores?.motivo ?? ""}
           placeholder="A paciente preferiu parcelar no cartão"
           className={AREA_TEXTO}
         />

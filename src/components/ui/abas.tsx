@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
 
 export type Aba = { href: string; rotulo: string; ativa: boolean; contagem?: number };
@@ -11,11 +14,27 @@ export type Aba = { href: string; rotulo: string; ativa: boolean; contagem?: num
  * leva `aria-current="page"`. No celular a faixa rola na horizontal dentro de
  * si mesma, sem empurrar a página, e um degradê na borda direita avisa que há
  * mais áreas além da vista.
+ *
+ * Ao abrir, a faixa rola até a área atual: no celular, "Fluxo mensal" ou
+ * "Tarefas" ficavam fora da vista, e a pessoa não sabia onde estava. Rola só a
+ * faixa (`scrollLeft` do contêiner, não `scrollIntoView`, que também rolaria
+ * a página até a faixa).
  */
 export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; abas: Aba[]; className?: string }) {
+  const faixa = useRef<HTMLDivElement>(null);
+  const atual = abas.find((aba) => aba.ativa)?.href;
+
+  useEffect(() => {
+    const caixa = faixa.current;
+    const ativa = caixa?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!caixa || !ativa) return;
+    const centro = ativa.offsetLeft + ativa.offsetWidth / 2 - caixa.clientWidth / 2;
+    caixa.scrollLeft = Math.max(0, centro);
+  }, [atual]);
+
   return (
     <nav aria-label={rotulo} className={cn("relative", className)}>
-      <div className="rolagem-discreta overflow-x-auto">
+      <div ref={faixa} className="rolagem-discreta relative overflow-x-auto">
         <ul className="flex min-w-max gap-1 border-b border-card-border">
           {abas.map((aba) => (
             <li key={aba.href}>

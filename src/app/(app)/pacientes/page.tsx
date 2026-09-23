@@ -1,11 +1,12 @@
-import { Upload, UserRoundPlus } from "lucide-react";
+import { Upload, UserRoundPlus, UsersRound } from "lucide-react";
 import type { Metadata } from "next";
 import { ehAdministradora } from "@/lib/auth";
 import { BuscaPacientes } from "@/components/pacientes/busca-pacientes";
 import { ListaPacientes } from "@/components/pacientes/lista-pacientes";
-import { Paginacao } from "@/components/pacientes/paginacao";
+import { Paginacao } from "@/components/ui/paginacao";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { estaAlemDoFim, PaginaAlemDoFim } from "@/components/ui/pagina-alem-do-fim";
 import { listarPacientes, type FiltroSituacao } from "@/server/consultas/pacientes";
 
 export const metadata: Metadata = {
@@ -79,13 +80,29 @@ export default async function PaginaPacientes({
             total={resultado.total}
           />
 
-          <ListaPacientes pacientes={resultado.itens} busca={busca} />
+          {estaAlemDoFim(resultado) ? (
+            <PaginaAlemDoFim
+              icone={UsersRound}
+              total={resultado.total}
+              paginas={resultado.paginas}
+              singular="paciente"
+              plural="pacientes"
+              caminho="/pacientes"
+              parametros={preservar}
+            />
+          ) : (
+            <>
+              <ListaPacientes pacientes={resultado.itens} busca={busca} />
 
-          <Paginacao
-            pagina={resultado.pagina}
-            paginas={resultado.paginas}
-            parametros={preservar}
-          />
+              <Paginacao
+                pagina={resultado.pagina}
+                paginas={resultado.paginas}
+                parametros={preservar}
+                caminho="/pacientes"
+                rotulo="Paginação dos pacientes"
+              />
+            </>
+          )}
         </CardCorpo>
       </Card>
     </div>

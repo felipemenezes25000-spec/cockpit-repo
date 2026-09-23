@@ -9,14 +9,18 @@ import { dataValida } from "@/lib/dates";
 import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
 import { registrarFalha } from "@/lib/registro";
 import {
+  canalDeEnvioValido,
+  enderecoDoLink,
   normalizarAssinatura,
+  origemPublica,
+  tokenPlausivel,
   uuidValido,
   validarAssinatura,
   type CampoRespondido,
   type ErrosAssinatura,
   type TipoCampo,
 } from "@/lib/documento";
-import { clienteServidor } from "@/lib/supabase/server";
+import { clienteAnonimo, clienteServidor } from "@/lib/supabase/server";
 
 /**
  * Assinatura à distância: criar o link, abrir o documento, assinar.
@@ -32,10 +36,6 @@ import { clienteServidor } from "@/lib/supabase/server";
 // Equipe: gerar e revogar o link
 // ---------------------------------------------------------------------
 
-export type ResultadoDoLink =
-  | { ok: true; endereco: string }
-  | { ok: false; erro: string };
-
 /**
  * 32 bytes de aleatoriedade criptográfica, em base64url: 43 caracteres,
  * 256 bits. Inadivinhável por força bruta, e é isso que precisa ser — o
@@ -49,20 +49,26 @@ function gerarToken(): string {
 }
 
 /**
- * Endereço absoluto, montado a partir do host da requisição.
+ * A origem do endereço público: `ORIGEM_PUBLICA` quando configurada (ver
+ * `.env.local.example`), senão o host da requisição, conferido. As regras
+ * moram em `origemPublica` (`lib/documento.ts`), testadas sem servidor.
  *
- * Sem variável de ambiente de propósito: em desenvolvimento é localhost, em
- * produção é o domínio da Vercel, e o cabeçalho já sabe disso sem ninguém
- * precisar manter uma configuração sincronizada.
+ * Nunca registra o token: o log leva só o motivo da recusa da origem.
  */
-async function origemDaRequisicao(): Promise<string> {
+async function origemDoLink(): Promise<string | null> {
   const cabecalhos = await headers();
-  const host = cabecalhos.get("host") ?? "localhost:3000";
-  const protocolo =
-    cabecalhos.get("x-forwarded-proto") ??
-    (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  const resultado = origemPublica({
+    configurada: process.env.ORIGEM_PUBLICA,
+    host: cabecalhos.get("host"),
+    protocolo: cabecalhos.get("x-forwarded-proto"),
+    producao: process.env.NODE_ENV === "production",
+  });
 
-  return `${protocolo}://${host}`;
+  if (!resultado.ok) {
+    registrarFalha("assinatura: origem pública", { code: "configuracao", message: resultado.motivo });
+    return null;
+  }
+  return resultado.origem;
 }
 
 /**
@@ -72,11 +78,6 @@ async function origemDaRequisicao(): Promise<string> {
 function erroDoBanco(error: ErroDoBanco, padrao: string, contexto: string): string {
   if (error) registrarFalha(contexto, error);
   return mensagemDoBanco(error, padrao);
-}
-
-/** Token no formato de `gerarToken`, e nada maior do que isso chega ao banco. */
-function tokenPlausivel(token: unknown): token is string {
-  return typeof token === "string" && /^[A-Za-z0-9_-]{32,128}$/.test(token);
 }
 
 export type ResultadoDaCriacao =
@@ -96,7 +97,20 @@ export async function criarLinkAssinatura(entrada: {
   }
 
   const dias = Math.min(90, Math.max(1, Math.trunc(Number(entrada.dias) || 15)));
+
+  // A origem é conferida ANTES de criar o link: criar revoga o anterior, e
+  // não adianta trocar um link que funciona por um endereço que não abre.
+  const origem = await origemDoLink();
+  if (!origem) {
+    return {
+      ok: false,
+      erro: "O endereço público do sistema não está configurado corretamente. Avise quem cuida do sistema.",
+    };
+  }
+
   const token = gerarToken();
+  const endereco = enderecoDoLink(origem, token);
+  if (!endereco) return { ok: false, erro: "Não foi possível gerar o link." };
 
   const supabase = await clienteServidor();
   const { data, error } = await supabase.rpc("documento_link_criar", {
@@ -116,11 +130,7 @@ export async function criarLinkAssinatura(entrada: {
 
   revalidatePath(`/formularios/${documentoId}`);
 
-  return {
-    ok: true,
-    endereco: `${await origemDaRequisicao()}/assinar/${token}`,
-    linkId: data,
-  };
+  return { ok: true, endereco, linkId: data };
 }
 
 /**
@@ -140,11 +150,25 @@ export async function registrarCanalDoLink(entrada: {
   if (!usuario) return;
   if (!uuidValido(entrada.linkId)) return;
 
+  // Mesmo formato da CHECK `documento_links_canal_formato` (0022). Fora dele
+  // o banco recusaria; o registro diz o que houve em vez de perder calado.
+  const canal = String(entrada.canal ?? "").trim().slice(0, 160);
+  if (!canalDeEnvioValido(canal)) {
+    registrarFalha("assinatura: canal do link", {
+      code: "formato",
+      message: "canal fora do formato aceito pelo banco",
+    });
+    return;
+  }
+
   const supabase = await clienteServidor();
-  await supabase
+  const { error } = await supabase
     .from("documento_links")
-    .update({ canal_envio: String(entrada.canal ?? "").trim().slice(0, 160) })
+    .update({ canal_envio: canal })
     .eq("id", entrada.linkId);
+
+  // Não sobe para a tela (ver acima), mas também não some: vai para o log.
+  if (error) registrarFalha("assinatura: registrar canal do link", error);
 
   if (uuidValido(entrada.documentoId)) {
     revalidatePath(`/formularios/${entrada.documentoId}`);
@@ -169,6 +193,21 @@ export async function revogarLinkAssinatura(
     return falha(erroDoBanco(error, "Não foi possível revogar o link. Tente de novo.", "assinatura: revogar link"));
   }
 
+  // A função devolve `void` e não reclama de zero linhas (link de outro
+  // documento, anamnese para quem não é administradora). Relê para saber se
+  // a revogação alcançou o link — zero linhas não é sucesso.
+  const { data: revogado, error: erroLeitura } = await supabase
+    .from("documento_links")
+    .select("id")
+    .eq("id", linkId)
+    .not("revogado_em", "is", null)
+    .maybeSingle();
+
+  if (erroLeitura) {
+    return falha(erroDoBanco(erroLeitura, "Não foi possível confirmar a revogação. Recarregue a página.", "assinatura: conferir revogação"));
+  }
+  if (!revogado) return falha("Link não encontrado.");
+
   if (uuidValido(documentoId)) revalidatePath(`/formularios/${documentoId}`);
   return sucesso("Link revogado. Quem o tiver não consegue mais abrir o documento.");
 }
@@ -188,6 +227,8 @@ export type DocumentoParaAssinar = {
   /** Preenchidos quando `situacao` é `ja_assinado` — é a via da paciente. */
   assinadoEm: string | null;
   assinadoPor: string | null;
+  /** Por onde a assinatura entrou (`balcao` ou `link`): a via diz a forma certa. */
+  assinadoCanal: string | null;
   /** As perguntas da anamnese, com o que já foi respondido. Vazio nos demais. */
   campos: CampoRespondido[];
 };
@@ -245,13 +286,15 @@ export async function abrirDocumentoParaAssinatura(
     hash: null,
     assinadoEm: null,
     assinadoPor: null,
+    assinadoCanal: null,
     campos: [],
   };
 
   if (!tokenPlausivel(token)) return vazio;
   if (!dataValida(nascimento)) return { ...vazio, situacao: "data_incorreta" };
 
-  const supabase = await clienteServidor();
+  // Sem os cookies de quem estiver logado neste navegador: ver `clienteAnonimo`.
+  const supabase = clienteAnonimo();
   const { data, error } = await supabase.rpc("documento_para_assinatura", {
     p_token: token,
     p_nascimento: nascimento,
@@ -277,6 +320,7 @@ export async function abrirDocumentoParaAssinatura(
     hash: linha.hash,
     assinadoEm: linha.assinado_em,
     assinadoPor: linha.assinado_por,
+    assinadoCanal: linha.assinado_canal,
     campos: camposRespondidos(linha.campos),
   };
 }
@@ -319,7 +363,8 @@ export async function assinarPorLink(entrada: {
   const cabecalhos = await headers();
   const encaminhado = cabecalhos.get("x-forwarded-for") ?? "";
 
-  const supabase = await clienteServidor();
+  // Sem os cookies de quem estiver logado neste navegador: ver `clienteAnonimo`.
+  const supabase = clienteAnonimo();
   const { data, error } = await supabase.rpc("documento_assinar_por_link", {
     p_token: entrada.token,
     p_nascimento: entrada.nascimento,
@@ -368,7 +413,8 @@ export async function responderPorLink(entrada: {
     return "respostas_invalidas";
   }
 
-  const supabase = await clienteServidor();
+  // Sem os cookies de quem estiver logado neste navegador: ver `clienteAnonimo`.
+  const supabase = clienteAnonimo();
   const { data, error } = await supabase.rpc("documento_responder_por_link", {
     p_token: entrada.token,
     p_nascimento: entrada.nascimento,

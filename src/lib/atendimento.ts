@@ -33,7 +33,8 @@ export const VERBO_SITUACAO: Record<SituacaoAtendimento, string> = {
   confirmado: "Confirmar",
   em_atendimento: "Iniciar atendimento",
   concluido: "Concluir",
-  cancelado: "Cancelar",
+  // "Cancelar" sozinho se confundia com "descartar" (sair sem salvar).
+  cancelado: "Cancelar atendimento",
   ausente: "Não compareceu",
 };
 

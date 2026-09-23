@@ -141,10 +141,53 @@ export function mensagemDoBanco(
  */
 export function erroParaRegistro(erro: ErroDoBanco): { codigo: string; mensagem: string } {
   if (!erro) return { codigo: "", mensagem: "" };
-  const mensagem = (erro.message ?? "")
-    .replace(/"[^"]*"/g, '"…"')
-    .replace(/'[^']*'/g, "'…'")
-    .replace(/=\([^)]*\)/g, "=(…)")
-    .slice(0, 300);
-  return { codigo: erro.code ?? "", mensagem };
+  const mensagem = sanitizarParaRegistro(
+    (erro.message ?? "")
+      .replace(/"[^"]*"/g, '"…"')
+      .replace(/'[^']*'/g, "'…'")
+      .replace(/=\([^)]*\)/g, "=(…)"),
+  ).slice(0, 300);
+  return { codigo: (erro.code ?? "").slice(0, 16), mensagem };
 }
+
+/**
+ * O que ainda pode sobrar de dado sensível num texto sem aspas.
+ *
+ * Mensagem de serviço (Auth, Storage, rede) não segue o formato do Postgres:
+ * pode trazer e-mail, token, CPF, telefone ou data solta no meio da frase.
+ * Nada disso ajuda a investigar — o código e o contexto bastam — e tudo isso
+ * é dado de paciente ou credencial. Quebra de linha também sai: uma linha de
+ * log é uma linha, e ninguém injeta entrada falsa no registro.
+ */
+export function sanitizarParaRegistro(texto: string): string {
+  return (
+    texto
+      // Quebra de linha e controle: uma entrada, uma linha.
+      .replace(/[\u0000-\u001f\u007f]+/g, " ")
+      // JWT (três partes base64url) e cabeçalho de autorização.
+      .replace(/\beyJ[\w-]*\.[\w-]*\.[\w-]*/g, "[token]")
+      .replace(/\bBearer\s+\S+/gi, "Bearer [token]")
+      // E-mail.
+      .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "[e-mail]")
+      // Segredo longo sem separador: token de link, chave, hash.
+      .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[token]")
+      // Data solta (nascimento é dado pessoal), antes dos números.
+      .replace(/\b\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}\b/g, "[data]")
+      // CPF, telefone, cartão: seis dígitos ou mais, com ou sem pontuação.
+      .replace(/\+?\(?\d[\d .()/-]{4,}\d/g, "[número]")
+      .replace(/\s{2,}/g, " ")
+      .trim()
+  );
+}
+
+/**
+ * Identificador curto de uma operação, para ligar a frase que a pessoa viu
+ * à linha do log sem carregar dado nenhum. Aleatório, sem relação com id de
+ * linha do banco.
+ */
+export function idDeCorrelacao(): string {
+  return globalThis.crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+}
+
+/** Cabeçalho em que o middleware entrega o id da requisição ao servidor. */
+export const CABECALHO_ID_REQUISICAO = "x-id-requisicao";

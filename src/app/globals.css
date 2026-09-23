@@ -53,7 +53,18 @@
   /* Texto e contornos */
   --color-on-surface: #1b1c1e;
   --color-on-surface-variant: #43474d;
-  --color-outline: #72767c;
+  /*
+   * `outline` é o texto terciário (legenda, data, contador). Precisa de
+   * 4,5:1 em TODO fundo onde aparece; o valor antigo (#72767c) dava 4,34
+   * no card, 4,22 no container-low e 3,96 no container. #5f6369 dá:
+   * surface 6,04 · bright 5,89 · card 5,74 · container-low 5,58 ·
+   * container 5,25 · container-high 4,96 · surface-variant 4,74 —
+   * e segue abaixo de `on-surface-variant` (9,35 no branco).
+   *
+   * `outline-variant` (1,72:1 no branco) é SÓ borda, divisória e ícone
+   * decorativo. Nunca texto.
+   */
+  --color-outline: #5f6369;
   --color-outline-variant: #c1c6cd;
 
   /*
@@ -91,7 +102,9 @@
 
   /* ---- Estado: positivo ----
      Confirmado · recebido · concluído · finalizado */
-  --color-positivo: #107e3e;
+  /* #107e3e dava 4,47:1 no container (#edeff2); #0e7639 dá 4,97 ali,
+     5,11 no próprio fundo e 5,72 no branco. */
+  --color-positivo: #0e7639;
   --color-positivo-fundo: #eaf5ea;
   --color-positivo-borda: #a9d3a9;
 

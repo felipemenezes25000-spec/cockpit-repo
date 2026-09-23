@@ -3,10 +3,10 @@ import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
-import { formatarMoeda } from "@/lib/format";
 import { alternarAtivoProcedimento } from "@/server/acoes/procedimentos";
 import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import type { Procedimento } from "@/server/consultas/procedimentos";
+import { resumoDoProcedimento } from "./resumo-procedimento";
 
 /**
  * A tabela de procedimentos. Quem não é administradora vê a mesma lista, sem
@@ -43,8 +43,12 @@ export function ListaProcedimentos({
         <li
           key={p.id}
           className={cn(
-            "flex flex-col gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] sm:flex-row sm:items-center sm:justify-between",
-            !p.ativo && "opacity-70",
+            "flex flex-col gap-3 rounded-[var(--radius-cartao)] border p-4 sm:flex-row sm:items-center sm:justify-between",
+            // Fora da agenda: fundo cinza e contorno tracejado, mais o selo em
+            // texto. Opacidade não: apagava o texto e o botão de reativar.
+            p.ativo
+              ? "border-card-border bg-surface shadow-[var(--shadow-cartao)]"
+              : "border-dashed border-outline-variant bg-surface-container-low",
           )}
         >
           <div className="min-w-0">
@@ -63,16 +67,7 @@ export function ListaProcedimentos({
               ) : null}
             </div>
 
-            <p className="tabular mt-1 text-xs text-outline">
-              {p.duracaoMin} min
-              {p.valorPadrao > 0 ? ` · ${formatarMoeda(p.valorPadrao)}` : " · sem valor de tabela"}
-              {p.retornoSugeridoDias
-                ? ` · retorno em ${p.retornoSugeridoDias} dias`
-                : " · sem retorno sugerido"}
-              {p.usos > 0
-                ? ` · ${p.usos} ${p.usos === 1 ? "atendimento" : "atendimentos"}`
-                : ""}
-            </p>
+            <p className="tabular mt-1 text-xs text-outline">{resumoDoProcedimento(p)}</p>
           </div>
 
           {podeEditar ? (

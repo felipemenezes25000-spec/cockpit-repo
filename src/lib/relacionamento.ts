@@ -1,5 +1,6 @@
 import { dataValida } from "@/lib/dates";
-import type { Prioridade, SituacaoAcompanhamento, TipoPendencia } from "@/lib/dominio";
+import { UUID } from "@/lib/formulario";
+import type { OrigemPendencia, Prioridade, SituacaoAcompanhamento, TipoPendencia } from "@/lib/dominio";
 
 export { dataValida };
 
@@ -22,16 +23,128 @@ export const SITUACOES_RETORNO = [
   "recusado",
 ] as const satisfies readonly SituacaoAcompanhamento[];
 
-export const UUID_RELACIONAMENTO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** O mesmo UUID de `lib/formulario.ts`; o nome antigo fica para quem já importa. */
+export const UUID_RELACIONAMENTO = UUID;
 
 /** Link direto informado pela clínica para receber avaliações no Google. */
 export const LINK_AVALIACAO_GOOGLE = "https://g.page/r/CYXDzsOMXUv5ECE/review";
 
+/**
+ * Número no formato do `wa.me`: `55` + DDD + número, só dígitos.
+ *
+ * O `55` inicial só é tratado como código do país quando sobram 10 ou 11
+ * dígitos depois dele (12 ou 13 no total). Antes ele saía sempre, e um
+ * telefone de DDD 55 (RS) gravado sem o código do país — `(55) 99123-4567` —
+ * perdia o DDD e era recusado.
+ */
 export function telefoneParaWhatsApp(telefone: string | null): string | null {
   if (!telefone) return null;
   const digitos = telefone.replace(/\D/g, "");
-  const numero = digitos.startsWith("55") ? digitos.slice(2) : digitos;
+  const numero = digitos.startsWith("55") && (digitos.length === 12 || digitos.length === 13)
+    ? digitos.slice(2)
+    : digitos;
   return /^\d{10,11}$/.test(numero) ? `55${numero}` : null;
+}
+
+/** Link do WhatsApp com a mensagem pronta; nulo sem telefone válido. */
+export function linkWhatsApp(telefone: string | null, mensagem: string): string | null {
+  const numero = telefoneParaWhatsApp(telefone);
+  return numero ? `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}` : null;
+}
+
+export function mensagemAniversario(nome: string): string {
+  const primeiroNome = nome.trim().split(/\s+/)[0] || "Olá";
+  return `Olá, ${primeiroNome}! A equipe da Dra. Érika Passos deseja a você um feliz aniversário!`;
+}
+
+// ---------------------------------------------------------------------
+// Situações que os botões da tela mudam
+// ---------------------------------------------------------------------
+
+export const SITUACOES_TAREFA = ["aberta", "resolvida", "cancelada"] as const;
+export type SituacaoTarefa = (typeof SITUACOES_TAREFA)[number];
+
+/**
+ * De onde cada situação de tarefa pode vir — a condição do UPDATE.
+ *
+ * É o que a tela já oferece: aberta conclui ou cancela; concluída ou
+ * cancelada só reabre. Dois cliques (ou duas abas) não gravam duas vezes, e
+ * uma tarefa que outra pessoa já concluiu não é "cancelada por cima".
+ */
+export const ORIGENS_TAREFA: Record<SituacaoTarefa, readonly SituacaoTarefa[]> = {
+  aberta: ["resolvida", "cancelada"],
+  resolvida: ["aberta"],
+  cancelada: ["aberta"],
+};
+
+/**
+ * Confirmação pela lista: só mexe em atendimento que ainda espera resposta.
+ * "Aguardando resposta" só sai de "agendado"; "confirmado" sai dos dois.
+ */
+export const DESTINOS_CONFIRMACAO = ["confirmado", "aguardando_confirmacao"] as const;
+export type DestinoConfirmacao = (typeof DESTINOS_CONFIRMACAO)[number];
+export const ORIGENS_CONFIRMACAO: Record<DestinoConfirmacao, readonly ("agendado" | "aguardando_confirmacao")[]> = {
+  confirmado: ["agendado", "aguardando_confirmacao"],
+  aguardando_confirmacao: ["agendado"],
+};
+
+export function situacaoTarefaValida(valor: string): valor is SituacaoTarefa {
+  return (SITUACOES_TAREFA as readonly string[]).includes(valor);
+}
+
+export function situacaoRetornoValida(valor: string): valor is SituacaoAcompanhamento {
+  return (SITUACOES_RETORNO as readonly string[]).includes(valor);
+}
+
+export function destinoConfirmacaoValido(valor: string): valor is DestinoConfirmacao {
+  return (DESTINOS_CONFIRMACAO as readonly string[]).includes(valor);
+}
+
+// ---------------------------------------------------------------------
+// Registro de contato (convite de avaliação, mensagem de aniversário)
+// ---------------------------------------------------------------------
+
+export const TIPOS_CONTATO = ["avaliacao", "aniversario"] as const;
+export type TipoContato = (typeof TIPOS_CONTATO)[number];
+
+export function tipoContatoValido(valor: string): valor is TipoContato {
+  return (TIPOS_CONTATO as readonly string[]).includes(valor);
+}
+
+/**
+ * Como cada contato vira `pendencia` concluída.
+ *
+ * Desde a migração 0025 o registro de contato é reconhecido pela coluna
+ * `origem`, não pelo texto: a ação grava a origem daqui, a deduplicação e
+ * as consultas filtram por ela, e a descrição é só o que a equipe lê. Os
+ * registros gravados antes da coluna foram reconhecidos pelo texto antigo
+ * na própria migração (`private.pendencia_origem_pelo_texto`). O banco
+ * confere a combinação origem/tipo (`pendencias_origem_coerente`) e
+ * recusa o segundo registro da mesma origem para a mesma paciente no mesmo
+ * dia da clínica (`pendencias_contato_um_por_dia`).
+ */
+export const REGISTRO_CONTATO: Record<
+  TipoContato,
+  { origem: Exclude<OrigemPendencia, "tarefa">; tipo: TipoPendencia; descricao: string }
+> = {
+  avaliacao: {
+    origem: "contato_avaliacao",
+    tipo: "pesquisa",
+    descricao: "Convite para avaliação no Google enviado pela equipe",
+  },
+  aniversario: {
+    origem: "contato_aniversario",
+    tipo: "outro",
+    descricao: "Mensagem de aniversário enviada pela equipe",
+  },
+};
+
+/** As origens que são registro de contato, na ordem de `TIPOS_CONTATO`. */
+export const ORIGENS_CONTATO = TIPOS_CONTATO.map((tipo) => REGISTRO_CONTATO[tipo].origem);
+
+/** De volta da coluna `origem` para o tipo de contato; tarefa não é contato. */
+export function tipoContatoDaOrigem(origem: OrigemPendencia): TipoContato | null {
+  return TIPOS_CONTATO.find((tipo) => REGISTRO_CONTATO[tipo].origem === origem) ?? null;
 }
 
 export function mensagemAvaliacao(nome: string, link: string): string {

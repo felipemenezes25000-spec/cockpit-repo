@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { destinoSeguro } from "./destino";
 import { FormularioLogin } from "./login-form";
 
 export const metadata: Metadata = {
@@ -39,7 +40,8 @@ export default async function PaginaEntrar({
             </p>
           ) : null}
 
-          <FormularioLogin proximo={proximo ?? "/"} />
+          {/* A ação confere de novo: o campo oculto pode ser editado. */}
+          <FormularioLogin proximo={destinoSeguro(proximo)} />
         </div>
 
         <p className="mt-6 text-center text-xs text-outline">

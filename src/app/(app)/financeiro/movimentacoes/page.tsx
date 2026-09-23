@@ -41,6 +41,7 @@ export default async function PaginaMovimentacoes({
   ]);
 
   const itens = tipo ? todos.filter((i) => i.tipo === tipo) : todos;
+  const filtrada = itens.length !== todos.length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -74,7 +75,7 @@ export default async function PaginaMovimentacoes({
               },
             ]}
           />
-          <ListaMovimentacoes itens={itens} />
+          <ListaMovimentacoes itens={itens} filtrada={filtrada} />
         </CardCorpo>
       </Card>
     </div>

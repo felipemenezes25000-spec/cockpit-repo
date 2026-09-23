@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** As contas de `supabase/usuarios-locais.json` — só existem no Supabase local. */
-type Papel = "administradora" | "financeiro" | "recepcao";
+export type Papel ="administradora" | "financeiro" | "recepcao";
 
 const arquivo = JSON.parse(
   readFileSync(join(__dirname, "..", "supabase", "usuarios-locais.json"), "utf8"),

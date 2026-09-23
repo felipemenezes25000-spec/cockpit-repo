@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { BuscaProntuarios } from "@/components/prontuarios/busca-prontuarios";
 import { ListaProntuarios } from "@/components/prontuarios/lista-prontuarios";
-import { PaginacaoProntuarios } from "@/components/prontuarios/paginacao-prontuarios";
+import { Paginacao } from "@/components/ui/paginacao";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { estaAlemDoFim, PaginaAlemDoFim } from "@/components/ui/pagina-alem-do-fim";
 import { ehAdministradora } from "@/lib/auth";
 import { EstruturaPendenteProntuario } from "@/components/prontuarios/estrutura-pendente";
 import {
@@ -59,7 +60,6 @@ export default async function PaginaProntuarios({
 
   return (
     <div>
-
       <Card>
         <CardCabecalho
           titulo="Prontuários"
@@ -74,12 +74,28 @@ export default async function PaginaProntuarios({
 
         <CardCorpo className="flex flex-col gap-6">
           <BuscaProntuarios busca={busca} total={resultado.total} />
-          <ListaProntuarios prontuarios={resultado.itens} busca={busca} />
-          <PaginacaoProntuarios
-            pagina={resultado.pagina}
-            paginas={resultado.paginas}
-            parametros={preservar}
-          />
+          {estaAlemDoFim(resultado) ? (
+            <PaginaAlemDoFim
+              icone={FileText}
+              total={resultado.total}
+              paginas={resultado.paginas}
+              singular="prontuário"
+              plural="prontuários"
+              caminho="/prontuarios"
+              parametros={preservar}
+            />
+          ) : (
+            <>
+              <ListaProntuarios prontuarios={resultado.itens} busca={busca} />
+              <Paginacao
+                pagina={resultado.pagina}
+                paginas={resultado.paginas}
+                parametros={preservar}
+                caminho="/prontuarios"
+                rotulo="Paginação dos prontuários"
+              />
+            </>
+          )}
         </CardCorpo>
       </Card>
     </div>

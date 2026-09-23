@@ -38,8 +38,12 @@ export function ListaTaxas({
         <li
           key={taxa.id}
           className={cn(
-            "flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)]",
-            !taxa.ativa && "opacity-60",
+            "flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-cartao)] border p-4",
+            // Inativa não usa opacidade (texto terciário cairia para 2,6:1):
+            // selo "Inativa", fundo recuado e borda tracejada.
+            taxa.ativa
+              ? "border-card-border bg-surface shadow-[var(--shadow-cartao)]"
+              : "border-dashed border-outline-variant bg-surface-container-low",
           )}
         >
           <div className="min-w-0">

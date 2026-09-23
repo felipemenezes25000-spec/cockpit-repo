@@ -40,7 +40,7 @@ export function CardCabecalho({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-end justify-between gap-3 border-b border-card-border px-6 pt-6 pb-4 sm:px-8 sm:pt-8",
+        "flex flex-wrap items-end justify-between gap-3 border-b border-card-border px-4 pt-5 pb-4 sm:px-8 sm:pt-8",
         className,
       )}
     >
@@ -65,7 +65,9 @@ export function CardCorpo({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={cn("px-6 py-6 sm:px-8", className)}>{children}</div>;
+  // Recuo de 16 px no celular: com o px-4 do `<main>`, o px-6 deixava 240 px
+  // para o conteúdo a 320 px, e botões e buscas estouravam o cartão.
+  return <div className={cn("px-4 py-6 sm:px-8", className)}>{children}</div>;
 }
 
 export function CardRodape({
@@ -78,7 +80,7 @@ export function CardRodape({
   return (
     <div
       className={cn(
-        "border-t border-card-border px-6 py-4 text-xs sm:px-8",
+        "border-t border-card-border px-4 py-4 text-xs sm:px-8",
         className,
       )}
     >

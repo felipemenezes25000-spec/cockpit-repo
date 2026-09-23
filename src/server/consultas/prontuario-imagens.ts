@@ -1,11 +1,17 @@
 import "server-only";
 
-import { falhaDeConsulta } from "@/lib/registro";
+import { falhaDeConsulta, registrarFalha } from "@/lib/registro";
 
 import { cache } from "react";
 import { dataDoBanco } from "@/lib/dates";
-import { BUCKET_IMAGENS } from "@/lib/prontuario-imagens";
+import { mensagemDoBanco } from "@/lib/erros-banco";
+import {
+  BUCKET_IMAGENS,
+  lerSobrasDasFotos,
+  type SobraDeFoto,
+} from "@/lib/prontuario-imagens";
 import { clienteServidor } from "@/lib/supabase/server";
+import { TAMANHO_DO_BLOCO } from "./todas-as-linhas";
 import {
   EstruturaProntuarioPendenteError,
   estruturaPendente,
@@ -165,3 +171,49 @@ export const fotosDoProntuario = cache(
     };
   },
 );
+
+export type ConferenciaDasFotos =
+  | { permitida: true; sobras: SobraDeFoto[] }
+  | { permitida: false; mensagem: string };
+
+/**
+ * Conferência entre o bucket e as linhas das fotos (migração 0024).
+ *
+ * Só leitura e só da administradora: a função do banco recusa as outras
+ * pessoas com 42501, e essa recusa vira frase para a tela, não página de
+ * erro. Qualquer outra falha é falha de consulta. Nada aqui apaga: quem
+ * decide o que fazer com cada sobra é uma pessoa (a eliminação com motivo,
+ * no prontuário).
+ */
+export const conferenciaDasFotos = cache(async (): Promise<ConferenciaDasFotos> => {
+  const supabase = await clienteServidor();
+
+  // Em blocos, como `todasAsLinhas`: função que devolve tabela também passa
+  // pelo `max_rows` do PostgREST, e acima de 1000 sobras a lista sairia
+  // cortada sem aviso — justo a tela que diz onde estão os órfãos. O laço é
+  // local porque a recusa por permissão (42501) tem resposta própria.
+  const linhas: Parameters<typeof lerSobrasDasFotos>[0][number][] = [];
+  for (let inicio = 0; ; inicio += TAMANHO_DO_BLOCO) {
+    const { data, error } = await supabase
+      .rpc("prontuario_imagens_reconciliar")
+      .order("caminho")
+      .order("situacao")
+      .range(inicio, inicio + TAMANHO_DO_BLOCO - 1);
+
+    if (error) {
+      if (error.code === "42501") {
+        registrarFalha("consulta fotos: conferência recusada", error);
+        return {
+          permitida: false,
+          mensagem: mensagemDoBanco(error, "A conferência das fotos é restrita à administradora."),
+        };
+      }
+      falhaDeConsulta("consulta fotos: conferência", error, "Não foi possível conferir as fotos.");
+    }
+
+    linhas.push(...(data ?? []));
+    if ((data?.length ?? 0) < TAMANHO_DO_BLOCO) break;
+  }
+
+  return { permitida: true, sobras: lerSobrasDasFotos(linhas, new Date()) };
+});

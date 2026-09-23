@@ -3,12 +3,20 @@ import "server-only";
 import { falhaDeConsulta } from "@/lib/registro";
 
 import { cache } from "react";
+import { termoDeBusca } from "@/lib/busca";
 import { chaveDoDia, dataDoBanco } from "@/lib/dates";
+import { estruturaAusente } from "@/lib/erros-banco";
 import { formatarData, formatarHora } from "@/lib/format";
+import { uuidValido } from "@/lib/formulario";
 import { formatarTelefone, nomeExibido } from "@/lib/paciente";
 import { clienteServidor } from "@/lib/supabase/server";
+import { paginaAlemDoFim } from "./todas-as-linhas";
 
 export const POR_PAGINA_PRONTUARIOS = 20;
+
+function paginasPara(total: number): number {
+  return Math.max(1, Math.ceil(total / POR_PAGINA_PRONTUARIOS));
+}
 
 export class EstruturaProntuarioPendenteError extends Error {
   constructor() {
@@ -17,19 +25,14 @@ export class EstruturaProntuarioPendenteError extends Error {
   }
 }
 
-/** A migração de prontuários (0010/0011) ainda não chegou neste banco. */
-export function estruturaPendente(
-  error: { code?: string; message?: string } | null,
-): boolean {
-  if (!error) return false;
-  return Boolean(
-    error.code === "PGRST205" ||
-    error.message?.includes("schema cache") ||
-    error.message?.includes("public.prontuarios") ||
-    error.message?.includes("public.prontuario_versoes") ||
-    error.message?.includes("public.prontuario_imagens"),
-  );
-}
+/**
+ * A migração de prontuários (0010/0011) ainda não chegou neste banco.
+ *
+ * A regra é a de `lib/erros-banco.ts`: tabela ausente chega como PGRST205 ou
+ * 42P01. A antiga checagem pelo nome da tabela na mensagem sobrava — e
+ * qualquer texto que citasse a tabela virava "migração pendente" por engano.
+ */
+export const estruturaPendente = estruturaAusente;
 
 export type PacienteDoProntuario = {
   id: string;
@@ -113,15 +116,6 @@ export type ProntuarioCompleto = {
   versoes: VersaoDoProntuario[];
 };
 
-function termoSeguro(bruto: string): string {
-  return bruto
-    .trim()
-    .slice(0, 80)
-    .replace(/[,()"\\*%]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function contatoPaciente(paciente: {
   telefone: string | null;
   email: string | null;
@@ -130,8 +124,20 @@ function contatoPaciente(paciente: {
   return [telefone, paciente.email].filter(Boolean).join(" · ") || null;
 }
 
+/*
+ * As três leituras por id abaixo seguem a mesma divisão. `null` quer dizer
+ * uma coisa só: a linha não existe, ou a RLS não a mostra — a página vira
+ * 404 (ou o formulário abre sem a paciente). Id que nem tem forma de uuid
+ * também é `null`, sem ir ao banco, porque o Postgres o recusaria com 22P02.
+ * Qualquer outro erro de banco falha alto por `falhaDeConsulta`: registrado
+ * e levado ao `error.tsx`. Antes, um timeout ou uma coluna renomeada virava
+ * "não encontrado", e nada ia para o log (AGENTS.md §6, regra 11).
+ */
+
 export const pacienteParaProntuario = cache(
   async (id: string): Promise<PacienteDoProntuario | null> => {
+    if (!uuidValido(id)) return null;
+
     const supabase = await clienteServidor();
 
     const { data, error } = await supabase
@@ -140,7 +146,10 @@ export const pacienteParaProntuario = cache(
       .eq("id", id)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) {
+      falhaDeConsulta("consulta prontuarios: paciente", error, "Não foi possível carregar a paciente.");
+    }
+    if (!data) return null;
 
     return {
       id: data.id,
@@ -152,6 +161,8 @@ export const pacienteParaProntuario = cache(
 
 export const atendimentoParaProntuario = cache(
   async (id: string): Promise<AtendimentoDoProntuario | null> => {
+    if (!uuidValido(id)) return null;
+
     const supabase = await clienteServidor();
 
     const { data, error } = await supabase
@@ -165,7 +176,10 @@ export const atendimentoParaProntuario = cache(
       .eq("id", id)
       .maybeSingle();
 
-    if (error || !data || !data.pacientes) return null;
+    if (error) {
+      falhaDeConsulta("consulta prontuarios: atendimento", error, "Não foi possível carregar o atendimento.");
+    }
+    if (!data || !data.pacientes) return null;
 
     const inicio = new Date(data.inicio);
     const procedimento = data.procedimentos?.nome ?? "Atendimento";
@@ -193,7 +207,7 @@ export const listarProntuarios = cache(
   } = {}): Promise<PaginaDeProntuarios> => {
     const supabase = await clienteServidor();
     const pagina = Math.max(1, Math.trunc(opcoes.pagina ?? 1));
-    const termo = termoSeguro(opcoes.busca ?? "");
+    const termo = termoDeBusca(opcoes.busca ?? "");
 
     let pacientesEncontradas: string[] = [];
 
@@ -218,6 +232,17 @@ export const listarProntuarios = cache(
       pacientesEncontradas = (data ?? []).map((paciente) => paciente.id);
     }
 
+    // O filtro fica num texto só porque vale para duas consultas: a da página
+    // e, se ela cair além do fim, a contagem.
+    let filtro: string | null = null;
+    if (termo) {
+      const alvos = [`titulo.ilike.%${termo}%`];
+      if (pacientesEncontradas.length > 0) {
+        alvos.push(`paciente_id.in.(${pacientesEncontradas.join(",")})`);
+      }
+      filtro = alvos.join(",");
+    }
+
     let consulta = supabase
       .from("prontuarios")
       .select(
@@ -226,23 +251,33 @@ export const listarProntuarios = cache(
          atendimentos ( id, inicio, procedimentos ( nome ) )`,
         { count: "exact" },
       );
-
-    if (termo) {
-      const alvos = [`titulo.ilike.%${termo}%`];
-      if (pacientesEncontradas.length > 0) {
-        alvos.push(`paciente_id.in.(${pacientesEncontradas.join(",")})`);
-      }
-      consulta = consulta.or(alvos.join(","));
-    }
+    if (filtro) consulta = consulta.or(filtro);
 
     const de = (pagina - 1) * POR_PAGINA_PRONTUARIOS;
     const { data, count, error } = await consulta
       .order("data_registro", { ascending: false })
       .order("atualizado_em", { ascending: false })
+      // Desempate único: registros da mesma transação empatam nas duas datas.
+      .order("id", { ascending: false })
       .range(de, de + POR_PAGINA_PRONTUARIOS - 1);
 
     if (error) {
       if (estruturaPendente(error)) throw new EstruturaProntuarioPendenteError();
+      if (paginaAlemDoFim(error)) {
+        // `?pagina=99` numa lista de duas páginas: não é falha, é endereço
+        // fora do alcance. O PostgREST recusa a página sem devolver a
+        // contagem, então ela é lida à parte, com o mesmo filtro — a lista
+        // responde vazia, mas com o total e as páginas de verdade.
+        let contagem = supabase
+          .from("prontuarios")
+          .select("id", { count: "exact", head: true });
+        if (filtro) contagem = contagem.or(filtro);
+        const { count: total, error: erroContagem } = await contagem;
+        if (erroContagem) {
+          falhaDeConsulta("consulta prontuarios: contagem", erroContagem, "Não foi possível carregar os prontuários.");
+        }
+        return { itens: [], total: total ?? 0, pagina, paginas: paginasPara(total ?? 0) };
+      }
       falhaDeConsulta("consulta prontuarios", error, "Não foi possível carregar os prontuários.");
     }
 
@@ -299,13 +334,15 @@ export const listarProntuarios = cache(
       })),
       total,
       pagina,
-      paginas: Math.max(1, Math.ceil(total / POR_PAGINA_PRONTUARIOS)),
+      paginas: paginasPara(total),
     };
   },
 );
 
 export const prontuarioPorId = cache(
   async (id: string): Promise<ProntuarioCompleto | null> => {
+    if (!uuidValido(id)) return null;
+
     const supabase = await clienteServidor();
 
     const { data, error } = await supabase
@@ -319,8 +356,13 @@ export const prontuarioPorId = cache(
       .eq("id", id)
       .maybeSingle();
 
-    if (estruturaPendente(error)) throw new EstruturaProntuarioPendenteError();
-    if (error || !data) return null;
+    if (error) {
+      // A tabela ausente é a única falha que tem tela própria: o card
+      // "Migração pendente", que a página mostra ao pegar este erro.
+      if (estruturaPendente(error)) throw new EstruturaProntuarioPendenteError();
+      falhaDeConsulta("consulta prontuarios", error, "Não foi possível carregar o prontuário.");
+    }
+    if (!data) return null;
 
     const { data: versoes, error: erroVersoes } = await supabase
       .from("prontuario_versoes")

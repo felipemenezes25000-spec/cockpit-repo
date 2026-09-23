@@ -65,10 +65,13 @@ export async function LinhaDoDia() {
         <div
           className={[
             "relative",
-            /* Linha do tempo esmaecendo nas duas pontas */
-            "before:absolute before:top-0 before:bottom-0 before:left-[4.5rem] before:w-0.5",
+            /* Linha do tempo esmaecendo nas duas pontas. O centro dela é o
+               centro do ponto de cada atendimento: borda 1 + recuo 12 + hora
+               40 + espaço 12 + meio ponto 6 = 71 px no celular, e
+               1 + 16 + 48 + 24 + 6 = 95 px do `sm` para cima. */
+            "before:absolute before:top-0 before:bottom-0 before:left-[70px] before:w-0.5",
             "before:bg-gradient-to-b before:from-transparent before:via-card-border before:to-transparent",
-            "sm:before:left-[5.5rem]",
+            "sm:before:left-[94px]",
           ].join(" ")}
         >
           <MarcadorAgora de={aberturaDoDia} ate={primeiro.inicio.getTime()} />

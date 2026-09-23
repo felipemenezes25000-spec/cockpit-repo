@@ -1,4 +1,4 @@
-import { custoDaTaxa } from "./moeda";
+import { custoDaTaxa, lerPercentual, percentualInformado } from "./moeda";
 import type { Database } from "./supabase/tipos-banco";
 
 /**
@@ -38,6 +38,32 @@ export const ROTULO_SITUACAO_RECEBIMENTO: Record<SituacaoRecebimento, string> = 
   recebido_divergencia: "Recebido com divergência",
   cancelado: "Cancelado",
 };
+
+/** Confirmado = o dinheiro entrou. Daqui em diante o registro é imutável (0020). */
+export function recebimentoConfirmado(
+  situacao: SituacaoRecebimento,
+): situacao is "recebido" | "recebido_divergencia" {
+  return situacao === "recebido" || situacao === "recebido_divergencia";
+}
+
+/** Só previsto e pendente aceitam confirmação, cancelamento ou troca de situação. */
+export const SITUACOES_EM_ABERTO = ["previsto", "pendente"] as const satisfies readonly SituacaoRecebimento[];
+
+export function recebimentoEmAberto(situacao: SituacaoRecebimento): boolean {
+  return (SITUACOES_EM_ABERTO as readonly string[]).includes(situacao);
+}
+
+/**
+ * Situação gravada ao confirmar. Divergência é fato, não opinião: o que entrou
+ * é diferente do líquido previsto — por um centavo que seja, e inclusive
+ * quando entrou zero.
+ */
+export function situacaoDaConfirmacao(
+  valorRecebidoCent: number,
+  liquidoPrevistoCent: number,
+): "recebido" | "recebido_divergencia" {
+  return valorRecebidoCent === liquidoPrevistoCent ? "recebido" : "recebido_divergencia";
+}
 
 /** Cartão passa pela operadora e por isso tem taxa e tabela. */
 export function formaUsaCartao(forma: FormaPagamento): forma is "debito" | "credito" {
@@ -93,6 +119,22 @@ export function calcularVenda(dados: {
   return { originalCent, descontoCent, finalCent, taxaBp, taxaCent, liquidoCent };
 }
 
+/**
+ * A taxa (em bp) que a prévia do formulário de venda usa. Sem taxa manual,
+ * vale a padrão. Com taxa manual, vale o que foi digitado — e campo vazio
+ * ou inválido dá `null`: vazio não é "0%" (a ação de servidor recusa esse
+ * caso), então a prévia não inventa taxa nem líquido.
+ */
+export function taxaDaPrevia(dados: {
+  manual: boolean;
+  textoManual: string;
+  bpPadrao: number;
+}): number | null {
+  if (!dados.manual) return dados.bpPadrao;
+  if (!percentualInformado(dados.textoManual)) return null;
+  return lerPercentual(dados.textoManual);
+}
+
 /** Parcelas válidas: 1 sempre; acima disso só no crédito, até 24. */
 export function parcelasValidas(forma: FormaPagamento, parcelas: number): boolean {
   if (!Number.isInteger(parcelas) || parcelas < 1 || parcelas > 24) return false;
@@ -139,18 +181,26 @@ export type EfeitoDaMudanca =
  * líquido e o que foi confirmado vira um ajuste financeiro à parte. Diferença
  * zero não gera ajuste nenhum.
  *
+ * Ajustes já lançados NÃO entram na conta: uma segunda alteração depois da
+ * confirmação compara de novo com `valor_recebido` e acumula ajuste. É dívida
+ * contábil em aberto (AGENTS.md §13) — o teste fixa o comportamento atual
+ * até a clínica decidir.
+ *
  * Quem decide de verdade é a função SQL `venda_alterar_pagamento`; esta é a
- * mesma regra escrita em TypeScript, e os testes (`venda.test.ts`) a usam
- * como especificação. Mudou uma, mude a outra.
+ * mesma regra escrita em TypeScript. A tela de alteração a usa para mostrar o
+ * ajuste que o banco vai gravar, e os testes (`venda.test.ts`) a usam como
+ * especificação. Mudou uma, mude a outra.
  */
 export function decidirEfeito(
   situacao: SituacaoRecebimento,
   confirmadoCent: number,
   novoLiquidoCent: number,
 ): EfeitoDaMudanca {
-  const jaConfirmado = situacao === "recebido" || situacao === "recebido_divergencia";
+  // Cancelado não é o recebimento vivo: a função SQL só enxerga o não
+  // cancelado e, sem ele, muda a venda e não toca recebimento nenhum.
+  if (situacao === "cancelado") return { tipo: "nada" };
 
-  if (!jaConfirmado) return { tipo: "atualizar_previsto" };
+  if (!recebimentoConfirmado(situacao)) return { tipo: "atualizar_previsto" };
 
   const diferenca = novoLiquidoCent - confirmadoCent;
   if (diferenca === 0) return { tipo: "nada" };

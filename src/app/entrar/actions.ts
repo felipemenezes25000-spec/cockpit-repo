@@ -2,21 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { registrarFalha } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
+import { destinoSeguro } from "./destino";
 
 export type EstadoLogin = {
   erro: string | null;
   /** O e-mail digitado volta para o campo: errar a senha não apaga o resto. */
   email?: string;
+  /**
+   * Os campos que a pessoa precisa corrigir. Falha do serviço, limite de
+   * tentativas e acesso não confirmado não marcam nada: o que foi digitado
+   * pode estar certo, e borda vermelha mandaria redigitar à toa.
+   */
+  invalidos?: CampoLogin[];
 };
 
-/** Só aceita caminho interno — impede redirecionar para fora do sistema. */
-function destinoSeguro(valor: FormDataEntryValue | null): string {
-  const caminho = typeof valor === "string" ? valor : "";
-  return caminho.startsWith("/") && !caminho.startsWith("//") && !caminho.startsWith("/\\")
-    ? caminho.slice(0, 300)
-    : "/";
-}
+export type CampoLogin = "email" | "senha";
 
 /**
  * Por que o login falhou, em frase que ajuda sem entregar nada.
@@ -26,17 +28,37 @@ function destinoSeguro(valor: FormDataEntryValue | null): string {
  * serviço não é credencial errada — dizer "senha incorreta" a quem digitou a
  * senha certa manda a pessoa redefinir uma senha que não tinha problema.
  */
-function motivoDaRecusa(erro: { status?: number; code?: string }): string {
+function motivoDaRecusa(erro: { status?: number; code?: string }): {
+  mensagem: string;
+  invalidos: CampoLogin[];
+  doServico: boolean;
+} {
   if (erro.code === "email_not_confirmed") {
-    return "Este acesso ainda não foi confirmado. Fale com a administradora.";
+    return {
+      mensagem: "Este acesso ainda não foi confirmado. Fale com a administradora.",
+      invalidos: [],
+      doServico: false,
+    };
   }
   if (erro.code === "over_request_rate_limit" || erro.status === 429) {
-    return "Muitas tentativas seguidas. Aguarde um minuto e tente de novo.";
+    return {
+      mensagem: "Muitas tentativas seguidas. Aguarde um minuto e tente de novo.",
+      invalidos: [],
+      doServico: false,
+    };
   }
   if (erro.code === "invalid_credentials" || erro.status === 400) {
-    return "E-mail ou senha incorretos.";
+    return {
+      mensagem: "E-mail ou senha incorretos.",
+      invalidos: ["email", "senha"],
+      doServico: false,
+    };
   }
-  return "O serviço de acesso não respondeu. Tente de novo em instantes.";
+  return {
+    mensagem: "O serviço de acesso não respondeu. Tente de novo em instantes.",
+    invalidos: [],
+    doServico: true,
+  };
 }
 
 export async function entrar(
@@ -48,7 +70,10 @@ export async function entrar(
   const proximo = destinoSeguro(dados.get("proximo"));
 
   if (!email || !senha) {
-    return { erro: "Preencha e-mail e senha.", email };
+    const invalidos: CampoLogin[] = [];
+    if (!email) invalidos.push("email");
+    if (!senha) invalidos.push("senha");
+    return { erro: "Preencha e-mail e senha.", email, invalidos };
   }
 
   const supabase = await clienteServidor();
@@ -58,15 +83,16 @@ export async function entrar(
   });
 
   if (error) {
-    const mensagem = motivoDaRecusa(error);
-    if (mensagem.startsWith("O serviço")) {
-      // Sem dado da pessoa no log: só o que ajuda a investigar o serviço.
-      console.error("[cockpit] login: falha do serviço de autenticação", {
-        status: error.status ?? null,
-        codigo: error.code ?? null,
+    const { mensagem, invalidos, doServico } = motivoDaRecusa(error);
+    if (doServico) {
+      // Sem dado da pessoa no log: só o que ajuda a investigar o serviço. A
+      // mensagem do Auth não entra — pode trazer o e-mail digitado.
+      registrarFalha("login: falha do serviço de autenticação", {
+        code: error.code ?? null,
+        message: `status ${error.status ?? "desconhecido"}`,
       });
     }
-    return { erro: mensagem, email };
+    return { erro: mensagem, email, invalidos };
   }
 
   revalidatePath("/", "layout");

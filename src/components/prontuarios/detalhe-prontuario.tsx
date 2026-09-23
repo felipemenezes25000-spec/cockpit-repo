@@ -1,6 +1,6 @@
 import {
+  ArrowLeft,
   CalendarDays,
-  FileText,
   History,
   PencilLine,
   UserRound,
@@ -101,10 +101,13 @@ export function DetalheProntuario({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <BotaoLink href="/prontuarios" variante="contorno" tamanho="sm">
-          <FileText aria-hidden="true" size={16} strokeWidth={1.75} />
-          Prontuários
-        </BotaoLink>
+        <Link
+          href="/prontuarios"
+          className="inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        >
+          <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
+          Voltar para prontuários
+        </Link>
 
         <BotaoLink
           href={`/prontuarios/${prontuario.id}/editar`}

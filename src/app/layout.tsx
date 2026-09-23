@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk } from "next/font/google";
+import { connection } from "next/server";
 import "./globals.css";
 
 /* Uma família só para toda a interface, como no mockup. */
@@ -25,7 +26,15 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Toda página renderiza no servidor, a cada acesso: a CSP leva um nonce por
+  // requisição (`src/middleware.ts`) e o Next só o aplica aos próprios
+  // scripts quando renderiza com a requisição em mãos. Uma página gerada no
+  // build sairia sem nonce, e o navegador recusaria os scripts dela — a tela
+  // apareceria, mas nenhum botão funcionaria. Estar aqui, no layout raiz,
+  // cobre também as rotas públicas e o 404.
+  await connection();
+
   return (
     // Extensões podem acrescentar atributos ao <html> antes da hidratação.
     //

@@ -16,11 +16,21 @@ export function BuscaProntuarios({
   const parametros = useSearchParams();
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
-  const primeiraRenderizacao = useRef(true);
+  const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // A URL pode mudar por fora (voltar no navegador, link da paginação).
   useEffect(() => setTermo(busca), [busca]);
 
+  // Sair da tela no meio da pausa não pode navegar depois.
+  useEffect(() => () => pararRelogio(), []);
+
+  function pararRelogio() {
+    if (relogio.current) clearTimeout(relogio.current);
+    relogio.current = null;
+  }
+
   function navegar(novoTermo: string) {
+    pararRelogio();
     const query = new URLSearchParams(parametros?.toString() ?? "");
 
     if (novoTermo.trim()) query.set("busca", novoTermo.trim());
@@ -32,17 +42,15 @@ export function BuscaProntuarios({
     iniciar(() => router.replace(texto ? `/prontuarios?${texto}` : "/prontuarios"));
   }
 
-  useEffect(() => {
-    if (primeiraRenderizacao.current) {
-      primeiraRenderizacao.current = false;
-      return;
-    }
-    if (termo === busca) return;
-
-    const relogio = setTimeout(() => navegar(termo), 350);
-    return () => clearTimeout(relogio);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [termo]);
+  // A espera fica no próprio evento de digitação, e não num efeito que
+  // observa `termo`: assim só a pessoa digitando dispara a busca, nunca a
+  // sincronização com a URL acima.
+  function aoDigitar(novoTermo: string) {
+    setTermo(novoTermo);
+    pararRelogio();
+    if (novoTermo.trim() === busca) return;
+    relogio.current = setTimeout(() => navegar(novoTermo), 350);
+  }
 
   return (
     <form
@@ -65,14 +73,22 @@ export function BuscaProntuarios({
           type="search"
           name="busca"
           value={termo}
-          onChange={(evento) => setTermo(evento.target.value)}
+          onChange={(evento) => aoDigitar(evento.target.value)}
           maxLength={80}
           aria-label="Buscar prontuário por paciente ou título"
           placeholder="Buscar por paciente ou título"
           className={classeDeEntrada({ recuo: "busca" })}
         />
 
-        {termo ? (
+        {/* Carregando ocupa o lugar do "limpar", dentro da caixa: fora dela
+            (-right-6), no celular o ícone passava da borda do cartão. */}
+        {pendente ? (
+          <LoaderCircle
+            aria-hidden="true"
+            size={16}
+            className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 animate-spin text-outline"
+          />
+        ) : termo ? (
           <button
             type="button"
             onClick={() => {
@@ -84,14 +100,6 @@ export function BuscaProntuarios({
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
-        ) : null}
-
-        {pendente ? (
-          <LoaderCircle
-            aria-hidden="true"
-            size={16}
-            className="absolute top-1/2 -right-6 -translate-y-1/2 animate-spin text-outline"
-          />
         ) : null}
       </div>
 

@@ -31,7 +31,9 @@ export const BarraSuperior = forwardRef<
         </button>
 
         <div className="min-w-0">
-          <h1 className="truncate text-lg leading-tight font-medium text-primary sm:text-2xl">
+          {/* No celular, até duas linhas em vez de "Relacionam…"; do `sm` para
+              cima cabe em uma. */}
+          <h1 className="line-clamp-2 text-base leading-tight font-medium break-words text-primary sm:line-clamp-1 sm:text-2xl">
             {caminho === "/busca" ? "Busca global" : item?.rotulo ?? "Cockpit"}
           </h1>
           <p className="mt-1 hidden truncate text-xs text-outline sm:block">
@@ -44,7 +46,7 @@ export const BarraSuperior = forwardRef<
         <Link href="/busca" aria-label="Abrir busca global" className="flex size-10 items-center justify-center rounded-[var(--radius-cartao)] text-on-surface-variant hover:bg-surface-container-low hover:text-primary lg:hidden">
           <Search aria-hidden="true" size={20} strokeWidth={1.5} />
         </Link>
-        <form method="get" action="/busca" role="search" aria-label="Busca do cabeçalho" className="hidden w-48 items-center gap-2 rounded-[var(--radius-controle)] border border-outline-variant bg-surface px-3 py-2 text-sm focus-within:border-primary lg:flex xl:w-80">
+        <form method="get" action="/busca" role="search" aria-label="Busca do cabeçalho" className="hidden w-48 items-center gap-2 rounded-[var(--radius-controle)] border border-outline-variant bg-surface px-3 py-2 text-sm focus-within:border-primary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary lg:flex xl:w-80">
           <button type="submit" aria-label="Buscar" className="flex size-6 shrink-0 items-center justify-center text-outline hover:text-primary"><Search aria-hidden="true" size={18} strokeWidth={1.5} /></button>
           <input type="search" name="q" minLength={2} maxLength={80} required aria-label="Buscar no sistema" placeholder="Paciente, atendimento, documento…" className="min-w-0 flex-1 bg-transparent text-sm text-on-surface outline-none placeholder:text-outline" />
         </form>
@@ -54,7 +56,7 @@ export const BarraSuperior = forwardRef<
             type="button"
             aria-disabled="true"
             title="A central de notificações chega em uma próxima etapa"
-            aria-label={`Notificações — ${pendenciasAltas} pendências de prioridade alta`}
+            aria-label={`Notificações — ${pendenciasAltas} ${pendenciasAltas === 1 ? "pendência" : "pendências"} de prioridade alta. A central de notificações chega em uma próxima etapa.`}
             className="relative flex size-10 cursor-not-allowed items-center justify-center text-on-surface-variant"
           >
             <Bell aria-hidden="true" size={22} strokeWidth={1.5} />

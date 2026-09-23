@@ -7,7 +7,11 @@ import {
   FORMAS_EM_ORDEM,
   montarComparativo,
   parcelasValidas,
+  recebimentoConfirmado,
+  recebimentoEmAberto,
   ROTULO_FORMA,
+  situacaoDaConfirmacao,
+  taxaDaPrevia,
 } from "./venda";
 
 describe("calcularVenda — a conta inteira em centavos", () => {
@@ -108,5 +112,80 @@ describe("mudança de forma ou taxa", () => {
       valorCent: -4000,
     });
     expect(decidirEfeito("recebido", 94_000, 94_000)).toEqual({ tipo: "nada" });
+  });
+});
+
+describe("confirmação do recebimento", () => {
+  it("divergência é decidida pelo sistema: qualquer centavo diferente do líquido", () => {
+    expect(situacaoDaConfirmacao(94_000, 94_000)).toBe("recebido");
+    expect(situacaoDaConfirmacao(93_999, 94_000)).toBe("recebido_divergencia");
+    expect(situacaoDaConfirmacao(94_001, 94_000)).toBe("recebido_divergencia");
+  });
+
+  it("zero digitado é divergência, não recebido (comportamento atual — §8.4)", () => {
+    expect(situacaoDaConfirmacao(0, 94_000)).toBe("recebido_divergencia");
+    // Venda de valor zero confirmada com zero não diverge.
+    expect(situacaoDaConfirmacao(0, 0)).toBe("recebido");
+  });
+
+  it("só previsto e pendente estão em aberto; confirmado e cancelado são terminais", () => {
+    expect(recebimentoEmAberto("previsto")).toBe(true);
+    expect(recebimentoEmAberto("pendente")).toBe(true);
+    expect(recebimentoEmAberto("recebido")).toBe(false);
+    expect(recebimentoEmAberto("recebido_divergencia")).toBe(false);
+    expect(recebimentoEmAberto("cancelado")).toBe(false);
+
+    expect(recebimentoConfirmado("recebido")).toBe(true);
+    expect(recebimentoConfirmado("recebido_divergencia")).toBe(true);
+    expect(recebimentoConfirmado("cancelado")).toBe(false);
+  });
+});
+
+describe("mudança depois da confirmação — dívidas contábeis, comportamento atual", () => {
+  it("recebimento cancelado não é tocado: a função SQL só enxerga o vivo", () => {
+    expect(decidirEfeito("cancelado", 0, 90_000)).toEqual({ tipo: "nada" });
+  });
+
+  it("com divergência, a primeira alteração absorve a divergência no ajuste", () => {
+    // Líquido previsto R$ 940,00, entrou R$ 900,00. Troca para PIX (líquido
+    // R$ 1.000,00): o ajuste é contra o que entrou, não contra o líquido.
+    expect(decidirEfeito("recebido_divergencia", 90_000, 100_000)).toEqual({
+      tipo: "ajuste",
+      valorCent: 10_000,
+    });
+  });
+
+  it("alteração repetida acumula ajuste: 6% → 3% → 6% deixa +R$ 30,00 (AGENTS.md §13, decisão em aberto)", () => {
+    const recebido = 94_000; // R$ 1.000,00 a 6%, confirmado sem divergência
+    const primeira = decidirEfeito("recebido", recebido, 97_000); // vai para 3%
+    const segunda = decidirEfeito("recebido", recebido, 94_000); // volta para 6%
+
+    expect(primeira).toEqual({ tipo: "ajuste", valorCent: 3000 });
+    // A segunda compara de novo com o que entrou e ignora o ajuste anterior:
+    // não estorna os R$ 30,00. Se a clínica decidir outra regra, este teste
+    // muda junto com a função SQL `venda_alterar_pagamento`.
+    expect(segunda).toEqual({ tipo: "nada" });
+  });
+});
+
+describe("taxaDaPrevia", () => {
+  it("sem taxa manual, usa a padrão", () => {
+    expect(taxaDaPrevia({ manual: false, textoManual: "", bpPadrao: 650 })).toBe(650);
+    expect(taxaDaPrevia({ manual: false, textoManual: "3", bpPadrao: 650 })).toBe(650);
+  });
+
+  it("taxa manual vazia não vira 0% nem volta para a padrão", () => {
+    expect(taxaDaPrevia({ manual: true, textoManual: "", bpPadrao: 650 })).toBeNull();
+    expect(taxaDaPrevia({ manual: true, textoManual: " % ", bpPadrao: 650 })).toBeNull();
+  });
+
+  it("taxa manual inválida não é mostrada", () => {
+    expect(taxaDaPrevia({ manual: true, textoManual: "abc", bpPadrao: 650 })).toBeNull();
+    expect(taxaDaPrevia({ manual: true, textoManual: "101", bpPadrao: 650 })).toBeNull();
+  });
+
+  it("taxa manual digitada vale, inclusive 0 explícito", () => {
+    expect(taxaDaPrevia({ manual: true, textoManual: "4,5", bpPadrao: 650 })).toBe(450);
+    expect(taxaDaPrevia({ manual: true, textoManual: "0", bpPadrao: 650 })).toBe(0);
   });
 });

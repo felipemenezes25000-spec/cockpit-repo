@@ -2,8 +2,9 @@
 
 import { LoaderCircle, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { classeDeEntrada } from "@/components/ui/field";
+import { cn } from "@/lib/cn";
 import { classeDaOpcao, SEGMENTO_GRUPO } from "@/components/ui/segmento";
 
 /**
@@ -53,18 +54,28 @@ export function FiltrosFinanceiro({
     iniciar(() => router.replace(texto ? `${caminho}?${texto}` : caminho));
   }
 
-  // Espera a pessoa parar de digitar antes de navegar.
-  useEffect(() => {
-    if (!busca || termo === buscaAtual) return;
-    const relogio = setTimeout(() => navegar({ [busca.param]: termo.trim() }), 350);
-    return () => clearTimeout(relogio);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [termo]);
+  // Espera a pessoa parar de digitar antes de navegar. O relógio vive no
+  // evento de digitação, não num efeito: cada tecla reinicia a espera, e
+  // limpar a busca cancela a navegação que ainda estava agendada.
+  const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function cancelarEspera() {
+    if (relogio.current) clearTimeout(relogio.current);
+    relogio.current = null;
+  }
+
+  useEffect(() => cancelarEspera, []);
+
+  function aoDigitar(param: string, valor: string) {
+    setTermo(valor);
+    cancelarEspera();
+    relogio.current = setTimeout(() => navegar({ [param]: valor.trim() }), 350);
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
       {busca ? (
-        <div className="relative w-full sm:max-w-xs">
+        <div className="relative w-full sm:max-w-sm">
           <Search
             aria-hidden="true"
             size={16}
@@ -74,7 +85,7 @@ export function FiltrosFinanceiro({
           <input
             type="search"
             value={termo}
-            onChange={(e) => setTermo(e.target.value)}
+            onChange={(e) => aoDigitar(busca.param, e.target.value)}
             maxLength={80}
             aria-label={busca.placeholder}
             placeholder={busca.placeholder}
@@ -85,6 +96,7 @@ export function FiltrosFinanceiro({
               type="button"
               onClick={() => {
                 setTermo("");
+                cancelarEspera();
                 navegar({ [busca.param]: "" });
               }}
               aria-label="Limpar busca"
@@ -102,12 +114,15 @@ export function FiltrosFinanceiro({
         // Muitas opções: select. Poucas: chips.
         if (grupo.opcoes.length > 5) {
           return (
-            <label key={grupo.param} className="flex items-center gap-2">
+            // No celular o select ocupa o que sobra da linha, sem passar da
+            // borda do cartão ("Todas as categorias" é mais largo que 280 px
+            // menos o rótulo).
+            <label key={grupo.param} className="flex w-full items-center gap-2 sm:w-auto">
               <span className="rotulo">{grupo.rotulo}</span>
               <select
                 value={atual}
                 onChange={(e) => navegar({ [grupo.param]: e.target.value })}
-                className={classeDeEntrada({ altura: "compacta", largura: "auto" })}
+                className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "min-w-0 flex-1 sm:flex-none")}
               >
                 {grupo.opcoes.map((opcao) => (
                   <option key={opcao.valor} value={opcao.valor}>
@@ -124,7 +139,7 @@ export function FiltrosFinanceiro({
             key={grupo.param}
             role="group"
             aria-label={grupo.rotulo}
-            className={SEGMENTO_GRUPO}
+            className={cn(SEGMENTO_GRUPO, "w-full sm:w-auto")}
           >
             {grupo.opcoes.map((opcao) => {
               const ativa = atual === opcao.valor;

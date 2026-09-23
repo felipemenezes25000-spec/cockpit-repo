@@ -11,14 +11,14 @@ function Linha({ documento }: { documento: DocumentoDaLista }) {
     <li className="border-b border-card-border last:border-b-0">
       <Link
         href={`/formularios/${documento.id}`}
-        className="flex flex-col gap-2 px-4 py-4 transition-colors hover:bg-surface-container-low sm:px-6"
+        className="-mx-3 flex flex-col gap-2 px-3 py-4 transition-colors hover:bg-surface-container-low"
       >
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-on-surface">{documento.titulo}</span>
           <MarcaTipo tipo={documento.tipo} />
           <MarcaSituacao situacao={documento.situacao} tipo={documento.tipo} />
           {documento.exemplo ? (
-            <span className="text-xs text-outline-variant">exemplo</span>
+            <span className="text-xs text-outline">exemplo</span>
           ) : null}
         </div>
 

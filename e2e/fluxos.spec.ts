@@ -1,29 +1,14 @@
-import { expect, test, type Browser, type Page } from "@playwright/test";
-import { SENHA_LOCAL, arquivoDaSessao } from "./contas";
+import { expect, test } from "@playwright/test";
+import { SUFIXO, comoPerfil, digitarNoSeletorDePaciente, hojeNaClinica, indiceDoProjeto } from "./apoio";
+import { SENHA_LOCAL } from "./contas";
 
 /**
  * Fluxos de ponta a ponta, contra o Supabase LOCAL (ver e2e/preparar.ts).
  *
  * Cada fluxo cria o que precisa com um sufixo único, para poder rodar de novo
  * sem limpar o banco. Os perfis entram com a sessão guardada pela preparação.
+ * A assinatura por link, que é pública, mora em `assinatura.spec.ts`.
  */
-
-const SUFIXO = Date.now().toString(36);
-
-async function comoPerfil(browser: Browser, papel: "administradora" | "financeiro" | "recepcao"): Promise<Page> {
-  const contexto = await browser.newContext({
-    storageState: arquivoDaSessao(papel),
-    locale: "pt-BR",
-    timezoneId: "America/Sao_Paulo",
-  });
-  return contexto.newPage();
-}
-
-/** O dia de hoje no relógio da clínica, "AAAA-MM-DD". */
-function hojeNaClinica(deslocamentoDias = 0): string {
-  const agora = new Date(Date.now() + deslocamentoDias * 86_400_000);
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(agora);
-}
 
 test.describe("entrar", () => {
   test("senha errada avisa e não apaga o e-mail", async ({ page }) => {
@@ -48,13 +33,19 @@ test.describe("entrar", () => {
     await expect(page).toHaveURL(/\/agenda$/);
   });
 
-  test("redirecionamento pós-login não sai do sistema", async ({ page }) => {
-    await page.goto("/entrar?proximo=//exemplo.com");
-    await page.getByLabel("E-mail").fill("recepcao@cockpit.local");
-    await page.getByLabel("Senha").fill(SENHA_LOCAL);
-    await page.getByRole("button", { name: "Entrar" }).click();
-    await expect(page).toHaveURL("http://localhost:3000/");
-  });
+  // `//x`, `/	x` e `/%2F%2Fx` viram "outro site" em algum navegador: o
+  // destino depois do login fica sempre no sistema.
+  for (const proximo of ["//exemplo.com", "/%09/exemplo.com", "/%2F%2Fexemplo.com"]) {
+    test(`redirecionamento pós-login não sai do sistema (${proximo})`, async ({ page, baseURL }) => {
+      await page.goto(`/entrar?proximo=${proximo}`);
+      await page.getByLabel("E-mail").fill("recepcao@cockpit.local");
+      await page.getByLabel("Senha").fill(SENHA_LOCAL);
+      await page.getByRole("button", { name: "Entrar" }).click();
+      // A raiz do próprio sistema, na porta em que ele roda (3000 no dev, a
+      // do build no gate de produção) — nunca outro host.
+      await expect(page).toHaveURL(new URL("/", baseURL).href);
+    });
+  }
 });
 
 test.describe("permissões na interface", () => {
@@ -138,12 +129,12 @@ test.describe("pacientes", () => {
 test.describe("agenda", () => {
   test("marca pelo seletor com teclado, recusa choque e confirma", async ({ browser }) => {
     const pagina = await comoPerfil(browser, "recepcao");
-    const dia = hojeNaClinica(300 + (Date.now() % 50));
+    // Um dia longe e sem ninguém; cada navegador fica com a sua faixa de 50
+    // dias, porque os projetos rodam em sequência no mesmo banco.
+    const dia = hojeNaClinica(300 + indiceDoProjeto() * 50 + (Date.now() % 50));
 
     await pagina.goto(`/agenda/novo?dia=${dia}`);
-    const busca = pagina.getByRole("combobox", { name: /Paciente/ });
-    await busca.fill("Aline");
-    await expect(pagina.getByRole("listbox")).toBeVisible();
+    const busca = await digitarNoSeletorDePaciente(pagina, "Aline");
     await busca.press("ArrowDown");
     await expect(busca).toHaveAttribute("aria-activedescendant", /.+/);
     await busca.press("Enter");
@@ -159,7 +150,7 @@ test.describe("agenda", () => {
 
     // O mesmo horário para a mesma profissional é recusado, com o nome de quem ocupa.
     await pagina.goto(`/agenda/novo?dia=${dia}`);
-    await pagina.getByRole("combobox", { name: /Paciente/ }).fill("Beatriz");
+    await digitarNoSeletorDePaciente(pagina, "Beatriz");
     await pagina.getByRole("listbox").getByRole("option").first().click();
     await pagina.getByLabel("Quem atende").selectOption({ label: "Dra. Marina Rocha" });
     await pagina.getByLabel("Procedimento").selectOption({ label: "Toxina botulínica" });
@@ -180,25 +171,52 @@ test.describe("financeiro", () => {
     const recepcao = await comoPerfil(browser, "recepcao");
     await recepcao.goto("/financeiro/vendas/nova");
 
-    await recepcao.getByRole("combobox", { name: /Paciente/ }).fill("Carolina");
+    await digitarNoSeletorDePaciente(recepcao, "Carolina");
     await recepcao.getByRole("listbox").getByRole("option").first().click();
     await recepcao.getByLabel("Procedimento ou serviço").selectOption({ label: "Toxina botulínica" });
-    await recepcao.getByLabel("Valor original (R$)").fill("1.234,56");
     await recepcao.getByLabel("Forma de pagamento").selectOption("pix");
+
+    // Valor vazio é recusado pelo servidor (o formulário é `noValidate`).
+    const valorOriginal = recepcao.getByLabel("Valor original (R$)");
+    await valorOriginal.fill("");
+    await recepcao.getByRole("button", { name: "Registrar venda" }).click();
+    await expect(recepcao.getByText("Informe o valor original.")).toBeVisible();
+    await expect(valorOriginal).toHaveAttribute("aria-invalid", "true");
+    await expect(recepcao).toHaveURL(/\/financeiro\/vendas\/nova/);
+
+    await valorOriginal.fill("1.234,56");
     await recepcao.getByRole("button", { name: "Registrar venda" }).click();
 
     await expect(recepcao).toHaveURL(/\/financeiro\/vendas\/[0-9a-f-]{36}$/);
     const endereco = recepcao.url();
     await expect(recepcao.getByText("R$ 1.234,56").first()).toBeVisible();
+    // A venda nasce pela função do banco (0023) com o recebimento a receber.
+    await expect(recepcao.getByText(/^Previsto$/).first()).toBeVisible();
     // A recepção não confirma recebimento: a porta nem aparece.
     await expect(recepcao.getByRole("button", { name: "Confirmar recebimento" })).toHaveCount(0);
     await recepcao.close();
 
     const financeiro = await comoPerfil(browser, "financeiro");
     await financeiro.goto(endereco);
+
+    // Vazio não é R$ 0,00: a ação pede o valor.
+    const valorRecebido = financeiro.getByLabel("Valor que entrou (R$)");
+    await valorRecebido.fill("");
     await financeiro.getByRole("button", { name: "Confirmar recebimento" }).click();
-    await expect(financeiro.getByText(/^Recebido$/).first()).toBeVisible();
+    await expect(financeiro.getByText(/Informe o valor que entrou/)).toBeVisible();
+
+    // Entrou menos do que o previsto: fica registrado como divergência.
+    await valorRecebido.fill("1.200,00");
+    await financeiro.getByRole("button", { name: "Confirmar recebimento" }).click();
+    await expect(financeiro.getByText("Recebido com divergência").first()).toBeVisible();
     await expect(financeiro.getByRole("button", { name: "Confirmar recebimento" })).toHaveCount(0);
+
+    // Depois de confirmado, mudar a forma não reescreve o que entrou: a
+    // prévia avisa que entra um ajuste (novo líquido − valor recebido).
+    await financeiro.getByRole("link", { name: "Alterar forma de pagamento" }).click();
+    await financeiro.getByLabel("Nova forma de pagamento").selectOption("dinheiro");
+    await expect(financeiro.getByText(/entra um ajuste de/)).toBeVisible();
+    await expect(financeiro.getByText("+ R$ 34,56")).toBeVisible();
     await financeiro.close();
   });
 
@@ -227,7 +245,7 @@ test.describe("prontuário", () => {
     const titulo = `Avaliação E2E ${SUFIXO}`;
 
     await pagina.goto("/prontuarios/novo");
-    await pagina.getByRole("combobox", { name: /Paciente/ }).fill("Daniela");
+    await digitarNoSeletorDePaciente(pagina, "Daniela");
     await pagina.getByRole("listbox").getByRole("option").first().click();
     await pagina.getByLabel("Título").fill(titulo);
     await pagina.getByLabel("Queixa e anamnese").fill("Queixa registrada pelo teste E2E.");
@@ -237,59 +255,5 @@ test.describe("prontuário", () => {
     await expect(pagina.getByRole("heading", { name: titulo })).toBeVisible();
     await expect(pagina.getByText("Queixa registrada pelo teste E2E.").first()).toBeVisible();
     await pagina.close();
-  });
-});
-
-test.describe("documentos e assinatura por link", () => {
-  test("modelo → emissão → link → paciente assina de fora do sistema", async ({ browser }) => {
-    const admin = await comoPerfil(browser, "administradora");
-    const nomeModelo = `Contrato E2E ${SUFIXO}`;
-
-    await admin.goto("/formularios/modelos/novo");
-    await admin.getByLabel("Tipo").selectOption("contrato");
-    await admin.getByLabel("Nome").fill(nomeModelo);
-    await admin.getByLabel("Texto do documento").fill("Eu, paciente, concordo com o procedimento descrito.");
-    await admin.getByRole("button", { name: "Criar modelo" }).click();
-    await expect(admin).toHaveURL(/\/formularios\/modelos\/[0-9a-f-]{36}\/editar$/);
-    await admin.close();
-
-    // A recepção emite para a Beatriz, que tem data de nascimento cadastrada.
-    const recepcao = await comoPerfil(browser, "recepcao");
-    await recepcao.goto("/formularios/novo?paciente=c0000000-0000-4000-8000-000000000002");
-    await recepcao.getByLabel("Modelo").selectOption({ label: `Contrato · ${nomeModelo} (v1)` });
-    await recepcao.getByRole("button", { name: "Emitir e congelar o texto" }).click();
-    await expect(recepcao).toHaveURL(/\/formularios\/[0-9a-f-]{36}$/);
-
-    await recepcao.getByRole("button", { name: "Gerar link" }).click();
-    const campoLink = recepcao.getByLabel("Endereço do link de assinatura");
-    await expect(campoLink).toHaveValue(/\/assinar\//);
-    const endereco = await campoLink.inputValue();
-    const documento = recepcao.url();
-    await recepcao.close();
-
-    // A paciente, sem sessão nenhuma.
-    const contexto = await browser.newContext({ locale: "pt-BR", timezoneId: "America/Sao_Paulo" });
-    const paciente = await contexto.newPage();
-    await paciente.goto(endereco);
-    await paciente.getByLabel("Sua data de nascimento").fill("2000-01-01");
-    await paciente.getByRole("button", { name: "Abrir documento" }).click();
-    await expect(paciente.getByText(/A data não confere/)).toBeVisible();
-
-    await paciente.getByLabel("Sua data de nascimento").fill("1992-09-11");
-    await paciente.getByRole("button", { name: "Abrir documento" }).click();
-    await expect(paciente.getByText("Eu, paciente, concordo com o procedimento descrito.")).toBeVisible();
-
-    await paciente.getByLabel("Nome completo").fill("Beatriz Nogueira");
-    await paciente.getByLabel(/Li o documento acima/).check();
-    await paciente.getByRole("button", { name: "Assinar documento" }).click();
-    await expect(paciente.getByText("Beatriz Nogueira").first()).toBeVisible();
-    await expect(paciente.getByRole("button", { name: /Salvar/ })).toBeVisible();
-    await contexto.close();
-
-    // Na clínica, o documento aparece assinado, pelo canal do link.
-    const conferencia = await comoPerfil(browser, "recepcao");
-    await conferencia.goto(documento);
-    await expect(conferencia.getByText(/Assinado/).first()).toBeVisible();
-    await conferencia.close();
   });
 });

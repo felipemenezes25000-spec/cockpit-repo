@@ -81,7 +81,7 @@ function Salvar({ rotulo, perigo = false }: { rotulo: string; perigo?: boolean }
       className={cn(
         "inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius-cartao)] px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55",
         perigo
-          ? "bg-negativo text-white hover:bg-error"
+          ? "bg-negativo text-on-primary hover:bg-error"
           : "bg-primary-container text-on-primary hover:bg-primary",
       )}
     >
@@ -147,8 +147,13 @@ export function FotoDaEvolucao({
   return (
     <li
       className={cn(
-        "flex flex-col overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface",
-        imagem.arquivada && "opacity-70",
+        "flex flex-col overflow-hidden rounded-[var(--radius-cartao)] border",
+        // Arquivada não usa opacidade no cartão: derrubaria o texto terciário
+        // para ~3,2:1. O estado vem da borda tracejada e do fundo recuado,
+        // como a despesa cancelada; só a foto esmaece.
+        imagem.arquivada
+          ? "border-dashed border-outline-variant bg-surface-container-low"
+          : "border-card-border bg-surface",
       )}
     >
       {imagem.url ? (
@@ -167,7 +172,10 @@ export function FotoDaEvolucao({
             alt={descricao}
             width={imagem.largura ?? undefined}
             height={imagem.altura ?? undefined}
-            className="size-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+            className={cn(
+              "size-full object-cover transition-transform duration-200 group-hover:scale-[1.02]",
+              imagem.arquivada && "opacity-70",
+            )}
           />
         </button>
       ) : (
@@ -191,11 +199,11 @@ export function FotoDaEvolucao({
               {imagem.legenda}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-outline-variant">Sem legenda</p>
+            <p className="mt-1 text-sm text-outline">Sem legenda</p>
           )}
         </div>
 
-        <p className="mt-auto text-xs text-outline-variant">
+        <p className="mt-auto text-xs text-outline">
           {formatarTamanho(imagem.tamanhoBytes)}
           {imagem.largura && imagem.altura
             ? ` · ${imagem.largura}×${imagem.altura}`
@@ -354,7 +362,7 @@ export function FotoDaEvolucao({
             // Clique no fundo fecha. O conteúdo interrompe a propagação.
             if (evento.target === ampliada.current) ampliada.current?.close();
           }}
-          className="m-auto max-h-[92vh] max-w-[92vw] rounded-[var(--radius-painel)] bg-surface p-0 backdrop:bg-black/70"
+          className="m-auto max-h-[92vh] max-w-[92vw] rounded-[var(--radius-painel)] bg-surface p-0 backdrop:bg-on-surface/70"
         >
           <div className="flex max-h-[92vh] flex-col">
             <div className="flex items-start justify-between gap-4 border-b border-card-border px-4 py-3">

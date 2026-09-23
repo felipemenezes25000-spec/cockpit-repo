@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  CABECALHO_ID_REQUISICAO,
   erroParaRegistro,
   estruturaAusente,
+  idDeCorrelacao,
   MENSAGEM_CONEXAO,
   MENSAGEM_ESTRUTURA,
   MENSAGEM_PERMISSAO,
   mensagemDoBanco,
+  sanitizarParaRegistro,
 } from "./erros-banco";
 
 const PADRAO = "Não foi possível salvar.";
@@ -76,5 +79,49 @@ describe("erroParaRegistro — o log não guarda dado de paciente", () => {
     expect(JSON.stringify(erroParaRegistro({ code: "23505", message: "x", details: "Key (cpf)=(1)" }))).not.toContain(
       "Key",
     );
+  });
+});
+
+describe("sanitizarParaRegistro — texto solto de serviço também sai limpo", () => {
+  it.each([
+    ["e-mail", "User ana.clara+teste@clinica.com.br not found", "ana.clara"],
+    ["JWT", "invalid JWT eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.abc_DEF-123 expired", "eyJ"],
+    ["Bearer", "Authorization: Bearer sb-abc.def.ghi rejected", "sb-abc"],
+    ["token de link", "token 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 inválido", "9f86d081"],
+    ["CPF pontuado", "cpf 529.982.247-25 duplicado", "529.982"],
+    ["CPF cru", "cpf 52998224725 duplicado", "52998224725"],
+    ["telefone", "telefone (11) 98765-4321 inválido", "98765"],
+    ["data", "nascimento 1990-02-31 fora do calendário", "1990-02-31"],
+    ["data BR", "nascimento 31/02/1990 fora do calendário", "31/02/1990"],
+  ])("tira %s", (_rotulo, entrada, proibido) => {
+    expect(sanitizarParaRegistro(entrada)).not.toContain(proibido);
+  });
+
+  it("uma entrada é uma linha: quebra de linha não forja outra entrada", () => {
+    expect(sanitizarParaRegistro("falhou\r\n[cockpit] login: tudo certo")).not.toMatch(/[\r\n]/);
+  });
+
+  it("mantém o que ajuda a investigar", () => {
+    expect(sanitizarParaRegistro("permission denied for table pacientes")).toBe(
+      "permission denied for table pacientes",
+    );
+    expect(sanitizarParaRegistro("value too long for type character varying(255)")).toContain("(255)");
+  });
+
+  it("erroParaRegistro passa a mensagem pela mesma limpeza", () => {
+    const { mensagem } = erroParaRegistro({ message: "fetch failed para ana@clinica.com, cpf 52998224725" });
+    expect(mensagem).not.toContain("ana@clinica.com");
+    expect(mensagem).not.toContain("52998224725");
+    expect(mensagem).toContain("fetch failed");
+  });
+});
+
+describe("idDeCorrelacao", () => {
+  it("é curto, opaco e muda a cada operação", () => {
+    const a = idDeCorrelacao();
+    const b = idDeCorrelacao();
+    expect(a).toMatch(/^[0-9a-f]{12}$/);
+    expect(a).not.toBe(b);
+    expect(CABECALHO_ID_REQUISICAO).toBe("x-id-requisicao");
   });
 });

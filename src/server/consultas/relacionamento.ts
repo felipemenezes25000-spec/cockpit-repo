@@ -6,6 +6,7 @@ import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, inicioDoDia, partesDoDia, somarDias } from "@/lib/dates";
 import type { Prioridade, SituacaoAcompanhamento, SituacaoAtendimento, TipoPendencia } from "@/lib/dominio";
+import { ORIGENS_CONTATO, TIPOS_TAREFA, tipoContatoDaOrigem, type TipoContato } from "@/lib/relacionamento";
 
 export type PacienteContato = {
   id: string;
@@ -54,6 +55,7 @@ export type ContatoRegistrado = {
   id: string;
   pacienteId: string;
   paciente: string;
+  tipo: TipoContato;
   descricao: string;
   quando: Date;
 };
@@ -140,7 +142,9 @@ export const tarefasDeContato = cache(async (): Promise<TarefaRelacionamento[]> 
     const { data, error } = await supabase
       .from("pendencias")
       .select("id, paciente_id, tipo, descricao, prazo, prioridade, situacao, pacientes(nome, nome_social)")
-      .in("tipo", ["confirmacao", "retorno", "pesquisa", "outro"])
+      .in("tipo", [...TIPOS_TAREFA])
+      // Registro de contato também mora em `pendencias`, mas não é tarefa (0025).
+      .eq("origem", "tarefa")
       .order("prazo", { ascending: true, nullsFirst: false }).order("id")
       .range(inicio, inicio + tamanho - 1);
     if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar as tarefas de contato.");
@@ -156,7 +160,7 @@ export const tarefasDeContato = cache(async (): Promise<TarefaRelacionamento[]> 
     })));
     if ((data?.length ?? 0) < tamanho) break;
   }
-  return tarefas.filter((t) => !/^(Convite para avaliação no Google enviado|Mensagem de aniversário enviada)/.test(t.descricao));
+  return tarefas;
 });
 
 export async function aniversariosDoMes(mes: number): Promise<AniversarioRelacionamento[]> {
@@ -195,21 +199,25 @@ export const candidatasAAvaliacao = cache(async (): Promise<AvaliacaoCandidata[]
 export const contatosRegistrados = cache(async (): Promise<ContatoRegistrado[]> => {
   const supabase = await clienteServidor();
   const { data, error } = await supabase.from("pendencias")
-    .select("id, paciente_id, descricao, resolvida_em, pacientes(nome, nome_social)")
-    .eq("situacao", "resolvida")
-    .in("tipo", ["pesquisa", "outro"])
+    .select("id, paciente_id, origem, descricao, resolvida_em, pacientes(nome, nome_social)")
+    // Pela coluna `origem` (0025), não pelo texto: o banco garante que
+    // registro de contato é concluído, com paciente e hora.
+    .in("origem", ORIGENS_CONTATO)
     .not("resolvida_em", "is", null)
     .order("resolvida_em", { ascending: false })
     .limit(200);
   if (error) falhaDeConsulta("consulta relacionamento", error, "Não foi possível carregar os contatos registrados.");
 
-  return (data ?? [])
-    .filter((t) => t.paciente_id && t.resolvida_em && /^(Convite para avaliação no Google enviado|Mensagem de aniversário enviada)/.test(t.descricao))
-    .map((t) => ({
+  return (data ?? []).flatMap((t) => {
+    const tipo = tipoContatoDaOrigem(t.origem);
+    if (!tipo || !t.paciente_id || !t.resolvida_em) return [];
+    return [{
       id: t.id,
-      pacienteId: t.paciente_id!,
+      pacienteId: t.paciente_id,
       paciente: t.pacientes?.nome_social || t.pacientes?.nome || "Paciente",
+      tipo,
       descricao: t.descricao,
-      quando: new Date(t.resolvida_em!),
-    }));
+      quando: new Date(t.resolvida_em),
+    }];
+  });
 });

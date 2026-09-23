@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function NaoEncontrado() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-6">
+    <main className="flex min-h-screen items-center justify-center bg-surface px-6">
       <div className="max-w-md text-center">
         <p className="rotulo">Página não encontrada</p>
         <h1 className="t-display mt-4 text-primary">
@@ -18,6 +18,6 @@ export default function NaoEncontrado() {
           Ir para a Visão Geral
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

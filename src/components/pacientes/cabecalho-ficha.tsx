@@ -3,8 +3,7 @@ import Link from "next/link";
 import { BotaoArquivar } from "./botao-arquivar";
 import { Avatar } from "@/components/ui/avatar";
 import { BotaoLink } from "@/components/ui/button";
-import { formatarData } from "@/lib/format";
-import { descreverPrazo } from "@/lib/format";
+import { descreverPrazo, formatarData } from "@/lib/format";
 import { diasAteAniversario, idadeEm } from "@/lib/paciente";
 import type { PacienteCompleto } from "@/server/consultas/pacientes";
 
@@ -23,7 +22,7 @@ export function CabecalhoFicha({
     <div className="mb-8">
       <Link
         href="/pacientes"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
       >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         Voltar para a lista

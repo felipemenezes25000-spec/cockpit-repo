@@ -15,7 +15,9 @@ import { defineConfig } from "vitest/config";
  * num componente de cliente, mas não num teste.
  */
 export default defineConfig({
-  esbuild: { jsx: "automatic" },
+  // O tsconfig do Next usa "jsx": "preserve" (quem transforma é o Next); aqui
+  // o Vite precisa transformar ele mesmo. Desde o Vite 8 isso é do oxc.
+  oxc: { jsx: { runtime: "automatic" } },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -23,14 +25,29 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["src/**/*.test.{ts,tsx}", "testes/**/*.test.{ts,tsx}"],
-    environment: "node",
-    // Componentes pedem DOM; o resto roda em Node, que é mais rápido.
-    environmentMatchGlobs: [["**/*.test.tsx", "jsdom"]],
     setupFiles: ["./testes/preparar.ts"],
     // O relógio da clínica é São Paulo. O processo roda em UTC de propósito,
     // como na Vercel: é assim que a divergência de meia-noite aparece.
     env: { TZ: "UTC" },
     restoreMocks: true,
+    // Componentes pedem DOM; o resto roda em Node, que é mais rápido.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "node",
+          include: ["src/**/*.test.ts", "testes/**/*.test.ts"],
+          environment: "node",
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "dom",
+          include: ["src/**/*.test.tsx", "testes/**/*.test.tsx"],
+          environment: "jsdom",
+        },
+      },
+    ],
   },
 });

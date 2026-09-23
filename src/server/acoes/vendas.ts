@@ -16,12 +16,16 @@ import {
   centavosParaBanco,
   lerPercentual,
   paraCentavos,
+  percentualInformado,
 } from "@/lib/moeda";
 import {
   calcularVenda,
   formaUsaCartao,
   FORMAS_EM_ORDEM,
   parcelasValidas,
+  recebimentoEmAberto,
+  SITUACOES_EM_ABERTO,
+  situacaoDaConfirmacao,
   type FormaPagamento,
 } from "@/lib/venda";
 
@@ -45,6 +49,9 @@ export type ErrosVenda = Partial<
     | "forma"
     | "parcelas"
     | "taxa"
+    | "taxa_percentual"
+    | "taxa_justificativa"
+    | "situacao_inicial"
     | "vencimento"
     | "recebido_em"
     | "valor_recebido"
@@ -77,7 +84,7 @@ async function resolverTaxa(
   podeManual: boolean,
 ): Promise<
   | { taxaBp: number; taxaCartaoId: string | null; manual: boolean; justificativa: string | null }
-  | { erroTaxa: string }
+  | { erroTaxa: string; campo?: "taxa_percentual" | "taxa_justificativa" }
 > {
   if (!formaUsaCartao(forma)) {
     return { taxaBp: 0, taxaCartaoId: null, manual: false, justificativa: null };
@@ -130,14 +137,20 @@ async function resolverTaxa(
     return { erroTaxa: "Alterar a taxa é restrito ao financeiro e à administradora." };
   }
 
-  const bp = lerPercentual(campoTexto(dados, "taxa_percentual", 10));
+  // Vazio não é 0%: esquecer o campo não pode gravar uma taxa que ninguém
+  // escolheu. Quem quer taxa zero digita 0.
+  const textoPercentual = campoTexto(dados, "taxa_percentual", 10);
+  if (!percentualInformado(textoPercentual)) {
+    return { erroTaxa: "Informe a nova taxa. Para taxa zero, digite 0.", campo: "taxa_percentual" };
+  }
+  const bp = lerPercentual(textoPercentual);
   if (bp === null) {
-    return { erroTaxa: "Percentual inválido. Use 6 ou 6,5." };
+    return { erroTaxa: "Percentual inválido. Use 6 ou 6,5.", campo: "taxa_percentual" };
   }
 
   const justificativa = campoTexto(dados, "taxa_justificativa", 500);
   if (justificativa.length < 5) {
-    return { erroTaxa: "A taxa manual exige uma justificativa." };
+    return { erroTaxa: "A taxa manual exige uma justificativa.", campo: "taxa_justificativa" };
   }
 
   return { taxaBp: bp, taxaCartaoId, manual: true, justificativa };
@@ -166,18 +179,29 @@ export async function registrarVenda(
   const dataVenda = campoTexto(dados, "data_venda", 10);
   const forma = lerForma(campoTexto(dados, "forma", 20));
   const parcelas = Number(campoTexto(dados, "parcelas", 3) || "1");
-  const originalCent = paraCentavos(campoTexto(dados, "valor_original", 30));
+  const textoOriginal = campoTexto(dados, "valor_original", 30);
+  // Vazio não é R$ 0,00: o campo é obrigatório. Venda de valor zero existe
+  // (desconto integral), mas só quando alguém digita 0.
+  const originalCent = textoOriginal ? paraCentavos(textoOriginal) : null;
   const descontoCent = paraCentavos(campoTexto(dados, "desconto", 30) || "0");
   const situacaoInicial = campoTexto(dados, "situacao_inicial", 20);
   const vencimento = campoTexto(dados, "vencimento", 10);
   const recebidoEm = campoTexto(dados, "recebido_em", 10);
   const observacoes = campoTexto(dados, "observacoes", 2000);
+  // A chave do envio (0028): gerada uma vez pelo formulário e repetida em
+  // todo reenvio dele. Com ela, o duplo clique ou o POST reenviado devolve a
+  // venda que já nasceu, em vez de criar a segunda. Sem chave válida (tela
+  // aberta antes da mudança), a venda é registrada como sempre foi.
+  const textoDaChave = campoTexto(dados, "chave_envio", 36);
+  const chaveEnvio = uuidValido(textoDaChave) ? textoDaChave : null;
 
   if (!uuidValido(pacienteId)) erros.paciente_id = "Escolha a paciente.";
   if (!uuidValido(procedimentoId)) erros.procedimento_id = "Escolha o procedimento.";
   if (!dataValida(dataVenda)) erros.data_venda = "Informe uma data de venda válida.";
   if (!forma) erros.forma = "Escolha a forma de pagamento.";
-  if (originalCent === null) {
+  if (!textoOriginal) {
+    erros.valor_original = "Informe o valor original.";
+  } else if (originalCent === null) {
     erros.valor_original = "Valor inválido. Use 150 ou 150,00.";
   }
   if (descontoCent === null) erros.desconto = "Desconto inválido.";
@@ -186,7 +210,7 @@ export async function registrarVenda(
   }
 
   if (situacaoInicial !== "previsto" && situacaoInicial !== "recebido") {
-    erros.geral = "Escolha se o valor ainda vai entrar ou se já entrou.";
+    erros.situacao_inicial = "Escolha se o valor ainda vai entrar ou se já entrou.";
   }
   if (situacaoInicial === "previsto" && !dataValida(vencimento)) {
     erros.vencimento = "Informe a data prevista do recebimento.";
@@ -205,7 +229,10 @@ export async function registrarVenda(
 
   const taxa = await resolverTaxa(dados, forma, parcelas, await ehFinanceira());
   if ("erroTaxa" in taxa) {
-    return { erros: { taxa: taxa.erroTaxa }, valores: valoresDigitados(dados) };
+    // O erro da taxa manual fica junto do campo que precisa de conserto.
+    const errosDaTaxa: ErrosVenda = {};
+    errosDaTaxa[taxa.campo ?? "taxa"] = taxa.erroTaxa;
+    return { erros: errosDaTaxa, valores: valoresDigitados(dados) };
   }
 
   const conta = calcularVenda({
@@ -256,6 +283,8 @@ export async function registrarVenda(
     p_vencimento: situacaoInicial === "previsto" ? vencimento : dataVenda,
     p_recebido_em: (situacaoInicial === "recebido" ? recebidoEm : null) as unknown as string,
     p_descricao: procedimento.nome,
+    // Opcional na função: sem chave, o parâmetro nem vai (default nulo).
+    p_chave: chaveEnvio ?? undefined,
   });
 
   if (error || !vendaId) {
@@ -350,9 +379,17 @@ async function executarAlteracao(
     taxaCartaoId = venda.taxa_cartao_id;
     manual = true;
 
-    const bp = lerPercentual(campoTexto(dados, "taxa_percentual", 10));
+    const textoPercentual = campoTexto(dados, "taxa_percentual", 10);
+    const bp = percentualInformado(textoPercentual) ? lerPercentual(textoPercentual) : null;
     if (bp === null) {
-      return { erros: { taxa: "Percentual inválido. Use 6 ou 6,5." }, valores: valoresDigitados(dados) };
+      return {
+        erros: {
+          taxa: percentualInformado(textoPercentual)
+            ? "Percentual inválido. Use 6 ou 6,5."
+            : "Informe a nova taxa. Para taxa zero, digite 0.",
+        },
+        valores: valoresDigitados(dados),
+      };
     }
     taxaBp = bp;
   }
@@ -422,7 +459,8 @@ export async function confirmarRecebimento(
   const id = campoTexto(dados, "recebimento_id", 36);
   const vendaId = campoTexto(dados, "venda_id", 36);
   const recebidoEm = campoTexto(dados, "recebido_em", 10);
-  const valorCent = paraCentavos(campoTexto(dados, "valor_recebido", 30));
+  const textoValor = campoTexto(dados, "valor_recebido", 30);
+  const valorCent = textoValor ? paraCentavos(textoValor) : null;
 
   if (!uuidValido(id) || !uuidValido(vendaId)) {
     return { erros: { geral: "Recebimento não identificado." } };
@@ -433,6 +471,15 @@ export async function confirmarRecebimento(
   if (recebidoEm > chaveDoDia()) {
     return {
       erros: { recebido_em: "A data do recebimento não pode estar no futuro." },
+      valores: valoresDigitados(dados),
+    };
+  }
+  // Campo vazio não é R$ 0,00. Confirmado é imutável e não tem desfazer
+  // (AGENTS.md §8.4): um zero que ninguém digitou ficaria gravado para sempre
+  // como divergência. Zero digitado continua aceito — é decisão em aberto.
+  if (!textoValor) {
+    return {
+      erros: { valor_recebido: "Informe o valor que entrou. Se não entrou nada, não confirme." },
       valores: valoresDigitados(dados),
     };
   }
@@ -453,7 +500,7 @@ export async function confirmarRecebimento(
     return { erros: { geral: mensagemDoBanco(erroLeitura, "Não foi possível ler o recebimento.") } };
   }
   if (!recebimento) return { erros: { geral: "Recebimento não encontrado." } };
-  if (recebimento.situacao !== "previsto" && recebimento.situacao !== "pendente") {
+  if (!recebimentoEmAberto(recebimento.situacao)) {
     return { erros: { geral: "Este recebimento já foi confirmado ou cancelado." } };
   }
 
@@ -461,7 +508,7 @@ export async function confirmarRecebimento(
   const liquidoCent =
     centavosDoBanco(Number(recebimento.valor)) -
     centavosDoBanco(Number(recebimento.taxa_valor));
-  const situacao = valorCent === liquidoCent ? "recebido" : "recebido_divergencia";
+  const situacao = situacaoDaConfirmacao(valorCent, liquidoCent);
 
   // A condição de situação vai no UPDATE: duas pessoas confirmando ao mesmo
   // tempo não gravam duas vezes — a segunda não encontra mais a linha aberta.
@@ -473,7 +520,7 @@ export async function confirmarRecebimento(
       valor_recebido: centavosParaBanco(valorCent),
     })
     .eq("id", id)
-    .in("situacao", ["previsto", "pendente"])
+    .in("situacao", [...SITUACOES_EM_ABERTO])
     .select("id")
     .maybeSingle();
 
@@ -520,7 +567,7 @@ export async function mudarSituacaoRecebimento(
     .from("recebimentos")
     .update({ situacao: para as TransicaoRecebimento })
     .eq("id", id)
-    .in("situacao", ["previsto", "pendente"])
+    .in("situacao", [...SITUACOES_EM_ABERTO])
     .neq("situacao", para as TransicaoRecebimento)
     .select("id")
     .maybeSingle();

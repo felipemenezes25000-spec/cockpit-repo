@@ -1,8 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { FormularioProntuario } from "@/components/prontuarios/formulario-prontuario";
-import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { ehAdministradora } from "@/lib/auth";
 import { chaveDoDia, hoje } from "@/lib/dates";
@@ -50,13 +50,13 @@ export default async function PaginaNovoProntuario({
 
   return (
     <div>
-
-      <div className="mb-4">
-        <BotaoLink href="/prontuarios" variante="contorno" tamanho="sm">
-          <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-          Prontuários
-        </BotaoLink>
-      </div>
+      <Link
+        href="/prontuarios"
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+      >
+        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
+        Voltar para prontuários
+      </Link>
 
       <Card>
         <CardCabecalho

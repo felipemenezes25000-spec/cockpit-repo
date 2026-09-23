@@ -1,8 +1,9 @@
-import { Building2, ChevronRight, Clock3, ShieldCheck, Stethoscope, Users } from "lucide-react";
+import { Building2, ChevronRight, Clock3, Images, ShieldCheck, Stethoscope, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { ehAdministradora } from "@/lib/auth";
 import { listarProcedimentos } from "@/server/consultas/procedimentos";
 
 export const metadata: Metadata = {
@@ -19,7 +20,10 @@ type Secao = {
 };
 
 export default async function PaginaConfiguracoes() {
-  const procedimentos = await listarProcedimentos();
+  const [procedimentos, administradora] = await Promise.all([
+    listarProcedimentos(),
+    ehAdministradora(),
+  ]);
   const ativos = procedimentos.filter((p) => p.ativo).length;
 
   const secoes: Secao[] = [
@@ -33,6 +37,18 @@ export default async function PaginaConfiguracoes() {
           ? "Nenhum ativo"
           : `${ativos} ${ativos === 1 ? "ativo" : "ativos"} na agenda`,
     },
+    // Só a administradora: a função do banco recusa as outras pessoas.
+    ...(administradora
+      ? [
+          {
+            titulo: "Conferência das fotos",
+            descricao:
+              "Fotos de evolução com registro e sem arquivo, ou com arquivo e sem registro. Só leitura.",
+            icone: Images,
+            href: "/configuracoes/fotos",
+          },
+        ]
+      : []),
     {
       titulo: "Equipe",
       descricao: "Quem atende e quem opera o sistema, com o perfil de acesso de cada pessoa.",
@@ -61,7 +77,7 @@ export default async function PaginaConfiguracoes() {
       <Card>
         <CardCabecalho
           titulo="Configurações"
-          descricao="O que a clínica precisa definir uma vez para o resto do sistema funcionar."
+          descricao="O que a clínica precisa definir uma vez para o resto do sistema funcionar. Os itens marcados como em breve ainda não podem ser alterados por aqui."
         />
         <CardCorpo>
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -76,7 +92,7 @@ export default async function PaginaConfiguracoes() {
                     <span className="flex items-center gap-2">
                       <span className="font-medium text-on-surface">{secao.titulo}</span>
                       {!secao.href ? (
-                        <span className="rounded-[var(--radius-tag)] border border-dashed border-outline-variant px-1.5 py-0.5 text-[0.6875rem] text-outline">
+                        <span className="shrink-0 rounded-[var(--radius-tag)] border border-dashed border-outline px-1.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap text-on-surface-variant">
                           em breve
                         </span>
                       ) : null}
@@ -102,19 +118,24 @@ export default async function PaginaConfiguracoes() {
               );
 
               const classe =
-                "flex items-start gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)]";
+                "flex items-start gap-4 rounded-[var(--radius-cartao)] border p-4";
 
               return (
                 <li key={secao.titulo}>
                   {secao.href ? (
                     <Link
                       href={secao.href}
-                      className={`${classe} transition-colors hover:border-primary`}
+                      className={`${classe} border-card-border bg-surface shadow-[var(--shadow-cartao)] transition-colors hover:border-primary`}
                     >
                       {conteudo}
                     </Link>
                   ) : (
-                    <div className={`${classe} opacity-70`}>{conteudo}</div>
+                    // Seção que ainda não existe: contorno tracejado e fundo cinza, sem
+                    // seta nem hover — não é link e não finge ser. O selo "em breve"
+                    // diz o motivo em texto, não só pela aparência.
+                    <div className={`${classe} border-dashed border-outline-variant bg-surface-container-low`}>
+                      {conteudo}
+                    </div>
                   )}
                 </li>
               );

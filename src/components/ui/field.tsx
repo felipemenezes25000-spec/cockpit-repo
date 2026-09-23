@@ -54,10 +54,14 @@ function ligarAoControle(
  * lista, e no Tailwind v4 quem vence é a ordem do CSS gerado, não a da
  * classe. Foi assim que a navegação de dias da Agenda empilhou as setas em
  * cima e embaixo de uma data de largura inteira.
+ *
+ * O exemplo no campo vazio ("Maria Aparecida da Silva", "000.000.000-00") é
+ * itálico: com a cor de texto terciário, que passa no contraste, ele ficava
+ * parecido demais com um valor já preenchido.
  */
 
 const CONTROLE_BASE =
-  "rounded-[var(--radius-cartao)] border border-outline-variant bg-surface text-on-surface outline-none transition-colors placeholder:text-outline focus-visible:border-primary aria-[invalid=true]:border-error disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline";
+  "rounded-[var(--radius-cartao)] border border-outline-variant bg-surface text-on-surface transition-colors placeholder:text-outline placeholder:italic focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-[invalid=true]:border-error disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline";
 
 const ALTURA = { padrao: "h-11", compacta: "h-9" } as const;
 const LARGURA = { cheia: "w-full", auto: "w-auto", nenhuma: "" } as const;
@@ -102,9 +106,10 @@ export const ENTRADA = classeDeEntrada();
  * Borda de erro. Com `!` porque disputa `border-color` com a base, e sem ele
  * o CSS gerado punha a borda neutra por último — o campo com erro nunca ficou
  * vermelho. Controle ligado a `Campo` já ganha a borda por `aria-invalid`;
- * esta classe cobre o controle montado fora dele.
+ * esta classe cobre o controle montado fora dele. Só a borda: o foco é o
+ * anel (`outline`) da base, que continua visível com a borda vermelha.
  */
-export const ENTRADA_ERRO = "border-error! focus-visible:border-error!";
+export const ENTRADA_ERRO = "border-error!";
 
 export const AREA_TEXTO = classeDeAreaDeTexto();
 

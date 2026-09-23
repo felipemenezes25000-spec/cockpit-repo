@@ -1,8 +1,8 @@
 "use client";
 
-import { CalendarCheck, CircleAlert, LoaderCircle } from "lucide-react";
+import { CalendarCheck, CircleAlert, Info, LoaderCircle } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { SeletorPaciente } from "./seletor-paciente";
 import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
@@ -30,13 +30,14 @@ export type ValoresAtendimento = {
   observacoes: string;
 };
 
-function BotaoSalvar({ rotulo }: { rotulo: string }) {
+function BotaoSalvar({ rotulo, indisponivel }: { rotulo: string; indisponivel: boolean }) {
   const { pending } = useFormStatus();
 
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || indisponivel}
+      aria-busy={pending || undefined}
       className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? (
@@ -62,6 +63,7 @@ export function FormularioAtendimento({
   atendimentoId,
   rotuloSalvar,
   cancelarPara,
+  filtroProfissional,
 }: {
   acao: Acao;
   catalogo: CatalogoAgenda;
@@ -71,6 +73,11 @@ export function FormularioAtendimento({
   atendimentoId?: string;
   rotuloSalvar: string;
   cancelarPara: string;
+  /**
+   * O filtro de profissional que estava na agenda de onde se veio. Vai num
+   * campo oculto para o redirect depois de salvar voltar à mesma agenda.
+   */
+  filtroProfissional?: string | null;
 }) {
   const [estado, enviar] = useActionState(acao, INICIAL);
 
@@ -98,13 +105,59 @@ export function FormularioAtendimento({
   const marcar = (campo: keyof typeof erros) =>
     erros[campo] ? ({ "aria-invalid": true as const } as const) : {};
 
+  // Recusado pelo servidor: o foco vai para o primeiro campo com erro (a frase
+  // está ligada a ele e é lida junto) ou, sem campo, para o aviso geral. Sem
+  // isto, quem usa teclado ficava no botão sem saber o que corrigir.
+  const formulario = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (Object.keys(estado.erros).length === 0) return;
+    const alvo =
+      formulario.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ??
+      formulario.current?.querySelector<HTMLElement>("[data-erro-geral]");
+    alvo?.focus();
+  }, [estado]);
+
+  // Sem profissional ou sem procedimento ativo, nada pode ser marcado: a
+  // tela diz o que falta em vez de devolver "Escolha…" a cada envio.
+  const semProfissional = catalogo.profissionais.length === 0;
+  const semProcedimento = catalogo.procedimentos.length === 0;
+
   return (
-    <form action={enviar} className="flex flex-col gap-6" noValidate>
+    <form ref={formulario} action={enviar} className="flex flex-col gap-6" noValidate>
       {atendimentoId ? <input type="hidden" name="id" value={atendimentoId} /> : null}
+      {filtroProfissional ? (
+        <input type="hidden" name="filtro_profissional" value={filtroProfissional} />
+      ) : null}
+
+      {semProfissional || semProcedimento ? (
+        <div className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-2.5 text-sm text-atencao">
+          <Info aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
+          <div className="flex flex-col gap-1">
+            <p className="font-medium">Ainda não dá para marcar atendimento.</p>
+            {semProcedimento ? (
+              <p>
+                Nenhum procedimento ativo.{" "}
+                <Link href="/configuracoes/procedimentos" className="underline">
+                  Cadastre em Configurações → Procedimentos
+                </Link>
+                .
+              </p>
+            ) : null}
+            {semProfissional ? (
+              <p>
+                Nenhuma profissional ativa em “Quem atende”. A equipe ainda não tem
+                tela própria: peça à administração do sistema para cadastrá-la.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {erros.geral ? (
         <p
           role="alert"
+          tabIndex={-1}
+          data-erro-geral
           className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
@@ -249,12 +302,14 @@ export function FormularioAtendimento({
       </Campo>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
-        <BotaoSalvar rotulo={rotuloSalvar} />
+        <BotaoSalvar rotulo={rotuloSalvar} indisponivel={semProfissional || semProcedimento} />
+        {/* "Voltar sem salvar", não "Cancelar": na edição, "Cancelar" é o
+            botão que cancela o ATENDIMENTO, logo acima. */}
         <Link
           href={cancelarPara}
           className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
         >
-          Cancelar
+          Voltar sem salvar
         </Link>
       </div>
     </form>

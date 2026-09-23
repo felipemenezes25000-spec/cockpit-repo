@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  canalDeEnvioValido,
+  enderecoDoLink,
   obrigatoriasPendentes,
+  origemPublica,
+  tokenPlausivel,
   rotuloDaSituacao,
   seAssina,
   situacaoDaAnamnese,
@@ -11,7 +15,7 @@ import {
   type CampoRespondido,
 } from "./documento";
 import { formatarData, formatarHora, formatarMoeda, iniciais, descreverPrazo, capitalizar } from "./format";
-import { PRONTUARIO_EM_BRANCO, validarProntuario } from "./prontuario";
+import { PRONTUARIO_EM_BRANCO, normalizarProntuario, validarProntuario } from "./prontuario";
 import {
   caminhoCoerente,
   dimensoesSanas,
@@ -19,6 +23,7 @@ import {
   motivoDaRecusa,
   motivoDataInvalida,
   TAMANHO_MAXIMO,
+  tipoPeloConteudo,
 } from "./prontuario-imagens";
 
 const campo = (mudancas: Partial<CampoDoModelo>): CampoDoModelo => ({
@@ -92,6 +97,62 @@ describe("documento", () => {
   });
 });
 
+describe("link público", () => {
+  const token = "A".repeat(43);
+
+  it("token só no formato gerado", () => {
+    expect(tokenPlausivel(token)).toBe(true);
+    expect(tokenPlausivel("%E0%A4%A")).toBe(false);
+    expect(tokenPlausivel("../../etc")).toBe(false);
+    expect(tokenPlausivel("A".repeat(129))).toBe(false);
+    expect(tokenPlausivel(undefined)).toBe(false);
+  });
+
+  it("origem configurada: só protocolo, domínio e porta, https fora do localhost", () => {
+    const com = (configurada: string) => origemPublica({ configurada, host: "atacante.exemplo", protocolo: "http" });
+    expect(com("https://cockpit.exemplo.com.br/")).toEqual({ ok: true, origem: "https://cockpit.exemplo.com.br" });
+    expect(com("http://localhost:3000")).toEqual({ ok: true, origem: "http://localhost:3000" });
+    expect(com("http://cockpit.exemplo.com.br").ok).toBe(false);
+    expect(com("https://cockpit.exemplo.com.br/assinar").ok).toBe(false);
+    expect(com("https://usuario:senha@cockpit.exemplo.com.br").ok).toBe(false);
+    expect(com("https://cockpit.exemplo.com.br?x=1").ok).toBe(false);
+    expect(com("javascript:alert(1)").ok).toBe(false);
+    expect(com("não é url").ok).toBe(false);
+  });
+
+  it("sem configuração, o Host é conferido e http só fica em localhost", () => {
+    const sem = (host: string | null, protocolo: string | null = null) =>
+      origemPublica({ configurada: undefined, host, protocolo });
+    expect(sem("localhost:3000")).toEqual({ ok: true, origem: "http://localhost:3000" });
+    expect(sem("Cockpit.Exemplo.com.br", "https,http")).toEqual({ ok: true, origem: "https://cockpit.exemplo.com.br" });
+    expect(sem("cockpit.exemplo.com.br", "http")).toEqual({ ok: true, origem: "https://cockpit.exemplo.com.br" });
+    expect(sem("cockpit.exemplo.com.br", "javascript")).toEqual({ ok: true, origem: "https://cockpit.exemplo.com.br" });
+    expect(sem(null).ok).toBe(false);
+    expect(sem("evil.com/phish").ok).toBe(false);
+    expect(sem("user@evil.com").ok).toBe(false);
+    expect(sem("evil.com\\@bom.com").ok).toBe(false);
+  });
+
+  it("em produção, sem ORIGEM_PUBLICA, o Host de fora não vira origem do link", () => {
+    const producao = (host: string, configurada?: string) =>
+      origemPublica({ configurada, host, protocolo: "https", producao: true });
+    expect(producao("preview-123.exemplo.app").ok).toBe(false);
+    expect(producao("localhost:3000")).toEqual({ ok: true, origem: "https://localhost:3000" });
+    expect(producao("preview-123.exemplo.app", "https://cockpit.exemplo.com.br")).toEqual({
+      ok: true,
+      origem: "https://cockpit.exemplo.com.br",
+    });
+  });
+
+  it("endereço só com token válido; canal no formato da CHECK", () => {
+    expect(enderecoDoLink("https://x.com.br", token)).toBe(`https://x.com.br/assinar/${token}`);
+    expect(enderecoDoLink("https://x.com.br", "curto")).toBeNull();
+    expect(canalDeEnvioValido("")).toBe(true);
+    expect(canalDeEnvioValido("WhatsApp (11) 91234-5678")).toBe(true);
+    expect(canalDeEnvioValido("E-mail ana@x.com")).toBe(false);
+  });
+});
+
 describe("prontuário", () => {
   const valido = {
     ...PRONTUARIO_EM_BRANCO,
@@ -108,6 +169,26 @@ describe("prontuário", () => {
     expect(validarProntuario({ ...valido, titulo: "A" })).toHaveProperty("titulo");
   });
 
+  it("limites com par no banco recusam no campo, sem cortar", () => {
+    expect(validarProntuario({ ...valido, evolucao: "x".repeat(6000) })).toEqual({});
+    expect(validarProntuario({ ...valido, evolucao: "x".repeat(6001) })).toHaveProperty("evolucao");
+    expect(validarProntuario({ ...valido, titulo: "x".repeat(161) })).toHaveProperty("titulo");
+    expect(
+      validarProntuario({ ...valido, motivo: "x".repeat(241) }, { exigirMotivo: true }),
+    ).toHaveProperty("motivo");
+  });
+
+  it("quebras CRLF do envio contam como 1 caractere, como no maxLength", () => {
+    // 150 linhas: 5.999 no textarea (quebra = 1), 6.148 se o CR contasse.
+    const digitado = Array.from({ length: 150 }, () => "x".repeat(39)).join("\r\n");
+    expect(digitado.length).toBeGreaterThan(6000);
+    const valores = normalizarProntuario({ ...valido, evolucao: digitado });
+    expect(valores.evolucao).not.toContain("\r");
+    expect(valores.evolucao.length).toBeLessThanOrEqual(6000);
+    expect(validarProntuario(valores)).toEqual({});
+    expect(normalizarProntuario({ ...valido, conduta: "a\rb\r\nc" }).conduta).toBe("a\nb\nc");
+  });
+
   it("nova versão exige motivo", () => {
     expect(validarProntuario(valido, { exigirMotivo: true })).toHaveProperty("motivo");
     expect(validarProntuario({ ...valido, motivo: "corrigir dose" }, { exigirMotivo: true })).toEqual({});
@@ -122,6 +203,21 @@ describe("fotos de evolução", () => {
     expect(caminhoCoerente(id, `outro/0b2f8a3e-4c1d-4f2a-9b3c-1d2e3f4a5b6c.jpg`)).toBe(false);
     expect(caminhoCoerente(id, `${id}/maria-antes.jpg`)).toBe(false);
     expect(caminhoCoerente(id, `${id}/0b2f8a3e-4c1d-4f2a-9b3c-1d2e3f4a5b6c.gif`)).toBe(false);
+    // O ponto é literal, e maiúscula não passa: o banco só aceita minúsculo.
+    expect(caminhoCoerente(id, `${id}/0b2f8a3e-4c1d-4f2a-9b3c-1d2e3f4a5b6cXjpg`)).toBe(false);
+    expect(caminhoCoerente(id, `${id}/0B2F8A3E-4C1D-4F2A-9B3C-1D2E3F4A5B6C.jpg`)).toBe(false);
+    expect(caminhoCoerente(id, `${id}/0b2f8a3e-4c1d-4f2a-9b3c-1d2e3f4a5b6c.JPG`)).toBe(false);
+  });
+
+  it("tipo pelo conteúdo: os primeiros bytes, não o nome", () => {
+    expect(tipoPeloConteudo(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe("image/jpeg");
+    expect(
+      tipoPeloConteudo(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+    ).toBe("image/png");
+    expect(tipoPeloConteudo(new TextEncoder().encode("RIFF\u0000\u0000\u0000\u0000WEBPVP8 "))).toBe("image/webp");
+    expect(tipoPeloConteudo(new TextEncoder().encode("GIF89a"))).toBeNull();
+    expect(tipoPeloConteudo(new TextEncoder().encode("<svg onload=x>"))).toBeNull();
+    expect(tipoPeloConteudo(new Uint8Array([]))).toBeNull();
   });
 
   it("tipo, tamanho e data de captura", () => {

@@ -129,8 +129,11 @@ export function FormularioNovaSenha() {
   if (situacao === "invalido") {
     return (
       <div className="space-y-4 text-sm">
-        <p role="alert" className="text-on-error-container">O link expirou ou não é válido. Solicite outro para continuar.</p>
-        <Link href="/recuperar-senha" className="font-medium text-primary hover:underline">Pedir outro link</Link>
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-on-error-container">
+          <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
+          O link expirou ou não é válido. Solicite outro para continuar.
+        </p>
+        <Link href="/recuperar-senha" className="inline-flex min-h-6 items-center font-medium text-primary hover:underline">Pedir outro link</Link>
       </div>
     );
   }
@@ -139,15 +142,15 @@ export function FormularioNovaSenha() {
     <form onSubmit={salvar} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="nova-senha" className="rotulo">Nova senha</label>
-        <input id="nova-senha" name="nova-senha" type="password" autoComplete="new-password" minLength={12} required value={senha} onChange={(evento) => definirSenha(evento.target.value)} className={ENTRADA} />
-        <p className="text-xs text-outline">Use pelo menos 12 caracteres.</p>
+        <input id="nova-senha" name="nova-senha" type="password" autoComplete="new-password" minLength={12} required aria-invalid={erro ? true : undefined} aria-describedby={erro ? "dica-nova-senha erro-nova-senha" : "dica-nova-senha"} value={senha} onChange={(evento) => definirSenha(evento.target.value)} className={ENTRADA} />
+        <p id="dica-nova-senha" className="text-xs text-outline">Use pelo menos 12 caracteres.</p>
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="confirmacao-senha" className="rotulo">Confirme a nova senha</label>
-        <input id="confirmacao-senha" name="confirmacao-senha" type="password" autoComplete="new-password" required value={confirmacao} onChange={(evento) => definirConfirmacao(evento.target.value)} className={ENTRADA} />
+        <input id="confirmacao-senha" name="confirmacao-senha" type="password" autoComplete="new-password" required aria-invalid={erro ? true : undefined} aria-describedby={erro ? "erro-nova-senha" : undefined} value={confirmacao} onChange={(evento) => definirConfirmacao(evento.target.value)} className={ENTRADA} />
       </div>
       {erro ? (
-        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
+        <p id="erro-nova-senha" role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-2.5 text-sm text-on-error-container">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erro}
         </p>

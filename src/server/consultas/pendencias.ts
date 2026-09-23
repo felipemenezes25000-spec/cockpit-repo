@@ -1,11 +1,10 @@
 import "server-only";
 
-import { falhaDeConsulta } from "@/lib/registro";
-
 import { cache } from "react";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataDoBanco, diferencaEmDias } from "@/lib/dates";
 import type { Database } from "@/lib/supabase/tipos-banco";
+import { todasAsLinhas } from "./todas-as-linhas";
 
 export type TipoPendencia = Database["public"]["Enums"]["tipo_pendencia"];
 export type Prioridade = Database["public"]["Enums"]["prioridade"];
@@ -46,19 +45,32 @@ const DESTINO: Record<TipoPendencia, string> = {
 
 const PESO: Record<Prioridade, number> = { alta: 0, media: 1, baixa: 2 };
 
-/** Pendências em aberto: alta primeiro, depois o prazo mais próximo. */
+/**
+ * Pendências em aberto: alta primeiro, depois o prazo mais próximo.
+ *
+ * Lidas inteiras, em blocos (`todasAsLinhas`): o menu e a Visão Geral contam
+ * estas linhas ("N em aberto", "N de prioridade alta") e a ordem final é
+ * feita aqui. O PostgREST corta cada resposta em 1000 linhas sem erro — a
+ * contagem sairia menor e a mais urgente poderia ficar de fora, calada.
+ */
 export const pendenciasAbertas = cache(async (): Promise<PendenciaAberta[]> => {
   const supabase = await clienteServidor();
 
-  const { data, error } = await supabase
-    .from("pendencias")
-    .select("id, tipo, descricao, prazo, prioridade, pacientes ( nome, nome_social )")
-    .eq("situacao", "aberta")
-    .order("prazo", { ascending: true, nullsFirst: false });
+  const linhas = await todasAsLinhas(
+    (inicio, fim) =>
+      supabase
+        .from("pendencias")
+        .select("id, tipo, descricao, prazo, prioridade, pacientes ( nome, nome_social )")
+        .eq("situacao", "aberta")
+        // O `id` desempata o prazo: sem ordem única, blocos repetem ou pulam linhas.
+        .order("prazo", { ascending: true, nullsFirst: false })
+        .order("id")
+        .range(inicio, fim),
+    "consulta pendencias",
+    "Não foi possível carregar as pendências.",
+  );
 
-  if (error) falhaDeConsulta("consulta pendencias", error, "Não foi possível carregar as pendências.");
-
-  return (data ?? [])
+  return linhas
     .map((linha) => {
       const prazo = linha.prazo ? dataDoBanco(linha.prazo) : null;
       return {

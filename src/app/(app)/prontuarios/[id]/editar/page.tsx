@@ -1,10 +1,10 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { EstruturaPendenteProntuario } from "@/components/prontuarios/estrutura-pendente";
 import { FormularioProntuario } from "@/components/prontuarios/formulario-prontuario";
-import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { ehAdministradora } from "@/lib/auth";
 import { formatarData, formatarHora } from "@/lib/format";
@@ -69,23 +69,19 @@ export default async function PaginaEditarProntuario({
 
   return (
     <div>
-
-      <div className="mb-4">
-        <BotaoLink
-          href={`/prontuarios/${prontuario.id}`}
-          variante="contorno"
-          tamanho="sm"
-        >
-          <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-          Prontuário
-        </BotaoLink>
-      </div>
+      <Link
+        href={`/prontuarios/${prontuario.id}`}
+        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
+      >
+        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
+        Voltar para o prontuário
+      </Link>
 
       <Card>
         <CardCabecalho
           titulo="Nova versão do prontuário"
-          descricao={`${prontuario.paciente} · versão atual ${
-            atual ? atual.numero : 0
+          descricao={`${prontuario.paciente} · ${
+            atual ? `versão atual ${atual.numero}` : "sem versão registrada"
           }`}
         />
         <CardCorpo>

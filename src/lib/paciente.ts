@@ -1,3 +1,4 @@
+import { semAcento, termoDeBusca } from "./busca";
 import { chaveDoDia, dataValida, diferencaEmDias, instanteNaClinica, partesDoDia } from "./dates";
 
 /**
@@ -220,6 +221,15 @@ function cortar(valor: string, limite: number): string {
 }
 
 /**
+ * Campo de uma linha só: espaço repetido (colado de planilha, dois toques na
+ * barra) vira um, para "Ana  Maria" e "Ana Maria" serem o mesmo nome na busca
+ * e na tela. Observações ficam de fora — ali a quebra de linha é conteúdo.
+ */
+function cortarLinha(valor: string, limite: number): string {
+  return cortar(valor.replace(/\s+/g, " "), limite);
+}
+
+/**
  * Deixa os valores no formato que o banco guarda.
  *
  * Documento e telefone viram só dígitos, e-mail vira minúsculo, UF vira
@@ -230,20 +240,22 @@ function cortar(valor: string, limite: number): string {
  */
 export function normalizarPaciente(valores: ValoresPaciente): ValoresPaciente {
   return {
-    nome: cortar(valores.nome, LIMITE.nome),
-    nome_social: cortar(valores.nome_social, LIMITE.nome_social),
+    nome: cortarLinha(valores.nome, LIMITE.nome),
+    nome_social: cortarLinha(valores.nome_social, LIMITE.nome_social),
     cpf: apenasDigitos(valores.cpf),
     data_nascimento: valores.data_nascimento.trim().slice(0, 10),
     telefone: apenasDigitos(valores.telefone),
     email: cortar(valores.email, LIMITE.email).toLowerCase(),
-    origem: cortar(valores.origem, LIMITE.origem),
+    origem: cortarLinha(valores.origem, LIMITE.origem),
     observacoes: cortar(valores.observacoes, LIMITE.observacoes),
-    cep: apenasDigitos(valores.cep).slice(0, 8),
-    logradouro: cortar(valores.logradouro, LIMITE.endereco),
-    numero: cortar(valores.numero, 20),
-    complemento: cortar(valores.complemento, 60),
-    bairro: cortar(valores.bairro, LIMITE.endereco),
-    cidade: cortar(valores.cidade, LIMITE.endereco),
+    // Sem cortar: CEP com dígito a mais é erro de digitação, e cortar em 8
+    // gravaria outro CEP em silêncio. `validarPaciente` recusa.
+    cep: apenasDigitos(valores.cep),
+    logradouro: cortarLinha(valores.logradouro, LIMITE.endereco),
+    numero: cortarLinha(valores.numero, 20),
+    complemento: cortarLinha(valores.complemento, 60),
+    bairro: cortarLinha(valores.bairro, LIMITE.endereco),
+    cidade: cortarLinha(valores.cidade, LIMITE.endereco),
     uf: cortar(valores.uf, 2).toUpperCase(),
   };
 }
@@ -255,8 +267,16 @@ export function normalizarPaciente(valores: ValoresPaciente): ValoresPaciente {
  * função. Mudar uma regra aqui muda nos três — que é o ponto.
  *
  * Espera valores já normalizados.
+ *
+ * `cepGravado` é o CEP que a ficha já tem no banco. Antes a regra dos 8
+ * dígitos não existia, e há fichas com CEP incompleto: sem essa exceção, a
+ * edição de qualquer outro campo (o telefone, por exemplo) seria recusada
+ * até alguém descobrir o CEP certo. CEP novo ou alterado segue a regra.
  */
-export function validarPaciente(v: ValoresPaciente): ErrosPaciente {
+export function validarPaciente(
+  v: ValoresPaciente,
+  opcoes: { cepGravado?: string | null } = {},
+): ErrosPaciente {
   const erros: ErrosPaciente = {};
 
   if (v.nome.length < 3) {
@@ -288,6 +308,10 @@ export function validarPaciente(v: ValoresPaciente): ErrosPaciente {
     } else if (v.data_nascimento > chaveDoDia()) {
       erros.data_nascimento = "A data de nascimento não pode estar no futuro.";
     }
+  }
+
+  if (v.cep && v.cep.length !== 8 && v.cep !== opcoes.cepGravado) {
+    erros.cep = "CEP inválido. Use os 8 números.";
   }
 
   if (v.uf && !UFS.includes(v.uf as (typeof UFS)[number])) {
@@ -369,4 +393,33 @@ export function formatarEndereco(endereco: Endereco): string {
   const linha1 = [rua, endereco.complemento].filter(Boolean).join(" — ");
   const cidadeUf = [endereco.cidade, endereco.uf].filter(Boolean).join("/");
   return [linha1, endereco.bairro, cidadeUf].filter(Boolean).join(" · ");
+}
+
+/**
+ * Os filtros `or` da busca na lista de pacientes (PostgREST), ou `null` sem termo.
+ *
+ * `termoDeBusca` troca o `_` por espaço — no nome ele seria curinga do `ilike`.
+ * No e-mail o `_` é comum ("ana_silva@..."), então o alvo `email` usa o termo
+ * com o `_` preservado: como curinga ele casa com qualquer caractere, inclusive
+ * o próprio `_`, e o e-mail é achado. O que tem significado na gramática do
+ * PostgREST (`,()"\*%`) continua limpo.
+ */
+export function alvosDaBuscaDePacientes(bruto: string): string[] | null {
+  const termo = termoDeBusca(bruto);
+  if (!termo) return null;
+
+  const termoEmail = termoDeBusca(bruto.replace(/_/g, "\u0001")).replace(/\u0001/g, "_");
+
+  const alvos = [
+    `busca.ilike.%${semAcento(termo)}%`,
+    `email.ilike.%${termoEmail}%`,
+    `telefone.ilike.%${termo}%`,
+  ];
+
+  const digitos = apenasDigitos(termo);
+  if (digitos.length >= 3) {
+    alvos.push(`cpf.ilike.%${digitos}%`, `telefone.ilike.%${digitos}%`);
+  }
+
+  return alvos;
 }

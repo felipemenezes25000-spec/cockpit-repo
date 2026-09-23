@@ -45,7 +45,7 @@ export function ListaProntuarios({
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/prontuarios/${prontuario.id}`}
-                className="font-medium text-on-surface transition-colors hover:text-primary"
+                className="inline-flex min-h-6 items-center font-medium text-on-surface transition-colors hover:text-primary"
               >
                 {prontuario.titulo}
               </Link>

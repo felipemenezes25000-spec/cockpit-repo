@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
 import type { Database } from "./tipos-banco";
@@ -29,5 +30,21 @@ export async function clienteServidor() {
         }
       },
     },
+  });
+}
+
+/**
+ * Cliente sem sessão, para a superfície pública do link (`/assinar`).
+ *
+ * As funções do link decidem pelo token e pela data de nascimento, nunca pela
+ * sessão. Mas se alguém da equipe estiver logado no navegador em que a
+ * paciente abre o link — o tablet do balcão —, `clienteServidor()` mandaria os
+ * cookies dessa pessoa, e o banco registraria na auditoria a funcionária como
+ * autora do que a paciente respondeu. Sem cookies, a chamada chega como
+ * `anon`: quem responde e quem assina é a paciente.
+ */
+export function clienteAnonimo() {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 }

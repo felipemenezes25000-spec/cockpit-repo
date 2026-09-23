@@ -90,14 +90,20 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
       <h2 id="indicadores" className="sr-only">
         Indicadores principais
       </h2>
-      <div className="grid grid-cols-2 gap-6 md:grid-cols-3 xl:grid-cols-6">
+      {/* Seis colunas só a partir de 2xl: em xl cada cartão ficava com uns
+          100 px úteis, e "R$ 16.940,00" passava da borda. No celular, os dois
+          financeiros ocupam a linha inteira pelo mesmo motivo. */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 2xl:grid-cols-6">
         {lista.map((ind) => {
           const Icone = ind.icone;
           return (
             <Link
               key={ind.rotulo}
               href={ind.href}
-              className="flex flex-col rounded-[var(--radius-cartao)] border border-card-border bg-card p-6 transition-colors hover:border-primary-fixed-dim"
+              className={cn(
+                "flex min-w-0 flex-col rounded-[var(--radius-cartao)] border border-card-border bg-card p-4 transition-colors sm:p-6 hover:border-primary-fixed-dim",
+                ind.financeiro && "col-span-2 md:col-span-1",
+              )}
             >
               <div className="mb-4 flex items-start justify-between gap-2">
                 <h3 className="rotulo tracking-wider">{ind.rotulo}</h3>
@@ -112,7 +118,7 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
               <span
                 className={cn(
                   "tabular mb-2 text-on-surface",
-                  ind.financeiro ? "t-headline mt-auto" : "t-display",
+                  ind.financeiro ? "mt-auto text-xl font-semibold" : "t-display",
                 )}
               >
                 {ind.valor}
@@ -132,7 +138,7 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
               </span>
 
               {ind.financeiro && exemplo ? (
-                <span className="text-[0.625rem] text-outline-variant uppercase">
+                <span className="text-[0.625rem] text-outline uppercase">
                   Valor demonstrativo
                 </span>
               ) : null}

@@ -24,18 +24,22 @@ export function ItemLinhaDoDia({ atendimento }: { atendimento: AtendimentoDoDia 
       href="/agenda"
       aria-label={`Ver atendimento de ${atendimento.paciente} às ${formatarHora(atendimento.inicio)}`}
       className={cn(
-        "group relative mb-2 flex items-center justify-between gap-4 rounded-[var(--radius-cartao)] border p-4 transition-all",
+        "group relative mb-2 flex items-center justify-between gap-2 rounded-[var(--radius-cartao)] border p-3 transition-all sm:gap-4 sm:p-4",
         /* O atendimento em curso sobe: fundo branco, sombra e ponto pulsando */
         emCurso
           ? "border-card-border bg-surface shadow-[var(--shadow-realce)]"
           : "border-transparent hover:border-card-border hover:bg-surface",
-        encerrado && "opacity-70",
+        // Encerrado (cancelado/ausente) já se distingue pelo nome riscado e
+        // pelo selo. Sem opacidade: ela derrubava o texto abaixo de 4,5:1.
       )}
     >
-      <span className="flex min-w-0 items-center gap-4 sm:gap-6">
+      {/* Hora, ponto e texto apertam no celular: a 320 px sobravam uns 78 px
+          para o nome, e o selo vazava por cima da seta. As medidas casam com
+          a linha do tempo de `day-rail.tsx`. */}
+      <span className="flex min-w-0 items-center gap-3 sm:gap-6">
         <span
           className={cn(
-            "tabular w-12 shrink-0 text-right text-sm",
+            "tabular w-10 shrink-0 text-right text-sm sm:w-12",
             emCurso ? "font-bold text-primary" : "font-medium text-on-surface-variant",
           )}
         >
@@ -83,7 +87,7 @@ export function ItemLinhaDoDia({ atendimento }: { atendimento: AtendimentoDoDia 
         size={22}
         strokeWidth={1.5}
         className={cn(
-          "shrink-0 transition-colors",
+          "hidden shrink-0 transition-colors sm:block",
           emCurso ? "text-primary" : "text-outline-variant group-hover:text-primary",
         )}
       />
@@ -97,9 +101,9 @@ export function IntervaloLivre({ minutos }: { minutos: number }) {
 
   return (
     <div className="relative flex items-center" style={{ height: `${altura}px` }}>
-      <span className="w-12 shrink-0" />
+      <span className="w-10 shrink-0 sm:w-12" />
       <span className="w-3 shrink-0" />
-      <span className="ml-10 text-xs text-outline sm:ml-12">
+      <span className="ml-8 text-xs text-outline sm:ml-12">
         {formatarIntervalo(minutos)} sem atendimento
       </span>
     </div>

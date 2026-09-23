@@ -53,16 +53,9 @@ export async function PendenciasDaClinica() {
             return (
               <ItemLista key={pendencia.id}>
                 <div className="mb-2 flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <span className="rounded-[var(--radius-tag)] bg-surface-container-low px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
-                      {ROTULO_PENDENCIA[pendencia.tipo]}
-                    </span>
-                    {pendencia.paciente ? (
-                      <span className="truncate text-sm font-medium text-on-surface">
-                        {pendencia.paciente}
-                      </span>
-                    ) : null}
-                  </div>
+                  <span className="rounded-[var(--radius-tag)] bg-surface-container-low px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
+                    {ROTULO_PENDENCIA[pendencia.tipo]}
+                  </span>
 
                   <Link
                     href={pendencia.destino}
@@ -78,6 +71,14 @@ export async function PendenciasDaClinica() {
                     <ChevronRight aria-hidden="true" size={14} strokeWidth={1.75} />
                   </Link>
                 </div>
+
+                {/* O nome em linha própria, inteiro: dividindo a linha com
+                    "Resolver", truncava mesmo com espaço sobrando embaixo. */}
+                {pendencia.paciente ? (
+                  <p className="mb-1 text-sm font-medium break-words text-on-surface">
+                    {pendencia.paciente}
+                  </p>
+                ) : null}
 
                 <p className="mb-3 text-sm text-on-surface-variant">
                   {pendencia.descricao}

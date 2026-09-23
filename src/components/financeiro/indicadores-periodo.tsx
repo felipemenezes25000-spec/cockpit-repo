@@ -22,8 +22,14 @@ type Cartao = {
   valor: number | null;
   apoio: string;
   icone: LucideIcon;
-  /** Sem semântica forçada: só o resultado e o vencido ganham cor. */
-  tom?: "positivo" | "negativo" | "atencao";
+  /** Cor do valor. Sem semântica forçada: só entrada, saída e resultado. */
+  tom?: "positivo" | "negativo";
+  /**
+   * O apoio em vermelho, com o valor principal neutro: "já vencido" no A
+   * receber. Vencido é dinheiro que já deveria ter entrado — negativo, como
+   * na Visão Geral (`overview/metric-cards.tsx`), não atenção.
+   */
+  apoioNegativo?: boolean;
 };
 
 /**
@@ -80,10 +86,10 @@ export function IndicadoresPeriodo({
       valor: n.aReceber,
       apoio:
         n.aReceberVencido > 0
-          ? `${formatarMoeda(n.aReceberVencido)} já venceu`
+          ? `${formatarMoeda(n.aReceberVencido)} já vencido`
           : "em aberto hoje",
       icone: CalendarClock,
-      tom: n.aReceberVencido > 0 ? "atencao" : undefined,
+      apoioNegativo: n.aReceberVencido > 0,
     },
     {
       // Despesa é sempre vermelha: dinheiro saindo, na convenção contábil.
@@ -116,7 +122,11 @@ export function IndicadoresPeriodo({
   ];
 
   return (
-    <section aria-label="Indicadores do período">
+    <section aria-labelledby="indicadores-titulo">
+      {/* Os cartões são h3: o h2 da seção mantém a ordem dos títulos. */}
+      <h2 id="indicadores-titulo" className="sr-only">
+        Indicadores do período
+      </h2>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {cartoes.map((cartao) => {
           const Icone = cartao.icone;
@@ -131,21 +141,19 @@ export function IndicadoresPeriodo({
                   aria-hidden="true"
                   size={16}
                   strokeWidth={1.5}
-                  className={cn(
-                    "shrink-0",
-                    cartao.tom === "negativo" ? "text-negativo" : "text-outline-variant",
-                  )}
+                  // O ícone é neutro em todos, como na Visão Geral: a cor já
+                  // está no valor.
+                  className="shrink-0 text-outline-variant"
                 />
               </div>
 
               <span
                 className={cn(
                   "tabular text-lg font-semibold",
-                  cartao.valor === null && "text-outline-variant",
+                  cartao.valor === null && "text-outline",
                   cartao.tom === "positivo" && "text-positivo",
                   cartao.tom === "negativo" && "text-negativo",
                   cartao.valor !== null && !cartao.tom && "text-on-surface",
-                  cartao.tom === "atencao" && "text-on-surface",
                 )}
                 title={cartao.valor === null ? RESTRITO : undefined}
               >
@@ -155,14 +163,14 @@ export function IndicadoresPeriodo({
               <span
                 className={cn(
                   "mt-1 text-xs",
-                  cartao.tom === "atencao" ? "font-medium text-atencao" : "text-outline",
+                  cartao.apoioNegativo ? "font-medium text-negativo" : "text-outline",
                 )}
               >
                 {cartao.apoio}
               </span>
 
               {exemplo && cartao.valor !== null ? (
-                <span className="mt-1 text-[0.625rem] text-outline-variant uppercase">
+                <span className="mt-1 text-[0.625rem] text-outline uppercase">
                   Demonstrativo
                 </span>
               ) : null}

@@ -1,6 +1,7 @@
 import { CalendarX2, Pencil } from "lucide-react";
 import Link from "next/link";
 import { BotoesSituacao } from "./botoes-situacao";
+import { FocoAposAcao } from "./foco-apos-acao";
 import { Avatar } from "@/components/ui/avatar";
 import { BotaoLink } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/empty-state";
@@ -11,15 +12,42 @@ import type { AtendimentoDoDia } from "@/server/consultas/agenda";
 /**
  * Os atendimentos do dia, um cartão por horário, com as ações no próprio
  * cartão: a recepção confirma, inicia e conclui sem sair da lista.
+ *
+ * Cada botão e o link de editar levam o nome da paciente no nome acessível:
+ * numa lista, "Confirmar" sozinho não diz de quem.
  */
 export function ListaDoDia({
   atendimentos,
   dia,
+  profissional,
+  profissionalId,
+  enderecoSemFiltro,
 }: {
   atendimentos: AtendimentoDoDia[];
   dia: string;
+  /** Nome da profissional filtrada, quando há filtro. */
+  profissional?: string | null;
+  /** Id da profissional filtrada: vai para a edição, que volta com o filtro. */
+  profissionalId?: string | null;
+  /** O mesmo dia, sem o filtro — a saída do estado vazio filtrado. */
+  enderecoSemFiltro?: string;
 }) {
   if (atendimentos.length === 0) {
+    if (profissional && enderecoSemFiltro) {
+      return (
+        <EstadoVazio
+          icone={CalendarX2}
+          titulo={`Nenhum horário de ${profissional} neste dia`}
+          descricao="Pode haver atendimentos de outras profissionais."
+          acao={
+            <BotaoLink href={enderecoSemFiltro} tamanho="sm">
+              Ver a agenda de todas
+            </BotaoLink>
+          }
+        />
+      );
+    }
+
     return (
       <EstadoVazio
         icone={CalendarX2}
@@ -61,14 +89,14 @@ export function ListaDoDia({
                 <Avatar nome={atendimento.paciente} tamanho="sm" />
                 <Link
                   href={`/pacientes/${atendimento.pacienteId}`}
-                  className="font-medium text-on-surface hover:text-primary hover:underline"
+                  className="inline-flex min-h-6 min-w-0 items-center font-medium break-words text-on-surface hover:text-primary hover:underline"
                 >
                   {atendimento.paciente}
                 </Link>
                 <SituacaoChip situacao={atendimento.situacao} compacto />
               </div>
 
-              <p className="text-sm text-on-surface-variant">
+              <p className="text-sm break-words text-on-surface-variant">
                 {atendimento.procedimento}
                 <span className="text-outline">
                   {" "}
@@ -80,23 +108,34 @@ export function ListaDoDia({
               </p>
 
               {atendimento.observacoes ? (
-                <p className="text-xs text-outline">{atendimento.observacoes}</p>
+                <p className="text-xs break-words whitespace-pre-line text-outline">
+                  {atendimento.observacoes}
+                </p>
               ) : null}
 
-              <div className="mt-1 flex flex-wrap items-center gap-2">
+              <FocoAposAcao
+                situacao={atendimento.situacao}
+                className="mt-1 flex flex-wrap items-start gap-2 rounded-[var(--radius-cartao)]"
+              >
                 <BotoesSituacao
                   atendimentoId={atendimento.id}
                   situacao={atendimento.situacao}
+                  paciente={atendimento.paciente}
                   compacto
                 />
                 <Link
-                  href={`/agenda/${atendimento.id}/editar`}
+                  href={
+                    profissionalId
+                      ? `/agenda/${atendimento.id}/editar?profissional=${profissionalId}`
+                      : `/agenda/${atendimento.id}/editar`
+                  }
+                  aria-label={`Remarcar ou editar: ${atendimento.paciente}`}
                   className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] px-3 text-xs font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
                 >
                   <Pencil aria-hidden="true" size={13} strokeWidth={1.75} />
                   Remarcar ou editar
                 </Link>
-              </div>
+              </FocoAposAcao>
             </div>
           </li>
         );
