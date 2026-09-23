@@ -35,75 +35,72 @@ export function ListaProntuarios({
   }
 
   return (
-    <ul className="divide-y divide-card-border">
+    <ul className="flex flex-col gap-3.5">
       {prontuarios.map((prontuario) => (
         <li
           key={prontuario.id}
-          className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 lg:flex-row lg:items-center lg:justify-between"
+          className="premium-interactive relative isolate overflow-hidden rounded-[var(--radius-cartao)] border border-card-border/85 bg-linear-to-br from-white/95 to-surface-container-low/45 p-4 shadow-[var(--shadow-cartao)] sm:p-5"
         >
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href={`/prontuarios/${prontuario.id}`}
-                className="inline-flex min-h-6 items-center font-medium text-on-surface transition-colors hover:text-primary"
-              >
-                {prontuario.titulo}
-              </Link>
-              {prontuario.exemplo ? (
-                <span className="rounded-[var(--radius-tag)] bg-atencao-fundo px-2 py-0.5 text-xs font-medium text-atencao">
-                  exemplo
-                </span>
-              ) : null}
-            </div>
+          <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-secondary-fixed/30 blur-3xl" />
 
-            <p className="mt-1 text-sm text-on-surface-variant">
-              {prontuario.paciente}
-              {prontuario.contato ? (
-                <span className="text-outline"> · {prontuario.contato}</span>
-              ) : null}
-            </p>
-
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-outline">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays aria-hidden="true" size={14} strokeWidth={1.75} />
-                {formatarData(prontuario.dataRegistro)}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-start gap-3.5">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/55 bg-primary-fixed/35 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                <FileText aria-hidden="true" size={20} strokeWidth={1.65} />
               </span>
 
-              {prontuario.ultimaVersao ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <History aria-hidden="true" size={14} strokeWidth={1.75} />
-                  Versão {prontuario.ultimaVersao.numero} ·{" "}
-                  {formatarData(prontuario.ultimaVersao.criadoEm)} às{" "}
-                  {formatarHora(prontuario.ultimaVersao.criadoEm)}
-                </span>
-              ) : null}
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/prontuarios/${prontuario.id}`}
+                    className="inline-flex min-h-6 items-center text-[0.95rem] font-semibold text-on-surface transition-colors hover:text-primary hover:underline"
+                  >
+                    {prontuario.titulo}
+                  </Link>
+                  {prontuario.exemplo ? (
+                    <span className="rounded-full border border-atencao-borda/70 bg-atencao-fundo/75 px-2 py-0.5 text-[0.68rem] font-medium text-atencao">
+                      exemplo
+                    </span>
+                  ) : null}
+                </div>
 
-              {prontuario.atendimento ? (
-                <span>
-                  {prontuario.atendimento.procedimento ?? "Atendimento"} ·{" "}
-                  {formatarData(prontuario.atendimento.inicio)}
-                </span>
-              ) : null}
+                <p className="mt-1.5 text-sm font-medium text-on-surface-variant">
+                  {prontuario.paciente}
+                  {prontuario.contato ? <span className="font-normal text-outline"> · {prontuario.contato}</span> : null}
+                </p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-outline">
+                  <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border/75 bg-surface/70 px-2.5">
+                    <CalendarDays aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary/70" />
+                    {formatarData(prontuario.dataRegistro)}
+                  </span>
+
+                  {prontuario.ultimaVersao ? (
+                    <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border/75 bg-surface/70 px-2.5">
+                      <History aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary/70" />
+                      Versão {prontuario.ultimaVersao.numero} · {formatarData(prontuario.ultimaVersao.criadoEm)} às {formatarHora(prontuario.ultimaVersao.criadoEm)}
+                    </span>
+                  ) : null}
+
+                  {prontuario.atendimento ? (
+                    <span className="inline-flex min-h-7 items-center rounded-full border border-card-border/75 bg-surface/70 px-2.5">
+                      {prontuario.atendimento.procedimento ?? "Atendimento"} · {formatarData(prontuario.atendimento.inicio)}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <BotaoLink
-              href={`/prontuarios/${prontuario.id}`}
-              variante="contorno"
-              tamanho="sm"
-            >
-              <FileText aria-hidden="true" size={16} strokeWidth={1.75} />
-              Abrir
-            </BotaoLink>
-            <BotaoLink
-              href={`/prontuarios/${prontuario.id}/editar`}
-              variante="secundaria"
-              tamanho="sm"
-            >
-              <History aria-hidden="true" size={16} strokeWidth={1.75} />
-              Nova versão
-            </BotaoLink>
+            <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+              <BotaoLink href={`/prontuarios/${prontuario.id}`} variante="contorno" tamanho="sm">
+                <FileText aria-hidden="true" size={16} strokeWidth={1.75} />
+                Abrir
+              </BotaoLink>
+              <BotaoLink href={`/prontuarios/${prontuario.id}/editar`} variante="secundaria" tamanho="sm">
+                <History aria-hidden="true" size={16} strokeWidth={1.75} />
+                Nova versão
+              </BotaoLink>
+            </div>
           </div>
         </li>
       ))}
