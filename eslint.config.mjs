@@ -10,7 +10,9 @@ const compat = new FlatCompat({ baseDirectory: __dirname });
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: [".next/**", "node_modules/**", "next-env.d.ts"],
+    // `supabase/.temp` é gerado pelo `supabase start` (o edge runtime ganha um
+    // index.ts minificado lá dentro) e já é ignorado pelo git.
+    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "supabase/.temp/**"],
   },
 ];
 
