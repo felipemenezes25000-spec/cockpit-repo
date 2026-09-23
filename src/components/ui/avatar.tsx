@@ -1,10 +1,6 @@
 import { cn } from "@/lib/cn";
 import { iniciais } from "@/lib/format";
 
-/**
- * Iniciais em quadrado de canto suave — o mesmo raio de 12px que o mockup usa
- * na foto do topo. Nesta etapa não há foto de paciente nem de equipe.
- */
 export function Avatar({
   nome,
   tamanho = "md",
@@ -17,15 +13,17 @@ export function Avatar({
   className?: string;
 }) {
   const tons = {
-    marca: "bg-secondary-fixed text-primary",
-    neutro: "bg-surface-container text-on-surface-variant",
+    marca:
+      "border border-primary/10 bg-[linear-gradient(145deg,var(--color-primary-fixed),#ffffff)] text-primary shadow-[var(--shadow-cartao)]",
+    neutro:
+      "border border-card-border bg-[linear-gradient(145deg,#ffffff,var(--color-surface-container-low))] text-on-surface-variant shadow-[var(--shadow-cartao)]",
   } as const;
 
   return (
     <span
       aria-hidden="true"
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-[var(--radius-controle)] font-semibold",
+        "inline-flex shrink-0 items-center justify-center rounded-[12px] font-semibold tracking-[-0.02em]",
         tamanho === "sm" ? "size-9 text-xs" : "size-10 text-sm",
         tons[tom],
         className,

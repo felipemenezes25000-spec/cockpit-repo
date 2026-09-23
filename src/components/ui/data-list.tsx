@@ -1,10 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-/**
- * Lista de cartões brancos sobre o painel cinza — o padrão de "Pendências" do
- * mockup, reaproveitado em retornos e aniversariantes.
- */
 export function Lista({
   children,
   className,
@@ -15,7 +11,7 @@ export function Lista({
   rotulo?: string;
 }) {
   return (
-    <ul aria-label={rotulo} className={cn("flex flex-col gap-4", className)}>
+    <ul aria-label={rotulo} className={cn("flex flex-col gap-3", className)}>
       {children}
     </ul>
   );
@@ -31,7 +27,7 @@ export function ItemLista({
   return (
     <li
       className={cn(
-        "rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow hover:shadow-[var(--shadow-realce)]",
+        "premium-interactive rounded-[16px] border border-card-border/85 bg-white/78 p-4 shadow-[var(--shadow-cartao)]",
         className,
       )}
     >
