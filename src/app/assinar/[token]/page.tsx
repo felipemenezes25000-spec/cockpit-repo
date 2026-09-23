@@ -1,33 +1,16 @@
-import { ShieldCheck } from "lucide-react";
+import { LockKeyhole, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { AssinarPorLink } from "@/components/documentos/assinar-por-link";
 import { tokenPlausivel, type TipoDocumento } from "@/lib/documento";
 import { CLINICA } from "@/lib/nav";
 import { estadoDoLinkPublico } from "@/server/consultas/documentos";
 
-/**
- * A única página do sistema que abre sem sessão.
- *
- * O que a protege não é esta rota — é a migração 0014: `anon` não tem acesso
- * a tabela nenhuma, só a três funções que exigem o token do link e a data de
- * nascimento da paciente a cada chamada. Aqui não há consulta ao banco fora
- * dessas funções, e não há nada que o servidor confie no que a página manda.
- */
-
 export const metadata: Metadata = {
   title: "Assinar documento",
   description: "Leia e assine o documento enviado pela clínica.",
-  // Link de assinatura não é conteúdo para buscador nenhum.
   robots: { index: false, follow: false },
 };
 
-/**
- * Sempre renderizada na hora, nunca guardada em cache (ISR). Hoje a consulta
- * já lê cookies e isso bastaria; o `force-dynamic` deixa explícito que a
- * situação de um link (assinado, revogado, vencido) não pode vir de uma
- * cópia antiga, e garante o `Cache-Control: private, no-store` de produção
- * mesmo se a consulta um dia deixar de ler cookies.
- */
 export const dynamic = "force-dynamic";
 
 const TIPOS = ["contrato", "termo", "orientacao", "anamnese"];
@@ -38,48 +21,54 @@ export default async function PaginaAssinar({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  // Sem `decodeURIComponent`: o token é base64url e nunca tem `%`. Decodificar
-  // só servia para um endereço malformado ("%E0%A4%A") derrubar a página com
-  // URIError. O que não tem a forma do token vira "link inválido" antes de
-  // qualquer ida ao banco, e não é repassado ao formulário.
   const limpo = tokenPlausivel(token) ? token : "";
 
-  // Só a situação, sem revelar conteúdo: a função devolve o tipo para a tela
-  // saber dizer "contrato" ou "termo", e mais nada antes da data de
-  // nascimento.
   const estado = await estadoDoLinkPublico(limpo);
   const situacao = estado.situacao;
-  const tipo =
-    estado.tipo && TIPOS.includes(estado.tipo) ? (estado.tipo as TipoDocumento) : null;
+  const tipo = estado.tipo && TIPOS.includes(estado.tipo) ? (estado.tipo as TipoDocumento) : null;
 
   return (
-    <main className="min-h-dvh bg-surface-container-low px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        {/* Cabeçalho e rodapé são da tela, não do documento: `sem-impressao`
-            os tira do papel para a via sair só com o que foi assinado. */}
-        <header className="sem-impressao flex items-center gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-primary-container text-sm font-semibold text-on-primary">
-            {CLINICA.monograma}
-          </span>
-          <div className="min-w-0">
-            <p className="font-medium text-on-surface">{CLINICA.nome}</p>
-            <p className="text-xs text-outline">{CLINICA.descricao}</p>
+    <main className="relative min-h-dvh overflow-hidden bg-surface-container-low px-4 py-6 sm:px-6 sm:py-10">
+      <div aria-hidden="true" className="sem-impressao pointer-events-none absolute -top-40 left-[5%] size-[30rem] rounded-full bg-primary-fixed/42 blur-3xl" />
+      <div aria-hidden="true" className="sem-impressao pointer-events-none absolute -right-40 bottom-[-12rem] size-[34rem] rounded-full bg-secondary-fixed/30 blur-3xl" />
+
+      <div className="relative mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6">
+        <header className="sem-impressao glass-surface flex items-center justify-between gap-4 rounded-[var(--radius-painel)] border px-4 py-3.5 shadow-[var(--shadow-cartao)] sm:px-5">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary-container text-sm font-bold text-on-primary shadow-[var(--shadow-primary)]">
+              {CLINICA.monograma}
+            </span>
+            <div className="min-w-0">
+              <p className="font-semibold tracking-[-0.015em] text-on-surface">{CLINICA.nome}</p>
+              <p className="mt-0.5 truncate text-xs text-outline">{CLINICA.descricao}</p>
+            </div>
           </div>
+
+          <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-positivo-borda/80 bg-positivo-fundo/75 px-3 py-1.5 text-xs font-semibold text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:inline-flex">
+            <LockKeyhole aria-hidden="true" size={13} strokeWidth={1.75} />
+            Link protegido
+          </span>
         </header>
+
+        <section className="sem-impressao premium-panel relative isolate overflow-hidden rounded-[var(--radius-painel)] border px-5 py-5 sm:px-6">
+          <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-16 -z-10 size-52 rounded-full bg-primary-fixed/38 blur-3xl" />
+          <p className="rotulo text-primary/80">Documento da clínica</p>
+          <h1 className="mt-2 text-[clamp(1.45rem,4vw,2rem)] leading-[1.1] font-semibold tracking-[-0.035em] text-on-surface">
+            Leia com calma antes de continuar
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-on-surface-variant">
+            Para proteger o documento, o conteúdo só é liberado após a conferência solicitada pela clínica. Esta página não pede senha do sistema nem dados de pagamento.
+          </p>
+        </section>
 
         <AssinarPorLink token={limpo} tipo={tipo} situacaoInicial={situacao} />
 
-        <footer className="sem-impressao flex items-start gap-2 px-1 text-xs text-outline">
-          <ShieldCheck
-            aria-hidden="true"
-            size={14}
-            strokeWidth={1.75}
-            className="mt-0.5 shrink-0"
-          />
+        <footer className="sem-impressao glass-surface flex items-start gap-3 rounded-[var(--radius-painel)] border px-4 py-4 text-xs leading-5 text-outline shadow-[var(--shadow-cartao)] sm:px-5">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-positivo-fundo text-positivo">
+            <ShieldCheck aria-hidden="true" size={15} strokeWidth={1.75} />
+          </span>
           <span>
-            Esta página é do consultório. Ela não pede senha, não cobra nada e
-            não guarda dados de pagamento. Na dúvida, ligue para a clínica antes
-            de assinar.
+            Esta página pertence ao consultório. Ela não pede senha, não cobra nada e não guarda dados de pagamento. Na dúvida, confirme o envio diretamente com a clínica antes de assinar.
           </span>
         </footer>
       </div>

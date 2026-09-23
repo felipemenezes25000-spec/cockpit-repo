@@ -1,20 +1,15 @@
-import { FileText, PencilLine } from "lucide-react";
+import { Archive, FileText, PencilLine } from "lucide-react";
 import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/empty-state";
+import { SeloHero } from "@/components/ui/page-hero";
 import { formatarData } from "@/lib/format";
 import { ROTULO_TIPO } from "@/lib/documento";
 import type { ModeloDaLista } from "@/server/consultas/documentos";
 import { BotaoModeloAtivo } from "./botao-modelo-ativo";
 
-/** Razão à vista, no lugar do número — mesma postura do botão indisponível. */
 const RESTRITO = "restrito à administradora";
 
-/**
- * `null` não é zero: é a anamnese, que a RLS esconde de quem não é
- * administradora (AGENTS.md §5). Dizer "nenhum documento emitido" seria
- * afirmar como fato o que este perfil simplesmente não enxerga.
- */
 function Emitidos({ quantos }: { quantos: number | null }) {
   if (quantos === null) {
     return (
@@ -36,56 +31,56 @@ function Linha({
   administradora: boolean;
 }) {
   return (
-    <li className="-mx-3 flex flex-col gap-3 border-b border-card-border px-3 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-on-surface">{modelo.nome}</span>
-          <span className="rounded-[var(--radius-tag)] bg-secondary-fixed px-2 py-0.5 text-xs font-medium text-primary">
-            {ROTULO_TIPO[modelo.tipo]}
-          </span>
+    <li className={modelo.ativo
+      ? "premium-interactive relative isolate flex min-h-48 flex-col overflow-hidden rounded-[var(--radius-painel)] border border-card-border/75 bg-surface/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] sm:p-5"
+      : "relative flex min-h-48 flex-col rounded-[var(--radius-painel)] border border-dashed border-outline-variant/80 bg-surface-container-low/60 p-4 sm:p-5"}
+    >
+      {modelo.ativo ? <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-primary-fixed/30 blur-2xl" /> : null}
+
+      <div className="flex items-start justify-between gap-4">
+        <span className={modelo.ativo
+          ? "flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/55 bg-primary-fixed/48 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
+          : "flex size-10 shrink-0 items-center justify-center rounded-2xl border border-card-border bg-surface-container text-outline"}
+        >
+          <FileText aria-hidden="true" size={18} strokeWidth={1.65} />
+        </span>
+        <div className="flex flex-wrap justify-end gap-1.5">
+          <SeloHero tom="informativo" className="min-h-7 px-2.5 py-0 text-[0.66rem]">{ROTULO_TIPO[modelo.tipo]}</SeloHero>
+          <SeloHero tom={modelo.ativo ? "positivo" : "neutro"} className="min-h-7 px-2.5 py-0 text-[0.66rem]">
+            {modelo.ativo ? "Ativo" : "Aposentado"}
+          </SeloHero>
+        </div>
+      </div>
+
+      <div className="mt-4 min-w-0 flex-1">
+        <h3 className="text-base font-semibold tracking-[-0.015em] text-on-surface">{modelo.nome}</h3>
+        {modelo.descricao ? <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-on-surface-variant">{modelo.descricao}</p> : null}
+
+        <div className="mt-4 flex flex-wrap gap-2">
           {modelo.versaoAtual > 0 ? (
-            <span className="tabular text-xs text-outline">
-              versão {modelo.versaoAtual}
-            </span>
+            <SeloHero className="min-h-7 px-2.5 py-0 text-[0.66rem]">Versão {modelo.versaoAtual}</SeloHero>
           ) : (
-            <span className="rounded-[var(--radius-tag)] bg-atencao-fundo px-2 py-0.5 text-xs font-medium text-atencao">
-              sem texto
-            </span>
+            <SeloHero tom="atencao" className="min-h-7 px-2.5 py-0 text-[0.66rem]">Sem texto</SeloHero>
           )}
-          {!modelo.ativo ? (
-            <span className="rounded-[var(--radius-tag)] border border-outline-variant px-2 py-0.5 text-xs text-outline">
-              aposentado
-            </span>
-          ) : null}
-          {modelo.exemplo ? (
-            <span className="text-xs text-outline">exemplo</span>
-          ) : null}
+          {modelo.exemplo ? <SeloHero tom="atencao" className="min-h-7 px-2.5 py-0 text-[0.66rem]">Exemplo</SeloHero> : null}
         </div>
 
-        {modelo.descricao ? (
-          <p className="mt-1 text-sm text-outline">{modelo.descricao}</p>
-        ) : null}
-
-        <p className="tabular mt-1 text-xs text-outline">
-          Atualizado em {formatarData(modelo.atualizadoEm)} ·{" "}
-          <Emitidos quantos={modelo.emitidos} />
+        <p className="tabular mt-3 text-xs leading-5 text-outline">
+          Atualizado em {formatarData(modelo.atualizadoEm)} · <Emitidos quantos={modelo.emitidos} />
         </p>
       </div>
 
       {administradora ? (
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-card-border/65 pt-3">
           <Link
             href={`/formularios/modelos/${modelo.id}/editar`}
-            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-tag)] px-2.5 text-xs font-medium whitespace-nowrap text-outline transition-colors hover:bg-surface-container-low hover:text-primary"
+            className="premium-interactive inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-on-surface-variant shadow-[var(--shadow-cartao)] hover:border-primary-fixed-dim hover:text-primary"
           >
-            <PencilLine aria-hidden="true" size={14} strokeWidth={1.75} />
+            <PencilLine aria-hidden="true" size={13} strokeWidth={1.75} />
             Nova versão
           </Link>
-          <BotaoModeloAtivo
-            modeloId={modelo.id}
-            ativo={modelo.ativo}
-            nome={modelo.nome}
-          />
+          {!modelo.ativo ? <Archive aria-hidden="true" size={13} className="text-outline" /> : null}
+          <BotaoModeloAtivo modeloId={modelo.id} ativo={modelo.ativo} nome={modelo.nome} />
         </div>
       ) : null}
     </li>
@@ -105,26 +100,14 @@ export function ListaModelos({
         icone={FileText}
         titulo="Nenhum modelo cadastrado"
         descricao="O modelo é o texto-base que cada documento congela na emissão. Sem modelo, não há o que emitir."
-        acao={
-          administradora ? (
-            <BotaoLink
-              href="/formularios/modelos/novo"
-              variante="primaria"
-              tamanho="sm"
-            >
-              Criar o primeiro modelo
-            </BotaoLink>
-          ) : undefined
-        }
+        acao={administradora ? <BotaoLink href="/formularios/modelos/novo" variante="primaria" tamanho="sm">Criar o primeiro modelo</BotaoLink> : undefined}
       />
     );
   }
 
   return (
-    <ul className="flex flex-col">
-      {modelos.map((modelo) => (
-        <Linha key={modelo.id} modelo={modelo} administradora={administradora} />
-      ))}
+    <ul className="grid gap-3 md:grid-cols-2">
+      {modelos.map((modelo) => <Linha key={modelo.id} modelo={modelo} administradora={administradora} />)}
     </ul>
   );
 }

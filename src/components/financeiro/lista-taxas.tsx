@@ -2,6 +2,7 @@ import { Archive, ArchiveRestore, BadgePercent, Pencil } from "lucide-react";
 import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/empty-state";
+import { SeloHero } from "@/components/ui/page-hero";
 import { cn } from "@/lib/cn";
 import { bpDoBanco, formatarPercentual } from "@/lib/moeda";
 import { alternarAtivaTaxa } from "@/server/acoes/taxas-cartao";
@@ -33,45 +34,60 @@ export function ListaTaxas({
   }
 
   return (
-    <ul aria-label="Taxas de cartão" className="flex flex-col gap-3">
+    <ul aria-label="Taxas de cartão" className="grid gap-3 md:grid-cols-2">
       {taxas.map((taxa) => (
         <li
           key={taxa.id}
           className={cn(
-            "flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-cartao)] border p-4",
-            // Inativa não usa opacidade (texto terciário cairia para 2,6:1):
-            // selo "Inativa", fundo recuado e borda tracejada.
+            "relative isolate flex min-h-44 flex-col overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5",
             taxa.ativa
-              ? "border-card-border bg-surface shadow-[var(--shadow-cartao)]"
-              : "border-dashed border-outline-variant bg-surface-container-low",
+              ? "premium-interactive border-card-border/75 bg-surface/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)]"
+              : "border-dashed border-outline-variant/80 bg-surface-container-low/60",
           )}
         >
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-on-surface">{taxa.operadora}</span>
-              <span className="rounded-[var(--radius-tag)] bg-surface-container px-1.5 py-0.5 text-[0.6875rem] font-medium text-on-surface-variant">
+          {taxa.ativa ? (
+            <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-primary-fixed/32 blur-2xl" />
+          ) : null}
+
+          <div className="flex items-start justify-between gap-4">
+            <span
+              className={cn(
+                "flex size-10 shrink-0 items-center justify-center rounded-2xl border shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                taxa.ativa
+                  ? "border-primary-fixed-dim/55 bg-primary-fixed/48 text-primary"
+                  : "border-card-border bg-surface-container text-outline",
+              )}
+            >
+              <BadgePercent aria-hidden="true" size={18} strokeWidth={1.65} />
+            </span>
+
+            <div className="flex flex-wrap justify-end gap-1.5">
+              <SeloHero tom={taxa.ativa ? "positivo" : "neutro"} className="min-h-7 px-2.5 py-0 text-[0.66rem]">
+                {taxa.ativa ? "Ativa" : "Inativa"}
+              </SeloHero>
+              <SeloHero className="min-h-7 px-2.5 py-0 text-[0.66rem]">
                 {taxa.tipo === "credito" ? `Crédito ${taxa.parcelas}x` : "Débito"}
-              </span>
-              {!taxa.ativa ? (
-                <span className="inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-surface-container px-1.5 py-0.5 text-[0.6875rem] font-medium text-on-surface-variant">
-                  <Archive aria-hidden="true" size={11} strokeWidth={1.75} />
-                  Inativa
-                </span>
-              ) : null}
+              </SeloHero>
             </div>
-            <p className="tabular mt-1 text-xs text-outline">
-              Taxa {formatarPercentual(bpDoBanco(taxa.percentual))}
+          </div>
+
+          <div className="mt-4 min-w-0 flex-1">
+            <h3 className="text-base font-semibold tracking-[-0.015em] text-on-surface">{taxa.operadora}</h3>
+            <p className="tabular mt-2 text-[1.65rem] leading-none font-semibold tracking-[-0.035em] text-primary">
+              {formatarPercentual(bpDoBanco(taxa.percentual))}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-outline">
               {taxa.usos > 0
-                ? ` · aplicada em ${taxa.usos} ${taxa.usos === 1 ? "venda" : "vendas"}`
-                : ""}
+                ? `Aplicada em ${taxa.usos} ${taxa.usos === 1 ? "venda" : "vendas"}`
+                : "Ainda não usada em venda"}
             </p>
           </div>
 
           {podeEditar ? (
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-card-border/65 pt-3">
               <Link
                 href={`/financeiro/taxas/${taxa.id}/editar`}
-                className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-cartao)] border border-card-border px-3 text-xs font-medium text-on-surface-variant transition-colors hover:border-primary hover:text-primary"
+                className="premium-interactive inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-on-surface-variant shadow-[var(--shadow-cartao)] hover:border-primary-fixed-dim hover:text-primary"
               >
                 <Pencil aria-hidden="true" size={13} strokeWidth={1.75} />
                 Editar
