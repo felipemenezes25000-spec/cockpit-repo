@@ -1,0 +1,92 @@
+/**
+ * Cliente do Supabase falso, para testar ação de servidor sem banco.
+ *
+ * Cada `from("tabela")` ou `rpc("função")` devolve um construtor que aceita
+ * qualquer encadeamento (`.update().eq().select().maybeSingle()`), anota o
+ * que foi chamado e, ao ser aguardado, entrega a próxima resposta configurada
+ * para aquele alvo. Sem resposta configurada, entrega `{ data: null, error:
+ * null }` — o mesmo que o PostgREST devolve quando a RLS esconde a linha.
+ *
+ * O objetivo não é simular o banco — isso é trabalho de
+ * `supabase/testes/permissoes.sql` e do E2E —, e sim conferir o que a ação faz
+ * com cada resposta: se trata o erro, se revalida só no sucesso, se a frase
+ * que sobe é segura.
+ */
+
+export type RespostaFalsa = {
+  data?: unknown;
+  error?: { code?: string; message?: string; details?: string } | null;
+};
+
+export type ChamadaFalsa = {
+  alvo: string;
+  passos: { metodo: string; argumentos: unknown[] }[];
+};
+
+type Construtor = {
+  then: (resolver: (valor: { data: unknown; error: unknown }) => void) => void;
+} & Record<string, (...argumentos: unknown[]) => Construtor>;
+
+export function supabaseFalso(respostas: Record<string, RespostaFalsa | RespostaFalsa[]> = {}) {
+  const chamadas: ChamadaFalsa[] = [];
+  const filas = new Map<string, RespostaFalsa[]>(
+    Object.entries(respostas).map(([alvo, r]) => [alvo, Array.isArray(r) ? [...r] : [r]]),
+  );
+
+  function proxima(alvo: string): { data: unknown; error: unknown } {
+    const fila = filas.get(alvo);
+    // A última resposta de cada alvo se repete: basta configurar uma quando
+    // a ação consulta a mesma tabela várias vezes.
+    const resposta = fila && fila.length > 1 ? fila.shift()! : fila?.[0];
+    return { data: resposta?.data ?? null, error: resposta?.error ?? null };
+  }
+
+  function construtor(alvo: string): Construtor {
+    const chamada: ChamadaFalsa = { alvo, passos: [] };
+    chamadas.push(chamada);
+
+    const alvoProxy: Construtor = new Proxy({} as Construtor, {
+      get(_objeto, propriedade) {
+        if (propriedade === "then") {
+          return (resolver: (valor: { data: unknown; error: unknown }) => void) => resolver(proxima(alvo));
+        }
+        return (...argumentos: unknown[]) => {
+          chamada.passos.push({ metodo: String(propriedade), argumentos });
+          return alvoProxy;
+        };
+      },
+    });
+
+    return alvoProxy;
+  }
+
+  const cliente = {
+    from: (tabela: string) => construtor(tabela),
+    rpc: (funcao: string, argumentos?: unknown) => {
+      const c = construtor(`rpc:${funcao}`);
+      chamadas[chamadas.length - 1].passos.push({ metodo: "rpc", argumentos: [argumentos] });
+      return c;
+    },
+    storage: {
+      from: (balde: string) => ({
+        list: () => Promise.resolve(proxima(`storage:${balde}:list`)),
+        remove: () => Promise.resolve(proxima(`storage:${balde}:remove`)),
+        createSignedUrls: () => Promise.resolve(proxima(`storage:${balde}:createSignedUrls`)),
+      }),
+    },
+  };
+
+  /** Os passos de uma chamada a um alvo, na ordem em que aconteceram. */
+  function passosDe(alvo: string, indice = 0) {
+    return chamadas.filter((c) => c.alvo === alvo)[indice]?.passos ?? [];
+  }
+
+  return { cliente, chamadas, passosDe };
+}
+
+/** O que o `redirect` falso lança — a ação para ali, como no Next. */
+export class Redirecionou extends Error {
+  constructor(public readonly destino: string) {
+    super(`redirect(${destino})`);
+  }
+}

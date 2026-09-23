@@ -22,3 +22,10 @@ tsconfig.tsbuildinfo
 # Supabase local
 .supabase/
 supabase/.temp/
+
+# Testes
+/e2e/.auth/
+/e2e/relatorio/
+/test-results/
+/coverage/
+/e2e/capturas/
