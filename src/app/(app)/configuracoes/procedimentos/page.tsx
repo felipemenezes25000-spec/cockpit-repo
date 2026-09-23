@@ -1,9 +1,9 @@
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus, Stethoscope } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ListaProcedimentos } from "@/components/configuracoes/lista-procedimentos";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { ehAdministradora } from "@/lib/auth";
 import { listarProcedimentos } from "@/server/consultas/procedimentos";
 
@@ -22,32 +22,38 @@ export default async function PaginaProcedimentos() {
   const inativos = procedimentos.length - ativos;
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
+      <LinkDeVoltar href="/configuracoes">Voltar para configurações</LinkDeVoltar>
 
-      <Link
-        href="/configuracoes"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Configurações
-      </Link>
+      <CabecalhoDePagina
+        icone={Stethoscope}
+        rotulo="Configurações"
+        titulo="Procedimentos"
+        descricao="A tabela que alimenta a Agenda: duração, valor e retorno sugerido ficam centralizados aqui para novas marcações."
+        acoes={
+          administradora ? (
+            <BotaoLink href="/configuracoes/procedimentos/novo" variante="primaria" tamanho="sm">
+              <Plus aria-hidden="true" size={16} strokeWidth={1.75} />
+              Novo procedimento
+            </BotaoLink>
+          ) : undefined
+        }
+        meta={
+          <>
+            <SeloHero tom={ativos > 0 ? "positivo" : "atencao"}>{ativos} {ativos === 1 ? "ativo na agenda" : "ativos na agenda"}</SeloHero>
+            {inativos > 0 ? <SeloHero>{inativos} {inativos === 1 ? "fora da agenda" : "fora da agenda"}</SeloHero> : null}
+            <SeloHero tom="informativo">{procedimentos.length} no total</SeloHero>
+          </>
+        }
+      />
 
       <Card>
         <CardCabecalho
-          titulo="Procedimentos"
+          titulo="Tabela da clínica"
           descricao={
             procedimentos.length === 0
               ? "A tabela está vazia."
-              : `${ativos} na agenda` +
-                (inativos > 0 ? ` · ${inativos} fora da agenda` : "")
-          }
-          acao={
-            administradora ? (
-              <BotaoLink href="/configuracoes/procedimentos/novo" variante="primaria" tamanho="sm">
-                <Plus aria-hidden="true" size={16} strokeWidth={1.75} />
-                Novo procedimento
-              </BotaoLink>
-            ) : undefined
+              : "Ativos aparecem em novas marcações; inativos preservam o histórico sem voltar à Agenda."
           }
         />
 
@@ -57,8 +63,8 @@ export default async function PaginaProcedimentos() {
 
         <CardRodape className="text-outline">
           {administradora
-            ? "Procedimento não se apaga: o histórico de atendimentos aponta para ele. Tirar da agenda esconde das novas marcações e preserva o passado."
-            : "Só a administradora altera a tabela. A recepção usa os procedimentos na agenda."}
+            ? "Procedimento não se apaga: o histórico de atendimentos aponta para ele. Tirar da agenda afeta apenas novas marcações e preserva o passado."
+            : "Só a administradora altera a tabela. A recepção usa os procedimentos disponíveis na Agenda."}
         </CardRodape>
       </Card>
     </div>

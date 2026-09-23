@@ -1,37 +1,56 @@
-/**
- * Enquanto o servidor monta a próxima tela.
- *
- * Um esqueleto com a forma de toda página do sistema — título, faixa de
- * indicadores, lista — e não um spinner: a área não salta quando o conteúdo
- * chega, e fica claro que a navegação foi ouvida. O texto para leitor de tela
- * diz o mesmo em palavras.
- */
+/** Esqueleto premium das telas autenticadas enquanto o servidor monta a próxima rota. */
 export default function Carregando() {
   return (
-    <div aria-busy="true" aria-live="polite" className="flex flex-col gap-8">
+    <div aria-busy="true" aria-live="polite" className="flex flex-col gap-6">
       <p className="sr-only">Carregando…</p>
 
-      <div className="flex flex-col gap-3">
-        <div className="esqueleto h-3 w-28" />
-        <div className="esqueleto h-8 w-72 max-w-full" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="esqueleto h-28 rounded-[var(--radius-painel)]" />
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-[var(--radius-painel)] border border-card-border bg-card p-6">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex items-center gap-4">
-            <div className="esqueleto size-10 shrink-0 rounded-[var(--radius-controle)]" />
-            <div className="flex flex-1 flex-col gap-2">
-              <div className="esqueleto h-3.5 w-1/3" />
-              <div className="esqueleto h-3 w-1/2" />
+      <div className="premium-panel relative overflow-hidden rounded-[calc(var(--radius-painel)+4px)] border px-5 py-6 sm:px-7 sm:py-7">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-12 size-64 rounded-full bg-primary-fixed/30 blur-3xl" />
+        <div className="relative flex items-start gap-4 sm:gap-5">
+          <div className="esqueleto size-12 shrink-0 rounded-2xl sm:size-14" />
+          <div className="min-w-0 flex-1 pt-1">
+            <div className="esqueleto h-2.5 w-24" />
+            <div className="esqueleto mt-3 h-8 w-80 max-w-[85%] rounded-lg" />
+            <div className="esqueleto mt-3 h-3.5 w-[34rem] max-w-full" />
+            <div className="mt-5 flex flex-wrap gap-2">
+              <div className="esqueleto h-8 w-28 rounded-full" />
+              <div className="esqueleto h-8 w-36 rounded-full" />
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="premium-panel rounded-[var(--radius-painel)] border p-4 sm:p-5">
+            <div className="esqueleto size-9 rounded-xl" />
+            <div className="esqueleto mt-5 h-7 w-20 rounded-lg" />
+            <div className="esqueleto mt-2 h-3 w-24 max-w-full" />
+          </div>
         ))}
+      </div>
+
+      <div className="premium-panel rounded-[var(--radius-painel)] border p-4 sm:p-6">
+        <div className="flex items-center justify-between gap-4 border-b border-card-border/70 pb-4">
+          <div className="min-w-0 flex-1">
+            <div className="esqueleto h-5 w-40" />
+            <div className="esqueleto mt-2 h-3 w-64 max-w-[80%]" />
+          </div>
+          <div className="esqueleto h-9 w-24 rounded-[var(--radius-controle)]" />
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border/55 bg-surface/45 px-3.5 py-3.5">
+              <div className="esqueleto size-10 shrink-0 rounded-xl" />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="esqueleto h-3.5 w-1/3 max-w-full" />
+                <div className="esqueleto h-3 w-1/2 max-w-full" />
+              </div>
+              <div className="esqueleto hidden h-7 w-20 rounded-full sm:block" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
