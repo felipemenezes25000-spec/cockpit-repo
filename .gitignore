@@ -29,3 +29,5 @@ supabase/.temp/
 /test-results/
 /coverage/
 /e2e/capturas/
+
+.vercel
