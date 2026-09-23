@@ -5,7 +5,8 @@ import { BuscaPacientes } from "@/components/pacientes/busca-pacientes";
 import { ListaPacientes } from "@/components/pacientes/lista-pacientes";
 import { Paginacao } from "@/components/ui/paginacao";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { Card, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { estaAlemDoFim, PaginaAlemDoFim } from "@/components/ui/pagina-alem-do-fim";
 import { listarPacientes, type FiltroSituacao } from "@/server/consultas/pacientes";
 
@@ -17,7 +18,6 @@ export const metadata: Metadata = {
 
 const SITUACOES: FiltroSituacao[] = ["ativas", "arquivadas", "todas"];
 
-/** Aceita só o que a consulta conhece — o resto da URL é ignorado. */
 function lerSituacao(valor: string | string[] | undefined): FiltroSituacao {
   const texto = Array.isArray(valor) ? valor[0] : valor;
   return SITUACOES.find((s) => s === texto) ?? "ativas";
@@ -34,7 +34,6 @@ export default async function PaginaPacientes({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const parametros = await searchParams;
-
   const busca = lerTexto(parametros.busca);
   const situacao = lerSituacao(parametros.situacao);
   const pagina = Math.max(1, Number(lerTexto(parametros.pagina)) || 1);
@@ -44,41 +43,43 @@ export default async function PaginaPacientes({
     ehAdministradora(),
   ]);
 
-  // O que a paginação precisa repetir nos links.
   const preservar: Record<string, string> = {};
   if (busca) preservar.busca = busca;
   if (situacao !== "ativas") preservar.situacao = situacao;
 
   return (
-    <div>
+    <div className="page-reveal flex flex-col gap-5 sm:gap-6">
+      <CabecalhoDePagina
+        icone={UsersRound}
+        rotulo="Base de pacientes"
+        titulo="Pacientes"
+        descricao="Encontre rapidamente quem você precisa, mantenha os dados organizados e entre no histórico da paciente sem perder contexto."
+        acoes={
+          <>
+            {administradora ? (
+              <BotaoLink href="/pacientes/importar" variante="contorno" tamanho="sm">
+                <Upload aria-hidden="true" size={16} strokeWidth={1.75} />
+                Importar planilha
+              </BotaoLink>
+            ) : null}
+            <BotaoLink href="/pacientes/novo" variante="primaria" tamanho="sm">
+              <UserRoundPlus aria-hidden="true" size={16} strokeWidth={1.75} />
+              Nova paciente
+            </BotaoLink>
+          </>
+        }
+        meta={
+          <>
+            <SeloHero tom="informativo">{resultado.total} {resultado.total === 1 ? "paciente" : "pacientes"}</SeloHero>
+            {busca ? <SeloHero>Busca ativa</SeloHero> : null}
+            {situacao !== "ativas" ? <SeloHero>{situacao === "arquivadas" ? "Arquivadas" : "Ativas e arquivadas"}</SeloHero> : <SeloHero tom="positivo">Ativas</SeloHero>}
+          </>
+        }
+      />
 
       <Card>
-        <CardCabecalho
-          titulo="Pacientes"
-          descricao="Cadastro, contatos e histórico de atendimento."
-          acao={
-            <div className="flex flex-wrap items-center gap-2">
-              {administradora ? (
-                <BotaoLink href="/pacientes/importar" variante="contorno" tamanho="sm">
-                  <Upload aria-hidden="true" size={16} strokeWidth={1.75} />
-                  Importar planilha
-                </BotaoLink>
-              ) : null}
-
-              <BotaoLink href="/pacientes/novo" variante="primaria" tamanho="sm">
-                <UserRoundPlus aria-hidden="true" size={16} strokeWidth={1.75} />
-                Nova paciente
-              </BotaoLink>
-            </div>
-          }
-        />
-
-        <CardCorpo className="flex flex-col gap-6">
-          <BuscaPacientes
-            busca={busca}
-            situacao={situacao}
-            total={resultado.total}
-          />
+        <CardCorpo className="flex flex-col gap-6 sm:gap-7">
+          <BuscaPacientes busca={busca} situacao={situacao} total={resultado.total} />
 
           {estaAlemDoFim(resultado) ? (
             <PaginaAlemDoFim
@@ -93,7 +94,6 @@ export default async function PaginaPacientes({
           ) : (
             <>
               <ListaPacientes pacientes={resultado.itens} busca={busca} />
-
               <Paginacao
                 pagina={resultado.pagina}
                 paginas={resultado.paginas}

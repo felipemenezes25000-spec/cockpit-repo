@@ -5,7 +5,8 @@ import { BuscaProntuarios } from "@/components/prontuarios/busca-prontuarios";
 import { ListaProntuarios } from "@/components/prontuarios/lista-prontuarios";
 import { Paginacao } from "@/components/ui/paginacao";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { Card, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { estaAlemDoFim, PaginaAlemDoFim } from "@/components/ui/pagina-alem-do-fim";
 import { ehAdministradora } from "@/lib/auth";
 import { EstruturaPendenteProntuario } from "@/components/prontuarios/estrutura-pendente";
@@ -34,45 +35,42 @@ export default async function PaginaProntuarios({
   const pagina = Math.max(1, Number(lerTexto(parametros.pagina)) || 1);
   const administradora = await ehAdministradora();
 
-  if (!administradora) {
-    return (
-      <div>
-        <AcessoRestritoProntuario />
-      </div>
-    );
-  }
+  if (!administradora) return <AcessoRestritoProntuario />;
 
   const resultado = await listarProntuarios({ busca, pagina }).catch((erro: unknown) => {
     if (erro instanceof EstruturaProntuarioPendenteError) return null;
     throw erro;
   });
 
-  if (!resultado) {
-    return (
-      <div>
-        <EstruturaPendenteProntuario />
-      </div>
-    );
-  }
+  if (!resultado) return <EstruturaPendenteProntuario />;
 
   const preservar: Record<string, string> = {};
   if (busca) preservar.busca = busca;
 
   return (
-    <div>
-      <Card>
-        <CardCabecalho
-          titulo="Prontuários"
-          descricao="Registros clínicos com histórico de versões."
-          acao={
-            <BotaoLink href="/prontuarios/novo" variante="primaria" tamanho="sm">
-              <FileText aria-hidden="true" size={16} strokeWidth={1.75} />
-              Novo prontuário
-            </BotaoLink>
-          }
-        />
+    <div className="page-reveal flex flex-col gap-5 sm:gap-6">
+      <CabecalhoDePagina
+        icone={FileText}
+        rotulo="Registro clínico"
+        titulo="Prontuários"
+        descricao="Registros versionados, com leitura mais sóbria e foco no histórico clínico de cada paciente."
+        acoes={
+          <BotaoLink href="/prontuarios/novo" variante="primaria" tamanho="sm">
+            <FileText aria-hidden="true" size={16} strokeWidth={1.75} />
+            Novo prontuário
+          </BotaoLink>
+        }
+        meta={
+          <>
+            <SeloHero tom="informativo">{resultado.total} {resultado.total === 1 ? "prontuário" : "prontuários"}</SeloHero>
+            <SeloHero>Histórico versionado</SeloHero>
+            {busca ? <SeloHero>Busca ativa</SeloHero> : null}
+          </>
+        }
+      />
 
-        <CardCorpo className="flex flex-col gap-6">
+      <Card>
+        <CardCorpo className="flex flex-col gap-6 sm:gap-7">
           <BuscaProntuarios busca={busca} total={resultado.total} />
           {estaAlemDoFim(resultado) ? (
             <PaginaAlemDoFim

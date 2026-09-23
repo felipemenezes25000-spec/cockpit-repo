@@ -5,7 +5,8 @@ import { FiltrosDocumentos } from "@/components/documentos/filtros-documentos";
 import { ListaDocumentos } from "@/components/documentos/lista-documentos";
 import { Paginacao } from "@/components/ui/paginacao";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { Card, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { estaAlemDoFim, PaginaAlemDoFim } from "@/components/ui/pagina-alem-do-fim";
 import type { SituacaoDocumento, TipoDocumento } from "@/lib/documento";
 import {
@@ -34,9 +35,6 @@ export default async function PaginaDocumentos({
   const parametros = await searchParams;
   const busca = lerTexto(parametros.busca);
   const pagina = Math.max(1, Number(lerTexto(parametros.pagina)) || 1);
-
-  // Valor fora da lista vira "sem filtro": a URL é editável por qualquer um, e
-  // um parâmetro inventado não deve virar erro de tela.
   const situacaoBruta = lerTexto(parametros.situacao);
   const tipoBruto = lerTexto(parametros.tipo);
   const situacao = (SITUACOES as readonly string[]).includes(situacaoBruta)
@@ -56,13 +54,7 @@ export default async function PaginaDocumentos({
     throw erro;
   });
 
-  if (!resultado) {
-    return (
-      <div>
-        <EstruturaPendenteDocumento />
-      </div>
-    );
-  }
+  if (!resultado) return <EstruturaPendenteDocumento />;
 
   const preservar: Record<string, string> = {};
   if (busca) preservar.busca = busca;
@@ -70,33 +62,35 @@ export default async function PaginaDocumentos({
   if (tipo) preservar.tipo = tipo;
 
   return (
-    <div>
+    <div className="page-reveal flex flex-col gap-5 sm:gap-6">
+      <CabecalhoDePagina
+        icone={FileSignature}
+        rotulo="Workspace documental"
+        titulo="Documentos e contratos"
+        descricao="Emita, acompanhe e recupere termos, contratos, orientações e anamneses preservando a via entregue e o histórico de assinatura."
+        acoes={
+          <>
+            <BotaoLink href="/formularios/modelos" variante="contorno" tamanho="sm">
+              <LayoutList aria-hidden="true" size={16} strokeWidth={1.75} />
+              Modelos
+            </BotaoLink>
+            <BotaoLink href="/formularios/novo" variante="primaria" tamanho="sm">
+              <FilePlus2 aria-hidden="true" size={16} strokeWidth={1.75} />
+              Emitir documento
+            </BotaoLink>
+          </>
+        }
+        meta={
+          <>
+            <SeloHero tom="informativo">{resultado.total} {resultado.total === 1 ? "documento" : "documentos"}</SeloHero>
+            {(busca || situacao || tipo) ? <SeloHero>Filtros ativos</SeloHero> : <SeloHero>Todos os registros</SeloHero>}
+          </>
+        }
+      />
 
       <Card>
-        <CardCabecalho
-          titulo="Documentos e Contratos"
-          descricao="O que foi entregue e assinado por cada paciente."
-          acao={
-            <div className="flex flex-wrap gap-2">
-              <BotaoLink href="/formularios/modelos" variante="contorno" tamanho="sm">
-                <LayoutList aria-hidden="true" size={16} strokeWidth={1.75} />
-                Modelos
-              </BotaoLink>
-              <BotaoLink href="/formularios/novo" variante="primaria" tamanho="sm">
-                <FilePlus2 aria-hidden="true" size={16} strokeWidth={1.75} />
-                Emitir documento
-              </BotaoLink>
-            </div>
-          }
-        />
-
-        <CardCorpo className="flex flex-col gap-6">
-          <FiltrosDocumentos
-            busca={busca}
-            situacao={situacao}
-            tipo={tipo}
-            total={resultado.total}
-          />
+        <CardCorpo className="flex flex-col gap-6 sm:gap-7">
+          <FiltrosDocumentos busca={busca} situacao={situacao} tipo={tipo} total={resultado.total} />
           {estaAlemDoFim(resultado) ? (
             <PaginaAlemDoFim
               icone={FileSignature}
@@ -109,10 +103,7 @@ export default async function PaginaDocumentos({
             />
           ) : (
             <>
-              <ListaDocumentos
-                documentos={resultado.itens}
-                filtrado={Boolean(busca || situacao || tipo)}
-              />
+              <ListaDocumentos documentos={resultado.itens} filtrado={Boolean(busca || situacao || tipo)} />
               <Paginacao
                 pagina={resultado.pagina}
                 paginas={resultado.paginas}

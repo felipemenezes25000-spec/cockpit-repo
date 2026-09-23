@@ -13,36 +13,17 @@ import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 import type { IndicadoresDoPeriodo } from "@/server/consultas/painel-financeiro";
 
-/** Razão à vista, no lugar do número — mesma postura do botão indisponível. */
 const RESTRITO = "restrito ao financeiro";
 
 type Cartao = {
   rotulo: string;
-  /** `null` = o perfil não enxerga este número. Nunca vira zero. */
   valor: number | null;
   apoio: string;
   icone: LucideIcon;
-  /** Cor do valor. Sem semântica forçada: só entrada, saída e resultado. */
   tom?: "positivo" | "negativo";
-  /**
-   * O apoio em vermelho, com o valor principal neutro: "já vencido" no A
-   * receber. Vencido é dinheiro que já deveria ter entrado — negativo, como
-   * na Visão Geral (`overview/metric-cards.tsx`), não atenção.
-   */
   apoioNegativo?: boolean;
 };
 
-/**
- * Os oito números do período.
- *
- * A taxa de cartão aparece uma vez só: como dedução entre o bruto e o
- * líquido. Ela não existe nas despesas — somar lá de novo dobraria o custo.
- *
- * Os três números que dependem de despesa chegam como `null` para a recepção,
- * porque a RLS a impede de ver despesas. O cartão continua na tela, com traço
- * no lugar do valor e a razão à vista: esconder faria a pessoa procurar, e
- * imprimir zero seria mentir.
- */
 export function IndicadoresPeriodo({
   numeros,
   exemplo,
@@ -53,46 +34,24 @@ export function IndicadoresPeriodo({
   const n = numeros;
 
   const cartoes: Cartao[] = [
-    {
-      rotulo: "Total vendido",
-      valor: n.totalVendido,
-      apoio: "vendas do período",
-      icone: ShoppingBag,
-    },
-    {
-      rotulo: "Total recebido",
-      valor: n.totalRecebidoBruto,
-      apoio: "bruto, antes das taxas",
-      icone: Wallet,
-    },
-    {
-      rotulo: "Taxas de cartão",
-      valor: n.taxasDeCartao,
-      apoio: "descontadas da clínica",
-      icone: BadgePercent,
-    },
+    { rotulo: "Total vendido", valor: n.totalVendido, apoio: "vendas do período", icone: ShoppingBag },
+    { rotulo: "Total recebido", valor: n.totalRecebidoBruto, apoio: "bruto, antes das taxas", icone: Wallet },
+    { rotulo: "Taxas de cartão", valor: n.taxasDeCartao, apoio: "descontadas da clínica", icone: BadgePercent },
     {
       rotulo: "Líquido recebido",
       valor: n.liquidoRecebido,
-      apoio:
-        n.ajustes !== 0
-          ? `inclui ${formatarMoeda(n.ajustes)} de ajustes`
-          : "o que de fato entrou",
+      apoio: n.ajustes !== 0 ? `inclui ${formatarMoeda(n.ajustes)} de ajustes` : "o que de fato entrou",
       icone: HandCoins,
       tom: "positivo",
     },
     {
       rotulo: "A receber",
       valor: n.aReceber,
-      apoio:
-        n.aReceberVencido > 0
-          ? `${formatarMoeda(n.aReceberVencido)} já vencido`
-          : "em aberto hoje",
+      apoio: n.aReceberVencido > 0 ? `${formatarMoeda(n.aReceberVencido)} já vencido` : "em aberto hoje",
       icone: CalendarClock,
       apoioNegativo: n.aReceberVencido > 0,
     },
     {
-      // Despesa é sempre vermelha: dinheiro saindo, na convenção contábil.
       rotulo: "Despesas pagas",
       valor: n.despesasPagas,
       apoio: n.despesasPagas === null ? RESTRITO : "saídas do período",
@@ -109,8 +68,7 @@ export function IndicadoresPeriodo({
     {
       rotulo: "Resultado de caixa",
       valor: n.resultadoDeCaixa,
-      apoio:
-        n.resultadoDeCaixa === null ? RESTRITO : "líquido recebido − despesas pagas",
+      apoio: n.resultadoDeCaixa === null ? RESTRITO : "líquido recebido − despesas pagas",
       icone: Scale,
       tom:
         n.resultadoDeCaixa === null
@@ -123,33 +81,39 @@ export function IndicadoresPeriodo({
 
   return (
     <section aria-labelledby="indicadores-titulo">
-      {/* Os cartões são h3: o h2 da seção mantém a ordem dos títulos. */}
-      <h2 id="indicadores-titulo" className="sr-only">
-        Indicadores do período
-      </h2>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <h2 id="indicadores-titulo" className="sr-only">Indicadores do período</h2>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {cartoes.map((cartao) => {
           const Icone = cartao.icone;
+          const destaque = cartao.rotulo === "Líquido recebido" || cartao.rotulo === "Resultado de caixa";
+
           return (
-            <div
+            <article
               key={cartao.rotulo}
-              className="flex flex-col rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4"
+              className={cn(
+                "premium-panel premium-interactive relative isolate flex min-w-0 flex-col overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5",
+                destaque && "bg-linear-to-br from-white to-primary-fixed/22",
+              )}
             >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <h3 className="rotulo">{cartao.rotulo}</h3>
-                <Icone
-                  aria-hidden="true"
-                  size={16}
-                  strokeWidth={1.5}
-                  // O ícone é neutro em todos, como na Visão Geral: a cor já
-                  // está no valor.
-                  className="shrink-0 text-outline-variant"
-                />
+              <span aria-hidden="true" className="pointer-events-none absolute -top-8 -right-8 -z-10 size-28 rounded-full bg-primary-fixed/35 blur-2xl" />
+
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <h3 className="rotulo leading-4">{cartao.rotulo}</h3>
+                <span
+                  className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-xl border bg-surface/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
+                    cartao.tom === "positivo" && "border-positivo-borda/70 bg-positivo-fundo/65 text-positivo",
+                    cartao.tom === "negativo" && "border-negativo-borda/70 bg-negativo-fundo/65 text-negativo",
+                    !cartao.tom && "border-card-border/80 text-primary",
+                  )}
+                >
+                  <Icone aria-hidden="true" size={17} strokeWidth={1.65} />
+                </span>
               </div>
 
               <span
                 className={cn(
-                  "tabular text-lg font-semibold",
+                  "tabular mt-auto text-[clamp(1.12rem,2vw,1.45rem)] leading-tight font-semibold tracking-[-0.025em]",
                   cartao.valor === null && "text-outline",
                   cartao.tom === "positivo" && "text-positivo",
                   cartao.tom === "negativo" && "text-negativo",
@@ -162,7 +126,7 @@ export function IndicadoresPeriodo({
 
               <span
                 className={cn(
-                  "mt-1 text-xs",
+                  "mt-2 text-xs leading-5",
                   cartao.apoioNegativo ? "font-medium text-negativo" : "text-outline",
                 )}
               >
@@ -170,11 +134,11 @@ export function IndicadoresPeriodo({
               </span>
 
               {exemplo && cartao.valor !== null ? (
-                <span className="mt-1 text-[0.625rem] text-outline uppercase">
+                <span className="mt-2 text-[0.625rem] font-medium tracking-[0.08em] text-outline uppercase">
                   Demonstrativo
                 </span>
               ) : null}
-            </div>
+            </article>
           );
         })}
       </div>
