@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // A única cor fora do globals.css: meta tag não lê variável de CSS. É o
+  // `--color-surface`.
   themeColor: "#ffffff",
 };
 
