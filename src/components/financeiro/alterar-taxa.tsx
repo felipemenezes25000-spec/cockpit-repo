@@ -28,8 +28,9 @@ function Botao() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+      className="group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:shadow-[0_12px_28px_-12px_rgba(8,84,160,0.68)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
     >
+      <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/60" />
       {pending ? (
         <>
           <LoaderCircle aria-hidden="true" size={18} className="animate-spin" />
@@ -45,13 +46,39 @@ function Botao() {
   );
 }
 
+function ValorFinanceiro({
+  rotulo,
+  valor,
+  tom = "neutro",
+}: {
+  rotulo: string;
+  valor: string;
+  tom?: "neutro" | "positivo" | "negativo" | "atencao";
+}) {
+  return (
+    <div className="rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/60 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
+      <p className="rotulo text-[0.64rem] text-outline">{rotulo}</p>
+      <p
+        className={cn(
+          "tabular mt-1.5 text-base font-semibold tracking-[-0.015em]",
+          tom === "positivo" && "text-positivo",
+          tom === "negativo" && "text-negativo",
+          tom === "atencao" && "text-atencao",
+          tom === "neutro" && "text-on-surface",
+        )}
+      >
+        {valor}
+      </p>
+    </div>
+  );
+}
+
 export function AlterarTaxa({
   venda,
   taxaPadraoPercentual,
   recebimentoConfirmado,
 }: {
   venda: VendaCompleta;
-  /** O percentual da tabela padrão para esta combinação, quando existir. */
   taxaPadraoPercentual: number | null;
   recebimentoConfirmado: number | null;
 }) {
@@ -60,7 +87,6 @@ export function AlterarTaxa({
 
   const finalCent = Math.round(venda.valorFinal * 100);
   const bpAtual = bpDoBanco(venda.taxaPercentual);
-  // Vazio não é 0%: a ação recusa, e a prévia não finge uma taxa zero.
   const bpNovo = percentualInformado(percentual) ? lerPercentual(percentual) : null;
 
   const taxaNovaCent = bpNovo !== null ? custoDaTaxa(finalCent, bpNovo) : null;
@@ -68,7 +94,6 @@ export function AlterarTaxa({
 
   const erros = estado.erros;
 
-  // O ajuste que o banco grava é `novo líquido − valor que entrou` (§8.4).
   const efeito =
     recebimentoConfirmado !== null && liquidoNovoCent !== null
       ? decidirEfeito("recebido", centavosDoBanco(recebimentoConfirmado), liquidoNovoCent)
@@ -81,38 +106,31 @@ export function AlterarTaxa({
       {erros.geral ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
+          className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-error/25 bg-error-container px-3.5 py-3 text-sm text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erros.geral}
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 text-sm">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-on-surface-variant">
-            Taxa padrão da tabela
-            {taxaPadraoPercentual === null ? " (combinação não cadastrada)" : ""}
-          </span>
-          <span className="tabular text-on-surface">
-            {taxaPadraoPercentual !== null
-              ? formatarPercentual(bpDoBanco(taxaPadraoPercentual))
-              : "—"}
-          </span>
+      <section aria-labelledby="taxa-atual" className="rounded-[var(--radius-painel)] border border-card-border/70 bg-surface-container-low/48 p-4 sm:p-5">
+        <p id="taxa-atual" className="rotulo text-primary/80">Cenário atual</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <ValorFinanceiro
+            rotulo="Taxa padrão da tabela"
+            valor={taxaPadraoPercentual !== null ? formatarPercentual(bpDoBanco(taxaPadraoPercentual)) : "Não cadastrada"}
+            tom={taxaPadraoPercentual === null ? "atencao" : "neutro"}
+          />
+          <ValorFinanceiro
+            rotulo="Aplicada nesta venda"
+            valor={`${formatarPercentual(bpAtual)} · ${formatarMoeda(venda.taxaValor)}`}
+            tom={venda.taxaValor > 0 ? "negativo" : "neutro"}
+          />
+          <ValorFinanceiro rotulo="Líquido atual" valor={formatarMoeda(venda.valorLiquido)} tom="positivo" />
         </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-on-surface-variant">Taxa aplicada hoje nesta venda</span>
-          <span className="tabular text-on-surface">
-            {formatarPercentual(bpAtual)} · {formatarMoeda(venda.taxaValor)}
-          </span>
-        </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-on-surface-variant">Líquido de hoje</span>
-          <span className="tabular text-on-surface">{formatarMoeda(venda.valorLiquido)}</span>
-        </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(15rem,0.85fr)]">
         <Campo
           id="taxa_percentual"
           rotulo="Nova taxa (%)"
@@ -132,39 +150,39 @@ export function AlterarTaxa({
           />
         </Campo>
 
-        <div className="flex flex-col justify-end gap-1 pb-1 text-sm">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-on-surface-variant">Novo custo da taxa</span>
-            <span className="tabular text-on-surface">
-              {taxaNovaCent !== null ? formatarMoeda(taxaNovaCent / 100) : "—"}
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-on-surface-variant">Novo líquido</span>
-            <span className="tabular font-semibold text-positivo">
-              {liquidoNovoCent !== null ? formatarMoeda(liquidoNovoCent / 100) : "—"}
-            </span>
-          </div>
+        <div className="grid grid-cols-2 gap-3 self-end">
+          <ValorFinanceiro
+            rotulo="Novo custo"
+            valor={taxaNovaCent !== null ? formatarMoeda(taxaNovaCent / 100) : "—"}
+            tom={taxaNovaCent !== null && taxaNovaCent > 0 ? "negativo" : "neutro"}
+          />
+          <ValorFinanceiro
+            rotulo="Novo líquido"
+            valor={liquidoNovoCent !== null ? formatarMoeda(liquidoNovoCent / 100) : "—"}
+            tom={liquidoNovoCent !== null ? "positivo" : "neutro"}
+          />
         </div>
       </div>
 
       {efeito && recebimentoConfirmado !== null ? (
-        <p className="rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-2.5 text-xs text-atencao">
-          O recebimento já foi confirmado. O registro original fica intacto
-          {efeito.tipo === "ajuste" ? (
-            <>
-              {" "}e entra um ajuste de{" "}
-              <strong className="tabular">
-                {efeito.valorCent < 0 ? "− " : "+ "}
-                {formatarMoeda(Math.abs(efeito.valorCent) / 100)}
-              </strong>
-              : o novo líquido menos o valor que de fato entrou (
-              {formatarMoeda(recebimentoConfirmado)}).
-            </>
-          ) : (
-            ": o novo líquido é igual ao valor que entrou, e nenhum ajuste é lançado."
-          )}
-        </p>
+        <div className="rounded-[var(--radius-controle)] border border-atencao-borda/85 bg-atencao-fundo px-4 py-3 text-xs leading-5 text-atencao shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+          <p className="font-semibold">O recebimento já foi confirmado.</p>
+          <p className="mt-1">
+            O registro original fica intacto
+            {efeito.tipo === "ajuste" ? (
+              <>
+                {" "}e entra um ajuste de{" "}
+                <strong className="tabular">
+                  {efeito.valorCent < 0 ? "− " : "+ "}
+                  {formatarMoeda(Math.abs(efeito.valorCent) / 100)}
+                </strong>
+                : o novo líquido menos o valor que de fato entrou ({formatarMoeda(recebimentoConfirmado)}).
+              </>
+            ) : (
+              ": o novo líquido é igual ao valor que entrou, e nenhum ajuste é lançado."
+            )}
+          </p>
+        </div>
       ) : null}
 
       <Campo
@@ -184,11 +202,11 @@ export function AlterarTaxa({
         />
       </Campo>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
+      <div className="flex flex-wrap items-center gap-3 border-t border-card-border/70 pt-6">
         <Botao />
         <Link
           href={`/financeiro/vendas/${venda.id}`}
-          className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+          className="premium-interactive inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface/75 px-6 text-sm font-semibold text-on-surface-variant shadow-[var(--shadow-cartao)] hover:border-primary-fixed-dim hover:text-primary"
         >
           Cancelar
         </Link>
