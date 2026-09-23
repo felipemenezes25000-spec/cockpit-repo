@@ -244,9 +244,9 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 6. **Horário de funcionamento.** A Linha do Dia hoje se ajusta aos atendimentos
    existentes. Com o horário oficial definido, ela pode passar a mostrar o
    expediente inteiro, inclusive as pontas vazias do dia.
-7. **Tratamento do fuso horário.** As datas fictícias são criadas como horário de
-   parede local. Se o sistema for hospedado em servidor com fuso diferente do
-   Brasil, essa decisão precisa ser revista.
+7. ~~**Tratamento do fuso horário.**~~ Definido: todo cálculo de dia usa o relógio
+   de São Paulo (`lib/dates.ts`), qualquer que seja o fuso do servidor — e os
+   testes rodam de propósito com o processo em UTC, como na Vercel.
 8. **Situações do atendimento.** As sete atuais cobrem a rotina? Falta alguma, como
    "remarcado"?
 9. ~~**Método de assinatura dos contratos.**~~ Definido: assinatura interna, com
@@ -329,12 +329,19 @@ Regras que valem para as próximas etapas:
 ## 9. Como executar
 
 ```bash
-npm install
-npm run dev        # http://localhost:3000
-npm run build      # build de produção
-npm run lint       # ESLint
-npm run typecheck  # TypeScript
+npm ci
+npx supabase start       # banco local com todas as migrações e os dados de exemplo
+npm run local:usuarios   # contas de teste dos três perfis
+npm run dev              # http://localhost:3000
+npm run lint             # ESLint, sem aviso tolerado
+npm run typecheck        # TypeScript
+npm test                 # unidade e componente
+npm run test:banco       # permissões do banco, por perfil
+npm run test:e2e         # fluxos e telas no navegador
 ```
+
+O passo a passo completo está no [`README.md`](../README.md) e no
+[`AGENTS.md`](../AGENTS.md) §2.
 
 ---
 
@@ -912,3 +919,70 @@ Isso silencia a divergência de atributos no `<html>`; não alcança componentes
 internos nem substitui a correção de uma diferença real entre HTML do servidor
 e do cliente. Se surgir um aviso em outro nó, confira esse nó e os valores que
 o geraram.
+
+## 20. Auditoria de setembro de 2026
+
+Revisão completa do sistema contra o schema efetivo (as migrações aplicadas em
+ordem num banco limpo) e contra o código, com correção do que era técnico e
+registro do que depende da clínica. O detalhe de cada regra está no
+[`AGENTS.md`](../AGENTS.md); aqui fica o que mudou para quem usa e o porquê.
+
+### O banco passou a garantir o que antes era só da tela
+
+- **Nada se apaga pela API**, exceto foto de prontuário a pedido da titular
+  (LGPD). Recebimento, despesa, taxa, paciente, atendimento e tarefa de contato
+  perderam o DELETE que ainda tinham. Mudanças em despesas, taxas, retornos,
+  tarefas, procedimentos, profissionais e perfis passaram a entrar na auditoria.
+- **Taxa de cartão conferida na origem.** Uma venda no cartão só grava o
+  percentual da tabela padrão (ou taxa manual, pelo financeiro), e o valor da
+  taxa precisa bater com o arredondamento do sistema. Venda em PIX ou dinheiro
+  não tem taxa.
+- **Recebimento confirmado não muda mais** — a diferença de uma correção
+  posterior entra como ajuste, como sempre foi a regra.
+- **Duas recepcionistas não marcam o mesmo horário.** A conferência de choque
+  passou a valer no banco, com uma trava por profissional. Reabrir um
+  atendimento cancelado cujo horário foi ocupado pede para remarcar.
+- **Documento e assinatura à prova da API.** Documento só nasce do texto do
+  modelo e só muda de situação; a evidência da assinatura (hash, hora, canal,
+  quem colheu) é escrita pelo banco; a pergunta da anamnese não muda depois de
+  emitida. No link público, dez tentativas de data errada são exatamente dez.
+
+### Erros que se veem
+
+- Nenhuma mensagem do banco em inglês ou com detalhe técnico chega à tela. O
+  que falha diz em português o que fazer; o detalhe vai para o log do servidor,
+  sem dado de paciente.
+- Os botões de ação (mudar situação, arquivar, ativar, revogar, pagar) mostram
+  a recusa ao lado do botão. Antes, se o banco recusasse, nada acontecia e
+  ninguém era avisado.
+- Toda tela tem estado de carregamento e de erro, com "Tentar de novo". O login
+  distingue senha errada de serviço fora do ar.
+
+### Interface
+
+- Campo com erro fica com borda vermelha (a regra de CSS perdia para a borda
+  neutra) e é anunciado junto do campo pelo leitor de tela.
+- A navegação de dias da Agenda voltou a ser uma linha (setas e data).
+- Nada rola na horizontal no celular: filtros e abas rolam dentro de si, ações
+  de cabeçalho quebram de linha, o nome do aniversariante não é mais espremido.
+- O seletor de paciente funciona pelo teclado (setas, Enter, Esc).
+- O menu do celular prende o foco enquanto está aberto e some da ordem do Tab
+  quando fechado.
+- O Relacionamento passou a usar os mesmos componentes do resto do sistema.
+- A faixa de demonstração vem do layout e fala com quem usa o sistema.
+- O atalho de registro clínico só aparece para a administradora.
+
+### Testes
+
+O sistema passou a ter suíte automatizada: regras de dinheiro, datas,
+validações, CSV e erros; ações de servidor e componentes; permissões do banco
+por perfil; e fluxos de ponta a ponta com todas as telas em três larguras.
+Nada roda contra produção — tudo usa o Supabase local.
+
+### Pendente de aplicação em produção
+
+As migrações 0019 a 0022 foram escritas e testadas no banco local, **não
+aplicadas em produção**. O dono do projeto aplica com `npm run db:push` e
+confere com `npm run db:tipos` (os tipos públicos não mudam). Ver
+[`supabase/README.md`](../supabase/README.md).
+

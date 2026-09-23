@@ -83,22 +83,21 @@ Estas valem a partir de agora, em toda tarefa:
 - **Nunca** use a chave `service_role`, em lugar nenhum.
 - **Nunca** edite uma migração já aplicada. Correção é arquivo novo.
 - **Nunca** edite `src/lib/supabase/tipos-banco.ts` à mão — é gerado.
-- **Nunca** rode `db:push`, `db:tipos`, `dados:exemplo` ou `dados:limpar`: não
-  existe banco local nem de homologação, os quatro falam direto com o banco de
-  produção da clínica. Quem aplica sou eu.
+- **Nunca** rode `db:push`, `db:tipos`, `dados:exemplo` ou `dados:limpar`: os
+  quatro falam direto com o banco de produção da clínica. Quem aplica sou eu.
+  Para testar, existe o **Supabase local** (`npx supabase start`,
+  `npm run local:usuarios`) — ali você aplica, reseta e testa à vontade.
 - **Nunca** tente `supabase login`. Você não tem e não terá credencial deste
   banco — é decisão, não limitação de ambiente a contornar. Se o login falhar,
   não insista nem procure caminho alternativo: não é para funcionar.
   Para escrever código você não precisa dele — o schema inteiro está em
   `supabase/migrations/*.sql` e em `src/lib/supabase/tipos-banco.ts`.
 
-  Quando a tarefa exigir mudança no banco: escreva a migração nova, **pare**, e
-  me diga o que ela faz. Eu aplico e regenero os tipos.
-
-  Até eu aplicar, **seu código não vai passar no typecheck** — `tipos-banco.ts`
-  ainda não conhece as tabelas novas. Isso é esperado. Não edite o arquivo
-  gerado à mão para "consertar": me avise que o typecheck só fecha depois da
-  aplicação.
+  Quando a tarefa exigir mudança no banco: escreva a migração nova, aplique no
+  banco local (`npx supabase db reset`), rode `npm run test:banco` e acrescente
+  ao `supabase/testes/permissoes.sql` o que ela garante. Se mudou tabela ou
+  função pública, `npm run db:tipos:local` regenera os tipos a partir do banco
+  local. Depois **pare** e me diga o que a migração faz. Eu aplico em produção.
 - **Nunca** rode `npm run build` sem antes conferir a porta 3000. `next build` e
   `next dev` compartilham a pasta `.next`: buildar com o dev no ar corrompe o
   servidor em execução, a aplicação abre sem CSS nenhum e algumas rotas dão 500.
@@ -114,19 +113,22 @@ Estas valem a partir de agora, em toda tarefa:
 - Toda ação de servidor começa com `usuarioAtual()`. O layout não protege server
   action.
 
-E o inverso, que também importa: a seção 13 do AGENTS.md lista bugs conhecidos e
-código morto. **Não os imite por analogia, e não os conserte por conta própria** —
-vários tocam dinheiro e permissão. Se um deles atrapalhar sua tarefa, me avise.
+E o inverso, que também importa: a seção 13 do AGENTS.md registra o que já foi
+corrigido (para ninguém tomar o comportamento antigo por padrão) e as dívidas que
+continuam abertas. **Não imite as dívidas por analogia, e não as conserte por
+conta própria** — várias dependem de decisão de produto ou tocam dinheiro e
+permissão. Se uma delas atrapalhar sua tarefa, me avise.
 
 ## Passo 5 — Como trabalhar daqui em diante
 
 - Tudo em português: interface, mensagens, funções, variáveis, comentários,
   colunas, migrações, commits.
 - Comentário explica o PORQUÊ, não o quê. É o padrão do repositório inteiro.
-- Antes de dar qualquer tarefa por concluída: `npm run lint` e
-  `npm run typecheck` limpos — e só esses dois. Não existe suíte de testes: não
-  diga que "os testes passam".
-- Não comite nem faça push sem eu pedir. A branch é `main`, única.
+- Antes de dar qualquer tarefa por concluída: `npm run lint`,
+  `npm run typecheck` e `npm test` limpos; mexeu em banco ou permissão,
+  `npm run test:banco`; mexeu em tela ou fluxo, `npm run test:e2e`. Regra nova
+  ou bug corrigido ganha teste junto. Só diga que "os testes passam" se rodou.
+- Não comite nem faça push sem eu pedir, e nunca na `main` sem combinar.
 - Se encontrar algo que contradiz o `AGENTS.md`, corrija o documento no mesmo
   commit da mudança.
 

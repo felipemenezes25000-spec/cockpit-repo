@@ -26,6 +26,10 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0016_via_da_paciente.sql` | Assinar deixa de revogar o link, e `documento_para_assinatura` passa a devolver o texto e os dados da assinatura quando `ja_assinado`. É por aí que a paciente salva a via dela. |
 | `0017_anamnese.sql` | Anamnese com campos de formulário. Perguntas em `modelo_documento_versoes.campos` (versionam com o texto), respostas em `documento_campos` com a pergunta congelada em cada linha. `documento_responder_por_link` é a quarta função alcançável por `anon` — e continua sendo só função, nenhuma tabela. |
 | `0018_emissao_grava_perguntas.sql` | Corrige a 0017: `documento_emitir` é invoker e esbarrava na RLS de `documento_campos`, que não tem política de INSERT. As perguntas passam a entrar só por `private.documento_campos_criar` (definer), que copia da versão do modelo do próprio documento, uma vez. |
+| `0019_privilegio_minimo.sql` | Grants declarados tabela a tabela (as da 0007 dependiam do padrão do projeto) e default sem privilégio para `authenticated`; políticas `for all` viram uma por operação, **sem DELETE**; UPDATE de recebimento só do financeiro; auditoria em retornos, pendências, despesas, taxas, procedimentos, profissionais e perfis; o próprio perfil só muda o nome; funções de gatilho fora do alcance de `anon`/`authenticated`. |
+| `0020_financeiro_conferido_no_banco.sql` | Gatilho `vendas_confere_taxa` (forma, parcelas, tabela padrão, percentual e valor da taxa); `recebimentos_confirmado_imutavel`; `private.recebimento_da_venda_criar` como porta do recebimento; `venda_registrar` e `venda_alterar_pagamento` recriadas com a mesma assinatura. |
+| `0021_agenda_sem_choque.sql` | Gatilho `atendimentos_sem_choque`: sobreposição exata recusada com `23P01`, sob trava por profissional. |
+| `0022_documentos_integridade.sql` | Documento só nasce do modelo e só muda `situacao`/`motivo_cancelamento`; transições só a partir de `emitido`; evidência da assinatura escrita pelo banco e assinatura fecha o documento; pergunta da anamnese congelada (UPDATE só nas colunas de resposta) e resposta só em documento `emitido`; link público com `for update` e `on conflict`; `campos_validos` mais estrita; prontuário sem troca de paciente e versão conferida; foto com caminho exato, eliminação só com motivo e Storage sem UPDATE. |
 
 ## Projeto
 
@@ -35,6 +39,47 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 A região não pode ser alterada depois da criação — trocar exige projeto novo e
 migração de dados. O primeiro projeto foi criado em `us-east-1` e descartado por
 isso, antes de existir qualquer dado.
+
+## Banco local (Docker)
+
+```bash
+npx supabase start       # sobe tudo, aplica as migrações e o seed (dados-exemplo.sql)
+npm run local:usuarios   # contas de teste: supabase/usuarios-locais.json
+npm run test:banco       # supabase/testes/permissoes.sql, por perfil
+npx supabase db reset    # do zero: migrações + seed (as contas precisam ser recriadas)
+```
+
+`config.toml` usa as portas 5532x porque o Windows reserva 54286–54385 para o
+Hyper-V. O banco local é onde toda migração nova se testa antes de produção:
+`db reset` precisa passar do zero, e `test:banco` precisa continuar verde.
+
+**Nunca crie usuário inserindo em `auth.users`** — nem no local. O script usa a
+API de administração do Auth, como o painel.
+
+## Pendente de aplicação em produção
+
+As migrações **0019 a 0022** estão escritas e verificadas no banco local (do
+zero, com o seed e com `npm run test:banco`: 78 testes). Não foram aplicadas em
+produção. Para aplicar, na ordem numérica, pelo dono do projeto:
+
+1. `npx supabase db diff --linked` para conferir o que vai mudar;
+2. `npm run db:push`;
+3. `npm run db:tipos` — os tipos públicos não mudam (as funções novas ficam no
+   schema `private`); o `git diff` deve vir vazio ou só de formatação do CLI.
+
+Riscos conhecidos e por que são baixos:
+
+- As restrições novas de dados antigos (`documento_links_canal_formato`,
+  `prontuario_versoes_limites`, `prontuario_imagens_caminho_forma`) entram
+  `NOT VALID` e só são validadas se nenhuma linha antiga violar — a migração
+  não falha por causa do passado.
+- Os gatilhos de regra valem para gravações novas. Um atendimento antigo que
+  já choque com outro só é recusado se alguém mexer no horário dele.
+- A 0019 revoga e concede grants: a aplicação continua com exatamente o que
+  usa (conferido por `test:banco` e pelo E2E completo).
+
+Reverter, se preciso, é escrever a migração inversa (recriar políticas,
+`drop trigger`, `grant`); nenhuma delas apaga dado.
 
 ## Como aplicar
 
@@ -62,6 +107,11 @@ npx supabase db diff --linked
 
 ## Regras que valem para as próximas migrações
 
+- **Grants declarados.** Desde a 0019 o default não concede nada a
+  `authenticated`: tabela nova diz o que ele faz nela, e só isso. DELETE só com
+  decisão explícita; UPDATE por coluna quando o resto da linha não pode mudar.
+- **Testar no banco local** (`db reset` + `test:banco`) antes de ir para
+  produção, e acrescentar ao `testes/permissoes.sql` o que a migração garante.
 - **RLS ligada em toda tabela nova.** Sem exceção: dado de paciente é dado
   pessoal sensível.
 - **Nunca escrever `DROP` de coluna com dado dentro** sem uma migração de
