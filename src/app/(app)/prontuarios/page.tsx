@@ -1,6 +1,5 @@
 import { FileText } from "lucide-react";
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { BuscaProntuarios } from "@/components/prontuarios/busca-prontuarios";
 import { ListaProntuarios } from "@/components/prontuarios/lista-prontuarios";
@@ -37,7 +36,6 @@ export default async function PaginaProntuarios({
   if (!administradora) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <AcessoRestritoProntuario />
       </div>
     );
@@ -51,7 +49,6 @@ export default async function PaginaProntuarios({
   if (!resultado) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteProntuario />
       </div>
     );
@@ -62,7 +59,6 @@ export default async function PaginaProntuarios({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <Card>
         <CardCabecalho

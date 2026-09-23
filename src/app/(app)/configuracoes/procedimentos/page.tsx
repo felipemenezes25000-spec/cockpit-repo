@@ -2,7 +2,6 @@ import { ArrowLeft, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ListaProcedimentos } from "@/components/configuracoes/lista-procedimentos";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { ehAdministradora } from "@/lib/auth";
@@ -24,7 +23,6 @@ export default async function PaginaProcedimentos() {
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <Link
         href="/configuracoes"

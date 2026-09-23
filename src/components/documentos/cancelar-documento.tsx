@@ -3,8 +3,7 @@
 import { Ban, LoaderCircle } from "lucide-react";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { AREA_TEXTO, Campo } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
+import { Campo, classeDeAreaDeTexto } from "@/components/ui/field";
 import { cancelarDocumento, type EstadoDocumento } from "@/server/acoes/documentos";
 
 const INICIAL: EstadoDocumento = { erro: null };
@@ -77,7 +76,7 @@ export function CancelarDocumento({ documentoId }: { documentoId: string }) {
           maxLength={400}
           rows={2}
           placeholder="Emitido para a paciente errada."
-          className={cn(AREA_TEXTO, "min-h-16")}
+          className={classeDeAreaDeTexto({ altura: "curta" })}
         />
       </Campo>
 

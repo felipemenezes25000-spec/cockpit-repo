@@ -1,7 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { EstruturaPendenteProntuario } from "@/components/prontuarios/estrutura-pendente";
 import { FormularioProntuario } from "@/components/prontuarios/formulario-prontuario";
@@ -30,7 +29,6 @@ export default async function PaginaEditarProntuario({
   if (!administradora) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <AcessoRestritoProntuario />
       </div>
     );
@@ -44,7 +42,6 @@ export default async function PaginaEditarProntuario({
   if (prontuario === undefined) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteProntuario />
       </div>
     );
@@ -72,7 +69,6 @@ export default async function PaginaEditarProntuario({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <div className="mb-4">
         <BotaoLink

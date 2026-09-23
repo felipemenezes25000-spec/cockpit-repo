@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
 import { FiltrosFinanceiro, type GrupoDeFiltro } from "@/components/financeiro/filtros";
 import { ListaDespesas } from "@/components/financeiro/lista-despesas";
@@ -98,7 +97,6 @@ export default async function PaginaDespesas({
 
   return (
     <div className="flex flex-col gap-6">
-      <FaixaDemonstracao />
       <AbasFinanceiro podeFinanceiro />
 
       <Card>

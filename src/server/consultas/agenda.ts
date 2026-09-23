@@ -1,5 +1,6 @@
 import "server-only";
 
+import { uuidValido } from "@/lib/formulario";
 import { falhaDeConsulta } from "@/lib/registro";
 
 import { cache } from "react";
@@ -150,25 +151,34 @@ export type CatalogoAgenda = {
   procedimentos: OpcaoProcedimento[];
 };
 
+type ManterNoCatalogo = { profissionalId?: string; procedimentoId?: string };
+
 /**
  * O que o formulário de marcar atendimento precisa para os seletores.
  *
  * O procedimento carrega a duração e o valor padrão: escolher "Botox" já
  * preenche 45 minutos e o preço da tabela, editáveis caso a caso.
+ *
+ * Só entram os ativos — desativar tira da agenda. A exceção é o que o
+ * atendimento sendo editado já usa: sem ela, desativar um procedimento
+ * travava a edição de todo atendimento antigo com ele, porque o seletor não
+ * tinha a opção atual.
  */
-export const catalogoAgenda = cache(async (): Promise<CatalogoAgenda> => {
+export const catalogoAgenda = cache(async (manter: ManterNoCatalogo = {}): Promise<CatalogoAgenda> => {
   const supabase = await clienteServidor();
+
+  const ativosOu = (id: string | undefined) => (uuidValido(id) ? `ativo.eq.true,id.eq.${id}` : "ativo.eq.true");
 
   const [profissionais, procedimentos] = await Promise.all([
     supabase
       .from("profissionais")
       .select("id, nome")
-      .eq("ativo", true)
+      .or(ativosOu(manter.profissionalId))
       .order("nome"),
     supabase
       .from("procedimentos")
       .select("id, nome, duracao_min, valor_padrao")
-      .eq("ativo", true)
+      .or(ativosOu(manter.procedimentoId))
       .order("nome"),
   ]);
 

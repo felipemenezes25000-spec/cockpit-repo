@@ -41,7 +41,7 @@ export function ListaVendas({
       {vendas.map((venda) => (
         <li
           key={venda.id}
-          className="relative flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow focus-within:border-primary hover:shadow-[0_4px_15px_rgba(0,0,0,0.03)]"
+          className="relative flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow focus-within:border-primary hover:shadow-[var(--shadow-realce)]"
         >
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

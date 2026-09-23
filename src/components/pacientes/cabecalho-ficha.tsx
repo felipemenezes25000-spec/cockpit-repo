@@ -33,7 +33,7 @@ export function CabecalhoFicha({
         <div className="flex min-w-0 items-start gap-4">
           <Avatar
             nome={paciente.exibicao}
-            tom={paciente.ativo ? "verde" : "neutro"}
+            tom={paciente.ativo ? "marca" : "neutro"}
             className="size-14 text-base"
           />
 

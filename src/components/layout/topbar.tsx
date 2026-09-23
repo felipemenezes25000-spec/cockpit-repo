@@ -18,8 +18,8 @@ export const BarraSuperior = forwardRef<
   const item = itemAtivo(caminho ?? "/");
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md sm:px-8 xl:px-20">
-      <div className="flex min-w-0 items-center gap-3">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-outline-variant bg-surface/90 px-3 backdrop-blur-md sm:h-20 sm:gap-4 sm:px-8 xl:px-20">
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
         <button
           ref={ref}
           type="button"
@@ -31,7 +31,7 @@ export const BarraSuperior = forwardRef<
         </button>
 
         <div className="min-w-0">
-          <h1 className="t-headline truncate text-primary">
+          <h1 className="truncate text-lg leading-tight font-medium text-primary sm:text-2xl">
             {caminho === "/busca" ? "Busca global" : item?.rotulo ?? "Cockpit"}
           </h1>
           <p className="mt-1 hidden truncate text-xs text-outline sm:block">
@@ -40,7 +40,7 @@ export const BarraSuperior = forwardRef<
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-6">
         <Link href="/busca" aria-label="Abrir busca global" className="flex size-10 items-center justify-center rounded-[var(--radius-cartao)] text-on-surface-variant hover:bg-surface-container-low hover:text-primary lg:hidden">
           <Search aria-hidden="true" size={20} strokeWidth={1.5} />
         </Link>
@@ -49,7 +49,7 @@ export const BarraSuperior = forwardRef<
           <input type="search" name="q" minLength={2} maxLength={80} required aria-label="Buscar no sistema" placeholder="Paciente, atendimento, documento…" className="min-w-0 flex-1 bg-transparent text-sm text-on-surface outline-none placeholder:text-outline" />
         </form>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 sm:gap-4">
           <button
             type="button"
             aria-disabled="true"
@@ -68,7 +68,7 @@ export const BarraSuperior = forwardRef<
             ) : null}
           </button>
 
-          <div className="border-l border-outline-variant pl-4">
+          <div className="sm:border-l sm:border-outline-variant sm:pl-4">
             <MenuPerfil usuario={usuario} />
           </div>
         </div>

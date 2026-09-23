@@ -2,7 +2,6 @@ import { Building2, ChevronRight, Clock3, ShieldCheck, Stethoscope, Users } from
 import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { listarProcedimentos } from "@/server/consultas/procedimentos";
 
@@ -58,7 +57,6 @@ export default async function PaginaConfiguracoes() {
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <Card>
         <CardCabecalho

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetalheDocumento } from "@/components/documentos/detalhe-documento";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import {
   documentoPorId,
   EstruturaDocumentoPendenteError,
@@ -29,7 +28,6 @@ export default async function PaginaDocumento({
   if (documento === undefined) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteDocumento />
       </div>
     );
@@ -44,7 +42,6 @@ export default async function PaginaDocumento({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
       <DetalheDocumento documento={documento} links={links} />
     </div>
   );

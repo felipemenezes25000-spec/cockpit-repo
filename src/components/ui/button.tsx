@@ -9,9 +9,9 @@ const BASE =
   "inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55";
 
 const VARIANTES: Record<Variante, string> = {
-  /* Ação principal: verde cheio, escurece no hover */
+  /* Ação principal: azul da marca cheio, escurece no hover */
   primaria: "bg-primary-container text-on-primary hover:bg-primary",
-  /* Ação da mesma família, em contorno verde */
+  /* Ação da mesma família, em contorno azul */
   secundaria:
     "border border-primary bg-surface text-primary hover:bg-surface-container-low",
   /* Ação neutra dentro de um painel cinza */
@@ -24,24 +24,6 @@ const TAMANHOS: Record<Tamanho, string> = {
   md: "h-11 rounded-[var(--radius-controle)] px-6 text-sm",
   sm: "h-9 rounded-[var(--radius-cartao)] px-4 text-sm",
 };
-
-export function Botao({
-  variante = "contorno",
-  tamanho = "md",
-  className,
-  children,
-  ...props
-}: ComponentProps<"button"> & { variante?: Variante; tamanho?: Tamanho }) {
-  return (
-    <button
-      type="button"
-      className={cn(BASE, VARIANTES[variante], TAMANHOS[tamanho], className)}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
 
 export function BotaoLink({
   href,

@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { SomenteAdministradora } from "@/components/configuracoes/somente-administradora";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { FormularioModelo } from "@/components/documentos/formulario-modelo";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { ehAdministradora } from "@/lib/auth";
 import {
   EstruturaDocumentoPendenteError,
@@ -25,7 +24,6 @@ export default async function PaginaEditarModelo({
   if (!administradora) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <SomenteAdministradora voltarPara="/formularios/modelos" />
       </div>
     );
@@ -40,7 +38,6 @@ export default async function PaginaEditarModelo({
   if (modelo === undefined) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteDocumento />
       </div>
     );
@@ -50,7 +47,6 @@ export default async function PaginaEditarModelo({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <FaixaDemonstracao className="mb-8" />
       <FormularioModelo modelo={modelo} />
     </div>
   );

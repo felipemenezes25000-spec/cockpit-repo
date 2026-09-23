@@ -42,12 +42,12 @@ export function MenuNavegacao({
                   aria-hidden="true"
                   size={22}
                   strokeWidth={estaAtivo ? 1.9 : 1.5}
-                  className={cn("shrink-0", !recolhido && "mr-4")}
+                  className={cn("shrink-0", !recolhido && "mr-3")}
                 />
                 {recolhido ? (
                   <span className="sr-only">{item.rotulo}</span>
                 ) : (
-                  <span className="truncate text-sm">{item.rotulo}</span>
+                  <span className="text-sm leading-snug">{item.rotulo}</span>
                 )}
               </Link>
             </li>

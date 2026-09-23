@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { DetalheProntuario } from "@/components/prontuarios/detalhe-prontuario";
 import { EstruturaPendenteProntuario } from "@/components/prontuarios/estrutura-pendente";
@@ -27,7 +26,6 @@ export default async function PaginaProntuario({
   if (!administradora) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <AcessoRestritoProntuario />
       </div>
     );
@@ -41,7 +39,6 @@ export default async function PaginaProntuario({
   if (prontuario === undefined) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteProntuario />
       </div>
     );
@@ -55,7 +52,6 @@ export default async function PaginaProntuario({
   if (fotos === undefined) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteProntuario />
       </div>
     );
@@ -63,7 +59,6 @@ export default async function PaginaProntuario({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
       <DetalheProntuario
         prontuario={prontuario}
         fotos={fotos}

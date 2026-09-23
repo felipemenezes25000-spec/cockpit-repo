@@ -3,8 +3,7 @@
 import { LoaderCircle, Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ENTRADA } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
+import { classeDeEntrada } from "@/components/ui/field";
 import {
   ROTULO_SITUACAO,
   ROTULO_TIPO,
@@ -93,7 +92,7 @@ export function FiltrosDocumentos({
             maxLength={80}
             aria-label="Buscar documento por paciente ou título"
             placeholder="Buscar por paciente ou título"
-            className={cn(ENTRADA, "pr-10 pl-11")}
+            className={classeDeEntrada({ recuo: "busca" })}
           />
           {termo ? (
             <button

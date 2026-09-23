@@ -2,8 +2,8 @@
 
 import { Check, LoaderCircle, Search, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
-import { Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { Campo, classeDeEntrada, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import {
   buscarPacientesParaSelecao,
@@ -18,6 +18,10 @@ import {
  * escondido `paciente_id`; é ele que a ação lê, nunca o texto digitado.
  *
  * Vem travado quando a paciente já é conhecida (marcado a partir da ficha).
+ *
+ * Segue o padrão de combobox do WAI-ARIA: setas percorrem as opções sem tirar
+ * o foco do campo (`aria-activedescendant`), Enter escolhe, Esc fecha a lista.
+ * Quem usa teclado ou leitor de tela escolhe a paciente sem precisar do mouse.
  */
 export function SeletorPaciente({
   inicial,
@@ -35,8 +39,40 @@ export function SeletorPaciente({
   const [opcoes, setOpcoes] = useState<PacienteParaSelecao[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [falhouBusca, setFalhouBusca] = useState(false);
+  const [destacada, setDestacada] = useState(-1);
+  const [listaFechada, setListaFechada] = useState(false);
   const idLista = useId();
   const ultimaBusca = useRef(0);
+  const campo = useRef<HTMLInputElement>(null);
+
+  const listaAberta = opcoes.length > 0 && !listaFechada;
+
+  function escolher(opcao: PacienteParaSelecao) {
+    setEscolhida(opcao);
+    setOpcoes([]);
+    setDestacada(-1);
+    aoEscolher?.(opcao);
+  }
+
+  function aoTeclar(evento: KeyboardEvent<HTMLInputElement>) {
+    if (evento.key === "ArrowDown" && opcoes.length > 0) {
+      evento.preventDefault();
+      setListaFechada(false);
+      setDestacada((atual) => (atual + 1) % opcoes.length);
+    } else if (evento.key === "ArrowUp" && opcoes.length > 0) {
+      evento.preventDefault();
+      setListaFechada(false);
+      setDestacada((atual) => (atual <= 0 ? opcoes.length - 1 : atual - 1));
+    } else if (evento.key === "Enter" && listaAberta && destacada >= 0) {
+      // Enter com uma opção destacada escolhe — não envia o formulário.
+      evento.preventDefault();
+      escolher(opcoes[destacada]);
+    } else if (evento.key === "Escape" && listaAberta) {
+      evento.preventDefault();
+      setListaFechada(true);
+      setDestacada(-1);
+    }
+  }
 
   useEffect(() => {
     if (escolhida || termo.trim().length < 2) {
@@ -47,6 +83,8 @@ export function SeletorPaciente({
     }
 
     setBuscando(true);
+    setListaFechada(false);
+    setDestacada(-1);
     const numero = ++ultimaBusca.current;
     const relogio = setTimeout(async () => {
       try {
@@ -93,6 +131,8 @@ export function SeletorPaciente({
               setEscolhida(null);
               setTermo("");
               aoEscolher?.(null);
+              // O campo de busca volta; o foco vai para ele.
+              requestAnimationFrame(() => campo.current?.focus());
             }}
             className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-tag)] text-outline transition-colors hover:bg-surface hover:text-primary"
             aria-label="Trocar a paciente"
@@ -109,17 +149,20 @@ export function SeletorPaciente({
             className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline"
           />
           <input
+            ref={campo}
             id="busca-paciente"
             type="text"
             role="combobox"
-            aria-expanded={opcoes.length > 0}
+            aria-expanded={listaAberta}
             aria-controls={idLista}
             aria-autocomplete="list"
+            aria-activedescendant={listaAberta && destacada >= 0 ? `${idLista}-${destacada}` : undefined}
             autoComplete="off"
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
+            onKeyDown={aoTeclar}
             placeholder="Buscar por nome, telefone ou CPF"
-            className={cn(ENTRADA, "pl-10", erro && ENTRADA_ERRO)}
+            className={cn(classeDeEntrada({ recuo: "icone" }), erro && ENTRADA_ERRO)}
             {...(erro ? { "aria-invalid": true as const } : {})}
           />
           {buscando ? (
@@ -130,28 +173,33 @@ export function SeletorPaciente({
             />
           ) : null}
 
-          {opcoes.length > 0 ? (
+          {listaAberta ? (
             <ul
               id={idLista}
               role="listbox"
               aria-label="Pacientes encontradas"
-              className="absolute z-20 mt-1 w-full overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface shadow-[var(--shadow-flutuante)]"
+              className="absolute z-20 mt-1 max-h-80 w-full overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface py-1 shadow-[var(--shadow-flutuante)]"
             >
-              {opcoes.map((opcao) => (
-                <li key={opcao.id} role="option" aria-selected="false">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEscolhida(opcao);
-                      aoEscolher?.(opcao);
-                    }}
-                    className="flex w-full flex-col items-start gap-0.5 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-container-low"
-                  >
-                    <span className="text-sm font-medium text-on-surface">
-                      {opcao.nome}
-                    </span>
-                    <span className="text-xs text-outline">{opcao.detalhe}</span>
-                  </button>
+              {opcoes.map((opcao, indice) => (
+                <li
+                  key={opcao.id}
+                  id={`${idLista}-${indice}`}
+                  role="option"
+                  aria-selected={indice === destacada}
+                  // mousedown, não click: o clique chega depois de o campo
+                  // perder o foco, e a lista já teria sumido.
+                  onMouseDown={(evento) => {
+                    evento.preventDefault();
+                    escolher(opcao);
+                  }}
+                  onMouseEnter={() => setDestacada(indice)}
+                  className={cn(
+                    "flex cursor-pointer flex-col items-start gap-0.5 px-3.5 py-2.5 text-left transition-colors",
+                    indice === destacada ? "bg-secondary-fixed" : "hover:bg-surface-container-low",
+                  )}
+                >
+                  <span className="text-sm font-medium text-on-surface">{opcao.nome}</span>
+                  <span className="text-xs text-outline">{opcao.detalhe}</span>
                 </li>
               ))}
             </ul>

@@ -93,7 +93,7 @@ export function ListaProcedimentos({
                 <BotaoDeAcao
                   tom="silencioso"
                   tamanho="xs"
-                  icone={p.ativo ? Archive : ArchiveRestore}
+                  icone={p.ativo ? <Archive strokeWidth={1.75} /> : <ArchiveRestore strokeWidth={1.75} />}
                   rotuloAcessivel={`${p.ativo ? "Tirar da agenda" : "Devolver à agenda"}: ${p.nome}`}
                 >
                   {p.ativo ? "Tirar da agenda" : "Devolver à agenda"}

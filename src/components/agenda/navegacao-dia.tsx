@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ENTRADA } from "@/components/ui/field";
+import { classeDeEntrada } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 
 /**
@@ -42,7 +42,7 @@ export function NavegacaoDia({
           if (e.target.value) router.push(`/agenda?dia=${e.target.value}`);
         }}
         aria-label="Escolher o dia"
-        className={cn(ENTRADA, "tabular h-9 w-auto")}
+        className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "tabular")}
       />
 
       <Link href={`/agenda?dia=${proximo}`} aria-label="Dia seguinte" className={seta}>

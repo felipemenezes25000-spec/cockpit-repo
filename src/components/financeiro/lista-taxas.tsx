@@ -81,7 +81,7 @@ export function ListaTaxas({
                 <BotaoDeAcao
                   tom="silencioso"
                   tamanho="xs"
-                  icone={taxa.ativa ? Archive : ArchiveRestore}
+                  icone={taxa.ativa ? <Archive strokeWidth={1.75} /> : <ArchiveRestore strokeWidth={1.75} />}
                   rotuloAcessivel={`${taxa.ativa ? "Desativar" : "Reativar"} a taxa ${taxa.operadora}`}
                 >
                   {taxa.ativa ? "Desativar" : "Reativar"}

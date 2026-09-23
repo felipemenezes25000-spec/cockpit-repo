@@ -31,7 +31,7 @@ export function ItemLista({
   return (
     <li
       className={cn(
-        "rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow hover:shadow-[0_4px_15px_rgba(0,0,0,0.03)]",
+        "rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow hover:shadow-[var(--shadow-realce)]",
         className,
       )}
     >

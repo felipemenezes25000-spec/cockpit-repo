@@ -24,13 +24,17 @@ export default async function PaginaEditarAtendimento({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [atendimento, catalogo] = await Promise.all([
-    atendimentoPorId(id),
-    catalogoAgenda(),
-  ]);
+  const atendimento = await atendimentoPorId(id);
 
   // Inexistente e sem permissão caem na mesma tela, como na ficha da paciente.
   if (!atendimento) notFound();
+
+  // O catálogo inclui o profissional e o procedimento deste atendimento mesmo
+  // que tenham sido desativados depois — senão a edição travaria.
+  const catalogo = await catalogoAgenda({
+    profissionalId: atendimento.profissionalId,
+    procedimentoId: atendimento.procedimentoId,
+  });
 
   const dia = chaveDoDia(atendimento.inicio);
 

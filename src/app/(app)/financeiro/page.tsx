@@ -1,6 +1,5 @@
 import { Plus, ReceiptText } from "lucide-react";
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
 import { IndicadoresPeriodo } from "@/components/financeiro/indicadores-periodo";
 import { ListaMovimentacoes } from "@/components/financeiro/lista-movimentacoes";
@@ -34,7 +33,6 @@ export default async function PaginaFinanceiro({
 
   return (
     <div className="flex flex-col gap-6">
-      <FaixaDemonstracao />
       <AbasFinanceiro podeFinanceiro={podeFinanceiro} />
 
       <div className="flex flex-wrap items-center justify-between gap-4">

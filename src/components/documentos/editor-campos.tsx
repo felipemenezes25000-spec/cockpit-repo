@@ -2,8 +2,7 @@
 
 import { ChevronDown, ChevronUp, ListPlus, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import { ENTRADA } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
+import { classeDeEntrada, ENTRADA } from "@/components/ui/field";
 import {
   campoEmBranco,
   precisaDeOpcoes,
@@ -172,7 +171,7 @@ export function EditorDeCampos({
                   placeholder="Texto de apoio (opcional)"
                   onChange={(evento) => alterar(indice, { ajuda: evento.target.value })}
                   aria-label={`Texto de apoio da pergunta ${indice + 1}`}
-                  className={cn(ENTRADA, "text-xs")}
+                  className={classeDeEntrada({ texto: "xs" })}
                 />
 
                 {precisaDeOpcoes(campo.tipo) ? (
@@ -200,7 +199,7 @@ export function EditorDeCampos({
                               })
                             }
                             aria-label={`Alternativa ${iOpcao + 1}`}
-                            className={cn(ENTRADA, "h-9 bg-surface text-sm")}
+                            className={classeDeEntrada({ altura: "compacta" })}
                           />
                           <button
                             type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, type LucideIcon } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useActionState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { ACAO_INICIAL, type AcaoDeBotao } from "@/lib/acao";
@@ -90,8 +90,8 @@ const TONS: Record<Tom, string> = {
 };
 
 const TAMANHOS = {
-  sm: "h-9 px-3.5 text-sm",
-  xs: "h-8 px-3 text-xs",
+  sm: "h-9 px-3.5 text-sm [&_svg]:size-4",
+  xs: "h-8 px-3 text-xs [&_svg]:size-3.5",
 } as const;
 
 /**
@@ -101,17 +101,21 @@ const TAMANHOS = {
  * ancestral (AGENTS.md §6, regra 8). Enquanto a ação roda, fica indisponível —
  * dois cliques rápidos não viram duas gravações — e troca o ícone pelo
  * indicador de progresso.
+ *
+ * O ícone chega como elemento (`<Archive />`), não como componente: página de
+ * servidor não pode passar função para componente de cliente. O tamanho vem
+ * daqui, pelo CSS, para todo botão do sistema ter o mesmo.
  */
 export function BotaoDeAcao({
   children,
-  icone: Icone,
+  icone,
   tom = "neutro",
   tamanho = "sm",
   className,
   rotuloAcessivel,
 }: {
   children: ReactNode;
-  icone?: LucideIcon;
+  icone?: ReactNode;
   tom?: Tom;
   tamanho?: keyof typeof TAMANHOS;
   className?: string;
@@ -119,7 +123,6 @@ export function BotaoDeAcao({
   rotuloAcessivel?: string;
 }) {
   const { pending } = useFormStatus();
-  const tamanhoIcone = tamanho === "xs" ? 14 : 16;
 
   return (
     <button
@@ -135,9 +138,11 @@ export function BotaoDeAcao({
       )}
     >
       {pending ? (
-        <LoaderCircle aria-hidden="true" size={tamanhoIcone} className="animate-spin" />
-      ) : Icone ? (
-        <Icone aria-hidden="true" size={tamanhoIcone} strokeWidth={1.75} />
+        <LoaderCircle aria-hidden="true" className="animate-spin" />
+      ) : icone ? (
+        <span aria-hidden="true" className="inline-flex">
+          {icone}
+        </span>
       ) : null}
       {children}
     </button>

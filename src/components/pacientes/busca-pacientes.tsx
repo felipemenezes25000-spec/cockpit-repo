@@ -3,8 +3,8 @@
 import { LoaderCircle, Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ENTRADA } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
+import { classeDeEntrada } from "@/components/ui/field";
+import { classeDaOpcao, SEGMENTO_GRUPO } from "@/components/ui/segmento";
 import type { FiltroSituacao } from "@/server/consultas/pacientes";
 
 const FILTROS: { valor: FiltroSituacao; rotulo: string }[] = [
@@ -95,7 +95,7 @@ export function BuscaPacientes({
           maxLength={80}
           aria-label="Buscar paciente por nome, telefone, e-mail ou CPF"
           placeholder="Buscar por nome, telefone, e-mail ou CPF"
-          className={cn(ENTRADA, "pr-10 pl-11")}
+          className={classeDeEntrada({ recuo: "busca" })}
         />
 
         {termo ? (
@@ -130,20 +130,12 @@ export function BuscaPacientes({
         <div
           role="group"
           aria-label="Filtrar por situação"
-          className="flex rounded-[var(--radius-controle)] border border-outline-variant p-0.5"
+          className={SEGMENTO_GRUPO}
         >
           {FILTROS.map((filtro) => {
             const ativo = filtro.valor === situacao;
             return (
-              <label
-                key={filtro.valor}
-                className={cn(
-                  "cursor-pointer rounded-[var(--radius-cartao)] px-3 py-1.5 text-xs font-medium transition-colors",
-                  ativo
-                    ? "bg-secondary-fixed text-primary"
-                    : "text-on-surface-variant hover:text-primary",
-                )}
-              >
+              <label key={filtro.valor} className={classeDaOpcao(ativo)}>
                 <input
                   type="radio"
                   name="situacao"

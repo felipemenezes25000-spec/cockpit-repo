@@ -219,7 +219,7 @@ export default async function PaginaVenda({ params }: Props) {
                           para: recebimento.situacao === "previsto" ? "pendente" : "previsto",
                         }}
                       >
-                        <BotaoDeAcao tamanho="xs" icone={TriangleAlert}>
+                        <BotaoDeAcao tamanho="xs" icone={<TriangleAlert strokeWidth={1.75} />}>
                           {recebimento.situacao === "previsto"
                             ? "Marcar como pendente"
                             : "Voltar para previsto"}
@@ -231,7 +231,7 @@ export default async function PaginaVenda({ params }: Props) {
                         campos={{ recebimento_id: recebimento.id, venda_id: venda.id, para: "cancelado" }}
                         confirmacao="Cancelar este recebimento? Ele deixa de contar como dinheiro a entrar. A venda continua registrada."
                       >
-                        <BotaoDeAcao tamanho="xs" tom="silencioso" icone={Ban}>
+                        <BotaoDeAcao tamanho="xs" tom="silencioso" icone={<Ban strokeWidth={1.75} />}>
                           Cancelar recebimento
                         </BotaoDeAcao>
                       </FormularioDeAcao>

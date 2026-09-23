@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { FormularioModelo } from "@/components/documentos/formulario-modelo";
 import { SomenteAdministradora } from "@/components/configuracoes/somente-administradora";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { ehAdministradora } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -17,7 +16,6 @@ export default async function PaginaNovoModelo() {
   if (!administradora) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <SomenteAdministradora voltarPara="/formularios/modelos" />
       </div>
     );
@@ -25,7 +23,6 @@ export default async function PaginaNovoModelo() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <FaixaDemonstracao className="mb-8" />
       <FormularioModelo modelo={null} />
     </div>
   );

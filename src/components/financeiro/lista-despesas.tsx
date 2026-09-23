@@ -99,7 +99,7 @@ export function ListaDespesas({
                   <BotaoDeAcao
                     tom="silencioso"
                     tamanho="xs"
-                    icone={Ban}
+                    icone={<Ban strokeWidth={1.75} />}
                     rotuloAcessivel={`Cancelar a despesa ${despesa.descricao}`}
                   >
                     Cancelar
@@ -114,7 +114,7 @@ export function ListaDespesas({
                   <BotaoDeAcao
                     tom="silencioso"
                     tamanho="xs"
-                    icone={RotateCcw}
+                    icone={<RotateCcw strokeWidth={1.75} />}
                     rotuloAcessivel={`Reabrir a despesa ${despesa.descricao}`}
                   >
                     Reabrir

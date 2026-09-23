@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { CabecalhoFicha } from "@/components/pacientes/cabecalho-ficha";
 import { HistoricoAtendimentos } from "@/components/pacientes/historico-atendimentos";
 import { PainelCadastro } from "@/components/pacientes/painel-cadastro";
@@ -43,7 +42,6 @@ export default async function PaginaFichaPaciente({ params }: Props) {
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <CabecalhoFicha paciente={paciente} podeProntuario={podeProntuario} />
 

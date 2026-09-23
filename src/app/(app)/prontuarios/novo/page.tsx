@@ -1,6 +1,5 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { FormularioProntuario } from "@/components/prontuarios/formulario-prontuario";
 import { BotaoLink } from "@/components/ui/button";
@@ -33,7 +32,6 @@ export default async function PaginaNovoProntuario({
   if (!administradora) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <AcessoRestritoProntuario />
       </div>
     );
@@ -52,7 +50,6 @@ export default async function PaginaNovoProntuario({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <div className="mb-4">
         <BotaoLink href="/prontuarios" variante="contorno" tamanho="sm">

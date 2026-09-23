@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
 import { ListaTaxas } from "@/components/financeiro/lista-taxas";
 import { SomenteFinanceiro } from "@/components/financeiro/somente-financeiro";
@@ -24,7 +23,6 @@ export default async function PaginaTaxas() {
 
   return (
     <div className="flex flex-col gap-6">
-      <FaixaDemonstracao />
       <AbasFinanceiro podeFinanceiro />
 
       <Card>

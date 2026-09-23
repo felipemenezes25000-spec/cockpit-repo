@@ -2,9 +2,8 @@
 
 import { CircleCheckBig } from "lucide-react";
 import { useId } from "react";
-import { ENTRADA } from "@/components/ui/field";
+import { classeDeEntrada } from "@/components/ui/field";
 import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
-import { cn } from "@/lib/cn";
 import { FORMAS_EM_ORDEM, ROTULO_FORMA } from "@/lib/venda";
 import { mudarSituacaoDespesa } from "@/server/acoes/despesas";
 
@@ -32,7 +31,7 @@ export function PagarDespesa({
             defaultValue={dataPadrao}
             max={dataPadrao}
             required
-            className={cn(ENTRADA, "h-9 w-auto")}
+            className={classeDeEntrada({ altura: "compacta", largura: "auto" })}
           />
         </div>
 
@@ -44,7 +43,7 @@ export function PagarDespesa({
             id={`${id}-forma`}
             name="forma"
             defaultValue="pix"
-            className={cn(ENTRADA, "h-9 w-auto")}
+            className={classeDeEntrada({ altura: "compacta", largura: "auto" })}
           >
             {FORMAS_EM_ORDEM.map((f) => (
               <option key={f} value={f}>
@@ -54,7 +53,7 @@ export function PagarDespesa({
           </select>
         </div>
 
-        <BotaoDeAcao tom="primario" icone={CircleCheckBig}>
+        <BotaoDeAcao tom="primario" icone={<CircleCheckBig strokeWidth={1.75} />}>
           Marcar como paga
         </BotaoDeAcao>
       </div>

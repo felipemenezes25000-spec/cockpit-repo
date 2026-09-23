@@ -45,13 +45,68 @@ function ligarAoControle(
   });
 }
 
-export const ENTRADA =
-  "h-11 w-full rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3.5 text-sm text-on-surface outline-none transition-colors placeholder:text-outline focus-visible:border-primary disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline";
+/*
+ * Aparência dos controles de formulário.
+ *
+ * Altura, largura, recuo e tamanho do texto são OPÇÕES de uma função, não
+ * classes para sobrescrever depois. `cn()` só junta texto: escrever
+ * `cn(ENTRADA, "h-9 w-auto")` deixava `h-11 w-full` e `h-9 w-auto` na mesma
+ * lista, e no Tailwind v4 quem vence é a ordem do CSS gerado, não a da
+ * classe. Foi assim que a navegação de dias da Agenda empilhou as setas em
+ * cima e embaixo de uma data de largura inteira.
+ */
 
-export const ENTRADA_ERRO = "border-error focus-visible:border-error";
+const CONTROLE_BASE =
+  "rounded-[var(--radius-cartao)] border border-outline-variant bg-surface text-on-surface outline-none transition-colors placeholder:text-outline focus-visible:border-primary aria-[invalid=true]:border-error disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline";
 
-export const AREA_TEXTO =
-  "min-h-28 w-full resize-y rounded-[var(--radius-cartao)] border border-outline-variant bg-surface px-3.5 py-2.5 text-sm leading-relaxed text-on-surface outline-none transition-colors placeholder:text-outline focus-visible:border-primary";
+const ALTURA = { padrao: "h-11", compacta: "h-9" } as const;
+const LARGURA = { cheia: "w-full", auto: "w-auto", nenhuma: "" } as const;
+const RECUO = {
+  padrao: "px-3.5",
+  /** Ícone à esquerda (lupa). */
+  icone: "pr-3.5 pl-10",
+  /** Ícone à esquerda e botão de limpar à direita. */
+  busca: "pr-10 pl-11",
+  /** O mesmo, no controle compacto. */
+  buscaCompacta: "pr-9 pl-10",
+} as const;
+const TEXTO = { sm: "text-sm", xs: "text-xs" } as const;
+
+export function classeDeEntrada({
+  altura = "padrao",
+  largura = "cheia",
+  recuo = "padrao",
+  texto = "sm",
+}: {
+  altura?: keyof typeof ALTURA;
+  largura?: keyof typeof LARGURA;
+  recuo?: keyof typeof RECUO;
+  texto?: keyof typeof TEXTO;
+} = {}): string {
+  return [CONTROLE_BASE, ALTURA[altura], LARGURA[largura], RECUO[recuo], TEXTO[texto]]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function classeDeAreaDeTexto({ altura = "padrao" }: { altura?: "padrao" | "curta" } = {}): string {
+  return [
+    CONTROLE_BASE,
+    "w-full resize-y px-3.5 py-2.5 text-sm leading-relaxed",
+    altura === "curta" ? "min-h-16" : "min-h-28",
+  ].join(" ");
+}
+
+export const ENTRADA = classeDeEntrada();
+
+/**
+ * Borda de erro. Com `!` porque disputa `border-color` com a base, e sem ele
+ * o CSS gerado punha a borda neutra por último — o campo com erro nunca ficou
+ * vermelho. Controle ligado a `Campo` já ganha a borda por `aria-invalid`;
+ * esta classe cobre o controle montado fora dele.
+ */
+export const ENTRADA_ERRO = "border-error! focus-visible:border-error!";
+
+export const AREA_TEXTO = classeDeAreaDeTexto();
 
 export function Campo({
   id,

@@ -50,7 +50,10 @@ export function CardCabecalho({
           <p className="mt-1 text-sm text-outline">{descricao}</p>
         ) : null}
       </div>
-      {acao ? <div className="shrink-0">{acao}</div> : null}
+      {/* `max-w-full`: no celular a ação desce para a linha de baixo e, se
+          tiver mais de um botão, eles quebram entre si em vez de empurrar a
+          página para o lado. */}
+      {acao ? <div className="max-w-full shrink-0">{acao}</div> : null}
     </div>
   );
 }

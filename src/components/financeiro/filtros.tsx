@@ -3,8 +3,8 @@
 import { LoaderCircle, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { ENTRADA } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
+import { classeDeEntrada } from "@/components/ui/field";
+import { classeDaOpcao, SEGMENTO_GRUPO } from "@/components/ui/segmento";
 
 /**
  * Filtros das listas do Financeiro, guardados na própria URL — mesma
@@ -78,7 +78,7 @@ export function FiltrosFinanceiro({
             maxLength={80}
             aria-label={busca.placeholder}
             placeholder={busca.placeholder}
-            className={cn(ENTRADA, "h-9 pr-9 pl-10")}
+            className={classeDeEntrada({ altura: "compacta", recuo: "buscaCompacta" })}
           />
           {termo ? (
             <button
@@ -107,7 +107,7 @@ export function FiltrosFinanceiro({
               <select
                 value={atual}
                 onChange={(e) => navegar({ [grupo.param]: e.target.value })}
-                className={cn(ENTRADA, "h-9 w-auto")}
+                className={classeDeEntrada({ altura: "compacta", largura: "auto" })}
               >
                 {grupo.opcoes.map((opcao) => (
                   <option key={opcao.valor} value={opcao.valor}>
@@ -124,20 +124,12 @@ export function FiltrosFinanceiro({
             key={grupo.param}
             role="group"
             aria-label={grupo.rotulo}
-            className="flex rounded-[var(--radius-controle)] border border-outline-variant p-0.5"
+            className={SEGMENTO_GRUPO}
           >
             {grupo.opcoes.map((opcao) => {
               const ativa = atual === opcao.valor;
               return (
-                <label
-                  key={opcao.valor}
-                  className={cn(
-                    "cursor-pointer rounded-[var(--radius-cartao)] px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                    ativa
-                      ? "bg-secondary-fixed text-primary"
-                      : "text-on-surface-variant hover:text-primary",
-                  )}
-                >
+                <label key={opcao.valor} className={classeDaOpcao(ativa)}>
                   <input
                     type="radio"
                     name={grupo.param}

@@ -4,7 +4,6 @@ import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pe
 import { FiltrosDocumentos } from "@/components/documentos/filtros-documentos";
 import { ListaDocumentos } from "@/components/documentos/lista-documentos";
 import { PaginacaoDocumentos } from "@/components/documentos/paginacao-documentos";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import type { SituacaoDocumento, TipoDocumento } from "@/lib/documento";
@@ -59,7 +58,6 @@ export default async function PaginaDocumentos({
   if (!resultado) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteDocumento />
       </div>
     );
@@ -72,7 +70,6 @@ export default async function PaginaDocumentos({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <Card>
         <CardCabecalho

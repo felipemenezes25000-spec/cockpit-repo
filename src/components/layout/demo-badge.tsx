@@ -1,35 +1,31 @@
-import { Info } from "lucide-react";
+import { FlaskConical } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { temDadosDeExemplo } from "@/server/consultas/exemplo";
 
 /**
- * Faixa de contexto no topo do conteúdo.
+ * Aviso de que a tela mostra dados fictícios.
  *
- * O aviso de dados fictícios só aparece enquanto houver dado de exemplo
- * carregado. Depois de `npm run dados:limpar`, some sozinho — o sistema não
- * mente sobre o que está mostrando.
+ * Mora no layout do sistema, não em cada página: antes cada tela montava o
+ * seu, e tela nova nascia sem aviso (AGENTS.md §13). Só aparece enquanto
+ * houver dado marcado como `exemplo` no banco — quando a clínica limpa a
+ * demonstração, some sozinho, sem ninguém precisar mexer em nada.
+ *
+ * Fala com quem usa o sistema, não com quem o mantém: como remover os dados
+ * de exemplo é assunto do README, não da recepção.
  */
-export async function FaixaDemonstracao({ className }: { className?: string }) {
-  const exemplo = await temDadosDeExemplo();
-
+export function FaixaDemonstracao({ className }: { className?: string }) {
   return (
-    <div
+    <p
+      role="note"
       className={cn(
-        "flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-cartao)] border border-outline-variant bg-surface-container-low px-4 py-2",
+        "flex items-start gap-2 rounded-[var(--radius-cartao)] border border-dashed border-outline-variant bg-surface-container-low px-4 py-2 text-xs leading-relaxed text-on-surface-variant sm:items-center",
         className,
       )}
     >
-      <span className="flex items-center gap-2 text-on-surface-variant">
-        <Info aria-hidden="true" size={16} strokeWidth={1.5} />
-        <span className="text-xs font-medium">
-          {exemplo
-            ? "Dados de exemplo carregados — nada aqui é real"
-            : "Etapa 5 — financeiro"}
-        </span>
+      <FlaskConical aria-hidden="true" size={16} strokeWidth={1.5} className="mt-px shrink-0 sm:mt-0" />
+      <span>
+        <strong className="font-semibold">Ambiente de demonstração.</strong> Pacientes, valores e
+        agendamentos marcados como <em>exemplo</em> são fictícios.
       </span>
-      <span className="text-xs font-medium text-outline">
-        {exemplo ? "npm run dados:limpar remove" : "Documentos e relatórios, em breve"}
-      </span>
-    </div>
+    </p>
   );
 }

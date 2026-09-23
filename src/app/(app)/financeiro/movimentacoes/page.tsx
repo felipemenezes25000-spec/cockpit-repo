@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
 import { FiltrosFinanceiro } from "@/components/financeiro/filtros";
 import { ListaMovimentacoes } from "@/components/financeiro/lista-movimentacoes";
@@ -45,7 +44,6 @@ export default async function PaginaMovimentacoes({
 
   return (
     <div className="flex flex-col gap-6">
-      <FaixaDemonstracao />
       <AbasFinanceiro podeFinanceiro={podeFinanceiro} />
 
       <Card>

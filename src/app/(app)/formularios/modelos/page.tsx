@@ -2,7 +2,6 @@ import { FilePlus2, FileSignature } from "lucide-react";
 import type { Metadata } from "next";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { ListaModelos } from "@/components/documentos/lista-modelos";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { ehAdministradora } from "@/lib/auth";
@@ -31,7 +30,6 @@ export default async function PaginaModelos() {
   if (!modelos) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteDocumento />
       </div>
     );
@@ -39,7 +37,6 @@ export default async function PaginaModelos() {
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <Card>
         <CardCabecalho

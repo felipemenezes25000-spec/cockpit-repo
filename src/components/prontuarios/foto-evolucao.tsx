@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { AREA_TEXTO, Campo, ENTRADA } from "@/components/ui/field";
+import { Campo, classeDeAreaDeTexto, ENTRADA } from "@/components/ui/field";
 import { FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { cn } from "@/lib/cn";
 import { formatarData } from "@/lib/format";
@@ -312,7 +312,7 @@ export function FotoDaEvolucao({
                 maxLength={500}
                 rows={2}
                 placeholder="Pedido de eliminação feito pela paciente por escrito em 10/09."
-                className={cn(AREA_TEXTO, "min-h-16")}
+                className={classeDeAreaDeTexto({ altura: "curta" })}
               />
             </Campo>
 

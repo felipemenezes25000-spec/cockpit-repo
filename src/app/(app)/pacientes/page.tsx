@@ -1,7 +1,6 @@
 import { Upload, UserRoundPlus } from "lucide-react";
 import type { Metadata } from "next";
 import { ehAdministradora } from "@/lib/auth";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { BuscaPacientes } from "@/components/pacientes/busca-pacientes";
 import { ListaPacientes } from "@/components/pacientes/lista-pacientes";
 import { Paginacao } from "@/components/pacientes/paginacao";
@@ -51,7 +50,6 @@ export default async function PaginaPacientes({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <Card>
         <CardCabecalho

@@ -1,12 +1,11 @@
 import { CalendarDays, ClipboardPlus, FileSignature, Search, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { SituacaoChip } from "@/components/ui/status-chip";
-import { ENTRADA } from "@/components/ui/field";
+import { classeDeEntrada } from "@/components/ui/field";
 import { usuarioAtual } from "@/lib/auth";
 import { termoDeBusca } from "@/lib/busca";
 import { ROTULO_TIPO } from "@/lib/documento";
@@ -34,10 +33,9 @@ export default async function PaginaBusca({ searchParams }: {
   const query = encodeURIComponent(termo);
 
   return <div>
-    <FaixaDemonstracao className="mb-8" />
     <div className="mb-6"><p className="rotulo mb-2">Encontre no consultório</p><h2 className="t-display text-primary">Busca global</h2><p className="mt-1 text-sm text-outline">Pacientes, atendimentos, documentos{administradora ? " e prontuários" : ""} em um lugar.</p></div>
     <form method="get" action="/busca" role="search" aria-label="Buscar em todos os módulos" className="mb-8 flex flex-col gap-3 sm:flex-row">
-      <div className="relative min-w-0 flex-1"><Search aria-hidden="true" size={18} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" /><input type="search" name="q" minLength={2} maxLength={80} required defaultValue={termo} autoFocus aria-label="O que deseja buscar?" placeholder="Nome, telefone, procedimento ou data (dd/mm/aaaa)" className={`${ENTRADA} pl-11`} /></div>
+      <div className="relative min-w-0 flex-1"><Search aria-hidden="true" size={18} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" /><input type="search" name="q" minLength={2} maxLength={80} required defaultValue={termo} autoFocus aria-label="O que deseja buscar?" placeholder="Nome, telefone, procedimento ou data (dd/mm/aaaa)" className={classeDeEntrada({ recuo: "busca" })} /></div>
       <button type="submit" className="h-11 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary hover:bg-primary">Buscar</button>
     </form>
 

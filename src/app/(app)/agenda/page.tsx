@@ -1,6 +1,5 @@
 import { CalendarPlus } from "lucide-react";
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { ListaDoDia } from "@/components/agenda/lista-do-dia";
 import { NavegacaoDia } from "@/components/agenda/navegacao-dia";
 import { BotaoLink } from "@/components/ui/button";
@@ -41,7 +40,6 @@ export default async function PaginaAgenda({
 
   return (
     <div>
-      <FaixaDemonstracao className="mb-8" />
 
       <Card>
         <CardCabecalho

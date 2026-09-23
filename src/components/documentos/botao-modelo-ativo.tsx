@@ -30,7 +30,7 @@ export function BotaoModeloAtivo({
       <BotaoDeAcao
         tom="silencioso"
         tamanho="xs"
-        icone={ativo ? Archive : ArchiveRestore}
+        icone={ativo ? <Archive strokeWidth={1.75} /> : <ArchiveRestore strokeWidth={1.75} />}
         rotuloAcessivel={`${ativo ? "Aposentar" : "Reativar"} o modelo ${nome}`}
       >
         {ativo ? "Aposentar" : "Reativar"}

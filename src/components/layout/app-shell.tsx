@@ -11,10 +11,13 @@ export function EstruturaApp({
   children,
   usuario,
   pendenciasAltas,
+  aviso,
 }: {
   children: ReactNode;
   usuario: UsuarioAtual;
   pendenciasAltas: number;
+  /** Faixa de demonstração, quando há dado de exemplo no banco. */
+  aviso?: ReactNode;
 }) {
   const [recolhida, setRecolhida] = useState(false);
   const [gavetaAberta, setGavetaAberta] = useState(false);
@@ -75,7 +78,10 @@ export function EstruturaApp({
           pendenciasAltas={pendenciasAltas}
         />
         <main id="conteudo" className="flex-1 px-4 py-8 sm:px-8 xl:px-20">
-          <div className="mx-auto w-full max-w-[1600px]">{children}</div>
+          <div className="mx-auto w-full max-w-[1600px]">
+            {aviso}
+            {children}
+          </div>
         </main>
       </div>
     </div>

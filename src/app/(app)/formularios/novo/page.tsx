@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { FormularioEmissao } from "@/components/documentos/formulario-emissao";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { uuidValido } from "@/lib/formulario";
 import { pacienteParaSelecao } from "@/server/consultas/pacientes";
 import {
@@ -35,7 +34,6 @@ export default async function PaginaEmitirDocumento({
   if (!modelos) {
     return (
       <div>
-        <FaixaDemonstracao className="mb-8" />
         <EstruturaPendenteDocumento />
       </div>
     );
@@ -45,7 +43,6 @@ export default async function PaginaEmitirDocumento({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <FaixaDemonstracao className="mb-8" />
 
       {/* Correção não edita o documento antigo: emite um novo apontando para
           ele, e o antigo passa a "substituído". */}

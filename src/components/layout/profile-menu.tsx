@@ -46,13 +46,14 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
         type="button"
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
-        aria-haspopup="menu"
+        aria-controls="menu-perfil"
+        aria-label={`Conta de ${usuario.nome}`}
         className="flex items-center gap-3 rounded-[var(--radius-cartao)] p-1 transition-colors hover:bg-surface-container-low"
       >
         <Avatar nome={usuario.nome} />
         <span className="hidden flex-col text-left sm:flex">
-          <span className="rotulo text-primary">{usuario.nome}</span>
-          <span className="mt-0.5 text-[0.625rem] font-medium text-outline">
+          <span className="max-w-40 truncate text-sm font-medium text-on-surface">{usuario.nome}</span>
+          <span className="text-xs text-outline">
             {ROTULO_PAPEL[usuario.papel]}
           </span>
         </span>
@@ -61,7 +62,7 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
           size={16}
           strokeWidth={1.5}
           className={cn(
-            "text-outline transition-transform duration-200",
+            "hidden text-outline transition-transform duration-200 sm:block",
             aberto && "rotate-180",
           )}
         />
@@ -69,8 +70,7 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
 
       {aberto ? (
         <div
-          role="menu"
-          aria-label="Menu do usuário"
+          id="menu-perfil"
           className="absolute right-0 z-30 mt-2 w-64 overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface shadow-[var(--shadow-flutuante)]"
         >
           <div className="border-b border-card-border px-4 py-3">
@@ -86,7 +86,6 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
               <li key={rotulo}>
                 <button
                   type="button"
-                  role="menuitem"
                   aria-disabled="true"
                   title="Disponível em uma próxima etapa"
                   className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-2.5 text-left text-sm text-outline"

@@ -44,9 +44,11 @@ export async function Aniversariantes() {
                 key={pessoa.id}
                 className="flex flex-wrap items-center gap-x-4 gap-y-3"
               >
-                <Avatar nome={pessoa.nome} tom={hojeEhODia ? "verde" : "neutro"} />
+                <Avatar nome={pessoa.nome} tom={hojeEhODia ? "marca" : "neutro"} />
 
-                <div className="min-w-0 flex-1">
+                {/* Largura mínima: no celular o botão desce para a linha de
+                    baixo, em vez de espremer o nome até virar uma letra. */}
+                <div className="min-w-[11rem] flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2">
                     <span className="truncate text-sm font-medium text-on-surface">
                       {pessoa.nome}

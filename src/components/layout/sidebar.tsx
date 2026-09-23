@@ -1,6 +1,7 @@
 "use client";
 
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
 import { CLINICA } from "@/lib/nav";
 import { MenuNavegacao } from "./sidebar-nav";
@@ -36,6 +37,33 @@ export function BarraLateral({
   gavetaAberta: boolean;
   aoFecharGaveta: () => void;
 }) {
+  const gaveta = useRef<HTMLElement>(null);
+  const botaoFechar = useRef<HTMLButtonElement>(null);
+
+  // Ao abrir, o foco entra na gaveta — quem navega por teclado não fica
+  // preso no botão que a abriu, atrás do fundo escurecido.
+  useEffect(() => {
+    if (gavetaAberta) botaoFechar.current?.focus();
+  }, [gavetaAberta]);
+
+  /** Com a gaveta aberta, o Tab circula só dentro dela (é um diálogo modal). */
+  function prenderFoco(evento: KeyboardEvent<HTMLElement>) {
+    if (evento.key !== "Tab" || !gaveta.current) return;
+    const focaveis = gaveta.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focaveis.length === 0) return;
+    const primeiro = focaveis[0];
+    const ultimo = focaveis[focaveis.length - 1];
+    if (evento.shiftKey && document.activeElement === primeiro) {
+      evento.preventDefault();
+      ultimo.focus();
+    } else if (!evento.shiftKey && document.activeElement === ultimo) {
+      evento.preventDefault();
+      primeiro.focus();
+    }
+  }
+
   const conteudo = (mostrarFechar: boolean, recolhidaAqui: boolean) => (
     <div className="flex h-full flex-col p-2">
       <div
@@ -47,10 +75,11 @@ export function BarraLateral({
         <Marca recolhida={recolhidaAqui} />
         {mostrarFechar ? (
           <button
+            ref={botaoFechar}
             type="button"
             onClick={aoFecharGaveta}
             aria-label="Fechar menu"
-            className="flex size-9 items-center justify-center rounded-[var(--radius-cartao)] text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+            className="flex size-10 items-center justify-center rounded-[var(--radius-cartao)] text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
           >
             <X aria-hidden="true" size={20} strokeWidth={1.5} />
           </button>
@@ -107,18 +136,20 @@ export function BarraLateral({
         <div className="sticky top-0 h-screen">{conteudo(false, recolhida)}</div>
       </aside>
 
-      {/* Gaveta em telas menores */}
+      {/* Gaveta em telas menores. Fechada, fica `inert`: fora da ordem do
+          Tab e do leitor de tela — sem isso os links invisíveis continuavam
+          recebendo foco. */}
       <div
         className={cn(
           "fixed inset-0 z-40 lg:hidden",
           gavetaAberta ? "pointer-events-auto" : "pointer-events-none",
         )}
-        aria-hidden={!gavetaAberta}
+        inert={!gavetaAberta}
       >
         <button
           type="button"
-          tabIndex={gavetaAberta ? 0 : -1}
-          aria-label="Fechar menu"
+          tabIndex={-1}
+          aria-hidden="true"
           onClick={aoFecharGaveta}
           className={cn(
             "absolute inset-0 bg-on-surface/35 transition-opacity duration-200",
@@ -126,9 +157,11 @@ export function BarraLateral({
           )}
         />
         <aside
+          ref={gaveta}
           role="dialog"
-          aria-modal={gavetaAberta || undefined}
+          aria-modal="true"
           aria-label="Menu de módulos"
+          onKeyDown={prenderFoco}
           className={cn(
             "absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r border-outline-variant bg-surface shadow-[var(--shadow-flutuante)] transition-transform duration-200",
             gavetaAberta ? "translate-x-0" : "-translate-x-full",

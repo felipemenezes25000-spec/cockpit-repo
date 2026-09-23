@@ -28,7 +28,7 @@ export function BotaoArquivar({
           : `Arquivar ${nome}? O histórico é mantido e ela sai da lista de ativas. Dá para reativar depois.`
       }
     >
-      <BotaoDeAcao icone={arquivada ? ArchiveRestore : Archive}>
+      <BotaoDeAcao icone={arquivada ? <ArchiveRestore strokeWidth={1.75} /> : <Archive strokeWidth={1.75} />}>
         {arquivada ? "Reativar paciente" : "Arquivar paciente"}
       </BotaoDeAcao>
     </FormularioDeAcao>

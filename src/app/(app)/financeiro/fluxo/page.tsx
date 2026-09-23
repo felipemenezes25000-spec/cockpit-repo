@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { FaixaDemonstracao } from "@/components/layout/demo-badge";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
 import { FluxoMensal } from "@/components/financeiro/fluxo-mensal";
 import { SomenteFinanceiro } from "@/components/financeiro/somente-financeiro";
@@ -24,7 +23,6 @@ export default async function PaginaFluxo() {
 
   return (
     <div className="flex flex-col gap-6">
-      <FaixaDemonstracao />
       <AbasFinanceiro podeFinanceiro={podeFinanceiro} />
 
       <Card>

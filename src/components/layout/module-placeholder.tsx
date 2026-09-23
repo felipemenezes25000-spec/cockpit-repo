@@ -1,7 +1,6 @@
 import { ArrowLeft, Hammer } from "lucide-react";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCorpo } from "@/components/ui/card";
-import { FaixaDemonstracao } from "./demo-badge";
 import { itemPorHref } from "@/lib/nav";
 
 /**
@@ -16,7 +15,6 @@ export function ModuloEmConstrucao({ href }: { href: string }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <FaixaDemonstracao className="mb-8" />
 
       <Card>
         <CardCorpo className="px-6 py-10 sm:px-10 sm:py-12">

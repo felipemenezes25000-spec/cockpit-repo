@@ -8,16 +8,16 @@ import { iniciais } from "@/lib/format";
 export function Avatar({
   nome,
   tamanho = "md",
-  tom = "verde",
+  tom = "marca",
   className,
 }: {
   nome: string;
   tamanho?: "sm" | "md";
-  tom?: "verde" | "neutro";
+  tom?: "marca" | "neutro";
   className?: string;
 }) {
   const tons = {
-    verde: "bg-secondary-fixed text-primary",
+    marca: "bg-secondary-fixed text-primary",
     neutro: "bg-surface-container text-on-surface-variant",
   } as const;
 
