@@ -1,7 +1,7 @@
 # Banco de dados
 
-O banco é um Postgres gerenciado pelo Supabase, na região **South America
-(São Paulo)**. Toda alteração de estrutura passa por um arquivo de migração
+O banco é um Postgres gerenciado pelo Supabase, na região **us-west-2
+(Oregon, EUA)** — exceção à regra de São Paulo, decisão do dono (ver Projeto). Toda alteração de estrutura passa por um arquivo de migração
 versionado nesta pasta — nada é alterado direto pelo painel.
 
 ## Migrações
@@ -39,10 +39,14 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 
 ## Projeto
 
-Produção: ref **`pghmzbtfsaupwezglddo`** (criado em 23/09/2026; região a
-conferir no painel, em Project Settings → General — precisa ser **sa-east-1
-(São Paulo)**). Substitui o `Cockpit-Consultorio2` (ref `khoaluytzzagtwmpaukx`,
-sa-east-1), que deixou de ser o de produção nessa data.
+Produção: ref **`pghmzbtfsaupwezglddo`**, região **us-west-2 (Oregon, EUA)**,
+criado em 23/09/2026. Substitui o `Cockpit-Consultorio2` (ref
+`khoaluytzzagtwmpaukx`, sa-east-1), que deixou de ser o de produção nessa data.
+
+**A região contraria a regra de São Paulo, por decisão do dono em 23/09/2026**,
+informado do custo: cada consulta vai do servidor da Vercel em `gru1` até o
+Oregon e volta, e os dados de saúde ficam fora do Brasil. Voltar para São
+Paulo exige projeto novo em `sa-east-1` e migração dos dados.
 
 A região não pode ser alterada depois da criação — trocar exige projeto novo e
 migração de dados. O primeiro projeto foi criado em `us-east-1` e descartado por
@@ -91,11 +95,20 @@ API de administração do Auth, como o painel.
 
 ## Pendente de aplicação em produção
 
+> **Aplicado em 23/09/2026.** O projeto `pghmzbtfsaupwezglddo` nasceu vazio e
+> recebeu as 28 migrações de uma vez (`db push`, 0001 → 0028, sem seed). As
+> conferências do passo 6 bateram todas, nenhuma tabela de `public` ficou sem
+> RLS, `anon` não tem grant em tabela e só executa as quatro funções do link;
+> o `db:tipos` saiu idêntico ao `tipos-banco.ts` do repositório. Só depois veio
+> o deploy na Vercel. Pré-conferência e backfill não se aplicaram (sem dado
+> antigo). O roteiro abaixo fica como registro e modelo para as próximas ondas;
+> o título da seção fica igual porque as mensagens da 0025 apontam para ele.
+
 As migrações **0019 a 0028** estão escritas e verificadas no banco local (do
 zero, com o seed e com `npm run test:banco`: as 194 asserções verdes a
 partir de `db reset` em 23/09/2026, com as 28 migrações e o seed aplicados do
-zero e a auditoria de RLS sem violação). Não
-foram aplicadas em produção. Para aplicar, na ordem numérica, pelo dono do
+zero e a auditoria de RLS sem violação). Em 23/09/2026 foram aplicadas no
+projeto novo, junto com 0001–0018 (nota acima). Para aplicar, na ordem numérica, pelo dono do
 projeto — **checklist do dono; nenhum agente executa**.
 
 > **A ordem é banco primeiro, código depois.** O código desta onda **não

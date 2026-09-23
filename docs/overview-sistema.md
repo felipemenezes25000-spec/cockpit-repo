@@ -1164,7 +1164,8 @@ Nada roda contra produção — tudo usa o Supabase local.
 
 As migrações 0019 a 0022 foram escritas e testadas no banco local, **não
 aplicadas em produção**. Depois vieram a 0023 a 0025 (seção 21) e a 0026 a
-0028 (seção 22), na mesma situação. O roteiro de aplicação, só para o dono do projeto, está em
+0028 (seção 22), na mesma situação. **Em 23/09/2026 as 28 migrações foram
+aplicadas no projeto de produção novo, antes do primeiro deploy.** O roteiro de aplicação está em
 [`supabase/README.md`](../supabase/README.md#pendente-de-aplicação-em-produção).
 
 ## 21. Rodada de 23/09/2026 — o que mudou para quem usa

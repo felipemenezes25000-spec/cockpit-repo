@@ -359,14 +359,20 @@ as quebras de linha para LF no repositório.
 
 | Camada | Onde | Detalhe |
 |---|---|---|
-| Aplicação | **Vercel** | `vercel.json`: `framework: nextjs`, região **`gru1`** (São Paulo) |
+| Aplicação | **Vercel** | Projeto `cockpit-consultorio`, em <https://cockpit-consultorio.vercel.app>, ligado ao GitHub: **todo push no `jamal-do-mal` publica em produção sozinho**. `vercel.json`: `framework: nextjs`, região **`gru1`** (São Paulo) |
 | Repositório | **GitHub** | `https://github.com/felipemenezes25000-spec/cockpit-repo`. Um único branch, `jamal-do-mal`; o trabalho entra direto nele, sem criar outros (decisão do dono, 23/09/2026) |
-| Banco e autenticação | **Supabase** | Ref `pghmzbtfsaupwezglddo` (produção desde 23/09/2026, no lugar do `Cockpit-Consultorio2`/`khoaluytzzagtwmpaukx`); região precisa ser **`sa-east-1` (São Paulo)** — a conferir no painel. MCP do Supabase configurado em `.mcp.json` |
+| Banco e autenticação | **Supabase** | Ref `pghmzbtfsaupwezglddo` (produção desde 23/09/2026, no lugar do `Cockpit-Consultorio2`/`khoaluytzzagtwmpaukx`); região **`us-west-2` (Oregon, EUA)**, exceção decidida pelo dono (abaixo). MCP do Supabase configurado em `.mcp.json` |
 
 **Por que tudo em São Paulo:** latência e soberania do dado. A região do projeto
 Supabase **não pode ser alterada depois da criação** — o primeiro projeto foi
 criado em `us-east-1` e descartado por isso, antes de existir qualquer dado.
 `gru1` na Vercel mantém o servidor ao lado do banco.
+
+**Exceção em vigor desde 23/09/2026:** o projeto de produção
+(`pghmzbtfsaupwezglddo`) foi criado em `us-west-2`, e o dono decidiu seguir
+nele assim mesmo, informado do custo — latência de ida e volta ao Oregon em
+cada consulta e dado de saúde fora do Brasil. Voltar a São Paulo exige projeto
+novo em `sa-east-1` e migração dos dados.
 
 ### Variáveis de ambiente
 
@@ -473,26 +479,24 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 
 ### As migrações existentes
 
-> **⚠️ As migrações 0019 a 0028 estão escritas e verificadas no banco local (do
-> zero, com o seed e com `npm run test:banco`), mas ainda não foram aplicadas
-> em produção** — ver [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção).
-> Até o dono do projeto aplicá-las, as garantias que este documento marca como
+> **Aplicadas em produção em 23/09/2026:** o projeto novo recebeu 0001 → 0028
+> de uma vez, com as conferências batendo — ver [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção).
+> Desde então valem no banco da clínica as garantias que este documento marca como
 > "desde a 0019" e "(0020)" a "(0028)" — nenhuma tabela com DELETE,
 > confirmar recebimento só pela RLS do financeiro, origem da taxa conferida pelo
 > banco, choque de horário recusado pelo banco, documento à prova da API, venda
 > só pela função e sempre com um recebimento, foto que não troca de arquivo,
 > reconciliação das fotos, contato estruturado no Relacionamento, marca de
 > exemplo fora do alcance da API, versão de modelo, autor da resposta e foto
-> escritos pelo banco, venda idempotente e foto só com o arquivo no bucket — valem no banco local e nos testes, **não no
-> banco da clínica**.
+> escritos pelo banco, venda idempotente e foto só com o arquivo no bucket.
 >
 > **Banco primeiro, código depois.** O código atual **não funciona contra o
 > banco anterior à 0025** (a busca de pacientes usa `pacientes.busca`; o
 > Relacionamento, `pendencias.origem`). A sequência é: backup → pré-conferência
 > → `db:push` (0019 → 0028) → `db:tipos` → conferência → **só então**
-> merge/deploy deste código → backfill de novo. Como não se sabe se um push
-> publica na Vercel (§12), desligue o deploy automático ou confirme qual branch
-> ela publica **antes** de qualquer merge/push. O roteiro completo está no
+> merge/deploy deste código → backfill de novo. **Todo push no `jamal-do-mal`
+> publica na Vercel** (§3): migração nova vai para o banco **antes** do push que
+> leva o código que depende dela. O roteiro completo está no
 > [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção).
 > **A 0028 torna a ordem obrigatória:** o app novo sempre manda `p_chave` para
 > `venda_registrar`; contra um banco sem ela o PostgREST não acha a função
@@ -2617,10 +2621,10 @@ Commits do trabalho assistido levam o trailer `Co-Authored-By:` do agente.
 único branch, `jamal-do-mal`**, que é o branch padrão (`origin/HEAD`) — não
 existe `main`. **Não crie branch nenhum** (nem `main`): o dono decidiu, em
 23/09/2026, que o trabalho entra direto no `jamal-do-mal`. Como a CI então só
-avisa depois do push (§2), rode os gates antes de comitar. Qual branch a Vercel publica
-em produção é configuração do painel da Vercel, não do repositório
-(`vercel.json` só fixa região e framework): confirme com o dono antes de supor
-que um push publica.
+avisa depois do push (§2), rode os gates antes de comitar. **Push publica:** o projeto
+`cockpit-consultorio` da Vercel está ligado ao repositório e põe no ar, em
+produção, cada push no `jamal-do-mal` (§3). Com migração nova, o banco vai
+primeiro.
 
 ### Ao mexer no banco
 

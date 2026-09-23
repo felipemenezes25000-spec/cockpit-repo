@@ -188,7 +188,7 @@ migração 0004 fechou essa escalada de privilégio). Liberar e promover são a�
 | Camada | Tecnologia | Onde |
 |---|---|---|
 | Aplicação | Next.js 15 (App Router) · React 19 · TypeScript estrito · Tailwind CSS v4 · `lucide-react` | **Vercel**, região `gru1` (São Paulo) |
-| Banco e autenticação | Postgres + Auth + Storage do **Supabase** (`@supabase/ssr`) | região `sa-east-1` (São Paulo) |
+| Banco e autenticação | Postgres + Auth + Storage do **Supabase** (`@supabase/ssr`) | região `us-west-2` (Oregon, EUA), por decisão do dono |
 | Qualidade | Vitest + Testing Library · SQL de permissões por perfil · Playwright | Supabase local em Docker — nada toca produção |
 
 Poucas dependências, de propósito: o leitor de CSV foi escrito à mão porque nenhuma biblioteca resolve ao
@@ -244,9 +244,9 @@ sequenceDiagram
 
 > [!NOTE]
 > As migrações **0019 a 0028** estão escritas e verificadas no banco local (do zero, com o seed e com
-> `npm run test:banco`), mas **ainda aguardam aplicação em produção** pelo dono do projeto — ver
-> [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção). Até lá, as garantias
-> marcadas com esses números neste README valem só no banco local e nos testes. **Banco primeiro,
+> `npm run test:banco`), e foram **aplicadas em produção em 23/09/2026**, antes do primeiro deploy — ver
+> [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção). Antes disso, as garantias
+> marcadas com esses números neste README valiam só no banco local e nos testes. **Banco primeiro,
 > código depois:** o código atual não funciona contra o banco anterior à 0025, então o merge/deploy
 > só vem depois do `db:push` (roteiro no link acima). O app novo sempre manda a chave do envio para `venda_registrar`:
 > contra um banco sem a 0028, o registro de venda para (`PGRST202`). **Antes do deploy, preencha
