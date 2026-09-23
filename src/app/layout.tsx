@@ -28,8 +28,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // Extensões podem acrescentar atributos ao <html> antes da hidratação.
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={sans.variable}>{children}</body>
+    //
+    // `--fonte-sans` vai no <html>, não no <body>: o Tailwind declara
+    // `--font-sans: var(--fonte-sans), …` em `:root`, e a variável se resolve
+    // onde é declarada. No <body>, `:root` não a enxergava, `--font-sans`
+    // inteira ficava inválida e a interface caía na fonte do sistema.
+    <html lang="pt-BR" className={sans.variable} suppressHydrationWarning>
+      <body>{children}</body>
     </html>
   );
 }
