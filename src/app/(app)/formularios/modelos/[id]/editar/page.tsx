@@ -1,6 +1,5 @@
-import { ArrowLeft } from "lucide-react";
+import { FilePenLine, History } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   EXPLICACAO_MODELOS,
@@ -8,6 +7,7 @@ import {
 } from "@/components/configuracoes/somente-administradora";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { FormularioModelo } from "@/components/documentos/formulario-modelo";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { ehAdministradora } from "@/lib/auth";
 import { uuidValido } from "@/lib/formulario";
 import {
@@ -28,18 +28,10 @@ export default async function PaginaEditarModelo({
   const administradora = await ehAdministradora();
 
   if (!administradora) {
-    return (
-      <div>
-        <SomenteAdministradora
-          voltarPara="/formularios/modelos"
-          explicacao={EXPLICACAO_MODELOS}
-        />
-      </div>
-    );
+    return <SomenteAdministradora voltarPara="/formularios/modelos" explicacao={EXPLICACAO_MODELOS} />;
   }
 
   const { id } = await params;
-  // Id sem forma de uuid é 404, sem ir ao banco (o Postgres recusaria com 22P02).
   if (!uuidValido(id)) notFound();
 
   const modelo = await modeloPorId(id).catch((erro: unknown) => {
@@ -47,25 +39,30 @@ export default async function PaginaEditarModelo({
     throw erro;
   });
 
-  if (modelo === undefined) {
-    return (
-      <div>
-        <EstruturaPendenteDocumento />
-      </div>
-    );
-  }
-
+  if (modelo === undefined) return <EstruturaPendenteDocumento />;
   if (!modelo) notFound();
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <Link
-        href="/formularios/modelos"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para modelos
-      </Link>
+    <div className="mx-auto flex max-w-5xl flex-col gap-5">
+      <LinkDeVoltar href="/formularios/modelos">Voltar para modelos</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={FilePenLine}
+        rotulo="Modelo de documento"
+        titulo={modelo.nome}
+        descricao="Edite criando uma nova versão do texto-base. A versão anterior continua preservada e documentos já emitidos não são reescritos."
+        meta={
+          <>
+            <SeloHero tom="informativo">
+              <History aria-hidden="true" size={13} strokeWidth={1.75} />
+              Nova versão
+            </SeloHero>
+            <SeloHero>{modelo.tipo}</SeloHero>
+            <SeloHero tom="positivo">Emissões anteriores preservadas</SeloHero>
+          </>
+        }
+      />
+
       <FormularioModelo modelo={modelo} />
     </div>
   );

@@ -1,11 +1,11 @@
-import { ArrowLeft } from "lucide-react";
+import { FilePlus2 } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FormularioModelo } from "@/components/documentos/formulario-modelo";
 import {
   EXPLICACAO_MODELOS,
   SomenteAdministradora,
 } from "@/components/configuracoes/somente-administradora";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { ehAdministradora } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -16,28 +16,28 @@ export const metadata: Metadata = {
 export default async function PaginaNovoModelo() {
   const administradora = await ehAdministradora();
 
-  // Esconder a tela não protege a rota: `criarModelo` repete a checagem, e a
-  // função do banco repete de novo.
   if (!administradora) {
-    return (
-      <div>
-        <SomenteAdministradora
-          voltarPara="/formularios/modelos"
-          explicacao={EXPLICACAO_MODELOS}
-        />
-      </div>
-    );
+    return <SomenteAdministradora voltarPara="/formularios/modelos" explicacao={EXPLICACAO_MODELOS} />;
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <Link
-        href="/formularios/modelos"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para modelos
-      </Link>
+    <div className="mx-auto flex max-w-5xl flex-col gap-5">
+      <LinkDeVoltar href="/formularios/modelos">Voltar para modelos</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={FilePlus2}
+        rotulo="Documentos"
+        titulo="Criar novo modelo"
+        descricao="Defina o texto-base e, quando aplicável, as perguntas que serão congeladas em cada documento emitido a partir deste modelo."
+        meta={
+          <>
+            <SeloHero tom="informativo">Base versionada</SeloHero>
+            <SeloHero>Emissão congela uma cópia</SeloHero>
+            <SeloHero tom="positivo">Somente administradora</SeloHero>
+          </>
+        }
+      />
+
       <FormularioModelo modelo={null} />
     </div>
   );

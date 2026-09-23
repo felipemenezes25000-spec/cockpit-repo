@@ -1,9 +1,10 @@
-import { FilePlus2, FileSignature } from "lucide-react";
+import { FilePlus2, FileSignature, Layers3 } from "lucide-react";
 import type { Metadata } from "next";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { ListaModelos } from "@/components/documentos/lista-modelos";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { ehAdministradora } from "@/lib/auth";
 import {
   EstruturaDocumentoPendenteError,
@@ -18,58 +19,49 @@ export const metadata: Metadata = {
 export default async function PaginaModelos() {
   const administradora = await ehAdministradora();
 
-  // A recepção vê os modelos — precisa saber o que existe para emitir. Quem
-  // escreve é só a administradora, e a RLS repete isso no banco.
-  const modelos = await listarModelos({
-    incluirInativos: administradora,
-  }).catch((erro: unknown) => {
+  const modelos = await listarModelos({ incluirInativos: administradora }).catch((erro: unknown) => {
     if (erro instanceof EstruturaDocumentoPendenteError) return null;
     throw erro;
   });
 
-  if (!modelos) {
-    return (
-      <div>
-        <EstruturaPendenteDocumento />
-      </div>
-    );
-  }
+  if (!modelos) return <EstruturaPendenteDocumento />;
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
+      <CabecalhoDePagina
+        icone={Layers3}
+        rotulo="Documentos"
+        titulo="Modelos de documento"
+        descricao="Textos-base versionados que dão origem a contratos, termos, orientações e anamneses. Cada emissão congela sua própria cópia."
+        acoes={
+          <>
+            <BotaoLink href="/formularios" variante="contorno" tamanho="sm">
+              <FileSignature aria-hidden="true" size={16} strokeWidth={1.75} />
+              Documentos
+            </BotaoLink>
+            {administradora ? (
+              <BotaoLink href="/formularios/modelos/novo" variante="primaria" tamanho="sm">
+                <FilePlus2 aria-hidden="true" size={16} strokeWidth={1.75} />
+                Novo modelo
+              </BotaoLink>
+            ) : null}
+          </>
+        }
+        meta={
+          <>
+            <SeloHero tom="informativo">{modelos.length} {modelos.length === 1 ? "modelo visível" : "modelos visíveis"}</SeloHero>
+            <SeloHero>Emissões ficam congeladas</SeloHero>
+            {administradora ? <SeloHero tom="positivo">Versionamento liberado</SeloHero> : <SeloHero>Consulta de modelos</SeloHero>}
+          </>
+        }
+      />
 
       <Card>
-        <CardCabecalho
-          titulo="Modelos de documento"
-          descricao="O texto-base que cada documento congela na emissão."
-          acao={
-            <div className="flex flex-wrap gap-2">
-              <BotaoLink href="/formularios" variante="contorno" tamanho="sm">
-                <FileSignature aria-hidden="true" size={16} strokeWidth={1.75} />
-                Documentos
-              </BotaoLink>
-              {administradora ? (
-                <BotaoLink
-                  href="/formularios/modelos/novo"
-                  variante="primaria"
-                  tamanho="sm"
-                >
-                  <FilePlus2 aria-hidden="true" size={16} strokeWidth={1.75} />
-                  Novo modelo
-                </BotaoLink>
-              ) : null}
-            </div>
-          }
-        />
-
-        <CardCorpo>
-          <ListaModelos modelos={modelos} administradora={administradora} />
-        </CardCorpo>
-
+        <CardCabecalho titulo="Biblioteca de modelos" descricao="Versões novas mudam somente emissões futuras; documentos anteriores continuam intactos." />
+        <CardCorpo><ListaModelos modelos={modelos} administradora={administradora} /></CardCorpo>
         {!administradora ? (
           <CardRodape className="text-outline">
-            A recepção consulta os modelos para saber o que emitir. Quem escreve e
-            aposenta é a administradora.
+            A recepção consulta os modelos para saber o que emitir. Quem escreve, versiona e aposenta é a administradora.
           </CardRodape>
         ) : null}
       </Card>
