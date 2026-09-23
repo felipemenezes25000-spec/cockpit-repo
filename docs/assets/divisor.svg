@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="36" viewBox="0 0 1280 36" role="img" aria-labelledby="t d">
+  <title id="t">Divisor de seção</title>
+  <desc id="d">Linha fina em azul da marca com um ponto de luz que percorre a largura.</desc>
+  <style>
+    svg { --linha: #d6e9fb; --marca: #0854a0; --acao: #0a6ed1; }
+    @media (prefers-color-scheme: dark) {
+      svg { --linha: #1f3a5f; --marca: #58a6ff; --acao: #388bfd; }
+    }
+    .base { stroke: var(--linha); }
+    .centro { fill: var(--marca); }
+    .anel { fill: none; stroke: var(--acao); transform-box: fill-box; transform-origin: center;
+      animation: anel 3.2s cubic-bezier(.2,.8,.2,1) infinite; }
+    .brilho { animation: correr 5.6s cubic-bezier(.45,0,.2,1) infinite; }
+    .brilho-2 { animation: correr-volta 5.6s cubic-bezier(.45,0,.2,1) infinite; }
+    @keyframes anel { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(2.6); opacity: 0; } }
+    @keyframes correr { 0% { transform: translateX(0); } 100% { transform: translateX(560px); } }
+    @keyframes correr-volta { 0% { transform: translateX(0); } 100% { transform: translateX(-560px); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+      .movimento { display: none; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="feixe" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#0a6ed1" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#0a6ed1" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#0a6ed1" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="feixe-volta" x1="1" x2="0" y1="0" y2="0">
+      <stop offset="0" stop-color="#0a6ed1" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#0a6ed1" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#0a6ed1" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <line class="base" x1="40" y1="18" x2="620" y2="18" stroke-width="1.5" stroke-linecap="round"/>
+  <line class="base" x1="660" y1="18" x2="1240" y2="18" stroke-width="1.5" stroke-linecap="round"/>
+  <g class="movimento">
+    <rect class="brilho" x="40" y="16.5" width="120" height="3" rx="1.5" fill="url(#feixe)"/>
+    <rect class="brilho-2" x="1120" y="16.5" width="120" height="3" rx="1.5" fill="url(#feixe-volta)"/>
+  </g>
+  <circle class="anel" cx="640" cy="18" r="6" stroke-width="1.5"/>
+  <rect class="centro" x="634" y="12" width="12" height="12" rx="3" transform="rotate(45 640 18)"/>
+</svg>

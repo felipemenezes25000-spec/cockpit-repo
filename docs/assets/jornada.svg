@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="410" viewBox="0 0 1280 410" role="img" aria-labelledby="t d">
+  <title id="t">A jornada do projeto</title>
+  <desc id="d">Linha do tempo com os marcos do histórico de commits, de 01/08 a 22/09/2026. 01/08: Etapa 1, estrutura navegável e Visão Geral. 02/08: fundação do banco no Supabase, com RLS nas tabelas. 04/08: autenticação real e correção da escalada de privilégio (migração 0004). 05/08: Visão Geral lendo do banco, no fuso da clínica. 19/08: Pacientes, importação por CSV com prévia e Agenda. 23/08: tabela de procedimentos em Configurações. 24/08: Financeiro, com vendas, recebimentos, taxas e fluxo de caixa. 29/08: Prontuários com registro versionado e o AGENTS.md. 14/09: fotos de evolução, Documentos e assinatura por link. 22/09: Relacionamento, busca global e recuperação de senha. 22/09: auditoria com privilégio mínimo no banco (migrações 0019 a 0022), 216 testes e Next 15.5.26. Próximos passos, ainda não entregues: Relatórios, perfil Profissional e Next 16.</desc>
+  <style>
+    svg {
+      --painel: #ffffff; --painel-2: #f9f9fa; --borda: #e3e5e8;
+      --texto: #1b1c1e; --texto-2: #43474d; --texto-3: #72767c;
+      --marca: #0854a0; --marca-acao: #0a6ed1; --marca-suave: #d6e9fb;
+      --positivo: #107e3e; --positivo-fundo: #eaf5ea;
+      --atencao-texto: #8f4700; --atencao-acento: #e9730c; --atencao-fundo: #fff3d6;
+      --nucleo: #ffffff;
+      font-family: "Hanken Grotesk", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --painel: #0d1117; --painel-2: #161b22; --borda: #30363d;
+        --texto: #e6edf3; --texto-2: #9da7b3; --texto-3: #7d8590;
+        --marca: #58a6ff; --marca-acao: #388bfd; --marca-suave: #0c2d6b;
+        --positivo: #3fb950; --positivo-fundo: #0f2e1a;
+        --atencao-texto: #f0a24b; --atencao-acento: #e9730c; --atencao-fundo: #3a2508;
+        --nucleo: #e6edf3;
+      }
+    }
+
+    /* Cores por papel: azul = trilho e cometa (navegação), verde = entregue, laranja = o que falta */
+    .painel { fill: var(--painel); stroke: var(--borda); }
+    .t { fill: var(--texto); }
+    .t2 { fill: var(--texto-2); }
+    .marca { fill: var(--marca); }
+    .at { fill: var(--atencao-texto); }
+    .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace; }
+    .sobrancelha { font-size: 13px; font-weight: 700; letter-spacing: .14em; }
+    .manchete { font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+    .meta { font-size: 15px; }
+    .legenda { font-size: 14px; }
+    .data { font-size: 13px; font-weight: 600; }
+    .etiqueta { fill: var(--painel); stroke: var(--borda); }
+    .etiqueta-txt { font-size: 13px; font-weight: 600; }
+    .titulo { font-size: 16px; font-weight: 700; }
+    .corpo { font-size: 15px; }
+    .cartao { fill: var(--painel-2); stroke: var(--borda); }
+    .cartao-prox { fill: var(--atencao-fundo); stroke: var(--atencao-acento); }
+    .trilho-base { stroke: var(--borda); fill: none; }
+    .trilho { stroke: var(--marca); fill: none; }
+    .futuro { stroke: var(--atencao-acento); fill: none; }
+    .haste { stroke: var(--borda); stroke-width: 1.5; }
+    .haste-prox { stroke: var(--atencao-acento); }
+    .no { fill: var(--positivo-fundo); stroke: var(--positivo); }
+    .ico-ok { stroke: var(--positivo); color: var(--positivo); }
+    .no-prox { fill: var(--atencao-fundo); }
+    .anel-prox { fill: none; stroke: var(--atencao-acento); }
+    .ico-prox { stroke: var(--atencao-texto); color: var(--atencao-texto); }
+    .anel-entra { fill: none; stroke: var(--positivo); }
+    .pulso { fill: none; stroke: var(--atencao-acento); }
+    .lampejo { fill: none; stroke: var(--marca-acao); }
+    .lampejo-prox { fill: none; stroke: var(--atencao-acento); }
+    .nucleo { fill: var(--nucleo); stroke: var(--marca-acao); }
+    .c-acao { stop-color: var(--marca-acao); }
+    .c-nucleo { stop-color: var(--nucleo); }
+
+    /* Entrada: cada peça parte do quadro 0% e termina no estado estático completo */
+    .sobe { animation: sobe .7s cubic-bezier(.2,.8,.2,1) both; }
+    .acende { transform-box: fill-box; transform-origin: center; animation: acende .6s cubic-bezier(.2,.8,.2,1) both; }
+    .trilho { stroke-dasharray: 1042; animation: desenha 2.4s linear 0.3s both; }
+    .haste { stroke-dasharray: 15; animation: haste .35s ease-out both; }
+    .haste-prox { stroke-dasharray: 3 3; animation: aparece .5s ease-out both; }
+    .futuro { stroke-dasharray: 6 5; animation: aparece .6s ease-out 2.75s both, fluxo 6s linear 2.75s infinite; }
+    .anel-entra { transform-box: fill-box; transform-origin: center; animation: anel-entra 1s cubic-bezier(.2,.8,.2,1) both; }
+    /* Laços */
+    .gira { transform-box: fill-box; transform-origin: center; animation: gira 14s linear infinite; }
+    .pulso { transform-box: fill-box; transform-origin: center; animation: pulso 6s cubic-bezier(.2,.8,.2,1) 3.4s infinite both; }
+
+    @keyframes sobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes acende {
+      0% { opacity: 0; transform: scale(.4); }
+      60% { opacity: 1; transform: scale(1.12); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes desenha { from { stroke-dashoffset: 1042; } to { stroke-dashoffset: 0; } }
+    @keyframes haste { from { stroke-dashoffset: 15; } to { stroke-dashoffset: 0; } }
+    @keyframes aparece { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fluxo { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -66; } }
+    @keyframes anel-entra {
+      0% { opacity: 0; transform: scale(1); }
+      15% { opacity: .8; }
+      100% { opacity: 0; transform: scale(2); }
+    }
+    @keyframes gira { to { transform: rotate(360deg); } }
+    @keyframes pulso {
+      0% { opacity: 0; transform: scale(1); }
+      5% { opacity: .85; }
+      38% { opacity: 0; transform: scale(2.1); }
+      50% { opacity: 0; transform: scale(1); }
+      55% { opacity: .85; }
+      88% { opacity: 0; transform: scale(2.1); }
+      100% { opacity: 0; transform: scale(2.1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+      .movimento { display: none; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="rastro" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" class="c-acao" stop-opacity="0"/>
+      <stop offset="1" class="c-acao" stop-opacity=".6"/>
+    </linearGradient>
+    <linearGradient id="brilho" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" class="c-nucleo" stop-opacity="0"/>
+      <stop offset="1" class="c-nucleo" stop-opacity="1"/>
+    </linearGradient>
+    <radialGradient id="halo">
+      <stop offset="0" class="c-acao" stop-opacity=".55"/>
+      <stop offset="1" class="c-acao" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="faixa">
+      <rect x="48" y="218" width="1173" height="44"/>
+    </clipPath>
+  </defs>
+
+  <!-- Painel próprio: funciona no GitHub claro e no escuro -->
+  <rect class="painel" x=".5" y=".5" width="1279" height="409" rx="24"/>
+
+  <!-- Cabeçalho -->
+  <g class="sobe" style="animation-delay:.05s">
+    <text class="marca sobrancelha" x="40" y="52">A JORNADA DO PROJETO</text>
+    <text class="t manchete" x="40" y="86">Da primeira tela à auditoria</text>
+  </g>
+  <g class="sobe" style="animation-delay:.2s">
+    <circle class="no" cx="1056" cy="47" r="8" stroke-width="1.25"/>
+    <g class="ico-ok" transform="translate(1050 41) scale(0.5)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></g>
+    <text class="t2 legenda" x="1070" y="52">entregue</text>
+    <circle class="no-prox" cx="1162" cy="47" r="8"/>
+    <circle class="anel-prox" cx="1162" cy="47" r="8" stroke-width="1.5" stroke-dasharray="2.6 2.4"/>
+    <text class="at legenda" x="1176" y="52">próximo</text>
+  </g>
+  <g class="sobe" style="animation-delay:.3s">
+    <text class="t2 meta" x="1240" y="86" text-anchor="end">git log · 01/08 → 22/09/2026 · 22 migrações</text>
+  </g>
+
+  <!-- Trilho: a base neutra fica por baixo; o azul se desenha da esquerda para a direita -->
+  <line class="trilho-base" x1="58" y1="240" x2="1100" y2="240" stroke-width="3" stroke-linecap="round"/>
+  <path class="trilho" d="M58 240 H1100" stroke-width="3" stroke-linecap="round"/>
+  <circle class="marca" cx="58" cy="240" r="4"/>
+  <!-- O que falta: tracejado laranja correndo em direção ao próximo nó -->
+  <path class="futuro" d="M1117 240 H1184" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Hastes entre nó e cartão -->
+  <g>
+    <line class="haste" x1="90" y1="223" x2="90" y2="208" style="animation-delay:0.374s"/>
+    <line class="haste" x1="191" y1="257" x2="191" y2="272" style="animation-delay:0.606s"/>
+    <line class="haste" x1="292" y1="223" x2="292" y2="208" style="animation-delay:0.839s"/>
+    <line class="haste" x1="393" y1="257" x2="393" y2="272" style="animation-delay:1.072s"/>
+    <line class="haste" x1="494" y1="223" x2="494" y2="208" style="animation-delay:1.304s"/>
+    <line class="haste" x1="595" y1="257" x2="595" y2="272" style="animation-delay:1.537s"/>
+    <line class="haste" x1="696" y1="223" x2="696" y2="208" style="animation-delay:1.769s"/>
+    <line class="haste" x1="797" y1="257" x2="797" y2="272" style="animation-delay:2.002s"/>
+    <line class="haste" x1="898" y1="223" x2="898" y2="208" style="animation-delay:2.235s"/>
+    <line class="haste" x1="999" y1="257" x2="999" y2="272" style="animation-delay:2.467s"/>
+    <line class="haste" x1="1100" y1="223" x2="1100" y2="208" style="animation-delay:2.7s"/>
+    <line class="haste haste-prox" x1="1201" y1="257" x2="1201" y2="272" style="animation-delay:3s"/>
+  </g>
+
+  <!-- Movimento decorativo (some com movimento reduzido) -->
+  <g class="movimento">
+    <!-- anéis que se expandem quando cada nó acende -->
+    <circle class="anel-entra" cx="90" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.294s"/>
+    <circle class="anel-entra" cx="191" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.526s"/>
+    <circle class="anel-entra" cx="292" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.759s"/>
+    <circle class="anel-entra" cx="393" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.992s"/>
+    <circle class="anel-entra" cx="494" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.224s"/>
+    <circle class="anel-entra" cx="595" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.457s"/>
+    <circle class="anel-entra" cx="696" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.689s"/>
+    <circle class="anel-entra" cx="797" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.922s"/>
+    <circle class="anel-entra" cx="898" cy="240" r="17" stroke-width="1.5" style="animation-delay:2.155s"/>
+    <circle class="anel-entra" cx="999" cy="240" r="17" stroke-width="1.5" style="animation-delay:2.387s"/>
+    <circle class="anel-entra" cx="1100" cy="240" r="17" stroke-width="1.5" style="animation-delay:2.62s"/>
+    <!-- pulso do próximo passo -->
+    <circle class="pulso" cx="1201" cy="240" r="17" stroke-width="1.75"/>
+    <!-- lampejo de cada nó quando o cometa passa: mesmo relógio SMIL do cometa -->
+    <g>
+      <circle class="lampejo" cx="90" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.013;0.093;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.001;0.013;0.103;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="191" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.066;0.146;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.054;0.066;0.156;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="292" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.119;0.199;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.107;0.119;0.209;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="393" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.172;0.252;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.16;0.172;0.262;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="494" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.225;0.305;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.213;0.225;0.315;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="595" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.278;0.358;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.266;0.278;0.368;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="696" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.331;0.411;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.319;0.331;0.421;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="797" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.384;0.464;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.372;0.384;0.474;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="898" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.437;0.517;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.425;0.437;0.527;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="999" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.49;0.57;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.478;0.49;0.58;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo" cx="1100" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.543;0.623;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.531;0.543;0.633;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle class="lampejo-prox" cx="1201" cy="240" r="17" stroke-width="2" opacity="0">
+        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.596;0.676;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.584;0.596;0.686;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+    <!-- cometa: percorre o trilho em laço de 10s (anda por 6s e se funde no próximo passo) -->
+    <g clip-path="url(#faixa)">
+      <g opacity="0">
+        <animateMotion path="M58 240 H1201" keyPoints="0;1;1" keyTimes="0;0.6;1" calcMode="linear" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;.04;0.56;0.6;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
+        <rect x="-96" y="-4" width="96" height="8" rx="4" fill="url(#rastro)"/>
+        <rect x="-64" y="-1" width="64" height="2" rx="1" fill="url(#brilho)"/>
+        <circle r="16" fill="url(#halo)"/>
+        <circle class="nucleo" r="4.5" stroke-width="2"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Nós: verde = entregue (deu certo); laranja tracejado = o que falta fazer -->
+  <g>
+    <g class="acende" style="animation-delay:0.294s">
+      <circle class="no" cx="90" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(81 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></g>
+    </g>
+    <g class="acende" style="animation-delay:0.526s">
+      <circle class="no" cx="191" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(182 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></g>
+    </g>
+    <g class="acende" style="animation-delay:0.759s">
+      <circle class="no" cx="292" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(283 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></g>
+    </g>
+    <g class="acende" style="animation-delay:0.992s">
+      <circle class="no" cx="393" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(384 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></g>
+    </g>
+    <g class="acende" style="animation-delay:1.224s">
+      <circle class="no" cx="494" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(485 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g>
+    </g>
+    <g class="acende" style="animation-delay:1.457s">
+      <circle class="no" cx="595" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(586 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></g>
+    </g>
+    <g class="acende" style="animation-delay:1.689s">
+      <circle class="no" cx="696" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(687 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></g>
+    </g>
+    <g class="acende" style="animation-delay:1.922s">
+      <circle class="no" cx="797" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(788 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14h6"/><path d="M12 17v-6"/></g>
+    </g>
+    <g class="acende" style="animation-delay:2.155s">
+      <circle class="no" cx="898" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(889 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 5-2.414-2.414A2 2 0 0 0 14.172 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><path d="M21.378 12.626a1 1 0 0 0-3.004-3.004l-4.01 4.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/><path d="M8 18h1"/></g>
+    </g>
+    <g class="acende" style="animation-delay:2.387s">
+      <circle class="no" cx="999" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(990 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M15.8 9.2a2.5 2.5 0 0 0-3.5 0l-.3.4-.35-.3a2.42 2.42 0 1 0-3.2 3.6l3.6 3.5 3.6-3.5c1.2-1.2 1.1-2.7.2-3.7"/></g>
+    </g>
+    <g class="acende" style="animation-delay:2.62s">
+      <circle class="no" cx="1100" cy="240" r="17" stroke-width="1.5"/>
+      <g class="ico-ok" transform="translate(1091 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g>
+    </g>
+    <g class="acende" style="animation-delay:2.95s">
+      <circle class="no-prox" cx="1201" cy="240" r="17"/>
+      <circle class="anel-prox gira" cx="1201" cy="240" r="17" stroke-width="1.75" stroke-dasharray="4.45 4.45"/>
+      <g class="ico-prox" transform="translate(1192 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></g>
+    </g>
+  </g>
+
+  <!-- Cartões, alternando acima e abaixo do trilho -->
+  <g>
+    <g class="sobe" style="animation-delay:0.424s">
+      <rect class="cartao" x="40" y="110" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="54" y="134">01/08</text>
+      <text class="t titulo" x="54" y="158">Etapa 1</text>
+      <text class="t2 corpo" x="54" y="178">estrutura navegável</text>
+      <text class="t2 corpo" x="54" y="197">e a Visão Geral</text>
+    </g>
+    <g class="sobe" style="animation-delay:0.656s">
+      <rect class="cartao" x="40" y="272" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="54" y="296">02/08</text>
+      <text class="t titulo" x="54" y="320">Fundação do banco</text>
+      <text class="t2 corpo" x="54" y="340">Etapa 2 no Supabase,</text>
+      <text class="t2 corpo" x="54" y="359">com RLS nas tabelas</text>
+    </g>
+    <g class="sobe" style="animation-delay:0.889s">
+      <rect class="cartao" x="242" y="110" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="256" y="134">04/08</text>
+      <rect class="etiqueta" x="374" y="120" width="46" height="20" rx="10"/>
+      <text class="t2 mono etiqueta-txt" x="397" y="134" text-anchor="middle">0004</text>
+      <text class="t titulo" x="256" y="158">Autenticação real</text>
+      <text class="t2 corpo" x="256" y="178">escalada de privilégio</text>
+      <text class="t2 corpo" x="256" y="197">corrigida no banco</text>
+    </g>
+    <g class="sobe" style="animation-delay:1.122s">
+      <rect class="cartao" x="242" y="272" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="256" y="296">05/08</text>
+      <text class="t titulo" x="256" y="320">Visão Geral</text>
+      <text class="t2 corpo" x="256" y="340">lendo do banco, no</text>
+      <text class="t2 corpo" x="256" y="359">fuso da clínica</text>
+    </g>
+    <g class="sobe" style="animation-delay:1.354s">
+      <rect class="cartao" x="444" y="110" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="458" y="134">19/08</text>
+      <text class="t titulo" x="458" y="158">Pacientes e Agenda</text>
+      <text class="t2 corpo" x="458" y="178">importação CSV com</text>
+      <text class="t2 corpo" x="458" y="197">prévia antes de gravar</text>
+    </g>
+    <g class="sobe" style="animation-delay:1.587s">
+      <rect class="cartao" x="444" y="272" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="458" y="296">23/08</text>
+      <text class="t titulo" x="458" y="320">Procedimentos</text>
+      <text class="t2 corpo" x="458" y="340">em Configurações:</text>
+      <text class="t2 corpo" x="458" y="359">o que a clínica faz</text>
+    </g>
+    <g class="sobe" style="animation-delay:1.819s">
+      <rect class="cartao" x="646" y="110" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="660" y="134">24/08</text>
+      <text class="t titulo" x="660" y="158">Financeiro</text>
+      <text class="t2 corpo" x="660" y="178">vendas, recebimentos,</text>
+      <text class="t2 corpo" x="660" y="197">taxas e fluxo de caixa</text>
+    </g>
+    <g class="sobe" style="animation-delay:2.052s">
+      <rect class="cartao" x="646" y="272" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="660" y="296">29/08</text>
+      <text class="t titulo" x="660" y="320">Prontuários</text>
+      <text class="t2 corpo" x="660" y="340">registro versionado;</text>
+      <text class="t2 corpo" x="660" y="359">nasce o AGENTS.md</text>
+    </g>
+    <g class="sobe" style="animation-delay:2.285s">
+      <rect class="cartao" x="848" y="110" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="862" y="134">14/09</text>
+      <text class="t titulo" x="862" y="158">Documentos</text>
+      <text class="t2 corpo" x="862" y="178">fotos de evolução e</text>
+      <text class="t2 corpo" x="862" y="197">assinatura por link</text>
+    </g>
+    <g class="sobe" style="animation-delay:2.517s">
+      <rect class="cartao" x="848" y="272" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="862" y="296">22/09</text>
+      <text class="t titulo" x="862" y="320">Relacionamento</text>
+      <text class="t2 corpo" x="862" y="340">busca global e</text>
+      <text class="t2 corpo" x="862" y="359">recuperação de senha</text>
+    </g>
+    <g class="sobe" style="animation-delay:2.75s">
+      <rect class="cartao" x="1050" y="110" width="190" height="98" rx="12"/>
+      <text class="t2 mono data" x="1064" y="134">22/09</text>
+      <rect class="etiqueta" x="1119" y="120" width="109" height="20" rx="10"/>
+      <text class="t2 mono etiqueta-txt" x="1173.5" y="134" text-anchor="middle">Next 15.5.26</text>
+      <text class="t titulo" x="1064" y="158">Auditoria</text>
+      <text class="t2 corpo" x="1064" y="178">privilégio mínimo,</text>
+      <text class="t2 corpo" x="1064" y="197">0019–0022, 216 testes</text>
+    </g>
+    <g class="sobe" style="animation-delay:3.05s">
+      <rect class="cartao-prox" x="1050" y="272" width="190" height="98" rx="12" stroke-dasharray="5 4"/>
+      <text class="at mono data" x="1064" y="296">a seguir</text>
+      <text class="t titulo" x="1064" y="320">Próximos passos</text>
+      <text class="t2 corpo" x="1064" y="340">Relatórios · perfil</text>
+      <text class="t2 corpo" x="1064" y="359">Profissional · Next 16</text>
+    </g>
+  </g>
+</svg>

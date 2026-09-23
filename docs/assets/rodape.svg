@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="220" viewBox="0 0 1280 220" role="img" aria-labelledby="t d">
+  <title id="t">Cockpit — rodapé</title>
+  <desc id="d">Ondas em azul da marca se movendo devagar, com a frase: software real, para uma clínica real, com dado de saúde de pessoas reais. Consultório Dra. Érika Passos, São Paulo.</desc>
+  <style>
+    text { font-family: "Hanken Grotesk", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+    .sobe { animation: sobe .9s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes sobe { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    .pulso { transform-box: fill-box; transform-origin: center; animation: pulso 2.8s ease-in-out infinite; }
+    @keyframes pulso { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.22); } 28% { transform: scale(1); } 42% { transform: scale(1.14); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+      .movimento { display: none; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="mar" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#041b33"/>
+      <stop offset=".55" stop-color="#0854a0"/>
+      <stop offset="1" stop-color="#0a6ed1"/>
+    </linearGradient>
+    <linearGradient id="espuma" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#58a6ff" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#a7cdf2" stop-opacity=".45"/>
+    </linearGradient>
+  </defs>
+
+  <!-- onda de trás -->
+  <path fill="url(#espuma)" d="M0 70 C 200 30, 420 110, 640 70 S 1080 30, 1280 70 L1280 220 L0 220 Z">
+    <animate attributeName="d" dur="11s" repeatCount="indefinite"
+      values="M0 70 C 200 30, 420 110, 640 70 S 1080 30, 1280 70 L1280 220 L0 220 Z;
+              M0 60 C 220 100, 400 30, 640 64 S 1060 104, 1280 58 L1280 220 L0 220 Z;
+              M0 70 C 200 30, 420 110, 640 70 S 1080 30, 1280 70 L1280 220 L0 220 Z"/>
+  </path>
+  <!-- onda da frente -->
+  <path fill="url(#mar)" d="M0 96 C 240 60, 400 130, 640 96 S 1040 62, 1280 100 L1280 220 L0 220 Z">
+    <animate attributeName="d" dur="8s" repeatCount="indefinite"
+      values="M0 96 C 240 60, 400 130, 640 96 S 1040 62, 1280 100 L1280 220 L0 220 Z;
+              M0 104 C 200 132, 440 66, 640 100 S 1000 132, 1280 92 L1280 220 L0 220 Z;
+              M0 96 C 240 60, 400 130, 640 96 S 1040 62, 1280 100 L1280 220 L0 220 Z"/>
+  </path>
+
+  <g transform="translate(628.8 108) scale(1.4)">
+    <path class="pulso" fill="#ff9aa2" d="M8 14.5 1.6 8.3A3.9 3.9 0 0 1 8 3.4a3.9 3.9 0 0 1 6.4 4.9Z"/>
+  </g>
+  <g class="sobe" style="animation-delay:.2s">
+    <text x="640" y="160" text-anchor="middle" font-size="19" font-weight="700" fill="#ffffff">Software real, para uma clínica real, com dado de saúde de pessoas reais.</text>
+  </g>
+  <g class="sobe" style="animation-delay:.45s">
+    <text x="640" y="192" text-anchor="middle" font-size="15" fill="#d6e9fb">Consultório Dra. Érika Passos · São Paulo · feito em português, do banco à tela</text>
+  </g>
+</svg>

@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="456" viewBox="0 0 1280 456" role="img" aria-labelledby="t d">
+  <title id="t">A conta que não erra centavo</title>
+  <desc id="d">Como o Cockpit calcula e protege uma venda no cartão, em cinco passos ligados por um trilho. 1, venda de exemplo: R$ 1.000,00 no crédito em 5x, sem desconto, taxa da tabela de 6,00%. 2, centavos inteiros: 100000 centavos × 600 pontos-base ÷ 10000 = 6000 centavos, com um único arredondamento por operação (src/lib/moeda.ts). 3, um recebimento só: a paciente parcela, a operadora antecipa e a clínica recebe uma vez; cinco parcelas viram um repasse único, taxa de − R$ 60,00 deduzida e líquido de R$ 940,00. 4, o banco confere de novo com CHECK na tabela vendas (migração 0007): valor_original − desconto = valor_final e valor_final − taxa_valor = valor_liquido; e um gatilho confere a origem da taxa (migração 0020). 5, recebimento confirmado não se reescreve: uma mudança depois da confirmação vira linha em ajustes_financeiros, e o histórico, com motivo, fica em venda_alteracoes. Selo: a taxa nunca vira despesa — contar de novo dobraria o custo.</desc>
+
+  <style>
+    svg {
+      --painel: #ffffff; --painel-2: #f9f9fa; --borda: #e3e5e8;
+      --texto: #1b1c1e; --texto-2: #43474d; --texto-3: #72767c;
+      --marca: #0854a0; --marca-acao: #0a6ed1; --marca-suave: #d6e9fb;
+      --positivo: #107e3e; --positivo-fundo: #eaf5ea;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --painel: #0d1117; --painel-2: #161b22; --borda: #30363d;
+        --texto: #e6edf3; --texto-2: #9da7b3; --texto-3: #7d8590;
+        --marca: #58a6ff; --marca-acao: #388bfd; --marca-suave: #0c2d6b;
+        --positivo: #3fb950; --positivo-fundo: #0f2e1a;
+      }
+    }
+
+    /* ---------- Tipografia ---------- */
+    text { font-family: "Hanken Grotesk", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+    .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace; }
+    .rotulo { font-size: 13px; font-weight: 700; letter-spacing: .14em; }
+    .titulo { font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+    .h { font-size: 17px; font-weight: 700; }
+    .s26 { font-size: 26px; } .s20 { font-size: 20px; } .s16 { font-size: 16px; } .s15 { font-size: 15px; } .s14 { font-size: 14px; } .s13 { font-size: 13px; }
+    .semi { font-weight: 600; } .negrito { font-weight: 700; }
+    .fim { text-anchor: end; } .meio { text-anchor: middle; }
+    .tab { font-variant-numeric: tabular-nums; }
+    .t { fill: var(--texto); } .t2 { fill: var(--texto-2); } .t3 { fill: var(--texto-3); }
+    .tm { fill: var(--marca); } .tp { fill: var(--positivo); }
+
+    /* ---------- Superfícies ---------- */
+    .painel { fill: var(--painel); stroke: var(--borda); }
+    .cartao { fill: var(--painel-2); stroke: var(--borda); stroke-width: 1.5; }
+    .aura { fill: var(--marca-acao); }
+    .selo-fundo { fill: var(--painel-2); stroke: var(--borda); stroke-width: 1.5; }
+    .selo-disco { fill: var(--marca-suave); }
+    .chip { fill: var(--painel); stroke: var(--borda); }
+    .fio { stroke: var(--borda); stroke-width: 1.5; }
+    .regua { stroke: var(--texto-2); stroke-width: 1; }
+    .ic-marca { stroke: var(--marca); } .ic2 { stroke: var(--texto-2); } .ic3 { stroke: var(--texto-3); } .ic-ok { stroke: var(--positivo); }
+    .parcela { fill: var(--texto-3); } .repasse { fill: var(--positivo); }
+
+    /* ---------- Trilho, nós e moedas ---------- */
+    .trilho { fill: none; stroke: var(--texto-3); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 0 10; opacity: .6; }
+    .trilho-feito { fill: none; stroke: var(--marca); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 988 988; }
+    .no { fill: var(--marca-suave); stroke: var(--marca); stroke-width: 1.5; }
+    .no-num { font-size: 14px; font-weight: 700; fill: var(--marca); text-anchor: middle; }
+    .anel { fill: none; stroke: var(--marca-acao); stroke-width: 1.5; }
+    .moeda-halo { fill: var(--marca-acao); opacity: .2; }
+    .moeda { fill: var(--painel); stroke: var(--marca-acao); stroke-width: 2; }
+    .moeda-miolo, .rastro { fill: var(--marca-acao); }
+    .ok-circ { stroke-dasharray: 63; } .ok-v { stroke-dasharray: 9; }
+    .rf0 { stop-color: var(--marca-acao); stop-opacity: 0; }
+    .rf1 { stop-color: var(--marca-acao); stop-opacity: .22; }
+    .selo-anel { fill: none; stroke: var(--marca-acao); stroke-width: 2; }
+
+    /* ---------- Movimento ----------
+       Um ciclo de 14s, da esquerda para a direita. A moeda sai de um nó e acende o próximo:
+         passo 1 acende em 0.3s, moeda viaja de 1.5s a 2.2s
+         passo 2 acende em 2.2s, moeda viaja de 4.3s a 5s
+         passo 3 acende em 5s, moeda viaja de 7s a 7.7s
+         passo 4 acende em 7.7s, moeda viaja de 9.6s a 10.3s
+         passo 5 acende em 10.3s
+       Tudo fica montado até 13.3s, apaga até 13.7s e recomeça.
+       O estado estático (sem animação) é a peça completa: nada depende da animação para aparecer. */
+    .anima { transform-box: fill-box; transform-origin: center; animation-duration: 14s; animation-iteration-count: infinite;
+      animation-fill-mode: both; animation-timing-function: cubic-bezier(.2,.8,.2,1); }
+    .entra { animation: entra .7s cubic-bezier(.2,.8,.2,1) both; }
+    .d1 { animation-delay: .05s; } .d2 { animation-delay: .15s; }
+    @keyframes entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .fluxo { animation: fluxo 7s linear infinite; }
+    @keyframes fluxo { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -70; } }
+    .tecla { animation-duration: 14s; animation-iteration-count: infinite; animation-fill-mode: both; }
+    .balanca { transform-origin: 50% 15%; }
+    /* Contagem: cada número intermediário aparece por ~0,08s, em escada (atraso no próprio elemento) */
+    .conta { animation: conta 14s linear infinite both; }
+    @keyframes conta { 0% { opacity: 0; } 0.01%, 0.55% { opacity: 1; } 0.56%, 100% { opacity: 0; } }
+
+    /* Cartão da vez: borda acende enquanto é o passo atual */
+    .quadro-1 { animation-name: quadro-1; }
+    @keyframes quadro-1 { 0%, 2.14% { stroke: var(--borda); stroke-width: 1.5; } 4.64%, 10.71% { stroke: var(--marca-acao); stroke-width: 2; } 13.57%, 100% { stroke: var(--borda); stroke-width: 1.5; } }
+    .aura-1 { animation-name: aura-1; }
+    @keyframes aura-1 { 0%, 2.14% { opacity: 0; } 4.64%, 10.71% { opacity: .2; } 13.57%, 100% { opacity: 0; } }
+    .quadro-2 { animation-name: quadro-2; }
+    @keyframes quadro-2 { 0%, 15.71% { stroke: var(--borda); stroke-width: 1.5; } 18.21%, 30.71% { stroke: var(--marca-acao); stroke-width: 2; } 33.57%, 100% { stroke: var(--borda); stroke-width: 1.5; } }
+    .aura-2 { animation-name: aura-2; }
+    @keyframes aura-2 { 0%, 15.71% { opacity: 0; } 18.21%, 30.71% { opacity: .2; } 33.57%, 100% { opacity: 0; } }
+    .quadro-3 { animation-name: quadro-3; }
+    @keyframes quadro-3 { 0%, 35.71% { stroke: var(--borda); stroke-width: 1.5; } 38.21%, 50% { stroke: var(--marca-acao); stroke-width: 2; } 52.86%, 100% { stroke: var(--borda); stroke-width: 1.5; } }
+    .aura-3 { animation-name: aura-3; }
+    @keyframes aura-3 { 0%, 35.71% { opacity: 0; } 38.21%, 50% { opacity: .2; } 52.86%, 100% { opacity: 0; } }
+    .quadro-4 { animation-name: quadro-4; }
+    @keyframes quadro-4 { 0%, 55% { stroke: var(--borda); stroke-width: 1.5; } 57.5%, 68.57% { stroke: var(--marca-acao); stroke-width: 2; } 71.43%, 100% { stroke: var(--borda); stroke-width: 1.5; } }
+    .aura-4 { animation-name: aura-4; }
+    @keyframes aura-4 { 0%, 55% { opacity: 0; } 57.5%, 68.57% { opacity: .2; } 71.43%, 100% { opacity: 0; } }
+    .quadro-5 { animation-name: quadro-5; }
+    @keyframes quadro-5 { 0%, 73.57% { stroke: var(--borda); stroke-width: 1.5; } 76.07%, 95% { stroke: var(--marca-acao); stroke-width: 2; } 97.86%, 100% { stroke: var(--borda); stroke-width: 1.5; } }
+    .aura-5 { animation-name: aura-5; }
+    @keyframes aura-5 { 0%, 73.57% { opacity: 0; } 76.07%, 95% { opacity: .2; } 97.86%, 100% { opacity: 0; } }
+
+    /* Nós do trilho: pendente → da vez → feito */
+    .no-1 { animation-name: no-1; }
+    @keyframes no-1 { 0%, 2.14% { fill: var(--painel); stroke: var(--borda); } 4.29%, 10.71% { fill: var(--marca-acao); stroke: var(--marca-acao); } 13.57%, 95% { fill: var(--marca-suave); stroke: var(--marca); } 97.86%, 100% { fill: var(--painel); stroke: var(--borda); } }
+    .no-num-1 { animation-name: no-num-1; }
+    @keyframes no-num-1 { 0%, 2.14% { fill: var(--texto-3); } 4.29%, 10.71% { fill: var(--painel); } 13.57%, 95% { fill: var(--marca); } 97.86%, 100% { fill: var(--texto-3); } }
+    .anel-1 { animation-name: anel-1; }
+    @keyframes anel-1 { 0% { opacity: 0; transform: scale(1); } 2.14% { opacity: .7; transform: scale(1); } 8.93% { opacity: 0; transform: scale(1.9); } 100% { opacity: 0; transform: scale(1); } }
+    .no-2 { animation-name: no-2; }
+    @keyframes no-2 { 0%, 15.71% { fill: var(--painel); stroke: var(--borda); } 17.86%, 30.71% { fill: var(--marca-acao); stroke: var(--marca-acao); } 33.57%, 95% { fill: var(--marca-suave); stroke: var(--marca); } 97.86%, 100% { fill: var(--painel); stroke: var(--borda); } }
+    .no-num-2 { animation-name: no-num-2; }
+    @keyframes no-num-2 { 0%, 15.71% { fill: var(--texto-3); } 17.86%, 30.71% { fill: var(--painel); } 33.57%, 95% { fill: var(--marca); } 97.86%, 100% { fill: var(--texto-3); } }
+    .anel-2 { animation-name: anel-2; }
+    @keyframes anel-2 { 0% { opacity: 0; transform: scale(1); } 15.71% { opacity: .7; transform: scale(1); } 22.5% { opacity: 0; transform: scale(1.9); } 23% { opacity: 0; transform: scale(1); } 23.21% { opacity: .7; transform: scale(1); } 30% { opacity: 0; transform: scale(1.9); } 100% { opacity: 0; transform: scale(1); } }
+    .no-3 { animation-name: no-3; }
+    @keyframes no-3 { 0%, 35.71% { fill: var(--painel); stroke: var(--borda); } 37.86%, 50% { fill: var(--marca-acao); stroke: var(--marca-acao); } 52.86%, 95% { fill: var(--marca-suave); stroke: var(--marca); } 97.86%, 100% { fill: var(--painel); stroke: var(--borda); } }
+    .no-num-3 { animation-name: no-num-3; }
+    @keyframes no-num-3 { 0%, 35.71% { fill: var(--texto-3); } 37.86%, 50% { fill: var(--painel); } 52.86%, 95% { fill: var(--marca); } 97.86%, 100% { fill: var(--texto-3); } }
+    .anel-3 { animation-name: anel-3; }
+    @keyframes anel-3 { 0% { opacity: 0; transform: scale(1); } 35.71% { opacity: .7; transform: scale(1); } 42.5% { opacity: 0; transform: scale(1.9); } 43% { opacity: 0; transform: scale(1); } 43.21% { opacity: .7; transform: scale(1); } 50% { opacity: 0; transform: scale(1.9); } 100% { opacity: 0; transform: scale(1); } }
+    .no-4 { animation-name: no-4; }
+    @keyframes no-4 { 0%, 55% { fill: var(--painel); stroke: var(--borda); } 57.14%, 68.57% { fill: var(--marca-acao); stroke: var(--marca-acao); } 71.43%, 95% { fill: var(--marca-suave); stroke: var(--marca); } 97.86%, 100% { fill: var(--painel); stroke: var(--borda); } }
+    .no-num-4 { animation-name: no-num-4; }
+    @keyframes no-num-4 { 0%, 55% { fill: var(--texto-3); } 57.14%, 68.57% { fill: var(--painel); } 71.43%, 95% { fill: var(--marca); } 97.86%, 100% { fill: var(--texto-3); } }
+    .anel-4 { animation-name: anel-4; }
+    @keyframes anel-4 { 0% { opacity: 0; transform: scale(1); } 55% { opacity: .7; transform: scale(1); } 61.79% { opacity: 0; transform: scale(1.9); } 62.29% { opacity: 0; transform: scale(1); } 62.5% { opacity: .7; transform: scale(1); } 69.29% { opacity: 0; transform: scale(1.9); } 100% { opacity: 0; transform: scale(1); } }
+    .no-5 { animation-name: no-5; }
+    @keyframes no-5 { 0%, 73.57% { fill: var(--painel); stroke: var(--borda); } 75.71%, 95% { fill: var(--marca-acao); stroke: var(--marca-acao); } 97.86%, 100% { fill: var(--painel); stroke: var(--borda); } }
+    .no-num-5 { animation-name: no-num-5; }
+    @keyframes no-num-5 { 0%, 73.57% { fill: var(--texto-3); } 75.71%, 95% { fill: var(--painel); } 97.86%, 100% { fill: var(--texto-3); } }
+    .anel-5 { animation-name: anel-5; }
+    @keyframes anel-5 { 0% { opacity: 0; transform: scale(1); } 73.57% { opacity: .7; transform: scale(1); } 80.36% { opacity: 0; transform: scale(1.9); } 80.86% { opacity: 0; transform: scale(1); } 81.07% { opacity: .7; transform: scale(1); } 87.86% { opacity: 0; transform: scale(1.9); } 88.36% { opacity: 0; transform: scale(1); } 88.57% { opacity: .7; transform: scale(1); } 95.36% { opacity: 0; transform: scale(1.9); } 100% { opacity: 0; transform: scale(1); } }
+
+    /* Trilho: o traço azul avança junto com a moeda */
+    .progresso { animation-name: progresso; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes progresso { 0%, 10.71% { stroke-dashoffset: 988; opacity: 1; } 15.71%, 30.71% { stroke-dashoffset: 768; } 35.71%, 50% { stroke-dashoffset: 530; } 55%, 68.57% { stroke-dashoffset: 266; } 73.57%, 95% { stroke-dashoffset: 0; opacity: 1; } 97.86% { stroke-dashoffset: 0; opacity: 0; } 98.21% { stroke-dashoffset: 988; opacity: 0; } 98.93%, 100% { stroke-dashoffset: 988; opacity: 1; } }
+
+    /* Passo 1 · Venda */
+    .c1-rotulo { animation-name: c1-rotulo; }
+    @keyframes c1-rotulo { 0%, 3.21% { opacity: 0; transform: translateY(8px); } 7.5%, 100% { opacity: 1; transform: translateY(0); } }
+    .c1-valor { animation-name: c1-valor; }
+    @keyframes c1-valor { 0%, 4.29% { opacity: 0; transform: translateY(8px); } 8.57%, 100% { opacity: 1; transform: translateY(0); } }
+    .c1-l1 { animation-name: c1-l1; }
+    @keyframes c1-l1 { 0%, 5.36% { opacity: 0; transform: translateY(8px); } 9.64%, 100% { opacity: 1; transform: translateY(0); } }
+    .c1-l2 { animation-name: c1-l2; }
+    @keyframes c1-l2 { 0%, 6.21% { opacity: 0; transform: translateY(8px); } 10.5%, 100% { opacity: 1; transform: translateY(0); } }
+    .c1-l3 { animation-name: c1-l3; }
+    @keyframes c1-l3 { 0%, 7.07% { opacity: 0; transform: translateY(8px); } 11.36%, 100% { opacity: 1; transform: translateY(0); } }
+
+    /* Passo 2 · Centavos inteiros: os números são digitados, o resultado conta */
+    .c2-r1 { animation-name: c2-r1; }
+    @keyframes c2-r1 { 0%, 16.79% { opacity: 0; } 18.21%, 100% { opacity: 1; } }
+    .tecla-1 { animation-name: tecla-1; animation-timing-function: linear; }
+    @keyframes tecla-1 { 0% { fill-opacity: 0; } 0.4%, 100% { fill-opacity: 1; } }
+    .c2-r2 { animation-name: c2-r2; }
+    @keyframes c2-r2 { 0%, 19.64% { opacity: 0; } 21.07%, 100% { opacity: 1; } }
+    .tecla-2 { animation-name: tecla-2; animation-timing-function: linear; }
+    @keyframes tecla-2 { 0% { fill-opacity: 0; } 0.4%, 100% { fill-opacity: 1; } }
+    .c2-r3 { animation-name: c2-r3; }
+    @keyframes c2-r3 { 0%, 21.79% { opacity: 0; } 23.21%, 100% { opacity: 1; } }
+    .tecla-3 { animation-name: tecla-3; animation-timing-function: linear; }
+    @keyframes tecla-3 { 0% { fill-opacity: 0; } 0.4%, 100% { fill-opacity: 1; } }
+    .c2-regua { animation-name: c2-regua; }
+    @keyframes c2-regua { 0%, 24.29% { opacity: 0; } 26.43%, 100% { opacity: 1; } }
+    .c2-igual { animation-name: c2-igual; }
+    @keyframes c2-igual { 0%, 25% { opacity: 0; } 27.14%, 100% { opacity: 1; } }
+    .c2-total { animation-name: c2-total; }
+    @keyframes c2-total { 0%, 27.64% { opacity: 0; } 28.21%, 100% { opacity: 1; } }
+    .c2-legenda { animation-name: c2-legenda; }
+    @keyframes c2-legenda { 0%, 28.93% { opacity: 0; transform: translateY(8px); } 33.21%, 100% { opacity: 1; transform: translateY(0); } }
+
+    /* Passo 3 · UM recebimento: cinco parcelas viram um repasse; o líquido desce até R$ 940,00 */
+    .c3-l1 { animation-name: c3-l1; }
+    @keyframes c3-l1 { 0%, 36.79% { opacity: 0; transform: translateY(8px); } 41.07%, 100% { opacity: 1; transform: translateY(0); } }
+    .c3-l2 { animation-name: c3-l2; }
+    @keyframes c3-l2 { 0%, 37.71% { opacity: 0; transform: translateY(8px); } 42%, 100% { opacity: 1; transform: translateY(0); } }
+    .c3-l3 { animation-name: c3-l3; }
+    @keyframes c3-l3 { 0%, 38.64% { opacity: 0; transform: translateY(8px); } 42.93%, 100% { opacity: 1; transform: translateY(0); } }
+    .c3-parcelas { animation-name: c3-parcelas; }
+    @keyframes c3-parcelas { 0%, 39.64% { opacity: 0; transform: translateY(8px); } 43.93%, 100% { opacity: 1; transform: translateY(0); } }
+    .junta-1 { animation-name: junta-1; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes junta-1 { 0%, 41.07% { opacity: 0; transform: translateX(0); } 41.5% { opacity: 1; } 44.29% { opacity: 1; transform: translateX(76px); } 44.79%, 100% { opacity: 0; transform: translateX(76px); } }
+    .junta-2 { animation-name: junta-2; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes junta-2 { 0%, 41.64% { opacity: 0; transform: translateX(0); } 42.07% { opacity: 1; } 44.86% { opacity: 1; transform: translateX(66px); } 45.36%, 100% { opacity: 0; transform: translateX(66px); } }
+    .junta-3 { animation-name: junta-3; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes junta-3 { 0%, 42.21% { opacity: 0; transform: translateX(0); } 42.64% { opacity: 1; } 45.43% { opacity: 1; transform: translateX(56px); } 45.93%, 100% { opacity: 0; transform: translateX(56px); } }
+    .junta-4 { animation-name: junta-4; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes junta-4 { 0%, 42.79% { opacity: 0; transform: translateX(0); } 43.21% { opacity: 1; } 46% { opacity: 1; transform: translateX(46px); } 46.5%, 100% { opacity: 0; transform: translateX(46px); } }
+    .junta-5 { animation-name: junta-5; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes junta-5 { 0%, 43.36% { opacity: 0; transform: translateX(0); } 43.79% { opacity: 1; } 46.57% { opacity: 1; transform: translateX(36px); } 47.07%, 100% { opacity: 0; transform: translateX(36px); } }
+    .repasse-pop { animation-name: repasse-pop; }
+    @keyframes repasse-pop { 0%, 44.29% { transform: scale(1); } 45.43% { transform: scale(1.6); } 47.5%, 100% { transform: scale(1); } }
+    .c3-taxa { animation-name: c3-taxa; }
+    @keyframes c3-taxa { 0%, 45.36% { opacity: 0; transform: translateY(8px); } 49.64%, 100% { opacity: 1; transform: translateY(0); } }
+    .c3-liquido { animation-name: c3-liquido; }
+    @keyframes c3-liquido { 0%, 45.71% { opacity: 0; transform: translateY(8px); } 50%, 100% { opacity: 1; transform: translateY(0); } }
+    .c3-liquido-final { animation-name: c3-liquido-final; }
+    @keyframes c3-liquido-final { 0%, 48.36% { opacity: 0; } 48.93%, 100% { opacity: 1; } }
+
+    /* Selo: quando a taxa aparece, a balança oscila e um reflexo atravessa */
+    .balanca { animation-name: balanca; }
+    @keyframes balanca { 0%, 45.71% { transform: rotate(0); } 48.21% { transform: rotate(-8deg); } 51.07% { transform: rotate(5deg); } 53.57% { transform: rotate(-2deg); } 55.71%, 100% { transform: rotate(0); } }
+    .selo-anel { animation-name: selo-anel; }
+    @keyframes selo-anel { 0%, 45.71% { opacity: 0; } 47.86% { opacity: .9; } 56.43%, 100% { opacity: 0; } }
+    .reflexo { animation-name: reflexo; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes reflexo { 0%, 46.07% { transform: translateX(0); } 53.21%, 100% { transform: translateX(520px); } }
+
+    /* Passo 4 · O banco confere: as duas CHECKs entram e o ✓ é desenhado */
+    .c4-rotulo { animation-name: c4-rotulo; }
+    @keyframes c4-rotulo { 0%, 56.07% { opacity: 0; transform: translateY(8px); } 60.36%, 100% { opacity: 1; transform: translateY(0); } }
+    .c4-eq1 { animation-name: c4-eq1; }
+    @keyframes c4-eq1 { 0%, 57.14% { opacity: 0; transform: translateY(8px); } 61.43%, 100% { opacity: 1; transform: translateY(0); } }
+    .c4-eq2 { animation-name: c4-eq2; }
+    @keyframes c4-eq2 { 0%, 61.07% { opacity: 0; transform: translateY(8px); } 65.36%, 100% { opacity: 1; transform: translateY(0); } }
+    .c4-gatilho { animation-name: c4-gatilho; }
+    @keyframes c4-gatilho { 0%, 66.43% { opacity: 0; transform: translateY(8px); } 70.71%, 100% { opacity: 1; transform: translateY(0); } }
+    .ok-circ-1 { animation-name: ok-circ-1; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes ok-circ-1 { 0%, 58.93% { stroke-dashoffset: 63; } 61.43%, 100% { stroke-dashoffset: 0; } }
+    .ok-v-1 { animation-name: ok-v-1; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes ok-v-1 { 0%, 60.71% { stroke-dashoffset: 9; } 62.5%, 100% { stroke-dashoffset: 0; } }
+    .ok-circ-2 { animation-name: ok-circ-2; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes ok-circ-2 { 0%, 62.86% { stroke-dashoffset: 63; } 65.36%, 100% { stroke-dashoffset: 0; } }
+    .ok-v-2 { animation-name: ok-v-2; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+    @keyframes ok-v-2 { 0%, 64.64% { stroke-dashoffset: 9; } 66.43%, 100% { stroke-dashoffset: 0; } }
+
+    /* Passo 5 · Confirmado não se reescreve: o cadeado fecha */
+    .cadeado { animation-name: cadeado; animation-timing-function: cubic-bezier(.34,1.56,.64,1); }
+    @keyframes cadeado { 0%, 73.93% { transform: translateY(-3.5px); } 76.79%, 97.86% { transform: translateY(0); } 99.29%, 100% { transform: translateY(-3.5px); } }
+    .c5-l1 { animation-name: c5-l1; }
+    @keyframes c5-l1 { 0%, 74.64% { opacity: 0; transform: translateY(8px); } 78.93%, 100% { opacity: 1; transform: translateY(0); } }
+    .c5-chip1 { animation-name: c5-chip1; }
+    @keyframes c5-chip1 { 0%, 76.07% { opacity: 0; transform: translateY(8px); } 80.36%, 100% { opacity: 1; transform: translateY(0); } }
+    .c5-l2 { animation-name: c5-l2; }
+    @keyframes c5-l2 { 0%, 77.86% { opacity: 0; transform: translateY(8px); } 82.14%, 100% { opacity: 1; transform: translateY(0); } }
+    .c5-chip2 { animation-name: c5-chip2; }
+    @keyframes c5-chip2 { 0%, 78.93% { opacity: 0; transform: translateY(8px); } 83.21%, 100% { opacity: 1; transform: translateY(0); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+      .movimento { display: none; }
+    }
+    /* O conteúdo dos cartões se monta UMA vez e fica: quem abre o README depois dos
+       primeiros segundos vê a conta inteira. O que repete é só o destaque — trilho,
+       nós, moeda e borda do cartão da vez — passando por cima da conta montada. */
+    .c1-rotulo, .c1-valor, .c1-l1, .c1-l2, .c1-l3, .c2-r1, .c2-r2, .c2-r3, .c2-regua, .c2-igual, .c2-total, .c2-legenda, .c3-l1, .c3-l2, .c3-l3, .c3-parcelas, .c3-taxa, .c3-liquido, .c3-liquido-final, .c4-rotulo, .c4-eq1, .c4-eq2, .c4-gatilho, .c5-l1, .c5-chip1, .c5-l2, .c5-chip2, .tecla-1, .tecla-2, .tecla-3, .ok-circ-1, .ok-v-1, .ok-circ-2, .ok-v-2, .conta { animation-iteration-count: 1; }
+  </style>
+
+  <defs>
+    <filter id="desfoque" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <linearGradient id="gradiente-reflexo" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" class="rf0"/>
+      <stop offset=".5" class="rf1"/>
+      <stop offset="1" class="rf0"/>
+    </linearGradient>
+    <clipPath id="recorte-selo">
+      <rect x="856" y="40" width="384" height="84" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <!-- Painel próprio: a peça funciona no GitHub claro e no escuro -->
+  <rect class="painel" x=".5" y=".5" width="1279" height="455" rx="24"/>
+
+  <!-- ================= Cabeçalho ================= -->
+  <g class="entra d1">
+    <text class="rotulo tm" x="40" y="62">FINANCEIRO · AS REGRAS QUE VALEM DINHEIRO</text>
+    <text class="titulo t" x="40" y="98">A conta que não erra centavo</text>
+    <text class="s16 t2" x="40" y="126">Uma venda no cartão, do formulário ao banco — conferida duas vezes.</text>
+  </g>
+
+  <!-- Selo (AGENTS.md §8.4): a taxa é dedução do líquido, não despesa -->
+  <g class="entra d2">
+    <rect class="selo-fundo" x="856" y="40" width="384" height="84" rx="14"/>
+    <circle class="selo-disco" cx="886" cy="82" r="17"/>
+    <g class="ic-marca" transform="translate(876 72) scale(0.83)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g class="anima balanca"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></g></g>
+    <text class="s13 t2 semi" x="914" y="66" letter-spacing=".08em">REGRA DA CASA · AGENTS.md §8.4</text>
+    <text class="s16 semi t" x="914" y="90">A taxa nunca vira despesa —</text>
+    <text class="s16 t2" x="914" y="112">contar de novo dobraria o custo.</text>
+    <g class="movimento">
+      <g clip-path="url(#recorte-selo)">
+        <g class="anima reflexo">
+          <polygon points="736,124 836,124 866,40 766,40" fill="url(#gradiente-reflexo)"/>
+        </g>
+      </g>
+      <rect class="anima selo-anel" x="856" y="40" width="384" height="84" rx="14"/>
+    </g>
+  </g>
+
+  <!-- ================= Brilho atrás do cartão da vez (decorativo) ================= -->
+  <g class="movimento" filter="url(#desfoque)">
+    <rect class="aura anima aura-1" x="46" y="194" width="180" height="216" rx="16"/>
+    <rect class="aura anima aura-2" x="258" y="194" width="196" height="216" rx="16"/>
+    <rect class="aura anima aura-3" x="486" y="194" width="216" height="216" rx="16"/>
+    <rect class="aura anima aura-4" x="734" y="194" width="248" height="216" rx="16"/>
+    <rect class="aura anima aura-5" x="1014" y="194" width="220" height="216" rx="16"/>
+  </g>
+
+  <!-- ================= Trilho ================= -->
+  <path class="trilho fluxo" d="M136 160 H1124"/>
+  <path class="trilho-feito anima progresso" d="M136 160 H1124"/>
+  <line class="fio" x1="136" y1="175" x2="136" y2="188"/>
+  <line class="fio" x1="356" y1="175" x2="356" y2="188"/>
+  <line class="fio" x1="594" y1="175" x2="594" y2="188"/>
+  <line class="fio" x1="858" y1="175" x2="858" y2="188"/>
+  <line class="fio" x1="1124" y1="175" x2="1124" y2="188"/>
+
+  <!-- Moedas: saem de baixo de um nó e mergulham no próximo (SMIL, sincronizado com o ciclo de 14s) -->
+  <g class="movimento">
+    <!-- passo 1 → 2 -->
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M136 160 H356" calcMode="spline" keyTimes="0;0.1186;0.1686;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="1.8" opacity=".45"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M136 160 H356" calcMode="spline" keyTimes="0;0.1129;0.1629;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="2.6" opacity=".7"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M136 160 H356" calcMode="spline" keyTimes="0;0.1071;0.1571;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="moeda-halo" r="10"/>
+      <circle class="moeda" r="6"/>
+      <circle class="moeda-miolo" r="2.2"/>
+    </g>
+    <!-- passo 2 → 3 -->
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M356 160 H594" calcMode="spline" keyTimes="0;0.3186;0.3686;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="1.8" opacity=".45"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M356 160 H594" calcMode="spline" keyTimes="0;0.3129;0.3629;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="2.6" opacity=".7"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M356 160 H594" calcMode="spline" keyTimes="0;0.3071;0.3571;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="moeda-halo" r="10"/>
+      <circle class="moeda" r="6"/>
+      <circle class="moeda-miolo" r="2.2"/>
+    </g>
+    <!-- passo 3 → 4 -->
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M594 160 H858" calcMode="spline" keyTimes="0;0.5114;0.5614;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="1.8" opacity=".45"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M594 160 H858" calcMode="spline" keyTimes="0;0.5057;0.5557;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="2.6" opacity=".7"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M594 160 H858" calcMode="spline" keyTimes="0;0.5;0.55;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="moeda-halo" r="10"/>
+      <circle class="moeda" r="6"/>
+      <circle class="moeda-miolo" r="2.2"/>
+    </g>
+    <!-- passo 4 → 5 -->
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M858 160 H1124" calcMode="spline" keyTimes="0;0.6971;0.7471;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="1.8" opacity=".45"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M858 160 H1124" calcMode="spline" keyTimes="0;0.6914;0.7414;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="rastro" r="2.6" opacity=".7"/>
+    </g>
+    <g>
+      <animateMotion dur="14s" repeatCount="indefinite" path="M858 160 H1124" calcMode="spline" keyTimes="0;0.6857;0.7357;1" keyPoints="0;0;1;1" keySplines="0 0 1 1;.45 0 .55 1;0 0 1 1"/>
+      <circle class="moeda-halo" r="10"/>
+      <circle class="moeda" r="6"/>
+      <circle class="moeda-miolo" r="2.2"/>
+    </g>
+  </g>
+
+  <!-- Nós numerados -->
+  <g class="movimento">
+    <circle class="anel anima anel-1" cx="136" cy="160" r="15"/>
+    <circle class="anel anima anel-2" cx="356" cy="160" r="15"/>
+    <circle class="anel anima anel-3" cx="594" cy="160" r="15"/>
+    <circle class="anel anima anel-4" cx="858" cy="160" r="15"/>
+    <circle class="anel anima anel-5" cx="1124" cy="160" r="15"/>
+  </g>
+  <circle class="no anima no-1" cx="136" cy="160" r="15"/>
+  <text class="no-num anima no-num-1" x="136" y="165">1</text>
+  <circle class="no anima no-2" cx="356" cy="160" r="15"/>
+  <text class="no-num anima no-num-2" x="356" y="165">2</text>
+  <circle class="no anima no-3" cx="594" cy="160" r="15"/>
+  <text class="no-num anima no-num-3" x="594" y="165">3</text>
+  <circle class="no anima no-4" cx="858" cy="160" r="15"/>
+  <text class="no-num anima no-num-4" x="858" y="165">4</text>
+  <circle class="no anima no-5" cx="1124" cy="160" r="15"/>
+  <text class="no-num anima no-num-5" x="1124" y="165">5</text>
+
+  <!-- ================= 1 · Venda (exemplo de src/lib/venda.ts) ================= -->
+  <g>
+    <rect class="cartao anima quadro-1" x="40" y="188" width="192" height="228" rx="16"/>
+    <g class="ic2" transform="translate(58 203) scale(0.83)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></g>
+    <text class="h t" x="86" y="219">Venda</text>
+    <rect class="chip" x="148" y="201" width="66" height="24" rx="12"/>
+    <text class="s13 t2 meio" x="181" y="218">exemplo</text>
+    <g class="anima c1-rotulo"><text class="s13 t2" x="58" y="266">valor da venda</text></g>
+    <g class="anima c1-valor"><text class="s26 negrito t tab" x="58" y="296">R$ 1.000,00</text></g>
+    <g class="anima c1-l1">
+      <line class="fio" x1="58" y1="312" x2="214" y2="312" stroke-width="1"/>
+      <text class="s13 t2" x="58" y="336">forma</text>
+      <text class="s14 semi t fim tab" x="214" y="336">Crédito em 5x</text>
+    </g>
+    <g class="anima c1-l2">
+      <text class="s13 t2" x="58" y="360">desconto</text>
+      <text class="s14 semi t fim tab" x="214" y="360">R$ 0,00</text>
+    </g>
+    <g class="anima c1-l3">
+      <text class="s13 t2" x="58" y="384">taxa da tabela</text>
+      <text class="s14 semi t fim tab" x="214" y="384">6,00%</text>
+    </g>
+  </g>
+
+  <!-- ================= 2 · Centavos inteiros (src/lib/moeda.ts, custoDaTaxa) ================= -->
+  <g>
+    <rect class="cartao anima quadro-2" x="252" y="188" width="208" height="228" rx="16"/>
+    <g class="ic2" transform="translate(270 203) scale(0.83)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></g>
+    <text class="h t" x="298" y="219">Centavos inteiros</text>
+    <g class="anima c2-r1">
+      <text class="mono s15 t fim" x="356" y="264"><tspan class="tecla tecla-1" style="animation-delay: 2.4s">1</tspan><tspan class="tecla tecla-1" style="animation-delay: 2.46s">0</tspan><tspan class="tecla tecla-1" style="animation-delay: 2.52s">0</tspan><tspan class="tecla tecla-1" style="animation-delay: 2.58s">0</tspan><tspan class="tecla tecla-1" style="animation-delay: 2.64s">0</tspan><tspan class="tecla tecla-1" style="animation-delay: 2.7s">0</tspan></text>
+      <text class="s13 t2" x="364" y="264">centavos</text>
+    </g>
+    <g class="anima c2-r2">
+      <text class="mono s15 t2" x="270" y="288">×</text>
+      <text class="mono s15 t fim" x="356" y="288"><tspan class="tecla tecla-2" style="animation-delay: 2.8s">6</tspan><tspan class="tecla tecla-2" style="animation-delay: 2.86s">0</tspan><tspan class="tecla tecla-2" style="animation-delay: 2.92s">0</tspan></text>
+      <text class="s13 t2" x="364" y="288">pontos-base</text>
+    </g>
+    <g class="anima c2-r3">
+      <text class="mono s15 t2" x="270" y="312">÷</text>
+      <text class="mono s15 t fim" x="356" y="312"><tspan class="tecla tecla-3" style="animation-delay: 3.1s">1</tspan><tspan class="tecla tecla-3" style="animation-delay: 3.16s">0</tspan><tspan class="tecla tecla-3" style="animation-delay: 3.22s">0</tspan><tspan class="tecla tecla-3" style="animation-delay: 3.28s">0</tspan><tspan class="tecla tecla-3" style="animation-delay: 3.34s">0</tspan></text>
+      <text class="s13 t2" x="364" y="312">(100%)</text>
+    </g>
+    <g class="anima c2-regua"><line class="regua" x1="270" y1="324" x2="442" y2="324"/></g>
+    <g class="anima c2-igual">
+      <text class="mono s15 t2" x="270" y="348">=</text>
+      <text class="s13 semi t" x="364" y="348">centavos</text>
+    </g>
+    <g class="movimento">
+      <text class="mono s15 negrito t fim conta" x="356" y="348" style="animation-delay: 3.55s">1200</text>
+      <text class="mono s15 negrito t fim conta" x="356" y="348" style="animation-delay: 3.63s">2400</text>
+      <text class="mono s15 negrito t fim conta" x="356" y="348" style="animation-delay: 3.71s">3600</text>
+      <text class="mono s15 negrito t fim conta" x="356" y="348" style="animation-delay: 3.79s">4800</text>
+    </g>
+    <g class="anima c2-total"><text class="mono s15 negrito t fim" x="356" y="348">6000</text></g>
+    <g class="anima c2-legenda">
+      <text class="s14 t2" x="270" y="376">um único arredondamento</text>
+      <text class="s14 t2" x="270" y="394">por operação</text>
+    </g>
+  </g>
+
+  <!-- ================= 3 · UM recebimento (AGENTS.md §8.4, venda_registrar) ================= -->
+  <g>
+    <rect class="cartao anima quadro-3" x="480" y="188" width="228" height="228" rx="16"/>
+    <g class="ic2" transform="translate(498 203) scale(0.83)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></g>
+    <text class="h t" x="526" y="219">UM recebimento</text>
+    <g class="anima c3-l1"><text class="s14 t2" x="498" y="266">a paciente parcela,</text></g>
+    <g class="anima c3-l2"><text class="s14 t2" x="498" y="285">a operadora antecipa,</text></g>
+    <g class="anima c3-l3"><text class="s14 t2" x="498" y="304">a clínica recebe <tspan class="negrito t">uma vez.</tspan></text></g>
+    <g class="anima c3-parcelas">
+      <circle class="parcela" cx="500" cy="326" r="3.5"/>
+      <circle class="parcela" cx="510" cy="326" r="3.5"/>
+      <circle class="parcela" cx="520" cy="326" r="3.5"/>
+      <circle class="parcela" cx="530" cy="326" r="3.5"/>
+      <circle class="parcela" cx="540" cy="326" r="3.5"/>
+      <g class="ic3" transform="translate(549 318) scale(0.67)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></g>
+      <circle class="repasse anima repasse-pop" cx="576" cy="326" r="5.5"/>
+      <text class="s13 t2" x="587" y="331">repasse único</text>
+      <g class="movimento">
+        <circle class="moeda-miolo anima junta-1" cx="500" cy="326" r="3.5"/>
+        <circle class="moeda-miolo anima junta-2" cx="510" cy="326" r="3.5"/>
+        <circle class="moeda-miolo anima junta-3" cx="520" cy="326" r="3.5"/>
+        <circle class="moeda-miolo anima junta-4" cx="530" cy="326" r="3.5"/>
+        <circle class="moeda-miolo anima junta-5" cx="540" cy="326" r="3.5"/>
+      </g>
+    </g>
+    <g class="anima c3-taxa">
+      <line class="fio" x1="498" y1="342" x2="690" y2="342" stroke-width="1"/>
+      <text class="s13 t2" x="498" y="366">taxa (6,00%)</text>
+      <text class="s15 t2 fim tab" x="690" y="366">− R$ 60,00</text>
+    </g>
+    <g class="anima c3-liquido"><text class="s13 semi t2" x="498" y="394">líquido</text></g>
+    <g class="movimento">
+      <text class="s20 negrito tp fim tab conta" x="690" y="395" style="animation-delay: 6.45s">R$ 1.000,00</text>
+      <text class="s20 negrito tp fim tab conta" x="690" y="395" style="animation-delay: 6.53s">R$ 985,00</text>
+      <text class="s20 negrito tp fim tab conta" x="690" y="395" style="animation-delay: 6.61s">R$ 970,00</text>
+      <text class="s20 negrito tp fim tab conta" x="690" y="395" style="animation-delay: 6.69s">R$ 955,00</text>
+    </g>
+    <g class="anima c3-liquido-final"><text class="s20 negrito tp fim tab" x="690" y="395">R$ 940,00</text></g>
+  </g>
+
+  <!-- ================= 4 · O banco confere de novo (0007: CHECKs · 0020: gatilho) ================= -->
+  <g>
+    <rect class="cartao anima quadro-4" x="728" y="188" width="260" height="228" rx="16"/>
+    <g class="ic2" transform="translate(746 203) scale(0.83)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></g>
+    <text class="h t" x="774" y="219">O banco confere</text>
+    <text class="h t" x="774" y="240">de novo</text>
+    <g class="anima c4-rotulo"><text class="s13 semi t2" x="746" y="266" letter-spacing=".04em">CHECK em vendas (0007)</text></g>
+    <g class="anima c4-eq1">
+      <text class="mono s14 t" x="746" y="289">valor_original <tspan class="t2">−</tspan> desconto</text>
+      <text class="mono s14 t" x="746" y="308"><tspan class="t2">=</tspan> valor_final</text>
+      <g class="ic-ok" transform="translate(948 292) scale(0.92)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle class="ok-circ anima ok-circ-1" cx="12" cy="12" r="10"/><path class="ok-v anima ok-v-1" d="m9 12 2 2 4-4"/></g>
+    </g>
+    <g class="anima c4-eq2">
+      <text class="mono s14 t" x="746" y="334">valor_final <tspan class="t2">−</tspan> taxa_valor</text>
+      <text class="mono s14 t" x="746" y="353"><tspan class="t2">=</tspan> valor_liquido</text>
+      <g class="ic-ok" transform="translate(948 337) scale(0.92)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle class="ok-circ anima ok-circ-2" cx="12" cy="12" r="10"/><path class="ok-v anima ok-v-2" d="m9 12 2 2 4-4"/></g>
+    </g>
+    <g class="anima c4-gatilho">
+      <g class="ic2" transform="translate(746 367) scale(0.67)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g>
+      <text class="s14 t2" x="768" y="380">gatilho confere a origem</text>
+      <text class="s14 t2" x="768" y="398">da taxa (0020)</text>
+    </g>
+  </g>
+
+  <!-- ================= 5 · Confirmado não se reescreve (0008 · 0020) ================= -->
+  <g>
+    <rect class="cartao anima quadro-5" x="1008" y="188" width="232" height="228" rx="16"/>
+    <g class="ic2" transform="translate(1026 203) scale(0.83)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path class="anima cadeado" d="M7 11V7a5 5 0 0 1 10 0v4"/></g>
+    <text class="h t" x="1054" y="219">Confirmado não</text>
+    <text class="h t" x="1054" y="240">se reescreve</text>
+    <g class="anima c5-l1">
+      <text class="s14 t2" x="1026" y="268">Mudança depois da</text>
+      <text class="s14 t2" x="1026" y="287">confirmação vira linha em</text>
+    </g>
+    <g class="anima c5-chip1">
+      <rect class="chip" x="1026" y="298" width="176" height="26" rx="6"/>
+      <text class="mono s14 t" x="1035" y="316">ajustes_financeiros</text>
+    </g>
+    <g class="anima c5-l2"><text class="s14 t2" x="1026" y="350">Histórico, com motivo, em</text></g>
+    <g class="anima c5-chip2">
+      <rect class="chip" x="1026" y="360" width="150" height="26" rx="6"/>
+      <text class="mono s14 t" x="1035" y="378">venda_alteracoes</text>
+    </g>
+  </g>
+</svg>

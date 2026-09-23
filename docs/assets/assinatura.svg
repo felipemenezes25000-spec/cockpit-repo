@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="476" viewBox="0 0 1280 476" role="img" aria-labelledby="t d">
+  <title id="t">Assinatura à distância, do texto congelado à via da paciente</title>
+  <desc id="d">Linha de seis passos da assinatura por link do Cockpit. 1, emitir: o banco congela o texto da versão do modelo e calcula o SHA-256. 2, gerar link: token de 256 bits; o banco guarda só o hash; validade de 7, 15 ou 30 dias. 3, a paciente abre /assinar/[token], sem login e sem conta; antes da data de nascimento só o tipo do documento é revelado. 4, data de nascimento como segundo fator: o link se fecha no décimo erro, e desde a migração 0022 a linha do link fica travada com for update. 5, lê e assina com o nome completo; IP e aparelho vêm dos cabeçalhos da requisição, nunca do formulário. 6, via da paciente: o link continua em modo leitura até vencer, com o botão Salvar em PDF ou imprimir. À direita, um celular mostra a tela da paciente em cada passo: a mensagem com o link, o campo de data de nascimento com uma tentativa errada, o texto com o botão Assinar documento e a assinatura registrada. Abaixo, o princípio: anon alcança quatro funções e nenhuma tabela — documento_link_estado, documento_para_assinatura, documento_assinar_por_link e documento_responder_por_link.</desc>
+  <style>
+    svg {
+      --painel: #ffffff; --painel-2: #f9f9fa; --borda: #e3e5e8;
+      --texto: #1b1c1e; --texto-2: #43474d; --texto-3: #72767c;
+      --marca: #0854a0; --marca-acao: #0a6ed1; --marca-suave: #d6e9fb;
+      --negativo: #bb0000; --negativo-fundo: #fceaea;
+      --positivo: #107e3e; --positivo-fundo: #eaf5ea;
+      font-family: "Hanken Grotesk", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --painel: #0d1117; --painel-2: #161b22; --borda: #30363d;
+        --texto: #e6edf3; --texto-2: #9da7b3; --texto-3: #7d8590;
+        --marca: #58a6ff; --marca-acao: #388bfd; --marca-suave: #0c2d6b;
+        --negativo: #ff7b72; --negativo-fundo: #3d1417;
+        --positivo: #3fb950; --positivo-fundo: #0f2e1a;
+      }
+    }
+
+    /* Tipografia */
+    .m { font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace; }
+    .sobrancelha { font-size: 13px; font-weight: 700; letter-spacing: .14em; }
+    .manchete { font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+    .s13 { font-size: 13px; }
+    .s14 { font-size: 14px; }
+    .s15 { font-size: 15px; }
+    .s18 { font-size: 18px; }
+    .b { font-weight: 700; }
+    .c { text-anchor: middle; }
+    .tab { font-variant-numeric: tabular-nums; }
+
+    /* Cores por papel: azul = onde a paciente está (navegação/ação),
+       vermelho = o que deu errado, verde = o que deu certo */
+    .fundo { fill: var(--painel); stroke: var(--borda); }
+    .t { fill: var(--texto); }
+    .t2 { fill: var(--texto-2); }
+    .mc { fill: var(--marca); }
+    .neg { fill: var(--negativo); }
+    .pos { fill: var(--positivo); }
+    .sobre { fill: var(--painel); }
+    .i-t { stroke: var(--texto); color: var(--texto); }
+    .i-t2 { stroke: var(--texto-2); color: var(--texto-2); }
+    .i-t3 { stroke: var(--texto-3); color: var(--texto-3); }
+    .i-marca { stroke: var(--marca); color: var(--marca); }
+    .i-painel { stroke: var(--painel); color: var(--painel); }
+    .i-neg { stroke: var(--negativo); color: var(--negativo); }
+    .i-pos { stroke: var(--positivo); color: var(--positivo); }
+
+    /* Linha de passos */
+    .trilho { stroke: var(--borda); stroke-width: 3; stroke-linecap: round; }
+    .progresso { stroke: var(--marca); stroke-width: 3; stroke-dasharray: 790; }
+    .no { fill: var(--painel); stroke: var(--borda); stroke-width: 1.5; }
+    .no-aceso { fill: var(--marca-suave); stroke: var(--marca); stroke-width: 2; }
+    .cartao-ativo { fill: var(--marca-suave); opacity: .6; }
+    .pulso { fill: none; stroke: var(--marca); stroke-width: 2; }
+    .cometa { fill: var(--marca); }
+    .cometa-halo { fill: var(--marca); opacity: .22; }
+    .selo-neg { fill: var(--negativo-fundo); stroke: var(--negativo); }
+    .selo-pos { fill: var(--positivo-fundo); stroke: var(--positivo); }
+
+    /* Faixa do princípio */
+    .faixa { fill: var(--painel-2); stroke: var(--borda); }
+    .chip { fill: var(--painel); stroke: var(--borda); stroke-width: 1.2; }
+    .chip-brilho { fill: var(--marca-suave); stroke: var(--marca); stroke-width: 1.5; }
+    .pacote { fill: var(--marca); }
+    .pacote-halo { fill: var(--marca); opacity: .25; }
+
+    /* Celular */
+    .aparelho { fill: var(--painel-2); stroke: var(--borda); stroke-width: 1.5; }
+    .lateral { fill: var(--borda); }
+    .tela { fill: var(--painel); stroke: var(--borda); }
+    .ilha { fill: var(--borda); }
+    .barra { fill: var(--painel-2); stroke: var(--borda); }
+    .divisa { stroke: var(--borda); }
+    .balao { fill: var(--painel-2); stroke: var(--borda); }
+    .sublinha { stroke: var(--marca); }
+    .suave { fill: var(--marca-suave); }
+    .campo { fill: var(--painel); stroke: var(--borda); stroke-width: 1.5; }
+    .campo-erro { fill: none; stroke: var(--negativo); stroke-width: 2; }
+    .caret { stroke: var(--marca); stroke-width: 1.5; }
+    .caixa { fill: var(--painel-2); stroke: var(--borda); }
+    .linha-texto { fill: var(--texto-3); opacity: .45; }
+    .caixa-check { fill: var(--painel); stroke: var(--texto-2); stroke-width: 1.5; }
+    .ok-fundo { fill: var(--positivo-fundo); stroke: var(--positivo); stroke-opacity: .5; }
+    .traco { stroke-dasharray: 10; }
+    .toque-marca { fill: var(--marca-acao); }
+    .toque-claro { fill: var(--painel); }
+
+    /* ---------------------------------------------------------------
+       Movimento. Tudo em laço de 14s, sincronizado pelo início do
+       documento. O estado estático (sem animação) é o fim da história:
+       seis passos acesos, linha cheia e a via na tela do celular.
+       --------------------------------------------------------------- */
+    .entra { animation: entra .7s cubic-bezier(.2,.8,.2,1) both; }
+    .anim {
+      animation-duration: 14s;
+      animation-iteration-count: infinite;
+      animation-fill-mode: both;
+      animation-timing-function: cubic-bezier(.2,.8,.2,1);
+    }
+    .escala { transform-box: fill-box; transform-origin: center; }
+
+    .cursor { animation-name: cursor; }
+    .progresso { animation-name: progresso; }
+    .pulso { animation-name: pulso; }
+    .a1 { animation-name: a1; } .a2 { animation-name: a2; } .a3 { animation-name: a3; }
+    .a4 { animation-name: a4; } .a5 { animation-name: a5; } .a6 { animation-name: a6; }
+    .selo-erro { animation-name: selo-erro; }
+    .selo-zerado { animation-name: selo-zerado; }
+    .b-estado { animation-name: b-estado; }
+    .b-para { animation-name: b-para; }
+    .b-assinar { animation-name: b-assinar; }
+    .tela0 { animation-name: tela0; }
+    .navegador { animation-name: navegador; }
+    .tela1 { animation-name: tela1; }
+    .tela2 { animation-name: tela2; }
+    .tela3 { animation-name: tela3; }
+    .bolha { animation-name: bolha; }
+    .caret { animation-name: caret; }
+    .data-errada { animation-name: data-errada; }
+    .campo-erro { animation-name: campo-erro; }
+    .msg-erro { animation-name: msg-erro; }
+    .tremor { animation-name: tremor; }
+    .aperta-abrir { animation-name: aperta-abrir; }
+    .marca-check { animation-name: marca-check; }
+    .aperta-assinar { animation-name: aperta-assinar; }
+    .traco { animation-name: traco; }
+    .aperta-pdf { animation-name: aperta-pdf; }
+    .toque { animation-name: toque; }
+
+    @keyframes entra {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Passos acendem em 0%, 13%, 26%, 38%, 62% e 78% do ciclo */
+    @keyframes cursor {
+      0% { transform: translateX(0); opacity: 0; }
+      2% { opacity: 1; }
+      11.5% { transform: translateX(0); }
+      13%, 24.5% { transform: translateX(158px); }
+      26%, 36.5% { transform: translateX(316px); }
+      38%, 60.5% { transform: translateX(474px); }
+      62%, 76.5% { transform: translateX(632px); }
+      78% { transform: translateX(790px); }
+      94% { transform: translateX(790px); opacity: 1; }
+      97.5% { transform: translateX(790px); opacity: 0; }
+      100% { transform: translateX(0); opacity: 0; }
+    }
+    @keyframes progresso {
+      0% { stroke-dashoffset: 790; opacity: 1; }
+      11.5% { stroke-dashoffset: 790; }
+      13%, 24.5% { stroke-dashoffset: 632; }
+      26%, 36.5% { stroke-dashoffset: 474; }
+      38%, 60.5% { stroke-dashoffset: 316; }
+      62%, 76.5% { stroke-dashoffset: 158; }
+      78% { stroke-dashoffset: 0; }
+      94% { stroke-dashoffset: 0; opacity: 1; }
+      97.5% { stroke-dashoffset: 0; opacity: 0; }
+      100% { stroke-dashoffset: 790; opacity: 0; }
+    }
+    @keyframes pulso {
+      0% { transform: scale(1); opacity: .6; }
+      5%, 12.9% { transform: scale(1.7); opacity: 0; }
+      13% { transform: scale(1); opacity: .6; }
+      18%, 25.9% { transform: scale(1.7); opacity: 0; }
+      26% { transform: scale(1); opacity: .6; }
+      31%, 37.9% { transform: scale(1.7); opacity: 0; }
+      38% { transform: scale(1); opacity: .6; }
+      43%, 61.9% { transform: scale(1.7); opacity: 0; }
+      62% { transform: scale(1); opacity: .6; }
+      67%, 77.9% { transform: scale(1.7); opacity: 0; }
+      78% { transform: scale(1); opacity: .6; }
+      83%, 100% { transform: scale(1.7); opacity: 0; }
+    }
+    @keyframes a1 {
+      0% { opacity: 0; transform: scale(.82); }
+      2%, 94% { opacity: 1; transform: scale(1); }
+      97.5% { opacity: 0; transform: scale(1); }
+      100% { opacity: 0; transform: scale(.82); }
+    }
+    @keyframes a2 {
+      0%, 12.5% { opacity: 0; transform: scale(.82); }
+      14.5%, 94% { opacity: 1; transform: scale(1); }
+      97.5% { opacity: 0; transform: scale(1); }
+      100% { opacity: 0; transform: scale(.82); }
+    }
+    @keyframes a3 {
+      0%, 25.5% { opacity: 0; transform: scale(.82); }
+      27.5%, 94% { opacity: 1; transform: scale(1); }
+      97.5% { opacity: 0; transform: scale(1); }
+      100% { opacity: 0; transform: scale(.82); }
+    }
+    @keyframes a4 {
+      0%, 37.5% { opacity: 0; transform: scale(.82); }
+      39.5%, 94% { opacity: 1; transform: scale(1); }
+      97.5% { opacity: 0; transform: scale(1); }
+      100% { opacity: 0; transform: scale(.82); }
+    }
+    @keyframes a5 {
+      0%, 61.5% { opacity: 0; transform: scale(.82); }
+      63.5%, 94% { opacity: 1; transform: scale(1); }
+      97.5% { opacity: 0; transform: scale(1); }
+      100% { opacity: 0; transform: scale(.82); }
+    }
+    @keyframes a6 {
+      0%, 77.5% { opacity: 0; transform: scale(.82); }
+      79.5%, 94% { opacity: 1; transform: scale(1); }
+      97.5% { opacity: 0; transform: scale(1); }
+      100% { opacity: 0; transform: scale(.82); }
+    }
+
+    /* Passo 4: a data errada conta (1 de 10); a certa zera a contagem */
+    @keyframes selo-erro {
+      0%, 46.5% { opacity: 0; transform: scale(.6); }
+      48%, 55% { opacity: 1; transform: scale(1); }
+      56.5%, 100% { opacity: 0; transform: scale(.9); }
+    }
+    @keyframes selo-zerado {
+      0%, 56.5% { opacity: 0; transform: scale(.6); }
+      58%, 61% { opacity: 1; transform: scale(1); }
+      62.5%, 100% { opacity: 0; transform: scale(.9); }
+    }
+
+    /* Cada função acende quando a página a chama */
+    @keyframes b-estado {
+      0%, 30.8% { opacity: 0; }
+      31.8%, 35.5% { opacity: 1; }
+      38%, 100% { opacity: 0; }
+    }
+    @keyframes b-para {
+      0%, 46.5% { opacity: 0; }
+      47.5%, 49% { opacity: 1; }
+      51%, 56.5% { opacity: 0; }
+      57.5%, 59.5% { opacity: 1; }
+      61.5%, 78.5% { opacity: 0; }
+      79.5%, 83% { opacity: 1; }
+      86%, 100% { opacity: 0; }
+    }
+    @keyframes b-assinar {
+      0%, 74.5% { opacity: 0; }
+      75.5%, 78.5% { opacity: 1; }
+      81%, 100% { opacity: 0; }
+    }
+
+    /* Telas do celular */
+    @keyframes tela0 {
+      0% { opacity: 0; }
+      2%, 25.5% { opacity: 1; }
+      27%, 100% { opacity: 0; }
+    }
+    @keyframes navegador {
+      0%, 26% { opacity: 0; }
+      28%, 94% { opacity: 1; }
+      97.5%, 100% { opacity: 0; }
+    }
+    @keyframes tela1 {
+      0%, 26.5% { opacity: 0; transform: translateY(10px); }
+      28.5%, 60.5% { opacity: 1; transform: translateY(0); }
+      62%, 100% { opacity: 0; transform: translateY(-6px); }
+    }
+    @keyframes tela2 {
+      0%, 62% { opacity: 0; transform: translateY(10px); }
+      64%, 77% { opacity: 1; transform: translateY(0); }
+      78.5%, 100% { opacity: 0; transform: translateY(-6px); }
+    }
+    @keyframes tela3 {
+      0%, 78.5% { opacity: 0; transform: translateY(10px); }
+      80.5%, 94% { opacity: 1; transform: translateY(0); }
+      97.5% { opacity: 0; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(10px); }
+    }
+    @keyframes bolha {
+      0%, 16.5% { opacity: 0; transform: translateY(14px); }
+      19%, 100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes caret {
+      0%, 28.5% { opacity: 0; }
+      29%, 32% { opacity: 1; }
+      32.5%, 35% { opacity: 0; }
+      35.5%, 39.5% { opacity: 1; }
+      40%, 100% { opacity: 0; }
+    }
+    @keyframes data-errada {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    @keyframes campo-erro {
+      0%, 46.5% { opacity: 0; }
+      47.5%, 53.5% { opacity: 1; }
+      54.5%, 100% { opacity: 0; }
+    }
+    @keyframes msg-erro {
+      0%, 46.5% { opacity: 0; transform: translateY(-4px); }
+      47.5%, 53.5% { opacity: 1; transform: translateY(0); }
+      54.5% { opacity: 0; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-4px); }
+    }
+    @keyframes tremor {
+      0%, 46.5% { transform: translateX(0); }
+      47.2% { transform: translateX(-7px); }
+      47.9% { transform: translateX(6px); }
+      48.6% { transform: translateX(-4px); }
+      49.3% { transform: translateX(2px); }
+      50%, 100% { transform: translateX(0); }
+    }
+    @keyframes aperta-abrir {
+      0%, 43.5% { transform: scale(1); }
+      44% { transform: scale(.95); }
+      45%, 53.5% { transform: scale(1); }
+      54% { transform: scale(.95); }
+      55%, 100% { transform: scale(1); }
+    }
+    @keyframes marca-check {
+      0%, 69.5% { opacity: 0; transform: scale(.6); }
+      70.5%, 100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes aperta-assinar {
+      0%, 71% { transform: scale(1); }
+      71.5% { transform: scale(.95); }
+      72.5%, 100% { transform: scale(1); }
+    }
+    @keyframes traco {
+      0%, 80.5% { stroke-dashoffset: 10; }
+      83.5%, 100% { stroke-dashoffset: 0; }
+    }
+    @keyframes aperta-pdf {
+      0%, 87.5% { transform: scale(1); }
+      88% { transform: scale(.96); }
+      89%, 100% { transform: scale(1); }
+    }
+    /* Um toque: o instante é dado pelo animation-delay de cada círculo */
+    @keyframes toque {
+      0% { opacity: 0; transform: scale(.3); }
+      1% { opacity: .55; transform: scale(.45); }
+      7%, 100% { opacity: 0; transform: scale(1.7); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+      .movimento { display: none; }
+    }
+  </style>
+
+  <defs>
+    <!-- Ícones do lucide (mesma biblioteca do app), grade 24x24 -->
+    <g id="ic-file-lock" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+      <rect width="8" height="6" x="8" y="12" rx="1"/>
+      <path d="M10 12v-2a2 2 0 1 1 4 0v2"/>
+    </g>
+    <g id="ic-link" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </g>
+    <g id="ic-smartphone" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+      <path d="M12 18h.01"/>
+    </g>
+    <g id="ic-key-round" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/>
+      <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
+    </g>
+    <g id="ic-fingerprint" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+      <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+      <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+      <path d="M2 12a10 10 0 0 1 18-6"/>
+      <path d="M2 16h.01"/>
+      <path d="M21.8 16c.2-2 .131-5.354 0-6"/>
+      <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/>
+      <path d="M8.65 22c.21-.66.45-1.32.57-2"/>
+      <path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>
+    </g>
+    <g id="ic-printer" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/>
+      <rect x="6" y="14" width="12" height="8" rx="1"/>
+    </g>
+    <g id="ic-lock" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </g>
+    <g id="ic-shield-check" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </g>
+    <g id="ic-circle-x" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="m15 9-6 6"/>
+      <path d="m9 9 6 6"/>
+    </g>
+    <g id="ic-circle-check" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="m9 12 2 2 4-4"/>
+    </g>
+    <g id="ic-check" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 6 9 17l-5-5"/>
+    </g>
+    <g id="ic-calendar-days" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 2v4"/>
+      <path d="M16 2v4"/>
+      <rect width="18" height="18" x="3" y="4" rx="2"/>
+      <path d="M3 10h18"/>
+      <path d="M8 14h.01"/>
+      <path d="M12 14h.01"/>
+      <path d="M16 14h.01"/>
+      <path d="M8 18h.01"/>
+      <path d="M12 18h.01"/>
+      <path d="M16 18h.01"/>
+    </g>
+    <g id="ic-file-signature" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m18 5-2.414-2.414A2 2 0 0 0 14.172 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/>
+      <path d="M21.378 12.626a1 1 0 0 0-3.004-3.004l-4.01 4.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>
+      <path d="M8 18h1"/>
+    </g>
+
+    <!-- Digitação na tela do celular: o recorte cresce como quem digita -->
+    <clipPath id="corte-errada">
+      <rect x="1056" y="306" width="100" height="24">
+        <animate attributeName="width" dur="14s" repeatCount="indefinite" values="0;0;100;100" keyTimes="0;0.40;0.43;1"/>
+      </rect>
+    </clipPath>
+    <clipPath id="corte-certa">
+      <rect x="1056" y="306" width="100" height="24">
+        <animate attributeName="width" dur="14s" repeatCount="indefinite" values="0;0;100;100" keyTimes="0;0.51;0.54;1"/>
+      </rect>
+    </clipPath>
+    <clipPath id="corte-nome">
+      <rect x="1054" y="316" width="110" height="22">
+        <animate attributeName="width" dur="14s" repeatCount="indefinite" values="0;0;110;110" keyTimes="0;0.64;0.685;1"/>
+      </rect>
+    </clipPath>
+  </defs>
+
+  <!-- Painel próprio: funciona no GitHub claro e no escuro -->
+  <rect class="fundo" x=".5" y=".5" width="1279" height="475" rx="24"/>
+
+  <!-- ================= Cabeçalho ================= -->
+  <g class="entra">
+    <text class="mc sobrancelha" x="40" y="52">ASSINATURA À DISTÂNCIA</text>
+    <text class="t2 m s13" x="990" y="52" text-anchor="end">migrações 0013 · 0014 · 0016 · 0017 · 0022</text>
+  </g>
+  <g class="entra" style="animation-delay:.08s">
+    <text class="t manchete" x="40" y="86">Do texto congelado à via da paciente</text>
+  </g>
+  <g class="entra" style="animation-delay:.16s">
+    <text class="t2 s15" x="40" y="114">A paciente assina pelo celular, sem login. Token, validade e data de nascimento são conferidos pelo banco a cada chamada.</text>
+  </g>
+
+  <!-- ================= Linha de passos ================= -->
+  <g class="entra" style="animation-delay:.26s">
+
+    <!-- Cartão do passo ativo, com pulso na chegada (só em movimento) -->
+    <g class="movimento">
+      <g class="anim cursor">
+        <rect class="cartao-ativo" x="42" y="132" width="154" height="168" rx="16"/>
+        <circle class="anim escala pulso" cx="119" cy="164" r="24"/>
+      </g>
+    </g>
+
+    <line class="trilho" x1="119" y1="164" x2="909" y2="164"/>
+    <line class="anim progresso" x1="119" y1="164" x2="909" y2="164"/>
+
+    <!-- Cometa na ponta do progresso: aparece no trecho entre um passo e outro -->
+    <g class="movimento">
+      <g class="anim cursor">
+        <circle class="cometa-halo" cx="119" cy="164" r="10"/>
+        <circle class="cometa" cx="119" cy="164" r="4.5"/>
+      </g>
+    </g>
+
+    <!-- Passo 1 · Emitir -->
+    <g>
+      <circle class="no" cx="119" cy="164" r="24"/>
+      <use href="#ic-file-lock" class="i-t3" transform="translate(107 152)" stroke-width="1.5"/>
+      <g class="anim escala a1">
+        <circle class="no-aceso" cx="119" cy="164" r="24"/>
+        <use href="#ic-file-lock" class="i-marca" transform="translate(107 152)" stroke-width="1.5"/>
+      </g>
+      <text class="t s15 b c" x="119" y="214"><tspan class="mc">1</tspan><tspan dx="7">Emitir</tspan></text>
+      <text class="t2 s14 c" x="119" y="236">Congela o texto</text>
+      <text class="t2 s14 c" x="119" y="254">da versão do modelo</text>
+      <text class="t2 s14 c" x="119" y="272">SHA-256 pelo banco</text>
+    </g>
+
+    <!-- Passo 2 · Gerar link -->
+    <g>
+      <circle class="no" cx="277" cy="164" r="24"/>
+      <use href="#ic-link" class="i-t3" transform="translate(265 152)" stroke-width="1.5"/>
+      <g class="anim escala a2">
+        <circle class="no-aceso" cx="277" cy="164" r="24"/>
+        <use href="#ic-link" class="i-marca" transform="translate(265 152)" stroke-width="1.5"/>
+      </g>
+      <text class="t s15 b c" x="277" y="214"><tspan class="mc">2</tspan><tspan dx="7">Gerar link</tspan></text>
+      <text class="t2 s14 c" x="277" y="236">Token de 256 bits</text>
+      <text class="t2 s14 c" x="277" y="254">o banco guarda só</text>
+      <text class="t2 s14 c" x="277" y="272">o hash SHA-256</text>
+      <text class="t2 s14 c" x="277" y="290">Vale 7, 15 ou 30 dias</text>
+    </g>
+
+    <!-- Passo 3 · Paciente abre -->
+    <g>
+      <circle class="no" cx="435" cy="164" r="24"/>
+      <use href="#ic-smartphone" class="i-t3" transform="translate(423 152)" stroke-width="1.5"/>
+      <g class="anim escala a3">
+        <circle class="no-aceso" cx="435" cy="164" r="24"/>
+        <use href="#ic-smartphone" class="i-marca" transform="translate(423 152)" stroke-width="1.5"/>
+      </g>
+      <text class="t s15 b c" x="435" y="214"><tspan class="mc">3</tspan><tspan dx="7">Paciente abre</tspan></text>
+      <text class="t2 s14 m c" x="435" y="236">/assinar/[token]</text>
+      <text class="t2 s14 c" x="435" y="254">Sem login, sem conta</text>
+      <text class="t2 s14 c" x="435" y="272">Revela só o tipo</text>
+      <text class="t2 s14 c" x="435" y="290">antes da data</text>
+    </g>
+
+    <!-- Passo 4 · Data de nascimento -->
+    <g>
+      <circle class="no" cx="593" cy="164" r="24"/>
+      <use href="#ic-key-round" class="i-t3" transform="translate(581 152)" stroke-width="1.5"/>
+      <g class="anim escala a4">
+        <circle class="no-aceso" cx="593" cy="164" r="24"/>
+        <use href="#ic-key-round" class="i-marca" transform="translate(581 152)" stroke-width="1.5"/>
+      </g>
+      <text class="t s15 b c" x="593" y="214"><tspan class="mc">4</tspan><tspan dx="7">Data de nascimento</tspan></text>
+      <text class="t2 s14 c" x="593" y="236">Segundo fator</text>
+      <text class="t2 s14 c" x="593" y="254">Fecha no 10º erro</text>
+      <text class="t2 s14 c" x="593" y="272">Linha travada com</text>
+      <text class="t2 s14 c" x="593" y="290"><tspan class="m">for update</tspan> (0022)</text>
+    </g>
+
+    <!-- Passo 5 · Lê e assina -->
+    <g>
+      <circle class="no" cx="751" cy="164" r="24"/>
+      <use href="#ic-fingerprint" class="i-t3" transform="translate(739 152)" stroke-width="1.5"/>
+      <g class="anim escala a5">
+        <circle class="no-aceso" cx="751" cy="164" r="24"/>
+        <use href="#ic-fingerprint" class="i-marca" transform="translate(739 152)" stroke-width="1.5"/>
+      </g>
+      <text class="t s15 b c" x="751" y="214"><tspan class="mc">5</tspan><tspan dx="7">Lê e assina</tspan></text>
+      <text class="t2 s14 c" x="751" y="236">Nome completo</text>
+      <text class="t2 s14 c" x="751" y="254">IP e aparelho: dos</text>
+      <text class="t2 s14 c" x="751" y="272">cabeçalhos, nunca</text>
+      <text class="t2 s14 c" x="751" y="290">do formulário</text>
+    </g>
+
+    <!-- Passo 6 · Via da paciente -->
+    <g>
+      <circle class="no" cx="909" cy="164" r="24"/>
+      <use href="#ic-printer" class="i-t3" transform="translate(897 152)" stroke-width="1.5"/>
+      <g class="anim escala a6">
+        <circle class="no-aceso" cx="909" cy="164" r="24"/>
+        <use href="#ic-printer" class="i-marca" transform="translate(897 152)" stroke-width="1.5"/>
+      </g>
+      <text class="t s15 b c" x="909" y="214"><tspan class="mc">6</tspan><tspan dx="7">Via da paciente</tspan></text>
+      <text class="t2 s14 c" x="909" y="236">Link em modo leitura</text>
+      <text class="t2 s14 c" x="909" y="254">até vencer</text>
+      <text class="t2 s14 c" x="909" y="272">“Salvar em PDF</text>
+      <text class="t2 s14 c" x="909" y="290">ou imprimir”</text>
+    </g>
+
+    <!-- Contador de tentativas do passo 4 (documento_links.tentativas) -->
+    <g class="movimento">
+      <g class="anim escala selo-erro">
+        <rect class="selo-neg" x="606" y="122" width="118" height="24" rx="12"/>
+        <use href="#ic-circle-x" class="i-neg" transform="translate(613 127) scale(.583)" stroke-width="2"/>
+        <text class="neg s13 b" x="632" y="139">erro 1 de 10</text>
+      </g>
+      <g class="anim escala selo-zerado">
+        <rect class="selo-pos" x="606" y="122" width="144" height="24" rx="12"/>
+        <use href="#ic-circle-check" class="i-pos" transform="translate(613 127) scale(.583)" stroke-width="2"/>
+        <text class="pos s13 b" x="632" y="139">contagem zerada</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ================= O princípio: função, nunca tabela ================= -->
+  <g class="entra" style="animation-delay:.4s">
+    <rect class="faixa" x="40" y="316" width="950" height="120" rx="16"/>
+
+    <use href="#ic-shield-check" class="i-t" transform="translate(64 334)" stroke-width="1.5"/>
+    <text class="t s18 b" x="98" y="352"><tspan class="m">anon</tspan> alcança 4 funções</text>
+    <text class="t s18 b" x="98" y="376">— nenhuma tabela</text>
+    <text class="t2 s14" x="98" y="402">Em toda tabela, <tspan class="m">anon</tspan> recebe 401;</text>
+    <text class="t2 s14" x="98" y="422"><tspan class="m">npm run test:banco</tspan> confere.</text>
+
+    <!-- documento_link_estado -->
+    <rect class="chip" x="428" y="330" width="268" height="40" rx="10"/>
+    <g class="movimento">
+      <rect class="anim chip-brilho b-estado" x="428" y="330" width="268" height="40" rx="10"/>
+    </g>
+    <text class="t m s14" x="442" y="347">documento_link_estado</text>
+    <text class="t2 s13" x="442" y="363">o link serve? sem revelar conteúdo</text>
+
+    <!-- documento_para_assinatura -->
+    <rect class="chip" x="708" y="330" width="268" height="40" rx="10"/>
+    <g class="movimento">
+      <rect class="anim chip-brilho b-para" x="708" y="330" width="268" height="40" rx="10"/>
+    </g>
+    <text class="t m s14" x="722" y="347">documento_para_assinatura</text>
+    <text class="t2 s13" x="722" y="363">revela o texto, mediante nascimento</text>
+
+    <!-- documento_assinar_por_link -->
+    <rect class="chip" x="428" y="382" width="268" height="40" rx="10"/>
+    <g class="movimento">
+      <rect class="anim chip-brilho b-assinar" x="428" y="382" width="268" height="40" rx="10"/>
+    </g>
+    <text class="t m s14" x="442" y="399">documento_assinar_por_link</text>
+    <text class="t2 s13" x="442" y="415">registra a assinatura</text>
+
+    <!-- documento_responder_por_link (anamnese, fora deste fluxo) -->
+    <rect class="chip" x="708" y="382" width="268" height="40" rx="10"/>
+    <text class="t m s14" x="722" y="399">documento_responder_por_link</text>
+    <text class="t2 s13" x="722" y="415">anamnese respondida de casa · 0017</text>
+  </g>
+
+  <!-- Pacotes: a página chamando cada função, no instante do passo -->
+  <g class="movimento">
+    <!-- passo 3: a página pergunta se o link serve -->
+    <g opacity="0">
+      <circle class="pacote-halo" r="8"/>
+      <circle class="pacote" r="3.5"/>
+      <animateMotion dur="14s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.27;0.31;1" keySplines="0 0 1 1;.45 0 .2 1;0 0 1 1" path="M1024 250 C1000 250 1000 323 976 323 H562 V330"/>
+      <animate attributeName="opacity" dur="14s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.268;0.272;0.305;0.312;1"/>
+    </g>
+    <!-- passo 4: data errada -->
+    <g opacity="0">
+      <circle class="pacote-halo" r="8"/>
+      <circle class="pacote" r="3.5"/>
+      <animateMotion dur="14s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.44;0.465;1" keySplines="0 0 1 1;.45 0 .2 1;0 0 1 1" path="M1024 250 C1000 250 1000 350 976 350"/>
+      <animate attributeName="opacity" dur="14s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.438;0.442;0.46;0.467;1"/>
+    </g>
+    <!-- passo 4: data certa -->
+    <g opacity="0">
+      <circle class="pacote-halo" r="8"/>
+      <circle class="pacote" r="3.5"/>
+      <animateMotion dur="14s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.54;0.565;1" keySplines="0 0 1 1;.45 0 .2 1;0 0 1 1" path="M1024 250 C1000 250 1000 350 976 350"/>
+      <animate attributeName="opacity" dur="14s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.538;0.542;0.56;0.567;1"/>
+    </g>
+    <!-- passo 5: assina -->
+    <g opacity="0">
+      <circle class="pacote-halo" r="8"/>
+      <circle class="pacote" r="3.5"/>
+      <animateMotion dur="14s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.715;0.745;1" keySplines="0 0 1 1;.45 0 .2 1;0 0 1 1" path="M1024 250 C1000 250 1000 376 976 376 H562 V382"/>
+      <animate attributeName="opacity" dur="14s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.713;0.717;0.74;0.747;1"/>
+    </g>
+    <!-- passo 6: a via é recarregada do banco, não montada com o que foi digitado -->
+    <g opacity="0">
+      <circle class="pacote-halo" r="8"/>
+      <circle class="pacote" r="3.5"/>
+      <animateMotion dur="14s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.76;0.785;1" keySplines="0 0 1 1;.45 0 .2 1;0 0 1 1" path="M1024 250 C1000 250 1000 350 976 350"/>
+      <animate attributeName="opacity" dur="14s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.758;0.762;0.78;0.787;1"/>
+    </g>
+  </g>
+
+  <!-- ================= Celular da paciente ================= -->
+  <g class="entra" style="animation-delay:.34s">
+    <rect class="lateral" x="1021" y="118" width="3" height="26" rx="1.5"/>
+    <rect class="lateral" x="1021" y="152" width="3" height="44" rx="1.5"/>
+    <rect class="aparelho" x="1024" y="40" width="216" height="396" rx="34"/>
+    <rect class="tela" x="1034" y="50" width="196" height="376" rx="26"/>
+    <rect class="ilha" x="1106" y="60" width="52" height="11" rx="5.5"/>
+
+    <!-- Barra do navegador e cabeçalho da clínica (passos 3 a 6) -->
+    <g class="anim navegador">
+      <rect class="barra" x="1044" y="80" width="176" height="26" rx="13"/>
+      <use href="#ic-lock" class="i-t2" transform="translate(1054 87) scale(.5)" stroke-width="2.25"/>
+      <text class="t2 m s13" x="1072" y="98">/assinar/k7Qx…</text>
+      <rect class="mc" x="1046" y="118" width="28" height="28" rx="7"/>
+      <text class="sobre s13 b c" x="1060" y="137">ÉP</text>
+      <text class="t s13 b" x="1082" y="137">Dra. Érika Passos</text>
+      <line class="divisa" x1="1046" y1="158" x2="1218" y2="158"/>
+    </g>
+
+    <!-- Tela 0 (passos 1 e 2): a mensagem com o link chega -->
+    <g class="movimento anim tela0">
+      <circle class="mc" cx="1062" cy="96" r="16"/>
+      <text class="sobre s13 b c" x="1062" y="101">ÉP</text>
+      <text class="t s13 b" x="1086" y="93">Dra. Érika Passos</text>
+      <text class="t2 s13" x="1086" y="110">Consultório</text>
+      <line class="divisa" x1="1044" y1="126" x2="1220" y2="126"/>
+      <g class="anim bolha">
+        <path class="balao" d="M1052 180 H1206 a8 8 0 0 1 8 8 V304 a8 8 0 0 1 -8 8 H1060 a8 8 0 0 1 -8 -8 V192 L1046 180 Z"/>
+        <text class="t s13" x="1064" y="202">Olá, Ana! Aqui é</text>
+        <text class="t s13" x="1064" y="219">Dra. Érika Passos.</text>
+        <text class="t s13" x="1064" y="241">Segue o contrato</text>
+        <text class="t s13" x="1064" y="258">para você ler e</text>
+        <text class="t s13" x="1064" y="275">assinar:</text>
+        <text class="mc m s13" x="1064" y="297">/assinar/k7Qx…</text>
+        <line class="sublinha" x1="1064" y1="300.5" x2="1172" y2="300.5"/>
+      </g>
+      <circle class="anim escala toque toque-marca" cx="1110" cy="293" r="14" style="animation-delay:3.22s"/>
+    </g>
+
+    <!-- Tela 1 (passos 3 e 4): a porta da data de nascimento -->
+    <g class="movimento anim tela1">
+      <rect class="suave" x="1046" y="170" width="32" height="32" rx="8"/>
+      <use href="#ic-lock" class="i-marca" transform="translate(1053 177) scale(.75)" stroke-width="2"/>
+      <text class="mc s14 b" x="1046" y="226">Contrato para assinar</text>
+      <text class="t2 s13" x="1046" y="246">Confirme sua data de</text>
+      <text class="t2 s13" x="1046" y="263">nascimento para abrir.</text>
+      <text class="t s13 b" x="1046" y="290">Sua data de nascimento</text>
+      <g class="anim tremor">
+        <rect class="campo" x="1046" y="298" width="172" height="36" rx="8"/>
+        <rect class="anim campo-erro" x="1046" y="298" width="172" height="36" rx="8"/>
+        <text class="t s15 tab anim data-errada" x="1058" y="321" clip-path="url(#corte-errada)">21/03/1990</text>
+        <text class="t s15 tab" x="1058" y="321" clip-path="url(#corte-certa)">12/03/1990</text>
+        <line class="anim caret" x1="1058" y1="306" x2="1058" y2="326"/>
+        <use href="#ic-calendar-days" class="i-t2" transform="translate(1194 308) scale(.667)" stroke-width="2"/>
+      </g>
+      <g class="anim msg-erro">
+        <use href="#ic-circle-x" class="i-neg" transform="translate(1046 341) scale(.583)" stroke-width="2"/>
+        <text class="neg s13" x="1066" y="352">A data não confere</text>
+        <text class="neg s13" x="1066" y="368">com o cadastro.</text>
+      </g>
+      <g class="anim escala aperta-abrir">
+        <rect class="mc" x="1046" y="380" width="172" height="36" rx="9"/>
+        <text class="sobre s14 b c" x="1132" y="403">Abrir documento</text>
+      </g>
+      <circle class="anim escala toque toque-claro" cx="1132" cy="398" r="14" style="animation-delay:6.16s"/>
+      <circle class="anim escala toque toque-claro" cx="1132" cy="398" r="14" style="animation-delay:7.56s"/>
+    </g>
+
+    <!-- Tela 2 (passo 5): lê o texto congelado e assina -->
+    <g class="movimento anim tela2">
+      <text class="mc s14 b" x="1046" y="182">Contrato</text>
+      <text class="t2 s13" x="1046" y="199">Ana Souza</text>
+      <rect class="caixa" x="1046" y="208" width="172" height="54" rx="8"/>
+      <rect class="linha-texto" x="1056" y="218" width="150" height="5" rx="2.5"/>
+      <rect class="linha-texto" x="1056" y="228" width="138" height="5" rx="2.5"/>
+      <rect class="linha-texto" x="1056" y="238" width="152" height="5" rx="2.5"/>
+      <rect class="linha-texto" x="1056" y="248" width="96" height="5" rx="2.5"/>
+      <use href="#ic-fingerprint" class="i-t2" transform="translate(1046 271) scale(.583)" stroke-width="2"/>
+      <text class="t2 m s13" x="1066" y="282">3f9a1c07…b26e41d8</text>
+      <text class="t s13 b" x="1046" y="304">Nome completo</text>
+      <rect class="campo" x="1046" y="311" width="172" height="32" rx="8"/>
+      <text class="t s14" x="1056" y="332" clip-path="url(#corte-nome)">Ana Souza</text>
+      <rect class="caixa-check" x="1046" y="352" width="15" height="15" rx="4"/>
+      <g class="anim escala marca-check">
+        <rect class="mc" x="1046" y="352" width="15" height="15" rx="4"/>
+        <use href="#ic-check" class="i-painel" transform="translate(1047.5 353.5) scale(.5)" stroke-width="3"/>
+      </g>
+      <text class="t s13" x="1068" y="364">Li e concordo.</text>
+      <g class="anim escala aperta-assinar">
+        <rect class="mc" x="1046" y="380" width="172" height="36" rx="9"/>
+        <use href="#ic-file-signature" class="i-painel" transform="translate(1062 390) scale(.667)" stroke-width="2"/>
+        <text class="sobre s13 b" x="1086" y="403">Assinar documento</text>
+      </g>
+      <circle class="anim escala toque toque-claro" cx="1132" cy="398" r="14" style="animation-delay:10.01s"/>
+    </g>
+
+    <!-- Tela 3 (passo 6): a via da paciente. É a tela do estado estático -->
+    <g class="anim tela3">
+      <rect class="ok-fundo" x="1046" y="170" width="172" height="70" rx="10"/>
+      <g class="i-pos" transform="translate(1055 180) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path class="anim traco" d="m9 12 2 2 4-4"/>
+      </g>
+      <text class="pos s14 b" x="1082" y="193">Assinatura</text>
+      <text class="pos s14 b" x="1082" y="210">registrada</text>
+      <text class="t s13" x="1082" y="229">Guarde a sua via.</text>
+      <g class="anim escala aperta-pdf">
+        <rect class="mc" x="1046" y="252" width="172" height="50" rx="9"/>
+        <use href="#ic-printer" class="i-painel" transform="translate(1060 268) scale(.75)" stroke-width="2"/>
+        <text class="sobre s13 b" x="1088" y="273">Salvar em PDF</text>
+        <text class="sobre s13 b" x="1088" y="290">ou imprimir</text>
+      </g>
+      <rect class="caixa" x="1046" y="314" width="172" height="100" rx="8"/>
+      <text class="t2 s13" x="1058" y="334">Assinado por <tspan class="t b">Ana Souza</tspan></text>
+      <text class="t2 s13" x="1058" y="353">Lei 14.063/2020</text>
+      <text class="t2 s13" x="1058" y="376">SHA-256</text>
+      <text class="t m s13" x="1058" y="394">3f9a1c07…b26e41d8</text>
+      <g class="movimento">
+        <circle class="anim escala toque toque-claro" cx="1069" cy="277" r="14" style="animation-delay:12.32s"/>
+      </g>
+    </g>
+  </g>
+</svg>

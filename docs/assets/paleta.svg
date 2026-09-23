@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="600" viewBox="0 0 1280 600" role="img" aria-labelledby="t d">
+  <title id="t">Cor com significado — a paleta do Cockpit</title>
+  <desc id="d">A marca azul identifica o sistema e nunca comunica estado. Quatro semânticas de estado: negativo (vermelho) para o que deu errado, atenção (laranja) para o que falta fazer, positivo (verde) para o que deu certo e informativo (azul). Abaixo, as sete situações do atendimento como aparecem no sistema, cada uma com texto, ícone e forma próprios.</desc>
+  <style>
+    svg {
+      --painel: #ffffff; --painel-2: #f9f9fa; --borda: #e3e5e8;
+      --texto: #1b1c1e; --texto-2: #43474d; --texto-3: #72767c;
+      --marca: #0854a0; --marca-acao: #0a6ed1; --marca-suave: #d6e9fb; --sobre-marca: #ffffff;
+      --negativo: #bb0000; --negativo-fundo: #fceaea; --negativo-borda: #e6a3a3;
+      --atencao: #8f4700; --atencao-acento: #e9730c; --atencao-fundo: #fff3d6;
+      --positivo: #107e3e; --positivo-fundo: #eaf5ea; --positivo-borda: #a9d3a9;
+      --info: #0a6ed1; --info-texto: #0854a0; --info-fundo: #eaf3fb;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --painel: #0d1117; --painel-2: #161b22; --borda: #30363d;
+        --texto: #e6edf3; --texto-2: #9da7b3; --texto-3: #7d8590;
+        --marca: #58a6ff; --marca-acao: #388bfd; --marca-suave: #0c2d6b; --sobre-marca: #0d1117;
+        --negativo: #ff7b72; --negativo-fundo: #3d1417; --negativo-borda: #8e2b2b;
+        --atencao: #f0a24b; --atencao-acento: #e9730c; --atencao-fundo: #3a2508;
+        --positivo: #3fb950; --positivo-fundo: #0f2e1a; --positivo-borda: #2e6b3d;
+        --info: #58a6ff; --info-texto: #79c0ff; --info-fundo: #0c2d6b;
+      }
+    }
+    text { font-family: "Hanken Grotesk", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+    .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace; }
+    .painel { fill: var(--painel); stroke: var(--borda); }
+    .cartao { fill: var(--painel-2); stroke: var(--borda); }
+    .t { fill: var(--texto); } .t2 { fill: var(--texto-2); } .t3 { fill: var(--texto-3); }
+    .marca { fill: var(--marca); } .marca-acao { fill: var(--marca-acao); } .marca-suave { fill: var(--marca-suave); }
+    .rotulo { font-size: 13px; font-weight: 700; letter-spacing: .12em; fill: var(--texto-3); }
+
+    /* entrada */
+    .sobe { animation: sobe .7s cubic-bezier(.2,.8,.2,1) both; }
+    .salta { transform-box: fill-box; transform-origin: center; animation: salta .55s cubic-bezier(.2,.9,.3,1.3) both; }
+    .barra { transform-box: fill-box; transform-origin: left center; animation: barra .9s cubic-bezier(.2,.8,.2,1) both; }
+    .traco { stroke-dasharray: 120; animation: traco 1s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes sobe { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes salta { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
+    @keyframes barra { from { transform: scaleX(0); } to { transform: none; } }
+    @keyframes traco { from { stroke-dashoffset: 120; } to { stroke-dashoffset: 0; } }
+
+    /* laços */
+    .foco { fill: none; stroke-width: 2; opacity: 0; animation: foco 8s ease-in-out infinite; }
+    @keyframes foco { 0%, 100% { opacity: 0; } 6%, 18% { opacity: 1; } 26% { opacity: 0; } }
+    .vivo { fill: none; stroke: var(--info); stroke-width: 2; transform-box: fill-box; transform-origin: center;
+      animation: vivo 2.4s cubic-bezier(.2,.8,.2,1) infinite; }
+    @keyframes vivo { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(1.18, 1.6); } }
+    .varredura { animation: varre 7s cubic-bezier(.45,0,.2,1) infinite; }
+    @keyframes varre { 0% { transform: translateX(-160px); } 55%, 100% { transform: translateX(1280px); } }
+    .onda { animation: onda 6s ease-in-out infinite; }
+    @keyframes onda { 0%, 100% { opacity: 1; } 50% { opacity: .82; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+      .movimento { display: none; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="luz" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="faixa-chips"><rect x="40" y="384" width="1200" height="100" rx="16"/></clipPath>
+  </defs>
+
+  <rect class="painel" x=".5" y=".5" width="1279" height="599" rx="24"/>
+
+  <!-- cabeçalho -->
+  <g class="sobe">
+    <text class="t" x="48" y="72" font-size="30" font-weight="800">Cor com significado</text>
+    <text class="t2" x="48" y="102" font-size="16">Azul é a cor do sistema. Estado tem quatro semânticas fixas — e nenhuma delas vive só na cor.</text>
+  </g>
+
+  <!-- MARCA -->
+  <g class="sobe" style="animation-delay:.1s">
+    <text class="rotulo" x="48" y="150">MARCA</text>
+  </g>
+  <g class="sobe" style="animation-delay:.18s">
+    <rect class="marca onda" x="48" y="166" width="64" height="44" rx="10"/>
+    <text class="t mono" x="128" y="184" font-size="15" font-weight="700">#0854A0</text>
+    <text class="t2" x="128" y="204" font-size="14">título, texto e foco · 7.54:1</text>
+  </g>
+  <g class="sobe" style="animation-delay:.26s">
+    <rect class="marca-acao onda" x="48" y="224" width="64" height="44" rx="10" style="animation-delay:.6s"/>
+    <text class="t mono" x="128" y="242" font-size="15" font-weight="700">#0A6ED1</text>
+    <text class="t2" x="128" y="262" font-size="14">botão de ação · 5.04:1</text>
+  </g>
+  <g class="sobe" style="animation-delay:.34s">
+    <rect class="marca-suave onda" x="48" y="282" width="64" height="44" rx="10" style="animation-delay:1.2s"/>
+    <text class="t mono" x="128" y="300" font-size="15" font-weight="700">#D6E9FB</text>
+    <text class="t2" x="128" y="320" font-size="14">apoio · nunca estado</text>
+  </g>
+
+  <!-- ESTADO -->
+  <g class="sobe" style="animation-delay:.1s">
+    <text class="rotulo" x="440" y="150">ESTADO</text>
+  </g>
+
+  <!-- negativo -->
+  <g class="sobe" style="animation-delay:.3s">
+    <rect class="cartao" x="440" y="166" width="186" height="164" rx="12"/>
+    <rect class="barra" x="440" y="166" width="186" height="6" rx="3" style="fill:var(--negativo);animation-delay:.5s"/>
+    <text x="458" y="202" font-size="18" font-weight="800" style="fill:var(--negativo)">Negativo</text>
+    <text class="t2 mono" x="458" y="224" font-size="13">#BB0000</text>
+    <text class="t2" x="458" y="256" font-size="13">não compareceu</text>
+    <text class="t2" x="458" y="276" font-size="13">cancelado · vencido</text>
+    <text class="t2" x="458" y="296" font-size="13">falha · dinheiro saindo</text>
+    <rect class="foco" x="440" y="166" width="186" height="164" rx="12" style="stroke:var(--negativo);animation-delay:0s"/>
+  </g>
+  <!-- atenção -->
+  <g class="sobe" style="animation-delay:.4s">
+    <rect class="cartao" x="642" y="166" width="186" height="164" rx="12"/>
+    <rect class="barra" x="642" y="166" width="186" height="6" rx="3" style="fill:var(--atencao-acento);animation-delay:.6s"/>
+    <text x="660" y="202" font-size="18" font-weight="800" style="fill:var(--atencao)">Atenção</text>
+    <text class="t2 mono" x="660" y="224" font-size="13">#8F4700 · #E9730C</text>
+    <text class="t2" x="660" y="256" font-size="13">confirmação pendente</text>
+    <text class="t2" x="660" y="276" font-size="13">aguardando assinatura</text>
+    <text class="t2" x="660" y="296" font-size="13">retorno próximo</text>
+    <rect class="foco" x="642" y="166" width="186" height="164" rx="12" style="stroke:var(--atencao-acento);animation-delay:2s"/>
+  </g>
+  <!-- positivo -->
+  <g class="sobe" style="animation-delay:.5s">
+    <rect class="cartao" x="844" y="166" width="186" height="164" rx="12"/>
+    <rect class="barra" x="844" y="166" width="186" height="6" rx="3" style="fill:var(--positivo);animation-delay:.7s"/>
+    <text x="862" y="202" font-size="18" font-weight="800" style="fill:var(--positivo)">Positivo</text>
+    <text class="t2 mono" x="862" y="224" font-size="13">#107E3E</text>
+    <text class="t2" x="862" y="256" font-size="13">confirmado</text>
+    <text class="t2" x="862" y="276" font-size="13">recebido · concluído</text>
+    <text class="t2" x="862" y="296" font-size="13">dinheiro entrando</text>
+    <rect class="foco" x="844" y="166" width="186" height="164" rx="12" style="stroke:var(--positivo);animation-delay:4s"/>
+  </g>
+  <!-- informativo -->
+  <g class="sobe" style="animation-delay:.6s">
+    <rect class="cartao" x="1046" y="166" width="186" height="164" rx="12"/>
+    <rect class="barra" x="1046" y="166" width="186" height="6" rx="3" style="fill:var(--info);animation-delay:.8s"/>
+    <text x="1064" y="202" font-size="18" font-weight="800" style="fill:var(--info-texto)">Informativo</text>
+    <text class="t2 mono" x="1064" y="224" font-size="13">#0A6ED1 · #0854A0</text>
+    <text class="t2" x="1064" y="256" font-size="13">agendado</text>
+    <text class="t2" x="1064" y="276" font-size="13">em atendimento</text>
+    <text class="t2" x="1064" y="296" font-size="13">aviso neutro</text>
+    <rect class="foco" x="1046" y="166" width="186" height="164" rx="12" style="stroke:var(--info);animation-delay:6s"/>
+  </g>
+
+  <!-- SITUAÇÕES DO ATENDIMENTO (espelho de src/components/ui/status-chip.tsx) -->
+  <g class="sobe" style="animation-delay:.2s">
+    <text class="rotulo" x="48" y="372">AS SETE SITUAÇÕES DO ATENDIMENTO</text>
+    <text class="t3" x="400" y="372" font-size="14">texto + ícone + forma — cor nunca decide sozinha</text>
+  </g>
+
+  <g font-size="15" stroke-linecap="round" stroke-linejoin="round">
+    <!-- linha 1 -->
+    <g class="salta" style="animation-delay:.8s">
+      <rect x="296" y="392" width="116" height="34" rx="12" style="fill:var(--info-fundo)"/>
+      <g transform="translate(308 401) scale(.667)" fill="none" stroke-width="2.6" style="stroke:var(--info-texto)"><circle cx="12" cy="12" r="10"/></g>
+      <text x="332" y="414" style="fill:var(--info-texto)">Agendado</text>
+    </g>
+    <g class="salta" style="animation-delay:.9s">
+      <rect x="426" y="392" width="230" height="34" rx="12" style="fill:var(--atencao-fundo)"/>
+      <g transform="translate(438 401) scale(.667)" fill="none" stroke-width="2.6" style="stroke:var(--atencao)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16.5 12"/></g>
+      <text x="462" y="414" style="fill:var(--atencao)">Aguardando confirmação</text>
+    </g>
+    <g class="salta" style="animation-delay:1s">
+      <rect x="670" y="392" width="134" height="34" rx="12" style="fill:var(--positivo-fundo);stroke:var(--positivo-borda)"/>
+      <g transform="translate(682 401) scale(.667)" fill="none" stroke-width="2.6" style="stroke:var(--positivo)"><path d="M20 6 9 17l-5-5"/></g>
+      <text x="706" y="414" style="fill:var(--positivo)">Confirmado</text>
+    </g>
+    <g class="salta" style="animation-delay:1.1s">
+      <rect class="vivo" x="818" y="392" width="166" height="34" rx="12"/>
+      <rect x="818" y="392" width="166" height="34" rx="12" style="fill:var(--info)"/>
+      <g transform="translate(830 401) scale(.667)" fill="none" stroke-width="2.6" style="stroke:var(--sobre-marca)"><path d="M22 12h-2.48a2 2 0 0 0-1.930 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></g>
+      <text x="854" y="414" font-weight="700" style="fill:var(--sobre-marca)">Em atendimento</text>
+    </g>
+    <!-- linha 2 -->
+    <g class="salta" style="animation-delay:1.2s">
+      <rect x="381" y="440" width="126" height="34" rx="12" style="fill:var(--positivo-fundo)"/>
+      <g transform="translate(393 449) scale(.667)" fill="none" stroke-width="2.6" style="stroke:var(--positivo)"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></g>
+      <text x="417" y="462" style="fill:var(--positivo)">Concluído</text>
+    </g>
+    <g class="salta" style="animation-delay:1.3s">
+      <rect x="521" y="440" width="126" height="34" rx="12" style="fill:var(--negativo-fundo)"/>
+      <g transform="translate(533 449) scale(.667)" fill="none" stroke-width="2.6" style="stroke:var(--negativo)"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g>
+      <text x="557" y="462" style="fill:var(--negativo)">Cancelado</text>
+    </g>
+    <g class="salta" style="animation-delay:1.4s">
+      <rect x="661" y="440" width="238" height="34" rx="12" style="fill:var(--painel);stroke:var(--negativo-borda)"/>
+      <g transform="translate(673 449) scale(.667)" fill="none" stroke-width="2.6" style="stroke:var(--negativo)"><path d="M22 2 2 22"/></g>
+      <text x="697" y="462" style="fill:var(--negativo)">Paciente não compareceu</text>
+    </g>
+  </g>
+
+  <g class="movimento" clip-path="url(#faixa-chips)">
+    <rect class="varredura" x="0" y="384" width="140" height="100" fill="url(#luz)" opacity=".35"/>
+  </g>
+
+  <!-- a regra -->
+  <g class="sobe" style="animation-delay:1.5s">
+    <text x="640" y="532" font-size="19" font-weight="700" text-anchor="middle" class="t"><tspan style="fill:var(--negativo)">Vermelho</tspan> é para o que deu errado. <tspan style="fill:var(--atencao)">Laranja</tspan> é para o que falta fazer.</text>
+    <text class="t3" x="640" y="564" font-size="14" text-anchor="middle">Texto passa no WCAG AA (≥ 4.5:1), com uma exceção anotada no AGENTS.md §7.4 · nenhuma cor fora de src/app/globals.css</text>
+  </g>
+</svg>
