@@ -1,9 +1,9 @@
-import { ArrowLeft } from "lucide-react";
+import { PencilLine, UserRound } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FormularioPaciente } from "@/components/pacientes/formulario-paciente";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import type { ValoresPaciente } from "@/lib/paciente";
 import { atualizarPaciente } from "@/server/acoes/pacientes";
 import { pacientePorId } from "@/server/consultas/pacientes";
@@ -40,21 +40,31 @@ export default async function PaginaEditarPaciente({ params }: Props) {
   const ficha = `/pacientes/${paciente.id}`;
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <Link
-        href={ficha}
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para a ficha
-      </Link>
+    <div className="mx-auto flex max-w-4xl flex-col gap-5">
+      <LinkDeVoltar href={ficha}>Voltar para a ficha</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={PencilLine}
+        rotulo="Paciente"
+        titulo={`Editar ${paciente.exibicao}`}
+        descricao="Atualize os dados cadastrais sem perder o contexto da ficha. Histórico clínico, atendimentos e documentos continuam vinculados à mesma paciente."
+        meta={
+          <>
+            <SeloHero tom={paciente.ativo ? "positivo" : "neutro"}>{paciente.ativo ? "Cadastro ativo" : "Cadastro arquivado"}</SeloHero>
+            <SeloHero tom="informativo">
+              <UserRound aria-hidden="true" size={13} strokeWidth={1.7} />
+              Mesmo registro
+            </SeloHero>
+          </>
+        }
+      />
 
       <Card>
         <CardCabecalho
-          titulo="Editar cadastro"
-          descricao={paciente.exibicao}
+          titulo="Dados cadastrais"
+          descricao="Revise identidade, contato, endereço e observações. O histórico da paciente não é recriado por esta edição."
         />
-        <CardCorpo className="py-8">
+        <CardCorpo className="py-7 sm:py-8">
           <FormularioPaciente
             acao={atualizarPaciente}
             inicial={inicial}
