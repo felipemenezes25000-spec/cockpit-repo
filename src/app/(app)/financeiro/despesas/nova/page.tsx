@@ -1,9 +1,9 @@
-import { ArrowLeft } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FormularioDespesa } from "@/components/financeiro/formulario-despesa";
 import { SomenteFinanceiro } from "@/components/financeiro/somente-financeiro";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { ehFinanceira } from "@/lib/auth";
 import { chaveDoDia, hoje } from "@/lib/dates";
 import { criarDespesa } from "@/server/acoes/despesas";
@@ -16,18 +16,28 @@ export default async function PaginaNovaDespesa() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Link
-        href="/financeiro/despesas"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para as despesas
-      </Link>
+    <div className="mx-auto flex max-w-4xl flex-col gap-5">
+      <LinkDeVoltar href="/financeiro/despesas">Voltar para despesas</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={ReceiptText}
+        rotulo="Financeiro"
+        titulo="Registrar despesa"
+        descricao="Registre a saída com vencimento e situação claramente separados, preservando a leitura do caixa e das pendências do período."
+        meta={
+          <>
+            <SeloHero tom="negativo">Saída financeira</SeloHero>
+            <SeloHero>Visível apenas ao financeiro</SeloHero>
+          </>
+        }
+      />
 
       <Card>
-        <CardCabecalho titulo="Nova despesa" />
-        <CardCorpo className="py-8">
+        <CardCabecalho
+          titulo="Dados da despesa"
+          descricao="Informe o compromisso financeiro e revise o vencimento antes de registrar."
+        />
+        <CardCorpo className="py-7 sm:py-8">
           <FormularioDespesa
             acao={criarDespesa}
             inicial={{ vencimento: chaveDoDia(hoje()) }}

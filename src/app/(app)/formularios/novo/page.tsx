@@ -1,8 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { FilePlus2 } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { EstruturaPendenteDocumento } from "@/components/documentos/estrutura-pendente";
 import { FormularioEmissao } from "@/components/documentos/formulario-emissao";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { uuidValido } from "@/lib/formulario";
 import { pacienteParaSelecao } from "@/server/consultas/pacientes";
 import {
@@ -42,23 +42,31 @@ export default async function PaginaEmitirDocumento({
   }
 
   const paciente = await pacienteParaSelecao(lerTexto(parametros.paciente));
+  const emCorrecao = uuidValido(corrige);
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <Link
-        href="/formularios"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para documentos
-      </Link>
+    <div className="mx-auto flex max-w-5xl flex-col gap-5">
+      <LinkDeVoltar href="/formularios">Voltar para documentos</LinkDeVoltar>
 
-      {/* Correção não edita o documento antigo: emite um novo apontando para
-          ele, e o antigo passa a "substituído". */}
+      <CabecalhoDePagina
+        icone={FilePlus2}
+        rotulo="Documentos"
+        titulo={emCorrecao ? "Emitir correção" : "Emitir documento"}
+        descricao="Escolha paciente e modelo em um fluxo que deixa claro o que será congelado como registro definitivo."
+        meta={
+          <>
+            <SeloHero tom="informativo">Texto congelado na emissão</SeloHero>
+            <SeloHero>{modelos.length} {modelos.length === 1 ? "modelo disponível" : "modelos disponíveis"}</SeloHero>
+            {paciente ? <SeloHero tom="positivo">Paciente já selecionada</SeloHero> : null}
+            {emCorrecao ? <SeloHero tom="atencao">Corrige documento anterior</SeloHero> : null}
+          </>
+        }
+      />
+
       <FormularioEmissao
         modelos={modelos}
         pacienteInicial={paciente}
-        corrigeId={uuidValido(corrige) ? corrige : ""}
+        corrigeId={emCorrecao ? corrige : ""}
       />
     </div>
   );

@@ -1,9 +1,9 @@
-import { ArrowLeft } from "lucide-react";
+import { FileText } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { AcessoRestritoProntuario } from "@/components/prontuarios/acesso-restrito";
 import { FormularioProntuario } from "@/components/prontuarios/formulario-prontuario";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { ehAdministradora } from "@/lib/auth";
 import { chaveDoDia, hoje } from "@/lib/dates";
 import { criarProntuario } from "@/server/acoes/prontuarios";
@@ -47,30 +47,39 @@ export default async function PaginaNovoProntuario({
   const paciente = atendimento?.paciente ?? (
     pacienteId ? await pacienteParaProntuario(pacienteId) : null
   );
+  const cancelarPara = paciente ? `/pacientes/${paciente.id}` : "/prontuarios";
 
   return (
-    <div>
-      <Link
-        href="/prontuarios"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para prontuários
-      </Link>
+    <div className="mx-auto flex max-w-5xl flex-col gap-5">
+      <LinkDeVoltar href="/prontuarios">Voltar para prontuários</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={FileText}
+        rotulo="Prontuário clínico"
+        titulo="Criar registro inicial"
+        descricao="Estruture o registro clínico com leitura confortável e histórico preservado. Ao salvar, nasce a versão 1 do prontuário."
+        meta={
+          <>
+            <SeloHero tom="informativo">Versão 1</SeloHero>
+            {paciente ? <SeloHero tom="positivo">Paciente selecionada: {paciente.nome}</SeloHero> : null}
+            {atendimento ? <SeloHero>Vinculado a atendimento</SeloHero> : null}
+          </>
+        }
+      />
 
       <Card>
         <CardCabecalho
-          titulo="Novo prontuário"
-          descricao="Registro clínico inicial, salvo com versão 1."
+          titulo="Registro clínico"
+          descricao="Revise paciente, data e conteúdo clínico antes de criar a primeira versão."
         />
-        <CardCorpo>
+        <CardCorpo className="py-7 sm:py-8">
           <FormularioProntuario
             acao={criarProntuario}
             modo="novo"
             pacienteInicial={paciente}
             atendimentoInicial={atendimento}
             dataPadrao={atendimento?.dataRegistro ?? chaveDoDia(hoje())}
-            cancelarPara={paciente ? `/pacientes/${paciente.id}` : "/prontuarios"}
+            cancelarPara={cancelarPara}
             rotuloSalvar="Salvar prontuário"
           />
         </CardCorpo>

@@ -1,8 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FormularioVenda } from "@/components/financeiro/formulario-venda";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { ehFinanceira } from "@/lib/auth";
 import { chaveDoDia, hoje } from "@/lib/dates";
 import { formatarTelefone } from "@/lib/paciente";
@@ -28,7 +28,6 @@ export default async function PaginaNovaVenda({
   const parametros = await searchParams;
   const pacienteId = lerTexto(parametros.paciente);
 
-  // Vinda da ficha: a paciente já chega escolhida.
   let pacienteInicial: PacienteParaSelecao | null = null;
   if (/^[0-9a-f-]{36}$/i.test(pacienteId)) {
     const paciente = await pacientePorId(pacienteId);
@@ -54,21 +53,29 @@ export default async function PaginaNovaVenda({
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Link
-        href="/financeiro/vendas"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para as vendas
-      </Link>
+    <div className="mx-auto flex max-w-4xl flex-col gap-5">
+      <LinkDeVoltar href="/financeiro/vendas">Voltar para vendas</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={ShoppingBag}
+        rotulo="Financeiro"
+        titulo="Registrar nova venda"
+        descricao="Concentre procedimento, paciente, recebimento e taxas em um fluxo único, com leitura financeira clara antes da confirmação."
+        meta={
+          <>
+            <SeloHero tom="informativo">Valores em centavos no banco</SeloHero>
+            <SeloHero>Taxa separada do valor bruto</SeloHero>
+            {pacienteInicial ? <SeloHero tom="positivo">Paciente já selecionada</SeloHero> : null}
+          </>
+        }
+      />
 
       <Card>
         <CardCabecalho
-          titulo="Nova venda"
+          titulo="Dados da venda"
           descricao="No cartão, a paciente parcela e a clínica recebe um repasse só, já líquido de taxa."
         />
-        <CardCorpo className="py-8">
+        <CardCorpo className="py-7 sm:py-8">
           <FormularioVenda
             procedimentos={catalogo.procedimentos}
             taxas={taxas}

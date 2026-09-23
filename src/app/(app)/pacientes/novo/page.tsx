@@ -1,8 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { UserRoundPlus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FormularioPaciente } from "@/components/pacientes/formulario-paciente";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { cadastrarPaciente } from "@/server/acoes/pacientes";
 
 export const metadata: Metadata = {
@@ -12,21 +12,28 @@ export const metadata: Metadata = {
 
 export default function PaginaNovaPaciente() {
   return (
-    <div className="mx-auto max-w-4xl">
-      <Link
-        href="/pacientes"
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para a lista
-      </Link>
+    <div className="mx-auto flex max-w-4xl flex-col gap-5">
+      <LinkDeVoltar href="/pacientes">Voltar para pacientes</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={UserRoundPlus}
+        rotulo="Pacientes"
+        titulo="Cadastrar nova paciente"
+        descricao="Comece pelo essencial e complete os demais dados conforme a relação com a clínica evoluir."
+        meta={
+          <>
+            <SeloHero tom="informativo">Só o nome é obrigatório</SeloHero>
+            <SeloHero>Cadastro editável depois</SeloHero>
+          </>
+        }
+      />
 
       <Card>
         <CardCabecalho
-          titulo="Nova paciente"
-          descricao="Só o nome é obrigatório. O restante pode ser completado depois, na ficha."
+          titulo="Dados da paciente"
+          descricao="Contato, nascimento e origem podem ser preenchidos agora ou atualizados posteriormente na ficha."
         />
-        <CardCorpo className="py-8">
+        <CardCorpo className="py-7 sm:py-8">
           <FormularioPaciente
             acao={cadastrarPaciente}
             cancelarPara="/pacientes"

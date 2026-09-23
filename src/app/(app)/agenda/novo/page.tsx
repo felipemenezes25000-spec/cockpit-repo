@@ -1,6 +1,5 @@
-import { ArrowLeft } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FormularioAtendimento } from "@/components/agenda/formulario-atendimento";
 import {
   enderecoDaAgenda,
@@ -8,6 +7,7 @@ import {
   lerProfissional,
 } from "@/components/agenda/parametros-agenda";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { chaveDoDia, hoje } from "@/lib/dates";
 import { formatarTelefone } from "@/lib/paciente";
 import { marcarAtendimento, type PacienteParaSelecao } from "@/server/acoes/agenda";
@@ -29,15 +29,10 @@ export default async function PaginaNovoAtendimento({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const parametros = await searchParams;
-
-  // Dia e profissional vêm da agenda (o dia e o filtro que estavam na tela).
-  // O que não é data de verdade nem id cai no padrão, e nunca vai cru para o
-  // link de voltar.
   const diaSugerido = lerChaveDoDia(parametros.dia);
   const profissionalSugerida = lerProfissional(parametros.profissional);
   const pacienteId = lerTexto(parametros.paciente);
 
-  // Marcado a partir da ficha: a paciente já vem escolhida.
   let pacienteInicial: PacienteParaSelecao | null = null;
   if (/^[0-9a-f-]{36}$/i.test(pacienteId)) {
     const paciente = await pacientePorId(pacienteId);
@@ -63,21 +58,28 @@ export default async function PaginaNovoAtendimento({
   const voltarPara = enderecoDaAgenda(diaSugerido, profissionalInicial || null);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Link
-        href={voltarPara}
-        className="mb-6 inline-flex min-h-6 items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-primary"
-      >
-        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-        Voltar para a agenda
-      </Link>
+    <div className="mx-auto flex max-w-4xl flex-col gap-5">
+      <LinkDeVoltar href={voltarPara}>Voltar para a agenda</LinkDeVoltar>
+
+      <CabecalhoDePagina
+        icone={CalendarPlus}
+        rotulo="Agenda"
+        titulo="Marcar atendimento"
+        descricao="Monte o horário com contexto completo sem perder o ritmo da agenda. Procedimento, duração e valor continuam seguindo a tabela da clínica."
+        meta={
+          <>
+            <SeloHero tom="informativo">Duração e valor assistidos</SeloHero>
+            {pacienteInicial ? <SeloHero tom="positivo">Paciente já selecionada</SeloHero> : null}
+          </>
+        }
+      />
 
       <Card>
         <CardCabecalho
-          titulo="Marcar atendimento"
-          descricao="Escolher o procedimento preenche a duração e o valor da tabela."
+          titulo="Detalhes do horário"
+          descricao="Escolher o procedimento preenche a duração e o valor da tabela; revise antes de salvar."
         />
-        <CardCorpo className="py-8">
+        <CardCorpo className="py-7 sm:py-8">
           <FormularioAtendimento
             acao={marcarAtendimento}
             catalogo={catalogo}

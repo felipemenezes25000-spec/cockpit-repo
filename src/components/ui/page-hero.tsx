@@ -1,4 +1,5 @@
-import type { LucideIcon } from "lucide-react";
+import { ArrowLeft, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -11,6 +12,31 @@ const TOM_DO_SELO: Record<TomDoSelo, string> = {
   atencao: "border-atencao-borda/85 bg-atencao-fundo/78 text-atencao",
   negativo: "border-negativo-borda/85 bg-negativo-fundo/78 text-negativo",
 };
+
+export function LinkDeVoltar({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group inline-flex min-h-10 w-fit items-center gap-2 rounded-[var(--radius-controle)] border border-card-border/80 bg-surface/65 px-3.5 text-sm font-medium text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-sm transition-[transform,border-color,background-color,color,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-primary-fixed-dim hover:bg-surface hover:text-primary hover:shadow-[var(--shadow-cartao)] active:translate-y-px",
+        className,
+      )}
+    >
+      <span className="flex size-6 items-center justify-center rounded-lg bg-surface-container-low text-outline transition-[transform,color,background-color] duration-150 group-hover:-translate-x-0.5 group-hover:bg-primary-fixed/65 group-hover:text-primary">
+        <ArrowLeft aria-hidden="true" size={14} strokeWidth={1.8} />
+      </span>
+      {children}
+    </Link>
+  );
+}
 
 export function SeloHero({
   children,
