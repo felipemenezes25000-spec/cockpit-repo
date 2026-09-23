@@ -39,8 +39,10 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 
 ## Projeto
 
-`Cockpit-Consultorio2` · ref `khoaluytzzagtwmpaukx` · região **sa-east-1
-(São Paulo)**.
+Produção: ref **`pghmzbtfsaupwezglddo`** (criado em 23/09/2026; região a
+conferir no painel, em Project Settings → General — precisa ser **sa-east-1
+(São Paulo)**). Substitui o `Cockpit-Consultorio2` (ref `khoaluytzzagtwmpaukx`,
+sa-east-1), que deixou de ser o de produção nessa data.
 
 A região não pode ser alterada depois da criação — trocar exige projeto novo e
 migração de dados. O primeiro projeto foi criado em `us-east-1` e descartado por

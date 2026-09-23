@@ -361,7 +361,7 @@ as quebras de linha para LF no repositório.
 |---|---|---|
 | Aplicação | **Vercel** | `vercel.json`: `framework: nextjs`, região **`gru1`** (São Paulo) |
 | Repositório | **GitHub** | `https://github.com/felipemenezes25000-spec/cockpit-repo`. Um único branch, `jamal-do-mal`; o trabalho entra direto nele, sem criar outros (decisão do dono, 23/09/2026) |
-| Banco e autenticação | **Supabase** | Projeto `Cockpit-Consultorio2`, ref `khoaluytzzagtwmpaukx`, região **`sa-east-1` (São Paulo)** |
+| Banco e autenticação | **Supabase** | Ref `pghmzbtfsaupwezglddo` (produção desde 23/09/2026, no lugar do `Cockpit-Consultorio2`/`khoaluytzzagtwmpaukx`); região precisa ser **`sa-east-1` (São Paulo)** — a conferir no painel. MCP do Supabase configurado em `.mcp.json` |
 
 **Por que tudo em São Paulo:** latência e soberania do dado. A região do projeto
 Supabase **não pode ser alterada depois da criação** — o primeiro projeto foi
