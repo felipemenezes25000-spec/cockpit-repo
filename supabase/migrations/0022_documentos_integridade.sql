@@ -1018,7 +1018,8 @@ declare
   v_opcao jsonb;
 begin
   if p_campos is null or jsonb_typeof(p_campos) <> 'array' then return false; end if;
-  if jsonb_array_length(p_campos) > 100 then return false; end if;
+  -- O mesmo teto de `validarCampos` (lib/documento.ts).
+  if jsonb_array_length(p_campos) > 120 then return false; end if;
 
   for v_campo in select * from jsonb_array_elements(p_campos) loop
     if jsonb_typeof(v_campo) <> 'object' then return false; end if;

@@ -153,6 +153,15 @@ select testes.falha('modelo com pergunta sem tipo é recusado',
 select testes.falha('modelo com alternativa que não é texto é recusado',
   $q$ select public.modelo_documento_criar('anamnese', 'Ruim', '', 'Texto.',
         '[{"chave":"x","rotulo":"R","tipo":"escolha_unica","opcoes":[1,2]}]'::jsonb) $q$);
+-- O teto de perguntas é o mesmo de `validarCampos` (lib/documento.ts).
+select testes.igual('modelo com 120 perguntas é aceito',
+  $q$ select (public.modelo_documento_criar('anamnese', 'Longa', '', 'Texto.',
+        (select jsonb_agg(jsonb_build_object('chave', 'p' || i, 'rotulo', 'Pergunta ' || i, 'tipo', 'texto'))
+           from generate_series(1, 120) i)) is not null)::text $q$, 'true');
+select testes.falha('modelo com 121 perguntas é recusado',
+  $q$ select public.modelo_documento_criar('anamnese', 'Longa demais', '', 'Texto.',
+        (select jsonb_agg(jsonb_build_object('chave', 'p' || i, 'rotulo', 'Pergunta ' || i, 'tipo', 'texto'))
+           from generate_series(1, 121) i)) $q$);
 
 -- ---------------------------------------------------------------------
 -- Recepção
