@@ -2,36 +2,27 @@ import { cn } from "@/lib/cn";
 import { capitalizar, formatarMesAno, formatarMoedaCompacta } from "@/lib/format";
 import type { MesDoFluxo } from "@/server/consultas/painel-financeiro";
 
-/**
- * Fluxo de caixa dos últimos 12 meses: entradas líquidas, saídas pagas,
- * resultado e o acumulado do período.
- *
- * Duas formas do mesmo dado. No celular, uma lista (um mês por item, os
- * quatro valores com rótulo): a tabela de cinco colunas não cabe em 320 px, e
- * rolando de lado só mostrava a coluna "Mês". A partir de `sm`, a tabela. Se
- * ela ainda precisar rolar (entre 640 e ~700 px), o contêiner recebe foco pelo
- * teclado e tem nome — região rolável que só o mouse alcança não é acessível
- * (WCAG 2.1.1).
- *
- * Cor: entrada verde, saída vermelha — convenção contábil. Mês zerado fica em
- * cinza: "R$ 0" verde ou vermelho sugeriria um movimento que não houve.
- */
 export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
   return (
     <>
-      <ul className="divide-y divide-card-border sm:hidden">
+      <ul className="flex flex-col gap-3 sm:hidden">
         {meses.map((mes, i) => {
           const ultimo = i === meses.length - 1;
           return (
             <li
               key={mes.mes.getTime()}
-              className={cn("-mx-3 px-3 py-3", ultimo && "rounded-[var(--radius-cartao)] bg-surface-container-low")}
+              className={cn(
+                "rounded-[var(--radius-cartao)] border px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)]",
+                ultimo
+                  ? "border-primary-fixed-dim/65 bg-primary-fixed/22"
+                  : "border-card-border/70 bg-surface/60",
+              )}
             >
-              <p className="text-sm font-medium text-on-surface">
-                {capitalizar(formatarMesAno(mes.mes))}
-                {ultimo ? <span className="ml-2 text-xs font-normal text-outline">(em curso)</span> : null}
-              </p>
-              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-on-surface">{capitalizar(formatarMesAno(mes.mes))}</p>
+                {ultimo ? <span className="rounded-full bg-primary-fixed/60 px-2.5 py-1 text-[0.68rem] font-semibold text-primary">Em curso</span> : null}
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-2.5 text-sm">
                 <Valor rotulo="Recebido líquido" classe={corDaEntrada(mes.recebido)} valor={mes.recebido} />
                 <Valor rotulo="Despesas pagas" classe={corDaSaida(mes.despesas)} valor={mes.despesas} />
                 <Valor rotulo="Resultado" classe={corDoResultado(mes.resultado)} valor={mes.resultado} />
@@ -43,19 +34,19 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
       </ul>
 
       <div
-        className="hidden overflow-x-auto sm:block"
+        className="rolagem-discreta hidden overflow-x-auto rounded-[var(--radius-cartao)] border border-card-border/70 bg-surface/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] sm:block"
         role="region"
         aria-label="Fluxo mensal, tabela"
         tabIndex={0}
       >
         <table className="w-full min-w-[36rem] text-sm">
-          <thead>
-            <tr className="border-b border-card-border text-left">
-              <th scope="col" className="rotulo py-3 pr-4">Mês</th>
-              <th scope="col" className="rotulo py-3 pr-4 text-right">Recebido líquido</th>
-              <th scope="col" className="rotulo py-3 pr-4 text-right">Despesas pagas</th>
-              <th scope="col" className="rotulo py-3 pr-4 text-right">Resultado</th>
-              <th scope="col" className="rotulo py-3 text-right">Acumulado</th>
+          <thead className="bg-surface-container-low/65">
+            <tr className="border-b border-card-border/75 text-left">
+              <th scope="col" className="rotulo px-4 py-3.5">Mês</th>
+              <th scope="col" className="rotulo px-4 py-3.5 text-right">Recebido líquido</th>
+              <th scope="col" className="rotulo px-4 py-3.5 text-right">Despesas pagas</th>
+              <th scope="col" className="rotulo px-4 py-3.5 text-right">Resultado</th>
+              <th scope="col" className="rotulo px-4 py-3.5 text-right">Acumulado</th>
             </tr>
           </thead>
           <tbody>
@@ -65,29 +56,18 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
                 <tr
                   key={mes.mes.getTime()}
                   className={cn(
-                    "border-b border-card-border last:border-b-0",
-                    ultimo && "bg-surface-container-low font-medium",
+                    "border-b border-card-border/65 transition-colors last:border-b-0 hover:bg-surface-container-low/45",
+                    ultimo && "bg-primary-fixed/18 font-medium hover:bg-primary-fixed/28",
                   )}
                 >
-                  <th
-                    scope="row"
-                    className={cn("py-2.5 pr-4 text-left text-on-surface", ultimo ? "font-medium" : "font-normal")}
-                  >
+                  <th scope="row" className={cn("px-4 py-3.5 text-left text-on-surface", ultimo ? "font-semibold" : "font-medium")}>
                     {capitalizar(formatarMesAno(mes.mes))}
-                    {ultimo ? <span className="ml-2 text-xs text-outline">(em curso)</span> : null}
+                    {ultimo ? <span className="ml-2 rounded-full bg-primary-fixed/60 px-2 py-0.5 text-[0.66rem] font-semibold text-primary">em curso</span> : null}
                   </th>
-                  <td className={cn("tabular py-2.5 pr-4 text-right", corDaEntrada(mes.recebido))}>
-                    {formatarMoedaCompacta(mes.recebido)}
-                  </td>
-                  <td className={cn("tabular py-2.5 pr-4 text-right", corDaSaida(mes.despesas))}>
-                    {formatarMoedaCompacta(mes.despesas)}
-                  </td>
-                  <td className={cn("tabular py-2.5 pr-4 text-right", corDoResultado(mes.resultado))}>
-                    {formatarMoedaCompacta(mes.resultado)}
-                  </td>
-                  <td className={cn("tabular py-2.5 text-right", corDoAcumulado(mes.acumulado))}>
-                    {formatarMoedaCompacta(mes.acumulado)}
-                  </td>
+                  <td className={cn("tabular px-4 py-3.5 text-right font-medium", corDaEntrada(mes.recebido))}>{formatarMoedaCompacta(mes.recebido)}</td>
+                  <td className={cn("tabular px-4 py-3.5 text-right font-medium", corDaSaida(mes.despesas))}>{formatarMoedaCompacta(mes.despesas)}</td>
+                  <td className={cn("tabular px-4 py-3.5 text-right font-semibold", corDoResultado(mes.resultado))}>{formatarMoedaCompacta(mes.resultado)}</td>
+                  <td className={cn("tabular px-4 py-3.5 text-right font-semibold", corDoAcumulado(mes.acumulado))}>{formatarMoedaCompacta(mes.acumulado)}</td>
                 </tr>
               );
             })}
@@ -100,29 +80,15 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
 
 function Valor({ rotulo, valor, classe }: { rotulo: string; valor: number; classe: string }) {
   return (
-    <div className="min-w-0">
-      <dt className="text-xs text-outline">{rotulo}</dt>
-      <dd className={cn("tabular", classe)}>{formatarMoedaCompacta(valor)}</dd>
+    <div className="rounded-[var(--radius-controle)] border border-card-border/55 bg-surface/55 px-3 py-2.5">
+      <dt className="text-[0.68rem] font-medium text-outline">{rotulo}</dt>
+      <dd className={cn("tabular mt-1 font-semibold", classe)}>{formatarMoedaCompacta(valor)}</dd>
     </div>
   );
 }
 
 const ZERADO = "text-on-surface-variant";
-
-function corDaEntrada(valor: number): string {
-  return valor === 0 ? ZERADO : "text-positivo";
-}
-
-function corDaSaida(valor: number): string {
-  return valor === 0 ? ZERADO : "text-negativo";
-}
-
-function corDoResultado(valor: number): string {
-  if (valor > 0) return "text-positivo";
-  if (valor < 0) return "text-negativo";
-  return ZERADO;
-}
-
-function corDoAcumulado(valor: number): string {
-  return valor >= 0 ? "text-on-surface" : "text-negativo";
-}
+function corDaEntrada(valor: number): string { return valor === 0 ? ZERADO : "text-positivo"; }
+function corDaSaida(valor: number): string { return valor === 0 ? ZERADO : "text-negativo"; }
+function corDoResultado(valor: number): string { if (valor > 0) return "text-positivo"; if (valor < 0) return "text-negativo"; return ZERADO; }
+function corDoAcumulado(valor: number): string { return valor >= 0 ? "text-on-surface" : "text-negativo"; }

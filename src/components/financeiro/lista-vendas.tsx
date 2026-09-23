@@ -1,8 +1,9 @@
-import { ChevronRight, Receipt } from "lucide-react";
+import { ChevronRight, Receipt, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { ChipRecebimento, MarcaTaxaManual } from "./chips";
 import { BotaoLink } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/empty-state";
+import { SeloHero } from "@/components/ui/page-hero";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { ROTULO_FORMA } from "@/lib/venda";
 import type { VendaDaLista } from "@/server/consultas/vendas";
@@ -12,78 +13,67 @@ export function ListaVendas({
   filtrada = false,
 }: {
   vendas: VendaDaLista[];
-  /** A lista está vazia por causa dos filtros, não por falta de venda. */
   filtrada?: boolean;
 }) {
   if (vendas.length === 0) {
     return filtrada ? (
-      <EstadoVazio
-        icone={Receipt}
-        titulo="Nada com estes filtros"
-        descricao="Afrouxe os filtros ou troque o mês para encontrar a venda."
-      />
+      <EstadoVazio icone={Receipt} titulo="Nada com estes filtros" descricao="Afrouxe os filtros ou troque o mês para encontrar a venda." />
     ) : (
       <EstadoVazio
         icone={Receipt}
         titulo="Nenhuma venda neste mês"
         descricao="Registre a primeira venda e o financeiro começa a acompanhar."
-        acao={
-          <BotaoLink href="/financeiro/vendas/nova" variante="primaria" tamanho="sm">
-            Registrar venda
-          </BotaoLink>
-        }
+        acao={<BotaoLink href="/financeiro/vendas/nova" variante="primaria" tamanho="sm">Registrar venda</BotaoLink>}
       />
     );
   }
 
   return (
-    <ul aria-label="Vendas" className="flex flex-col gap-3">
+    <ul aria-label="Vendas" className="grid gap-3 lg:grid-cols-2">
       {vendas.map((venda) => (
         <li
           key={venda.id}
-          className="relative flex items-center gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 shadow-[var(--shadow-cartao)] transition-shadow focus-within:border-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary hover:shadow-[var(--shadow-realce)]"
+          className="premium-interactive group relative isolate flex min-h-40 flex-col overflow-hidden rounded-[var(--radius-painel)] border border-card-border/75 bg-surface/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] focus-within:border-primary"
         >
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <Link
-                href={`/financeiro/vendas/${venda.id}`}
-                className="inline-flex min-h-6 items-center font-medium text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
-              >
-                {venda.paciente}
-              </Link>
-              {/* O separador é borda, não texto: quando a linha quebra, o
-                  procedimento não começa com "·" solto. */}
-              <span className="border-l border-outline-variant pl-2 text-sm text-outline">
-                {venda.procedimento}
-              </span>
-              {/* Sem recebimento vivo, o único foi cancelado (o mesmo critério
-                  do filtro "Canceladas"): sem chip, a venda cancelada parecia
-                  igual às outras. */}
+          <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-primary-fixed/28 blur-2xl transition-transform duration-300 group-hover:scale-125" />
+
+          <div className="flex items-start justify-between gap-4">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/50 bg-primary-fixed/42 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <ShoppingBag aria-hidden="true" size={18} strokeWidth={1.65} />
+            </span>
+            <div className="flex flex-wrap justify-end gap-1.5">
               <ChipRecebimento situacao={venda.situacaoRecebimento ?? "cancelado"} />
               {venda.taxaManual ? <MarcaTaxaManual /> : null}
-              {venda.exemplo ? (
-                <span className="rounded-[var(--radius-tag)] border border-dashed border-outline-variant px-1.5 py-0.5 text-[0.6875rem] text-outline">
-                  exemplo
-                </span>
-              ) : null}
+              {venda.exemplo ? <SeloHero className="min-h-7 px-2 py-0 text-[0.65rem]">Exemplo</SeloHero> : null}
             </div>
-
-            <p className="tabular mt-1 text-xs text-outline">
-              {formatarData(venda.dataVenda)} · {ROTULO_FORMA[venda.forma]}
-              {venda.parcelas > 1 ? ` ${venda.parcelas}x` : ""} ·{" "}
-              {formatarMoeda(venda.valorFinal)}
-              {venda.taxaValor > 0
-                ? ` − taxa ${formatarMoeda(venda.taxaValor)} = líquido ${formatarMoeda(venda.valorLiquido)}`
-                : ""}
-            </p>
           </div>
 
-          <ChevronRight
-            aria-hidden="true"
-            size={18}
-            strokeWidth={1.5}
-            className="shrink-0 text-outline-variant"
-          />
+          <div className="mt-4 min-w-0 flex-1">
+            <Link
+              href={`/financeiro/vendas/${venda.id}`}
+              className="inline-flex min-h-6 items-center font-semibold text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
+            >
+              {venda.paciente}
+            </Link>
+            <p className="mt-1 text-sm leading-5 text-on-surface-variant">{venda.procedimento}</p>
+
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="tabular text-xl font-semibold tracking-[-0.025em] text-on-surface">{formatarMoeda(venda.valorFinal)}</p>
+                {venda.taxaValor > 0 ? (
+                  <p className="tabular mt-1 text-xs text-outline">líquido {formatarMoeda(venda.valorLiquido)} · taxa {formatarMoeda(venda.taxaValor)}</p>
+                ) : (
+                  <p className="tabular mt-1 text-xs text-outline">líquido {formatarMoeda(venda.valorLiquido)}</p>
+                )}
+              </div>
+              <p className="tabular text-right text-xs leading-5 text-outline">
+                {formatarData(venda.dataVenda)}<br />
+                {ROTULO_FORMA[venda.forma]}{venda.parcelas > 1 ? ` · ${venda.parcelas}x` : ""}
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight aria-hidden="true" size={17} strokeWidth={1.6} className="absolute right-4 bottom-4 text-outline-variant transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-primary" />
         </li>
       ))}
     </ul>
