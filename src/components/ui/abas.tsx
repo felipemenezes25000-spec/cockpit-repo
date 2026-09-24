@@ -22,11 +22,11 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
     <nav aria-label={rotulo} className={cn("relative", className)}>
       <div
         ref={faixa}
-        className="rolagem-discreta relative overflow-x-auto rounded-[16px] border border-card-border/75 bg-white/46 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.94),var(--shadow-cartao)] backdrop-blur-sm"
+        className="rolagem-discreta relative snap-x snap-mandatory scroll-px-1 overflow-x-auto rounded-[16px] border border-card-border/75 bg-white/46 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.94),var(--shadow-cartao)] backdrop-blur-sm"
       >
         <ul className="flex min-w-max gap-1">
           {abas.map((aba) => (
-            <li key={aba.href}>
+            <li key={aba.href} className="snap-start">
               <Link
                 href={aba.href}
                 aria-current={aba.ativa ? "page" : undefined}
@@ -34,7 +34,7 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
                   "group relative inline-flex min-h-10 items-center gap-2 overflow-hidden rounded-[11px] border border-transparent px-3.5 text-sm font-medium transition-[transform,background-color,border-color,box-shadow,color] duration-200 active:scale-[0.985]",
                   aba.ativa
                     ? "border-primary/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(242,248,255,0.88))] font-semibold text-primary shadow-[0_1px_2px_rgba(15,35,58,0.05),0_8px_18px_-12px_rgba(8,84,160,0.45)]"
-                    : "text-on-surface-variant hover:border-primary/8 hover:bg-white/60 hover:text-primary",
+                    : "text-on-surface-variant hover:-translate-y-px hover:border-primary/8 hover:bg-white/64 hover:text-primary",
                 )}
               >
                 {aba.ativa ? (
@@ -47,7 +47,7 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
                 <span className="relative">{aba.rotulo}</span>
                 {aba.contagem !== undefined && aba.contagem > 0 ? (
                   <span className={cn(
-                    "tabular relative rounded-full border px-1.5 py-px text-[0.67rem] font-semibold",
+                    "tabular relative rounded-full border px-1.5 py-px text-[0.67rem] font-semibold transition-[transform,background-color] duration-150 group-hover:scale-[1.03]",
                     aba.ativa
                       ? "border-primary/10 bg-white/78 text-primary shadow-[var(--shadow-cartao)]"
                       : "border-card-border/70 bg-primary-fixed/55 text-primary",
