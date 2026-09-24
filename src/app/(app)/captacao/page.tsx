@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 function lerTexto(valor: string | string[] | undefined, limite = 80): string {
   const texto = Array.isArray(valor) ? valor[0] : valor;
-  return (texto ?? "").slice(0, limite);
+  return (texto ?? "").slice(0, limite).trim();
 }
 
 function lerEtapa(valor: string | string[] | undefined): FiltroEtapaLead {
@@ -53,6 +53,8 @@ export default async function PaginaCaptacao({
   const periodo = lerMes(parametros.mes);
   const busca = lerTexto(parametros.busca);
   const etapa = lerEtapa(parametros.etapa);
+  const origemSolicitada = lerTexto(parametros.origem, 60);
+  const campanhaSolicitada = lerTexto(parametros.campanha, 120);
   const pagina = Math.max(1, Number(lerTexto(parametros.pagina, 8)) || 1);
 
   const [painel, procedimentos, usuario] = await Promise.all([
@@ -61,8 +63,13 @@ export default async function PaginaCaptacao({
     usuarioAtual(),
   ]);
 
+  const origensDisponiveis = painel.origens.map((item) => item.origem);
+  const campanhasDisponiveis = painel.campanhas.map((item) => item.campanha);
+  const origem = origensDisponiveis.includes(origemSolicitada) ? origemSolicitada : "";
+  const campanha = campanhasDisponiveis.includes(campanhaSolicitada) ? campanhaSolicitada : "";
+
   const carteira = painel.estruturaDisponivel
-    ? await listarLeadsCaptacao(periodo, busca, etapa, pagina)
+    ? await listarLeadsCaptacao(periodo, busca, etapa, pagina, origem, campanha)
     : CARTEIRA_VAZIA;
 
   const podeEditarLeads = usuario?.papel === "administradora" || usuario?.papel === "recepcao";
@@ -73,6 +80,8 @@ export default async function PaginaCaptacao({
   if (!periodo.ehMesAtual) parametrosPaginacao.mes = periodo.chave;
   if (busca) parametrosPaginacao.busca = busca;
   if (etapa !== "todos") parametrosPaginacao.etapa = etapa;
+  if (origem) parametrosPaginacao.origem = origem;
+  if (campanha) parametrosPaginacao.campanha = campanha;
 
   return (
     <div className="flex flex-col gap-5 pb-8 sm:gap-6">
@@ -153,6 +162,7 @@ export default async function PaginaCaptacao({
             metaConfigurada={metaConfigurada}
             motivosPerda={painel.motivosPerda}
             totalPerdidos={painel.perdidos}
+            mes={periodo.ehMesAtual ? null : periodo.chave}
           />
 
           <LeadsDoFunil
@@ -164,6 +174,10 @@ export default async function PaginaCaptacao({
             paginas={carteira.paginas}
             busca={busca}
             etapa={etapa}
+            origem={origem}
+            campanha={campanha}
+            origens={origensDisponiveis}
+            campanhas={campanhasDisponiveis}
             parametrosPaginacao={parametrosPaginacao}
           />
         </>
