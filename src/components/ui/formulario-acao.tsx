@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
+import { CheckCircle2, CircleAlert, LoaderCircle } from "lucide-react";
 import { useActionState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { ACAO_INICIAL, type AcaoDeBotao } from "@/lib/acao";
@@ -45,17 +45,25 @@ export function FormularioDeAcao({
         <p
           role="alert"
           className={cn(
-            "max-w-xs rounded-lg border border-negativo-borda/65 bg-negativo-fundo/65 px-2.5 py-1.5 text-xs leading-snug text-negativo",
+            "inline-flex max-w-sm items-start gap-2 rounded-[12px] border border-negativo-borda/70 bg-negativo-fundo/72 px-3 py-2 text-xs leading-5 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
             alinhamento === "fim" && "text-right",
           )}
         >
-          {estado.mensagem}
+          <CircleAlert aria-hidden="true" size={14} strokeWidth={1.8} className="mt-0.5 shrink-0" />
+          <span>{estado.mensagem}</span>
         </p>
       ) : null}
 
       {estado.ok && estado.mensagem ? (
-        <p role="status" className="sr-only">
-          {estado.mensagem}
+        <p
+          role="status"
+          className={cn(
+            "inline-flex max-w-sm items-start gap-2 rounded-[12px] border border-positivo-borda/70 bg-positivo-fundo/72 px-3 py-2 text-xs leading-5 text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
+            alinhamento === "fim" && "text-right",
+          )}
+        >
+          <CheckCircle2 aria-hidden="true" size={14} strokeWidth={1.8} className="mt-0.5 shrink-0" />
+          <span>{estado.mensagem}</span>
         </p>
       ) : null}
     </form>
@@ -66,16 +74,16 @@ type Tom = "neutro" | "positivo" | "negativo" | "informativo" | "silencioso" | "
 
 const TONS: Record<Tom, string> = {
   neutro:
-    "border border-card-border/90 bg-surface/85 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:border-primary-fixed-dim hover:bg-primary-fixed/20 hover:text-primary",
+    "border border-card-border/90 bg-surface/85 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:-translate-y-0.5 hover:border-primary-fixed-dim hover:bg-primary-fixed/20 hover:text-primary hover:shadow-[var(--shadow-cartao)]",
   positivo:
-    "border border-positivo-borda/90 bg-positivo-fundo/55 text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-positivo-fundo hover:shadow-[0_6px_14px_-10px_rgba(14,118,57,0.65)]",
+    "border border-positivo-borda/90 bg-positivo-fundo/55 text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:-translate-y-0.5 hover:bg-positivo-fundo hover:shadow-[0_8px_18px_-12px_rgba(14,118,57,0.65)]",
   negativo:
-    "border border-negativo-borda/90 bg-negativo-fundo/45 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-negativo-fundo",
+    "border border-negativo-borda/90 bg-negativo-fundo/45 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:-translate-y-0.5 hover:bg-negativo-fundo hover:shadow-[0_8px_18px_-12px_rgba(186,26,26,0.45)]",
   informativo:
-    "border border-informativo-borda/90 bg-informativo-fundo/55 text-informativo-texto shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-informativo-fundo",
+    "border border-informativo-borda/90 bg-informativo-fundo/55 text-informativo-texto shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:-translate-y-0.5 hover:bg-informativo-fundo hover:shadow-[var(--shadow-cartao)]",
   silencioso: "text-outline hover:bg-surface/80 hover:text-primary",
   primario:
-    "border border-primary-container bg-linear-to-b from-primary-container to-primary text-on-primary shadow-[var(--shadow-primary)] hover:brightness-[0.96]",
+    "border border-primary-container bg-linear-to-b from-primary-container to-primary text-on-primary shadow-[var(--shadow-primary)] hover:-translate-y-0.5 hover:brightness-[0.96] hover:shadow-[0_12px_28px_-12px_rgba(8,84,160,0.68)]",
 };
 
 const TAMANHOS = {
@@ -107,20 +115,23 @@ export function BotaoDeAcao({
       aria-busy={pending || undefined}
       aria-label={rotuloAcessivel}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-controle)] font-medium whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-wait disabled:opacity-60 disabled:active:translate-y-0 disabled:active:scale-100",
+        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-medium whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-wait disabled:opacity-60 disabled:active:translate-y-0 disabled:active:scale-100",
         TAMANHOS[tamanho],
         TONS[tom],
         className,
       )}
     >
-      {pending ? (
-        <LoaderCircle aria-hidden="true" className="animate-spin" />
-      ) : icone ? (
-        <span aria-hidden="true" className="inline-flex">
-          {icone}
-        </span>
-      ) : null}
-      {children}
+      {tom === "primario" ? <span aria-hidden="true" className="pointer-events-none absolute inset-x-5 top-0 h-px bg-white/45" /> : null}
+      <span className="relative inline-flex items-center gap-1.5">
+        {pending ? (
+          <LoaderCircle aria-hidden="true" className="animate-spin" />
+        ) : icone ? (
+          <span aria-hidden="true" className="inline-flex transition-transform duration-150 group-hover:scale-[1.04]">
+            {icone}
+          </span>
+        ) : null}
+        {children}
+      </span>
     </button>
   );
 }
