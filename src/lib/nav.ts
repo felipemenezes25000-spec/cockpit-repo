@@ -3,6 +3,7 @@ import {
   ChartNoAxesColumn,
   ClipboardPlus,
   FileSignature,
+  Funnel,
   LayoutGrid,
   MessageCircleHeart,
   Settings,
@@ -30,8 +31,8 @@ export type ItemMenu = {
 };
 
 /**
- * Fonte única do menu. Sidebar, cabeçalho e páginas provisórias leem daqui —
- * assim rótulo, ícone e rota nunca saem de sincronia.
+ * Fonte única do menu. Barra de módulos, gaveta, paleta e páginas provisórias
+ * leem daqui — assim rótulo, ícone e rota nunca saem de sincronia.
  */
 export const MENU: ItemMenu[] = [
   {
@@ -48,7 +49,6 @@ export const MENU: ItemMenu[] = [
     icone: CalendarDays,
     finalidade:
       "Marcar, remarcar e acompanhar os atendimentos da clínica por dia, semana e profissional.",
-    // Marcar, remarcar, confirmar e mudar situação já existem. Fica o que falta.
     proximosPassos: [
       "Visualização por semana e por profissional",
       "Bloqueio de horários e intervalos",
@@ -61,8 +61,6 @@ export const MENU: ItemMenu[] = [
     icone: Users,
     finalidade:
       "Cadastro e histórico de cada paciente, com contatos, procedimentos realizados e observações.",
-    // Cadastro, busca, ficha e linha do tempo já existem — o módulo não usa
-    // mais a página provisória. Aqui fica só o que ainda falta.
     proximosPassos: [
       "Filtros por procedimento e período",
       "Anexos e fotos de evolução",
@@ -90,7 +88,6 @@ export const MENU: ItemMenu[] = [
     icone: Wallet,
     finalidade:
       "Recebimentos, despesas, formas de pagamento e acompanhamento do que está em aberto.",
-    // Vendas, recebimentos, despesas, taxas e fluxo já existem. Fica o que falta.
     proximosPassos: [
       "Cobrança automática do que venceu",
       "Exportação para contabilidade",
@@ -104,9 +101,6 @@ export const MENU: ItemMenu[] = [
     icone: FileSignature,
     finalidade:
       "Contratos de prestação de serviços, anamneses, termos de consentimento e orientações entregues às pacientes.",
-    // O módulo existe e não usa mais `ModuloEmConstrucao`. O que sobrou aqui
-    // é o que ainda falta: anamnese com campos de formulário e PDF próprio.
-    // Ver AGENTS.md §8.7.
     proximosPassos: ["PDF montado pelo sistema, com paginação própria"],
   },
   {
@@ -118,6 +112,18 @@ export const MENU: ItemMenu[] = [
     proximosPassos: [
       "Envio automático de lembretes, quando a clínica definir canal e cadência",
       "Consulta das avaliações recebidas no Google",
+    ],
+  },
+  {
+    href: "/captacao",
+    rotulo: "Captação",
+    icone: Funnel,
+    finalidade:
+      "Funil de novos contatos, meta financeira, conversões e origem dos leads até a venda.",
+    proximosPassos: [
+      "Metas específicas por procedimento",
+      "Integração automática com campanhas e formulários de anúncios",
+      "Tempo médio entre as etapas do funil",
     ],
   },
   {
@@ -140,7 +146,6 @@ export const MENU: ItemMenu[] = [
     icone: Settings,
     finalidade:
       "Dados da clínica, equipe, procedimentos, horários de atendimento e preferências do sistema.",
-    // A tabela de procedimentos já existe. Fica o que falta.
     proximosPassos: [
       "Dados da clínica e da equipe",
       "Horários de funcionamento",
@@ -150,11 +155,11 @@ export const MENU: ItemMenu[] = [
 ];
 
 /**
- * A barra de módulos do topo mostra os sete módulos do dia a dia; Relatórios
+ * A barra de módulos do topo mostra os oito módulos do dia a dia; Relatórios
  * e Configurações ficam em "Mais". A gaveta do celular mostra todos.
  */
-export const MODULOS_DA_BARRA: ItemMenu[] = MENU.slice(0, 7);
-export const MODULOS_EM_MAIS: ItemMenu[] = MENU.slice(7);
+export const MODULOS_DA_BARRA: ItemMenu[] = MENU.slice(0, 8);
+export const MODULOS_EM_MAIS: ItemMenu[] = MENU.slice(8);
 
 export type Atalho = {
   tecla: string;
