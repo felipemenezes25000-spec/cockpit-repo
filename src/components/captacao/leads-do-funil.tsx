@@ -15,8 +15,10 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
+import { FiltrosLeads } from "@/components/captacao/filtros-leads";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { Campo, classeDeAreaDeTexto, classeDeEntrada } from "@/components/ui/field";
+import { Paginacao } from "@/components/ui/paginacao";
 import { ACAO_INICIAL } from "@/lib/acao";
 import { ETAPAS_FUNIL, ORIGENS_CAPTACAO, ROTULO_ETAPA } from "@/lib/captacao";
 import { formatarData } from "@/lib/format";
@@ -28,6 +30,7 @@ import {
   type EstadoLead,
 } from "@/server/acoes/captacao";
 import type { LeadDoPainel } from "@/server/consultas/captacao";
+import type { FiltroEtapaLead } from "@/server/consultas/captacao-leads";
 import type { Procedimento } from "@/server/consultas/procedimentos";
 
 const INICIAL: EstadoLead = { erros: {} };
@@ -202,7 +205,7 @@ function VincularPaciente({ lead }: { lead: LeadDoPainel }) {
           ) : null}
         </div>
         <p className="text-[0.68rem] leading-5 text-outline">
-          Depois do vínculo, uma venda registrada para esta paciente pode concluir o lead automaticamente.
+          Depois do vínculo, agendamento e venda desta paciente avançam o funil automaticamente.
         </p>
       </form>
     </details>
@@ -283,22 +286,38 @@ export function LeadsDoFunil({
   leads,
   procedimentos,
   podeEditar,
+  total,
+  pagina,
+  paginas,
+  busca,
+  etapa,
+  parametrosPaginacao,
 }: {
   leads: LeadDoPainel[];
   procedimentos: Procedimento[];
   podeEditar: boolean;
+  total: number;
+  pagina: number;
+  paginas: number;
+  busca: string;
+  etapa: FiltroEtapaLead;
+  parametrosPaginacao: Record<string, string>;
 }) {
+  const filtrado = Boolean(busca) || etapa !== "todos";
+
   return (
     <div className="flex flex-col gap-5">
       {podeEditar ? <NovoLead procedimentos={procedimentos} /> : null}
 
       <Card>
         <CardCabecalho
-          titulo="Leads recentes"
-          descricao="A carteira comercial continua separada de Pacientes, mas agora o vínculo fecha o ciclo: ficha, agenda e venda passam a conversar com o mesmo lead."
-          acao={<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary"><Route aria-hidden="true" size={15} /> {leads.length} exibidos</span>}
+          titulo="Carteira comercial"
+          descricao="Busque toda a carteira do período, vincule o cadastro clínico e acompanhe o avanço até agenda e venda sem perder o histórico do lead."
+          acao={<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary"><Route aria-hidden="true" size={15} /> {total} no recorte</span>}
         />
-        <CardCorpo>
+        <CardCorpo className="flex flex-col gap-4">
+          <FiltrosLeads busca={busca} etapa={etapa} total={total} />
+
           {leads.length > 0 ? (
             <ul className="flex flex-col gap-2.5">
               {leads.map((lead) => <LinhaLead key={lead.id} lead={lead} podeEditar={podeEditar} />)}
@@ -306,10 +325,24 @@ export function LeadsDoFunil({
           ) : (
             <div className="flex min-h-36 flex-col items-center justify-center rounded-[var(--radius-cartao)] border border-dashed border-card-border px-5 text-center">
               <UserRoundPlus aria-hidden="true" size={24} className="text-outline" />
-              <p className="mt-3 text-sm font-semibold text-on-surface">O funil ainda está vazio neste período.</p>
-              <p className="mt-1 max-w-md text-xs leading-5 text-outline">O primeiro contato registrado já aparece aqui e alimenta automaticamente os indicadores.</p>
+              <p className="mt-3 text-sm font-semibold text-on-surface">
+                {filtrado ? "Nenhum lead corresponde a este filtro." : "O funil ainda está vazio neste período."}
+              </p>
+              <p className="mt-1 max-w-md text-xs leading-5 text-outline">
+                {filtrado
+                  ? "Limpe a busca ou troque a etapa para voltar a enxergar a carteira do mês."
+                  : "O primeiro contato registrado já aparece aqui e alimenta automaticamente os indicadores."}
+              </p>
             </div>
           )}
+
+          <Paginacao
+            pagina={pagina}
+            paginas={paginas}
+            parametros={parametrosPaginacao}
+            caminho="/captacao"
+            rotulo="Paginação da carteira de leads"
+          />
         </CardCorpo>
       </Card>
     </div>
