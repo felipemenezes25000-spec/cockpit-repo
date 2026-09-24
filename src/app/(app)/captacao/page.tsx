@@ -151,6 +151,8 @@ export default async function PaginaCaptacao({
             campanhas={painel.campanhas}
             gargalo={painel.gargalo}
             metaConfigurada={metaConfigurada}
+            motivosPerda={painel.motivosPerda}
+            totalPerdidos={painel.perdidos}
           />
 
           <LeadsDoFunil
