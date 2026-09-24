@@ -21,12 +21,19 @@ export function FiltrosLeads({
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
   const [enviado, setEnviado] = useState(busca);
+  const [buscaAnterior, setBuscaAnterior] = useState(busca);
   const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    setTermo(busca);
-    setEnviado(busca);
-  }, [busca]);
+  // Mesmo padrão da busca de Pacientes: URL nova atualiza o campo sem um
+  // efeito que dispara setState depois da pintura e sem atropelar texto ainda
+  // sendo digitado enquanto a navegação anterior termina.
+  if (busca !== buscaAnterior) {
+    setBuscaAnterior(busca);
+    if (busca !== enviado) {
+      setTermo(busca);
+      setEnviado(busca);
+    }
+  }
 
   useEffect(() => {
     const espera = relogio;
