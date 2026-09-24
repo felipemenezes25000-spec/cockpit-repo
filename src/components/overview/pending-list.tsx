@@ -30,14 +30,15 @@ export async function PendenciasDaClinica() {
   }
 
   return (
-    <Card className="flex flex-col">
+    <Card className="relative flex flex-col overflow-hidden">
+      <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-14 size-48 rounded-full bg-atencao-fundo/70 blur-3xl" />
       <CardCabecalho
         titulo="Pendências da clínica"
         descricao={
           atrasadas > 0 ? (
             <>
               {todas.length} em aberto ·{" "}
-              <span className="font-medium text-negativo">{atrasadas} fora do prazo</span>
+              <span className="font-semibold text-negativo">{atrasadas} fora do prazo</span>
             </>
           ) : (
             `${todas.length} em aberto`
@@ -45,15 +46,34 @@ export async function PendenciasDaClinica() {
         }
       />
 
-      <CardCorpo className="rolagem-discreta max-h-[560px] flex-1 overflow-y-auto">
+      <CardCorpo className="rolagem-discreta relative max-h-[560px] flex-1 overflow-y-auto">
         <Lista rotulo="Pendências da clínica">
           {visiveis.map((pendencia) => {
             const atrasada = (pendencia.prazoEmDias ?? 0) < 0;
 
             return (
-              <ItemLista key={pendencia.id}>
-                <div className="mb-2 flex items-start justify-between gap-3">
-                  <span className="rounded-[var(--radius-tag)] bg-surface-container-low px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
+              <ItemLista
+                key={pendencia.id}
+                className={cn(
+                  "premium-interactive relative overflow-hidden border bg-white/62 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  atrasada ? "border-negativo-borda/55 bg-negativo-fundo/28" : "border-card-border/75",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute inset-y-3 left-0 w-[3px] rounded-r-full",
+                    atrasada ? "bg-negativo" : "bg-primary-container/55",
+                  )}
+                />
+
+                <div className="mb-2 flex items-start justify-between gap-3 pl-1">
+                  <span className={cn(
+                    "rounded-[var(--radius-tag)] border px-2 py-1 text-[0.625rem] font-bold tracking-wider uppercase",
+                    atrasada
+                      ? "border-negativo-borda/60 bg-negativo-fundo/70 text-negativo"
+                      : "border-card-border/75 bg-white/60 text-outline",
+                  )}>
                     {ROTULO_PENDENCIA[pendencia.tipo]}
                   </span>
 
@@ -61,36 +81,34 @@ export async function PendenciasDaClinica() {
                     href={pendencia.destino}
                     aria-label={`Resolver: ${pendencia.descricao}`}
                     className={cn(
-                      "inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-cartao)] px-3 py-1.5 text-xs font-medium transition-colors",
+                      "group inline-flex shrink-0 items-center gap-1 rounded-[11px] px-3 py-1.5 text-xs font-semibold shadow-[var(--shadow-cartao)] transition-[transform,background-color,border-color,box-shadow] duration-150 hover:-translate-y-px active:translate-y-px active:scale-[0.985]",
                       atrasada
-                        ? "bg-primary-container text-on-primary hover:bg-primary"
-                        : "border border-primary text-primary hover:bg-surface-container-low",
+                        ? "border border-primary/10 bg-primary-container text-on-primary hover:bg-primary"
+                        : "border border-primary/15 bg-white/75 text-primary hover:border-primary/25 hover:bg-white hover:shadow-[var(--shadow-realce)]",
                     )}
                   >
                     Resolver
-                    <ChevronRight aria-hidden="true" size={14} strokeWidth={1.75} />
+                    <ChevronRight aria-hidden="true" size={14} strokeWidth={1.75} className="transition-transform duration-150 group-hover:translate-x-0.5" />
                   </Link>
                 </div>
 
-                {/* O nome em linha própria, inteiro: dividindo a linha com
-                    "Resolver", truncava mesmo com espaço sobrando embaixo. */}
                 {pendencia.paciente ? (
-                  <p className="mb-1 text-sm font-medium break-words text-on-surface">
+                  <p className="mb-1 pl-1 text-sm font-semibold break-words text-on-surface">
                     {pendencia.paciente}
                   </p>
                 ) : null}
 
-                <p className="mb-3 text-sm text-on-surface-variant">
+                <p className="mb-3 pl-1 text-sm leading-5 text-on-surface-variant">
                   {pendencia.descricao}
                 </p>
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pl-1">
                   <PrioridadeTag prioridade={pendencia.prioridade} />
                   {pendencia.prazo ? (
                     <span
                       className={cn(
                         "tabular text-xs",
-                        atrasada ? "font-medium text-negativo" : "text-outline",
+                        atrasada ? "font-semibold text-negativo" : "text-outline",
                       )}
                     >
                       {atrasada ? "Venceu " : "Prazo "}
@@ -108,7 +126,7 @@ export async function PendenciasDaClinica() {
       </CardCorpo>
 
       {todas.length > LIMITE ? (
-        <CardRodape className="flex flex-wrap items-center justify-between gap-3">
+        <CardRodape className="relative flex flex-wrap items-center justify-between gap-3">
           <span className="text-outline">
             {todas.length - LIMITE} pendências além destas
           </span>
