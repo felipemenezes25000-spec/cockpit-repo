@@ -30,9 +30,6 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
 
   return (
     <section className={`cabine ${estilos.palco} relative min-h-[34rem] overflow-hidden p-4 sm:p-6`} aria-labelledby="titulo-funil">
-      <div aria-hidden="true" className={`${estilos.luz} ${estilos.luzA}`} />
-      <div aria-hidden="true" className={`${estilos.luz} ${estilos.luzB}`} />
-
       <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="rotulo">Funil de captação e vendas</p>
@@ -65,7 +62,6 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
                   className={`${estilos.segmento} group relative min-h-[5.6rem] overflow-hidden px-5 py-3 text-left text-cabine-texto focus-visible:z-20`}
                   style={{ width: `${LARGURA[indice] ?? 47}%` }}
                 >
-                  <span aria-hidden="true" className={estilos.brilho} />
                   <span className="relative z-10 flex h-full items-center justify-between gap-3">
                     <span className="min-w-0">
                       <span className="block text-[0.68rem] font-semibold tracking-[0.08em] text-cabine-texto-secundario uppercase">
@@ -89,7 +85,7 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
             );
           })}
 
-          <span aria-hidden="true" className={`${estilos.particula}`} />
+          <span aria-hidden="true" className={estilos.particula} />
           <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula2}`} />
           <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula3}`} />
         </div>
