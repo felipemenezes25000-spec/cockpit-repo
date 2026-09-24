@@ -1,7 +1,8 @@
-import { Search } from "lucide-react";
+import { ArrowUpRight, CalendarClock, ClipboardPlus, FileText, Search, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Avatar } from "@/components/ui/avatar";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui/empty-state";
@@ -31,7 +32,19 @@ function verTodos(destino: string) {
   return <BotaoLink href={destino} tamanho="sm">Ver todos</BotaoLink>;
 }
 
-const linhaResultado = "premium-interactive block rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/58 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:border-primary-fixed-dim";
+const linhaResultado = "premium-interactive group relative block overflow-hidden rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/62 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] hover:border-primary/20 hover:bg-white/82";
+
+function IconeResultado({ children }: { children: ReactNode }) {
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-primary/10 bg-primary-fixed/42 text-primary shadow-[var(--shadow-cartao)] transition-transform duration-150 group-hover:scale-[1.04]">
+      {children}
+    </span>
+  );
+}
+
+function SetaResultado() {
+  return <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.65} className="shrink-0 text-outline-variant transition-[transform,color] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />;
+}
 
 export default async function PaginaBusca({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -63,7 +76,8 @@ export default async function PaginaBusca({ searchParams }: {
         }
       />
 
-      <form method="get" action="/busca" role="search" aria-label="Buscar em todos os módulos" className="premium-panel flex flex-col gap-3 rounded-[var(--radius-painel)] border p-4 sm:flex-row sm:p-5">
+      <form method="get" action="/busca" role="search" aria-label="Buscar em todos os módulos" className="premium-panel relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:flex-row sm:p-5">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-12 size-44 rounded-full bg-primary-fixed/45 blur-3xl" />
         <div className="relative min-w-0 flex-1">
           <Search aria-hidden="true" size={18} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
           <input
@@ -79,7 +93,7 @@ export default async function PaginaBusca({ searchParams }: {
             className={classeDeEntrada({ recuo: "busca" })}
           />
         </div>
-        <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary/10 bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary active:translate-y-px active:scale-[0.99]">
+        <button type="submit" className="relative inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary/10 bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary active:translate-y-px active:scale-[0.99]">
           <Search aria-hidden="true" size={16} strokeWidth={1.8} />
           Buscar
         </button>
@@ -101,9 +115,10 @@ export default async function PaginaBusca({ searchParams }: {
           </div>
 
           <div className="grid items-start gap-5 xl:grid-cols-2">
-            <Card>
+            <Card className="relative overflow-hidden">
+              <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 size-36 rounded-full bg-primary-fixed/32 blur-3xl" />
               <CardCabecalho titulo={`Pacientes · ${resultado.pacientes.total}`} descricao="Nome, contato ou CPF. Inclui cadastros arquivados." acao={resultado.pacientes.total > 0 ? verTodos(`/pacientes?busca=${query}&situacao=todas`) : undefined} />
-              <CardCorpo>
+              <CardCorpo className="relative">
                 {resultado.pacientes.itens.length === 0 ? (
                   <SemResultado>Nenhuma paciente encontrada. Tente outro nome ou contato.</SemResultado>
                 ) : (
@@ -111,11 +126,17 @@ export default async function PaginaBusca({ searchParams }: {
                     {resultado.pacientes.itens.slice(0, 6).map((p) => (
                       <li key={p.id}>
                         <Link href={`/pacientes/${p.id}`} className={linhaResultado}>
-                          <span className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="font-semibold text-on-surface">{p.exibicao}</span>
-                            {!p.ativo ? <SeloHero className="min-h-6 px-2 py-0 text-[0.66rem]">Arquivada</SeloHero> : null}
+                          <span className="flex items-center gap-3">
+                            <Avatar nome={p.exibicao} tom={p.ativo ? "marca" : "neutro"} />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-2">
+                                <span className="truncate font-semibold text-on-surface">{p.exibicao}</span>
+                                {!p.ativo ? <SeloHero className="min-h-6 px-2 py-0 text-[0.66rem]">Arquivada</SeloHero> : null}
+                              </span>
+                              <span className="mt-1 block truncate text-xs text-outline">{p.telefone || p.email || "Sem contato"}</span>
+                            </span>
+                            <SetaResultado />
                           </span>
-                          <span className="mt-1 block text-xs text-outline">{p.telefone || p.email || "Sem contato"}</span>
                         </Link>
                       </li>
                     ))}
@@ -124,9 +145,10 @@ export default async function PaginaBusca({ searchParams }: {
               </CardCorpo>
             </Card>
 
-            <Card>
+            <Card className="relative overflow-hidden">
+              <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 size-36 rounded-full bg-secondary-fixed/30 blur-3xl" />
               <CardCabecalho titulo={`Atendimentos · ${resultado.atendimentos.length}${resultado.maisAtendimentos ? "+" : ""}`} descricao="Por paciente, procedimento ou data; até 8 mais recentes." />
-              <CardCorpo>
+              <CardCorpo className="relative">
                 {resultado.atendimentos.length === 0 ? (
                   <SemResultado>Nenhum atendimento encontrado. Busque pelo nome, procedimento ou uma data.</SemResultado>
                 ) : (
@@ -134,12 +156,18 @@ export default async function PaginaBusca({ searchParams }: {
                     {resultado.atendimentos.map((a) => (
                       <li key={a.id}>
                         <Link href={a.href} className={linhaResultado}>
-                          <span className="flex flex-wrap items-start justify-between gap-2">
-                            <span>
-                              <span className="block font-semibold text-on-surface">{a.paciente}</span>
-                              <span className="mt-1 block text-xs text-outline">{a.procedimento} · {formatarData(a.inicio)} às {formatarHora(a.inicio)}</span>
+                          <span className="flex items-start gap-3">
+                            <IconeResultado><CalendarClock aria-hidden="true" size={17} strokeWidth={1.65} /></IconeResultado>
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-start justify-between gap-2">
+                                <span className="min-w-0">
+                                  <span className="block truncate font-semibold text-on-surface">{a.paciente}</span>
+                                  <span className="mt-1 block text-xs text-outline">{a.procedimento} · {formatarData(a.inicio)} às {formatarHora(a.inicio)}</span>
+                                </span>
+                                <SituacaoChip situacao={a.situacao} compacto />
+                              </span>
                             </span>
-                            <SituacaoChip situacao={a.situacao} compacto />
+                            <SetaResultado />
                           </span>
                         </Link>
                       </li>
@@ -150,7 +178,7 @@ export default async function PaginaBusca({ searchParams }: {
               </CardCorpo>
             </Card>
 
-            <Card>
+            <Card className="relative overflow-hidden">
               <CardCabecalho titulo={`Documentos${resultado.documentos ? ` · ${resultado.documentos.total}` : ""}`} descricao="Título ou paciente; acesso conforme seu perfil." acao={resultado.documentos?.total ? verTodos(`/formularios?busca=${query}`) : undefined} />
               <CardCorpo>
                 {!resultado.documentos ? (
@@ -162,8 +190,14 @@ export default async function PaginaBusca({ searchParams }: {
                     {resultado.documentos.itens.slice(0, 6).map((d) => (
                       <li key={d.id}>
                         <Link href={`/formularios/${d.id}`} className={linhaResultado}>
-                          <span className="block font-semibold text-on-surface">{d.titulo}</span>
-                          <span className="mt-1 block text-xs text-outline">{ROTULO_TIPO[d.tipo]} · {d.paciente} · {formatarData(d.emitidoEm)}</span>
+                          <span className="flex items-center gap-3">
+                            <IconeResultado><FileText aria-hidden="true" size={17} strokeWidth={1.65} /></IconeResultado>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-semibold text-on-surface">{d.titulo}</span>
+                              <span className="mt-1 block truncate text-xs text-outline">{ROTULO_TIPO[d.tipo]} · {d.paciente} · {formatarData(d.emitidoEm)}</span>
+                            </span>
+                            <SetaResultado />
+                          </span>
                         </Link>
                       </li>
                     ))}
@@ -173,7 +207,7 @@ export default async function PaginaBusca({ searchParams }: {
             </Card>
 
             {administradora ? (
-              <Card>
+              <Card className="relative overflow-hidden">
                 <CardCabecalho titulo={`Prontuários${resultado.prontuarios ? ` · ${resultado.prontuarios.total}` : ""}`} descricao="Registros clínicos visíveis apenas para a administradora." acao={resultado.prontuarios?.total ? verTodos(`/prontuarios?busca=${query}`) : undefined} />
                 <CardCorpo>
                   {!resultado.prontuarios ? (
@@ -185,8 +219,14 @@ export default async function PaginaBusca({ searchParams }: {
                       {resultado.prontuarios.itens.slice(0, 6).map((p) => (
                         <li key={p.id}>
                           <Link href={`/prontuarios/${p.id}`} className={linhaResultado}>
-                            <span className="block font-semibold text-on-surface">{p.titulo}</span>
-                            <span className="mt-1 block text-xs text-outline">{p.paciente} · {formatarData(p.dataRegistro)}</span>
+                            <span className="flex items-center gap-3">
+                              <IconeResultado><ClipboardPlus aria-hidden="true" size={17} strokeWidth={1.65} /></IconeResultado>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-semibold text-on-surface">{p.titulo}</span>
+                                <span className="mt-1 block truncate text-xs text-outline">{p.paciente} · {formatarData(p.dataRegistro)}</span>
+                              </span>
+                              <SetaResultado />
+                            </span>
                           </Link>
                         </li>
                       ))}
@@ -196,6 +236,13 @@ export default async function PaginaBusca({ searchParams }: {
               </Card>
             ) : null}
           </div>
+
+          {totalVisivel > 0 ? (
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs text-outline">
+              <Users aria-hidden="true" size={14} />
+              <span>Resultados organizados por contexto para entrar direto no registro certo.</span>
+            </div>
+          ) : null}
         </>
       )}
     </div>
