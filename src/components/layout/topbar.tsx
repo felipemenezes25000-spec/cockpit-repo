@@ -8,6 +8,7 @@ import { MenuPerfil } from "./profile-menu";
 import { capitalizar, formatarDataExtenso } from "@/lib/format";
 import { hoje } from "@/lib/dates";
 import { itemAtivo } from "@/lib/nav";
+import { cn } from "@/lib/cn";
 import type { UsuarioAtual } from "@/lib/perfil";
 
 export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () => void; usuario: UsuarioAtual; pendenciasAltas: number }>(function BarraSuperior({ aoAbrirGaveta, usuario, pendenciasAltas }, ref) {
@@ -15,6 +16,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
   const item = itemAtivo(caminho ?? "/");
   const buscaRef = useRef<HTMLInputElement>(null);
   const [comandosAbertos, setComandosAbertos] = useState(false);
+  const [elevada, setElevada] = useState(false);
 
   useEffect(() => {
     function atalho(evento: KeyboardEvent) {
@@ -45,13 +47,29 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
     return () => window.removeEventListener("keydown", atalho);
   }, []);
 
+  useEffect(() => {
+    function aoRolar() {
+      setElevada(window.scrollY > 8);
+    }
+    aoRolar();
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    return () => window.removeEventListener("scroll", aoRolar);
+  }, []);
+
+  const titulo = caminho === "/busca" ? "Busca global" : item?.rotulo ?? "Cockpit";
+
   return (
     <>
-      <header className="glass-surface sticky top-0 z-30 flex min-h-16 items-center justify-between gap-2 border-b px-3 py-2 sm:min-h-20 sm:gap-4 sm:px-6 xl:px-10 2xl:px-14">
+      <header className={cn(
+        "glass-surface sticky top-0 z-30 flex min-h-16 items-center justify-between gap-2 border-b px-3 py-2 transition-[background-color,box-shadow,border-color] duration-300 sm:min-h-20 sm:gap-4 sm:px-6 xl:px-10 2xl:px-14",
+        elevada
+          ? "border-card-border/95 bg-white/86 shadow-[0_12px_36px_-26px_rgba(8,41,76,0.42),inset_0_1px_0_rgba(255,255,255,0.95)]"
+          : "border-card-border/65 shadow-none",
+      )}>
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
           <button ref={ref} type="button" onClick={aoAbrirGaveta} aria-label="Abrir menu" className="flex size-10 shrink-0 items-center justify-center rounded-[12px] text-on-surface-variant transition-[transform,background-color,color] duration-200 hover:bg-primary-fixed/40 hover:text-primary active:scale-95 lg:hidden"><Menu aria-hidden="true" size={22} strokeWidth={1.6} /></button>
           <div className="min-w-0">
-            <h1 className="line-clamp-2 text-base leading-tight font-semibold tracking-[-0.02em] break-words text-primary sm:line-clamp-1 sm:text-[1.45rem]">{caminho === "/busca" ? "Busca global" : item?.rotulo ?? "Cockpit"}</h1>
+            <h1 key={titulo} className="page-reveal line-clamp-2 text-base leading-tight font-semibold tracking-[-0.02em] break-words text-primary sm:line-clamp-1 sm:text-[1.45rem]">{titulo}</h1>
             <p className="mt-1 hidden truncate text-xs font-medium text-outline sm:block">{capitalizar(formatarDataExtenso(hoje()))}</p>
           </div>
         </div>
@@ -71,7 +89,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
           <div className="flex items-center gap-1 sm:gap-3">
             <button type="button" aria-disabled="true" title="A central de notificações chega em uma próxima etapa" aria-label={`Notificações — ${pendenciasAltas} ${pendenciasAltas === 1 ? "pendência" : "pendências"} de prioridade alta. A central de notificações chega em uma próxima etapa.`} className="relative flex size-10 cursor-not-allowed items-center justify-center rounded-[12px] text-on-surface-variant">
               <Bell aria-hidden="true" size={21} strokeWidth={1.6} />
-              {pendenciasAltas > 0 ? <span aria-hidden="true" className="tabular absolute top-0.5 right-0.5 flex min-w-4.5 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[0.58rem] font-bold text-on-primary shadow-sm">{pendenciasAltas}</span> : null}
+              {pendenciasAltas > 0 ? <span aria-hidden="true" className="tabular absolute top-0.5 right-0.5 flex min-w-4.5 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[0.58rem] font-bold text-on-primary shadow-[0_2px_8px_rgba(187,0,0,0.2)]">{pendenciasAltas}</span> : null}
             </button>
             <div className="sm:border-l sm:border-card-border/80 sm:pl-3"><MenuPerfil usuario={usuario} /></div>
           </div>
