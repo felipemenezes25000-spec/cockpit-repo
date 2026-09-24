@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { termoDeBusca } from "@/lib/busca";
 import { comoClienteCaptacao, type EtapaLead } from "@/lib/captacao-banco";
-import { diferencaEmDias } from "@/lib/dates";
+import { diferencaEmDias, inicioDoDia, somarDias } from "@/lib/dates";
 import { falhaDeConsulta } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import type { Periodo } from "@/lib/periodo";
@@ -13,6 +13,7 @@ import { paginaAlemDoFim } from "./todas-as-linhas";
 export const LEADS_POR_PAGINA = 15;
 
 export type FiltroEtapaLead = EtapaLead | "todos";
+export type FiltroAtencaoLead = "todos" | "parados";
 
 export type MovimentoLead = {
   de: EtapaLead | null;
@@ -48,6 +49,7 @@ export const listarLeadsCaptacao = cache(
     paginaRecebida = 1,
     origem = "",
     campanha = "",
+    atencao: FiltroAtencaoLead = "todos",
   ): Promise<PaginaDeLeads> => {
     const base = await clienteServidor();
     const supabase = comoClienteCaptacao(base);
@@ -56,6 +58,9 @@ export const listarLeadsCaptacao = cache(
     const digitos = termo.replace(/\D/g, "");
     const origemExata = origem.trim().slice(0, 60);
     const campanhaExata = campanha.trim().slice(0, 120);
+    // Três dias de calendário ou mais: no dia 24, qualquer movimento feito no
+    // dia 21 já pede atenção, independentemente da hora em que aconteceu.
+    const limiteParado = somarDias(inicioDoDia(), -2);
     const frase = "Não foi possível carregar a carteira de leads.";
 
     const montar = (contagem: { count: "exact"; head?: boolean }) => {
@@ -71,6 +76,11 @@ export const listarLeadsCaptacao = cache(
       if (etapa !== "todos") consulta = consulta.eq("etapa", etapa);
       if (origemExata) consulta = consulta.eq("origem", origemExata);
       if (campanhaExata) consulta = consulta.eq("campanha", campanhaExata);
+      if (atencao === "parados") {
+        consulta = consulta
+          .lt("atualizado_em", limiteParado.toISOString())
+          .not("etapa", "in", "(ganho,perdido)");
+      }
 
       if (termo) {
         const alvos = [
@@ -88,10 +98,11 @@ export const listarLeadsCaptacao = cache(
 
     const lerPagina = (numero: number) => {
       const de = (numero - 1) * LEADS_POR_PAGINA;
-      return montar({ count: "exact" })
-        .order("criado_em", { ascending: false })
-        .order("id", { ascending: true })
-        .range(de, de + LEADS_POR_PAGINA - 1);
+      const consulta = montar({ count: "exact" });
+      const ordenada = atencao === "parados"
+        ? consulta.order("atualizado_em", { ascending: true }).order("id", { ascending: true })
+        : consulta.order("criado_em", { ascending: false }).order("id", { ascending: true });
+      return ordenada.range(de, de + LEADS_POR_PAGINA - 1);
     };
 
     let resposta = await lerPagina(pagina);
