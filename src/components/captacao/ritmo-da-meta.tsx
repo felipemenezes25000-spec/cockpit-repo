@@ -104,12 +104,14 @@ export function RitmoDaMeta({
   ticketReal,
   ticketPlanejado,
   metaFaturamento,
+  metaConfigurada,
 }: {
   plano: PlanoDaMeta;
   ritmo: RitmoMensal;
   ticketReal: number;
   ticketPlanejado: number;
   metaFaturamento: number;
+  metaConfigurada: boolean;
 }) {
   const atual = ritmo.situacao === "atual";
   const passado = ritmo.situacao === "passado";
@@ -117,9 +119,12 @@ export function RitmoDaMeta({
     ? "Resultado do mês"
     : atual
       ? "Projeção no ritmo atual"
-      : "Meta planejada";
+      : metaConfigurada
+        ? "Meta planejada"
+        : "Período futuro";
   const valorProjecao = passado || atual ? ritmo.projecaoFaturamento : metaFaturamento;
   const percentualProjetado = Math.round(ritmo.projecaoPercentualMeta);
+  const vazio = "—";
 
   return (
     <Card>
@@ -130,23 +135,29 @@ export function RitmoDaMeta({
               <p className="rotulo text-primary">Ritmo do mês</p>
               <span
                 className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[0.65rem] font-semibold ${
-                  atual
-                    ? "border-informativo-borda bg-informativo-fundo text-informativo-texto"
-                    : passado
-                      ? "border-card-border bg-surface-container-low text-outline"
-                      : "border-atencao-borda bg-atencao-fundo text-atencao"
+                  !metaConfigurada
+                    ? "border-atencao-borda bg-atencao-fundo text-atencao"
+                    : atual
+                      ? "border-informativo-borda bg-informativo-fundo text-informativo-texto"
+                      : passado
+                        ? "border-card-border bg-surface-container-low text-outline"
+                        : "border-atencao-borda bg-atencao-fundo text-atencao"
                 }`}
               >
-                {atual ? "em andamento" : passado ? "mês encerrado" : "planejamento futuro"}
+                {!metaConfigurada ? "aguardando meta" : atual ? "em andamento" : passado ? "mês encerrado" : "planejamento futuro"}
               </span>
             </div>
-            <h2 className="titulo-secao mt-1.5">A meta virou uma cadência operacional</h2>
+            <h2 className="titulo-secao mt-1.5">
+              {metaConfigurada ? "A meta virou uma cadência operacional" : "O realizado já existe; falta definir o alvo"}
+            </h2>
             <p className="mt-1 text-xs leading-5 text-outline">
-              {atual
-                ? "A projeção estende a média realizada até hoje; é ritmo de execução, não previsão estatística."
-                : passado
-                  ? "O mês já terminou: a leitura abaixo preserva o resultado final e o funil que foi necessário."
-                  : "Para um mês futuro, o Cockpit distribui a meta e o esforço comercial ao longo de todos os dias do período."}
+              {!metaConfigurada
+                ? "O Cockpit consegue projetar o faturamento já realizado, mas só calcula ritmo, vendas e leads necessários depois que a meta for salva."
+                : atual
+                  ? "A projeção estende a média realizada até hoje; é ritmo de execução, não previsão estatística."
+                  : passado
+                    ? "O mês já terminou: a leitura abaixo preserva o resultado final e o funil que foi necessário."
+                    : "Para um mês futuro, o Cockpit distribui a meta e o esforço comercial ao longo de todos os dias do período."}
             </p>
           </div>
 
@@ -155,7 +166,7 @@ export function RitmoDaMeta({
             <div>
               <p className="text-[0.65rem] font-semibold tracking-[0.06em] text-outline uppercase">Ticket real / planejado</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-on-surface">
-                {formatarMoeda(ticketReal)} <span className="font-normal text-outline">/ {formatarMoeda(ticketPlanejado)}</span>
+                {formatarMoeda(ticketReal)} <span className="font-normal text-outline">/ {metaConfigurada ? formatarMoeda(ticketPlanejado) : vazio}</span>
               </p>
             </div>
           </div>
@@ -164,37 +175,59 @@ export function RitmoDaMeta({
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <BlocoRitmo
             rotulo={tituloProjecao}
-            valor={formatarMoeda(valorProjecao)}
+            valor={!metaConfigurada && ritmo.situacao === "futuro" ? vazio : formatarMoeda(valorProjecao)}
             detalhe={
-              atual && metaFaturamento > 0
-                ? `${percentualProjetado}% da meta se o ritmo médio do mês continuar.`
-                : passado && metaFaturamento > 0
-                  ? `${percentualProjetado}% da meta mensal realizada.`
-                  : `Alvo financeiro definido para ${ritmo.diasNoMes} dias.`
+              !metaConfigurada
+                ? atual
+                  ? "Projeção do faturamento realizado até hoje, ainda sem comparação com uma meta."
+                  : passado
+                    ? "Resultado financeiro do período, ainda sem meta cadastrada para comparação."
+                    : "Defina a meta deste mês para transformar o período futuro em planejamento comercial."
+                : atual && metaFaturamento > 0
+                  ? `${percentualProjetado}% da meta se o ritmo médio do mês continuar.`
+                  : passado && metaFaturamento > 0
+                    ? `${percentualProjetado}% da meta mensal realizada.`
+                    : `Alvo financeiro distribuído em ${ritmo.diasNoMes} dias.`
             }
             icone={TrendingUp}
-            destaque={atual && metaFaturamento > 0 && ritmo.projecaoFaturamento >= metaFaturamento}
+            destaque={metaConfigurada && atual && metaFaturamento > 0 && ritmo.projecaoFaturamento >= metaFaturamento}
           />
           <BlocoRitmo
             rotulo={passado ? "Gap final" : "Ritmo financeiro"}
-            valor={passado ? formatarMoeda(plano.gapFinanceiro) : `${formatarMoeda(ritmo.ritmoFinanceiroDia)}/dia`}
+            valor={
+              !metaConfigurada
+                ? vazio
+                : passado
+                  ? formatarMoeda(plano.gapFinanceiro)
+                  : `${formatarMoeda(ritmo.ritmoFinanceiroDia)}/dia`
+            }
             detalhe={
-              passado
-                ? plano.gapFinanceiro > 0
-                  ? "Diferença entre o realizado e a meta encerrada."
-                  : "A meta foi alcançada ou superada."
-                : `Gap atual de ${formatarMoeda(plano.gapFinanceiro)} distribuído pelo restante do mês.`
+              !metaConfigurada
+                ? "Disponível depois de definir a meta financeira do período."
+                : passado
+                  ? plano.gapFinanceiro > 0
+                    ? "Diferença entre o realizado e a meta encerrada."
+                    : "A meta foi alcançada ou superada."
+                  : `Gap atual de ${formatarMoeda(plano.gapFinanceiro)} distribuído pelo restante do mês.`
             }
             icone={CircleDollarSign}
-            destaque={!passado && plano.gapFinanceiro > 0}
+            destaque={metaConfigurada && !passado && plano.gapFinanceiro > 0}
           />
           <BlocoRitmo
             rotulo={passado ? "Vendas necessárias" : "Cadência comercial"}
-            valor={passado ? `${plano.vendasNecessarias}` : `${textoDecimal(ritmo.vendasPorDia)} vendas/dia`}
+            valor={
+              !metaConfigurada
+                ? vazio
+                : passado
+                  ? `${plano.vendasNecessarias}`
+                  : `${textoDecimal(ritmo.vendasPorDia)} vendas/dia`
+            }
             detalhe={
-              passado
-                ? "Leitura do gap usando o ticket planejado configurado."
-                : `${textoDecimal(ritmo.leadsPorDia)} leads/dia no topo com as taxas planejadas atuais.`
+              !metaConfigurada
+                ? "Ticket e taxas de conversão entram no cálculo depois que a meta for configurada."
+                : passado
+                  ? "Leitura do gap usando o ticket planejado configurado."
+                  : `${textoDecimal(ritmo.leadsPorDia)} leads/dia no topo com as taxas planejadas atuais.`
             }
             icone={Crosshair}
           />
@@ -216,17 +249,21 @@ export function RitmoDaMeta({
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
             <div className="shrink-0 px-2 py-2 xl:w-48">
               <p className="rotulo text-primary">Funil inverso</p>
-              <p className="mt-1 text-xs leading-5 text-outline">O esforço restante sobe da receita até a entrada de novos contatos.</p>
+              <p className="mt-1 text-xs leading-5 text-outline">
+                {metaConfigurada
+                  ? "O esforço restante sobe da receita até a entrada de novos contatos."
+                  : "Salve a meta para o Cockpit calcular o esforço necessário em cada etapa."}
+              </p>
             </div>
 
             <ArrowRight aria-hidden="true" size={18} className="hidden shrink-0 text-outline xl:block" />
 
             <div className="grid min-w-0 flex-1 grid-cols-2 gap-1 sm:grid-cols-3 xl:grid-cols-5">
-              <Numero rotulo="Gap financeiro" valor={formatarMoeda(plano.gapFinanceiro)} icone={CircleDollarSign} />
-              <Numero rotulo="Vendas" valor={`+${plano.vendasNecessarias.toLocaleString("pt-BR")}`} icone={Crosshair} />
-              <Numero rotulo="Agendamentos" valor={`+${plano.agendamentosNecessarios.toLocaleString("pt-BR")}`} icone={CalendarPlus2} />
-              <Numero rotulo="Qualificados" valor={`+${plano.qualificadosNecessarios.toLocaleString("pt-BR")}`} icone={UsersRound} />
-              <Numero rotulo="Leads" valor={`+${plano.leadsNecessarios.toLocaleString("pt-BR")}`} icone={UsersRound} destaque />
+              <Numero rotulo="Gap financeiro" valor={metaConfigurada ? formatarMoeda(plano.gapFinanceiro) : vazio} icone={CircleDollarSign} />
+              <Numero rotulo="Vendas" valor={metaConfigurada ? `+${plano.vendasNecessarias.toLocaleString("pt-BR")}` : vazio} icone={Crosshair} />
+              <Numero rotulo="Agendamentos" valor={metaConfigurada ? `+${plano.agendamentosNecessarios.toLocaleString("pt-BR")}` : vazio} icone={CalendarPlus2} />
+              <Numero rotulo="Qualificados" valor={metaConfigurada ? `+${plano.qualificadosNecessarios.toLocaleString("pt-BR")}` : vazio} icone={UsersRound} />
+              <Numero rotulo="Leads" valor={metaConfigurada ? `+${plano.leadsNecessarios.toLocaleString("pt-BR")}` : vazio} icone={UsersRound} destaque={metaConfigurada} />
             </div>
           </div>
         </div>
