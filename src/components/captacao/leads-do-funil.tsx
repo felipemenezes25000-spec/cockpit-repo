@@ -107,6 +107,10 @@ function MoverLead({ lead }: { lead: LeadDoPainel }) {
   const [estado, executar] = useActionState(mudarEtapaLead, ACAO_INICIAL);
   const [para, setPara] = useState(lead.etapa);
 
+  useEffect(() => {
+    setPara(lead.etapa);
+  }, [lead.etapa]);
+
   return (
     <form action={executar} className="flex min-w-[13rem] flex-col gap-2 sm:items-end">
       <input type="hidden" name="id" value={lead.id} />
