@@ -1,11 +1,11 @@
 "use client";
 
-import { CalendarCheck, CircleAlert, Info, LoaderCircle } from "lucide-react";
+import { CalendarCheck, CircleAlert, Info } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { SeletorPaciente } from "./seletor-paciente";
 import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
+import { BotaoDeAcao } from "@/components/ui/formulario-acao";
 import { cn } from "@/lib/cn";
 import type {
   CatalogoAgenda,
@@ -31,27 +31,17 @@ export type ValoresAtendimento = {
 };
 
 function BotaoSalvar({ rotulo, indisponivel }: { rotulo: string; indisponivel: boolean }) {
-  const { pending } = useFormStatus();
-
   return (
-    <button
-      type="submit"
-      disabled={pending || indisponivel}
-      aria-busy={pending || undefined}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+    <BotaoDeAcao
+      tom="primario"
+      tamanho="md"
+      icone={<CalendarCheck size={18} strokeWidth={1.75} />}
+      rotuloPendente="Salvando…"
+      indisponivel={indisponivel}
+      motivoIndisponivel={indisponivel ? "Cadastre ao menos uma profissional e um procedimento ativo antes de salvar." : undefined}
     >
-      {pending ? (
-        <>
-          <LoaderCircle aria-hidden="true" size={18} className="animate-spin" />
-          Salvando…
-        </>
-      ) : (
-        <>
-          <CalendarCheck aria-hidden="true" size={18} strokeWidth={1.75} />
-          {rotulo}
-        </>
-      )}
-    </button>
+      {rotulo}
+    </BotaoDeAcao>
   );
 }
 
@@ -203,7 +193,6 @@ export function FormularioAtendimento({
             name="profissional_id"
             required
             defaultValue={
-              // Uma profissional só: já vem escolhida.
               de("profissional_id") ||
               (catalogo.profissionais.length === 1 ? catalogo.profissionais[0].id : "")
             }
@@ -303,8 +292,6 @@ export function FormularioAtendimento({
 
       <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
         <BotaoSalvar rotulo={rotuloSalvar} indisponivel={semProfissional || semProcedimento} />
-        {/* "Voltar sem salvar", não "Cancelar": na edição, "Cancelar" é o
-            botão que cancela o ATENDIMENTO, logo acima. */}
         <Link
           href={cancelarPara}
           className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
