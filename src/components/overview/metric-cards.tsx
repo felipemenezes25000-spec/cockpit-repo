@@ -21,13 +21,15 @@ type Indicador = {
   href: string;
   financeiro?: boolean;
   enfase?: "atencao" | "negativo";
+  progresso?: number;
 };
 
 export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
   const n = await indicadores();
+  const proporcao = (parte: number, total: number) => total > 0 ? Math.max(0, Math.min(1, parte / total)) : 0;
   const lista: Indicador[] = [
-    { rotulo: "Atendimentos de hoje", valor: String(n.atendimentosHoje), apoio: `${n.concluidos} já ${n.concluidos === 1 ? "concluído" : "concluídos"}`, icone: CalendarDays, href: "/agenda" },
-    { rotulo: "Confirmados", valor: String(n.confirmados), apoio: `de ${n.atendimentosHoje} na agenda de hoje`, icone: BadgeCheck, href: "/agenda" },
+    { rotulo: "Atendimentos de hoje", valor: String(n.atendimentosHoje), apoio: `${n.concluidos} já ${n.concluidos === 1 ? "concluído" : "concluídos"}`, icone: CalendarDays, href: "/agenda", progresso: proporcao(n.concluidos, n.atendimentosHoje) },
+    { rotulo: "Confirmados", valor: String(n.confirmados), apoio: `de ${n.atendimentosHoje} na agenda de hoje`, icone: BadgeCheck, href: "/agenda", progresso: proporcao(n.confirmados, n.atendimentosHoje) },
     { rotulo: "Confirmações pendentes", valor: String(n.confirmacoesPendentes), apoio: n.confirmacoesPendentes > 0 ? "precisam de contato hoje" : "nenhuma em aberto", icone: Clock3, href: "/agenda", enfase: n.confirmacoesPendentes > 0 ? "atencao" : undefined },
     { rotulo: "Aguardando retorno", valor: String(n.aguardandoRetorno), apoio: "pacientes na janela de contato", icone: Repeat2, href: "/relacionamento" },
     { rotulo: "Recebido no mês", valor: formatarMoeda(n.recebidoNoMes), apoio: "lançamentos já quitados", icone: Wallet, href: "/financeiro", financeiro: true },
@@ -74,6 +76,15 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
                 {ind.valor}
               </span>
 
+              {typeof ind.progresso === "number" ? (
+                <span aria-hidden="true" className="relative mb-2.5 mt-1 h-1.5 overflow-hidden rounded-full bg-primary-fixed/45">
+                  <span
+                    className="block h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary-container),var(--color-primary))] shadow-[0_0_10px_rgba(10,110,209,0.2)] transition-[width] duration-500"
+                    style={{ width: `${Math.round(ind.progresso * 100)}%` }}
+                  />
+                </span>
+              ) : null}
+
               <div className="relative mt-auto flex items-end justify-between gap-2">
                 <span className={cn(
                   "leading-5",
@@ -86,11 +97,7 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
                 )}>
                   {ind.apoio}
                 </span>
-                <ArrowUpRight
-                  aria-hidden="true"
-                  size={15}
-                  className="mb-0.5 shrink-0 text-outline-variant transition-[transform,color] duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary"
-                />
+                <ArrowUpRight aria-hidden="true" size={15} className="mb-0.5 shrink-0 text-outline-variant transition-[transform,color] duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
               </div>
 
               {ind.financeiro && exemplo ? (
