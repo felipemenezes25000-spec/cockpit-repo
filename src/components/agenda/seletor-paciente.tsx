@@ -16,11 +16,18 @@ export function SeletorPaciente({
   erro,
   obrigatorio = true,
   aoEscolher,
+  idPrefix = "busca-paciente",
 }: {
   inicial: PacienteParaSelecao | null;
   erro?: string;
   obrigatorio?: boolean;
   aoEscolher?: (paciente: PacienteParaSelecao | null) => void;
+  /**
+   * Identificador visual/acessível do controle. O nome enviado ao formulário
+   * continua sendo `paciente_id`; o prefixo só evita ids HTML repetidos quando
+   * uma tela tem mais de um seletor, como a carteira de Captação.
+   */
+  idPrefix?: string;
 }) {
   const [escolhida, setEscolhida] = useState<PacienteParaSelecao | null>(inicial);
   const [termo, setTermo] = useState("");
@@ -34,6 +41,7 @@ export function SeletorPaciente({
   const campo = useRef<HTMLInputElement>(null);
   const oculto = useRef<HTMLInputElement>(null);
   const trocar = useRef<HTMLButtonElement>(null);
+  const idErro = `${idPrefix}-erro`;
 
   const listaAberta = opcoes.length > 0 && !listaFechada;
 
@@ -73,13 +81,16 @@ export function SeletorPaciente({
     const formulario = oculto.current?.form;
     if (!formulario) return;
     function aoResetar() {
+      setEscolhida(null);
       setTermo("");
       setOpcoes([]);
       setDestacada(-1);
+      setListaFechada(false);
+      aoEscolher?.(null);
     }
     formulario.addEventListener("reset", aoResetar);
     return () => formulario.removeEventListener("reset", aoResetar);
-  }, []);
+  }, [aoEscolher]);
 
   useEffect(() => {
     if (escolhida || termo.trim().length < 2) {
@@ -114,7 +125,7 @@ export function SeletorPaciente({
   }, [termo, escolhida]);
 
   return (
-    <Campo id="busca-paciente" rotulo="Paciente" obrigatorio={obrigatorio} erro={erro}>
+    <Campo id={idPrefix} rotulo="Paciente" obrigatorio={obrigatorio} erro={erro}>
       <input ref={oculto} type="hidden" name="paciente_id" value={escolhida?.id ?? ""} />
 
       {escolhida ? (
@@ -152,7 +163,7 @@ export function SeletorPaciente({
           <Search aria-hidden="true" size={16} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors" />
           <input
             ref={campo}
-            id="busca-paciente"
+            id={idPrefix}
             type="text"
             role="combobox"
             aria-expanded={listaAberta}
@@ -168,7 +179,7 @@ export function SeletorPaciente({
               setDestacada(-1);
             }}
             onFocus={() => setListaFechada(false)}
-            aria-describedby={erro ? "busca-paciente-erro" : undefined}
+            aria-describedby={erro ? idErro : undefined}
             placeholder="Buscar por nome, telefone ou CPF"
             className={cn(classeDeEntrada({ recuo: "icone" }), erro && ENTRADA_ERRO)}
             {...(erro ? { "aria-invalid": true as const } : {})}
