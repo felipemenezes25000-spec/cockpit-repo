@@ -2,8 +2,8 @@
 -- Migração 0029: captação, funil comercial e metas mensais
 --
 -- O módulo nasce separado de Pacientes: lead ainda não é paciente. Quando a
--- pessoa entra de fato na clínica, o lead pode ser vinculado a `pacientes` e
--- uma venda vinculada ao mesmo paciente converte o lead aberto mais recente.
+-- pessoa entra de fato na clínica, o lead pode ser vinculado a `pacientes`;
+-- agendamento e venda passam a avançar o funil pelo próprio banco.
 -- =====================================================================
 
 create type public.etapa_lead as enum (
@@ -108,7 +108,42 @@ create trigger lead_etapa_historico
   after insert or update of etapa on public.leads
   for each row execute function private.lead_registrar_etapa();
 
--- Quando uma venda nasce, converte o lead aberto mais recente daquele paciente.
+-- Um horário novo é evidência de avanço comercial. Só mexe em lead aberto e
+-- vinculado à paciente; não reabre perdido nem retrocede quem já virou venda.
+create or replace function private.atendimento_avanca_lead()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  alvo uuid;
+begin
+  select id into alvo
+    from public.leads
+   where paciente_id = new.paciente_id
+     and etapa in ('novo', 'qualificado')
+   order by criado_em desc, id desc
+   limit 1;
+
+  if alvo is not null then
+    update public.leads
+       set etapa = 'agendamento',
+           motivo_perda = null
+     where id = alvo;
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function private.atendimento_avanca_lead() from public, anon, authenticated;
+
+create trigger atendimento_avanca_lead
+  after insert on public.atendimentos
+  for each row execute function private.atendimento_avanca_lead();
+
+-- Quando uma venda nasce, converte o lead aberto mais recente daquela paciente.
 -- Isso fecha o ciclo sem fazer o Financeiro conhecer regras de interface da Captação.
 create or replace function private.venda_converte_lead()
 returns trigger
