@@ -32,8 +32,8 @@ export function ResumoDaPaciente({
       <CardCabecalho titulo="Resumo" descricao="Relação operacional da paciente com a clínica." />
       <CardCorpo className="grid grid-cols-3 gap-2.5">
         {linhas.map(({ rotulo, valor, icone: Icone, tom }) => (
-          <div key={rotulo} className="min-w-0 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/58 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)]">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary-fixed/38 text-primary">
+          <div key={rotulo} className="min-w-0 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+            <span className="flex size-7 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
               <Icone aria-hidden="true" size={14} strokeWidth={1.75} />
             </span>
             <p className={cn(
@@ -49,7 +49,7 @@ export function ResumoDaPaciente({
         ))}
 
         {exemplo ? (
-          <p className="col-span-3 border-t border-card-border/70 pt-3 text-[0.625rem] text-outline uppercase">Valores demonstrativos</p>
+          <p className="col-span-3 border-t border-card-border pt-3 text-[0.625rem] text-outline uppercase">Valores demonstrativos</p>
         ) : null}
       </CardCorpo>
     </Card>
@@ -62,7 +62,7 @@ export function PendenciasDaPaciente({ pendencias }: { pendencias: PendenciaDaFi
       <Card>
         <CardCabecalho titulo="Pendências" />
         <CardCorpo className="flex items-center gap-3 rounded-b-[var(--radius-painel)] text-sm text-on-surface-variant">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-positivo-fundo text-positivo">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-positivo-fundo text-positivo">
             <CircleCheck aria-hidden="true" size={18} strokeWidth={1.6} />
           </span>
           <div>
@@ -110,7 +110,7 @@ export function RetornosDaPaciente({ retornos }: { retornos: RetornoDaFicha[] })
           {retornos.map((retorno) => (
             <ItemLista key={retorno.id}>
               <div className="flex items-start gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary-fixed/40 text-primary">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
                   <Repeat2 aria-hidden="true" size={15} strokeWidth={1.65} />
                 </span>
                 <div className="min-w-0">

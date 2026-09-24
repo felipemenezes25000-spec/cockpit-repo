@@ -48,7 +48,7 @@ export function FormularioPaciente({ acao, inicial, pacienteId, rotuloSalvar = "
   return (
     <form action={enviar} className="flex flex-col gap-8" noValidate>
       {pacienteId ? <input type="hidden" name="id" value={pacienteId} /> : null}
-      {erros.geral ? <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"><CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />{erros.geral}</p> : null}
+      {erros.geral ? <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"><CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />{erros.geral}</p> : null}
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Campo id="nome" rotulo="Nome completo" obrigatorio erro={erros.nome}><input id="nome" name="nome" type="text" required autoComplete="name" maxLength={120} defaultValue={de("nome")} placeholder="Maria Aparecida da Silva" className={cn(ENTRADA, erros.nome && ENTRADA_ERRO)} {...marcar("nome")} /></Campo>
@@ -87,7 +87,7 @@ export function FormularioPaciente({ acao, inicial, pacienteId, rotuloSalvar = "
 
       <RodapeAcoesFormulario>
         <BotaoSalvar rotulo={rotuloSalvar} />
-        <Link href={cancelarPara} className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] hover:bg-primary-fixed/35 hover:text-primary active:scale-[0.985]">Cancelar</Link>
+        <Link href={cancelarPara} className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] hover:bg-selecao hover:text-primary active:scale-[0.985]">Cancelar</Link>
       </RodapeAcoesFormulario>
     </form>
   );

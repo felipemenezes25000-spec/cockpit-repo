@@ -2,9 +2,10 @@
 
 @source not "../../docs";
 
-/* Cockpit Consultório — Clinical Precision
-   Marca e estados continuam separados. Os tokens abaixo adicionam profundidade,
-   movimento e superfícies sem sacrificar contraste ou semântica. */
+/* Cockpit Consultório — sistema "Cockpit" (setembro de 2026)
+   Claro, plano e no azul da marca. Painel não tem sombra: tem uma linha de 1px.
+   A única cor cheia da tela é a cabine, no azul de AÇÃO. Estados continuam
+   separados da marca e sempre vêm com texto e ícone. */
 @theme {
   --color-surface: #ffffff;
   --color-surface-bright: #fcfcfd;
@@ -14,23 +15,42 @@
   --color-surface-container-high: #e6e9ed;
   --color-surface-variant: #e1e4e8;
 
-  --color-card: #fbfcfe;
+  /* Fundo da página, atrás dos painéis. */
+  --color-fundo: #f6f9fc;
+
+  --color-card: #ffffff;
   --color-card-border: #dfe5ec;
 
   --color-on-surface: #1b1c1e;
   --color-on-surface-variant: #43474d;
   --color-outline: #5f6369;
   --color-outline-variant: #c1c6cd;
+  /* Contorno de campo e de botão secundário: 3,2:1 sobre branco (limite de controle da WCAG). */
+  --color-borda-controle: #8a9098;
 
+  /* Rampa da marca. primary = azul de TEXTO; primary-container = azul de AÇÃO. */
   --color-primary: #0854a0;
   --color-primary-container: #0a6ed1;
+  --color-primary-hover: #083c73;
   --color-on-primary: #ffffff;
-  --color-primary-fixed: #d1e8ff;
+  --color-primary-fixed: #d6e9fb;
   --color-primary-fixed-dim: #a7cdf2;
   --color-secondary: #4a6c8f;
   --color-secondary-fixed: #d6e9fb;
   --color-secondary-fixed-dim: #b4d3ef;
   --color-on-secondary-container: #0854a0;
+  /* Linha selecionada, busca destacada. */
+  --color-selecao: #eaf3fb;
+
+  /* A cabine: o bloco de destaque de cada tela (degradê de ação a texto). */
+  --color-cabine: #0a6ed1;
+  --color-cabine-profunda: #0854a0;
+  --color-cabine-linha: #4f97e0;
+  --color-cabine-texto: #ffffff;
+  --color-cabine-texto-secundario: #f2f8fd;
+
+  /* Trilho vazio da barra de progresso. */
+  --color-trilho: #edeff2;
 
   --color-negativo: #bb0000;
   --color-negativo-fundo: #fceaea;
@@ -56,33 +76,35 @@
 
   --font-sans: var(--fonte-sans), ui-sans-serif, system-ui, sans-serif;
 
-  --radius-painel: 22px;
-  --radius-cartao: 14px;
-  --radius-controle: 12px;
-  --radius-tag: 7px;
+  /* Nada maior que 12px: o sistema é preciso, não uma bolha. */
+  --radius-painel: 12px;
+  --radius-cartao: 10px;
+  --radius-controle: 8px;
+  --radius-tag: 4px;
 
-  --shadow-cartao: 0 1px 2px rgba(15, 35, 58, 0.035), 0 6px 20px rgba(15, 35, 58, 0.035);
-  --shadow-realce: 0 2px 4px rgba(15, 35, 58, 0.04), 0 12px 30px rgba(15, 35, 58, 0.08);
+  /* Painel é plano. As duas primeiras ficam como nome, sem efeito. */
+  --shadow-cartao: 0 0 #0000;
+  --shadow-realce: 0 0 #0000;
+  --shadow-primary: 0 0 #0000;
+  /* SÓ o que flutua sobre a tela: menu, diálogo, paleta de comandos, gaveta. */
   --shadow-flutuante: 0 24px 64px -24px rgba(8, 41, 76, 0.28), 0 8px 24px -12px rgba(8, 41, 76, 0.16);
-  --shadow-primary: 0 8px 22px -10px rgba(10, 110, 209, 0.58);
 }
 
 :root {
-  --surface-canvas: #f6f9fc;
-  --surface-raised: rgba(255, 255, 255, 0.88);
-  --surface-floating: rgba(255, 255, 255, 0.94);
-  --surface-glass: rgba(250, 252, 255, 0.78);
-  --surface-selected: rgba(209, 232, 255, 0.58);
-  --border-optical: rgba(100, 128, 157, 0.18);
-  --border-highlight: rgba(255, 255, 255, 0.9);
+  --surface-canvas: var(--color-fundo);
 
   --motion-instant: 110ms;
   --motion-fast: 160ms;
   --motion-normal: 240ms;
   --motion-emphasis: 360ms;
+  --motion-long: 700ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Alturas da estrutura: barra de módulos e faixa do agora. */
+  --altura-barra: 64px;
+  --altura-faixa: 52px;
 }
 
 @layer base {
@@ -92,16 +114,12 @@
 
   html {
     -webkit-text-size-adjust: 100%;
-    background: var(--surface-canvas);
+    background: var(--color-fundo);
   }
 
   body {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 12% -8%, rgba(10, 110, 209, 0.105), transparent 31rem),
-      radial-gradient(circle at 88% 8%, rgba(167, 205, 242, 0.15), transparent 28rem),
-      linear-gradient(180deg, #fbfdff 0%, var(--surface-canvas) 34rem, #f7f9fc 100%);
-    background-attachment: fixed;
+    background: var(--color-fundo);
     color: var(--color-on-surface);
     font-family: var(--font-sans);
     font-size: 0.875rem;
@@ -117,9 +135,9 @@
 
   :focus-visible {
     outline: 2px solid var(--color-primary-container);
-    outline-offset: 3px;
-    border-radius: 7px;
-    box-shadow: 0 0 0 4px rgba(10, 110, 209, 0.1);
+    outline-offset: 2px;
+    border-radius: 4px;
+    box-shadow: 0 0 0 5px rgba(10, 110, 209, 0.18);
   }
 
   input,
@@ -135,7 +153,6 @@
     flex: 0 0 auto;
     accent-color: var(--color-primary-container);
     cursor: pointer;
-    filter: drop-shadow(0 1px 1px rgba(15, 35, 58, 0.08));
   }
 
   input[type="checkbox"]:not(.sr-only):disabled,
@@ -144,13 +161,10 @@
     opacity: 0.58;
   }
 
+  /* O botão principal é o azul de ação, chapado; escurece para o azul profundo. */
   :where(button, a)[class*="bg-primary-container"] {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.22),
-      var(--shadow-primary);
     transition:
       transform var(--motion-fast) var(--ease-enter),
-      box-shadow var(--motion-normal) var(--ease-standard),
       background-color var(--motion-fast) var(--ease-standard),
       border-color var(--motion-fast) var(--ease-standard),
       color var(--motion-fast) var(--ease-standard);
@@ -158,12 +172,7 @@
 
   button[class*="bg-primary-container"]:active:not(:disabled),
   a[class*="bg-primary-container"]:active {
-    transform: translateY(1px) scale(0.985);
-  }
-
-  button[class*="bg-primary-container"]:disabled {
-    box-shadow: none;
-    transform: none;
+    transform: translateY(1px);
   }
 
   input:-webkit-autofill,
@@ -180,19 +189,65 @@
   }
 }
 
-@layer utilities {
-  .t-display {
-    font-size: clamp(2rem, 3vw, 2.65rem);
-    line-height: 1.08;
+/* Classes do sistema em components: as utilitárias do Tailwind (text-*, bg-*)
+   ainda podem sobrescrever a cor ou o fundo de cada uma. */
+@layer components {
+  /* ---------- Tipografia ---------- */
+
+  /* O <h1> de cada tela, no azul de texto. */
+  .titulo-tela {
+    font-size: clamp(1.45rem, 1.1rem + 1.1vw, 1.75rem);
+    line-height: 1.2;
     font-weight: 650;
+    letter-spacing: -0.025em;
+    color: var(--color-primary);
+    text-wrap: balance;
+  }
+
+  .titulo-secao {
+    font-size: 1.0625rem;
+    line-height: 1.5rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  /* Números: um destaque por tela, com a frase que diz o que ele conta. */
+  .numero-destaque {
+    font-size: clamp(2.4rem, 1.6rem + 2.6vw, 3.5rem);
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .numero {
+    font-size: clamp(1.9rem, 1.5rem + 1.3vw, 2.5rem);
+    line-height: 1.1;
+    font-weight: 600;
     letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .numero-sm {
+    font-size: clamp(1.3rem, 1.15rem + 0.5vw, 1.625rem);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .t-display {
+    font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+    line-height: 1.1;
+    font-weight: 650;
+    letter-spacing: -0.03em;
   }
 
   .t-headline {
-    font-size: clamp(1.25rem, 2vw, 1.55rem);
-    line-height: 1.25;
-    font-weight: 600;
-    letter-spacing: -0.025em;
+    font-size: 1.0625rem;
+    line-height: 1.5rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
   }
 
   .t-body-lg {
@@ -201,45 +256,118 @@
   }
 
   .rotulo {
-    font-size: 0.72rem;
+    font-size: 0.6875rem;
     font-weight: 650;
-    line-height: 1;
+    line-height: 1.1;
     letter-spacing: 0.075em;
     text-transform: uppercase;
     color: var(--color-on-surface-variant);
   }
 
+  /* ---------- Superfícies ---------- */
+
+  /* Nomes antigos, agora planos: superfície branca e linha fina. */
   .glass-surface {
-    background: var(--surface-glass);
-    border-color: var(--border-optical);
-    box-shadow: inset 0 1px 0 var(--border-highlight);
-    -webkit-backdrop-filter: blur(18px) saturate(145%);
-    backdrop-filter: blur(18px) saturate(145%);
+    background: var(--color-surface);
+    border-color: var(--color-card-border);
   }
 
   .premium-panel {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 252, 255, 0.9));
-    border-color: var(--border-optical);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.96),
-      var(--shadow-cartao);
+    background: var(--color-surface);
+    border-color: var(--color-card-border);
   }
 
   .premium-interactive {
     transition:
-      transform var(--motion-fast) var(--ease-enter),
-      box-shadow var(--motion-normal) var(--ease-standard),
       border-color var(--motion-fast) var(--ease-standard),
-      background-color var(--motion-fast) var(--ease-standard);
+      background-color var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard);
   }
+
+  /* A cabine: um bloco por tela, no azul de ação, com o que se lê de relance. */
+  .cabine {
+    background: linear-gradient(150deg, var(--color-cabine), var(--color-cabine-profunda));
+    color: var(--color-cabine-texto);
+    border-radius: var(--radius-painel);
+  }
+
+  .cabine :focus-visible {
+    outline-color: var(--color-cabine-texto);
+    box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.28);
+  }
+
+  /* Barra lisa de proporção: trilho e parte cheia. */
+  .barra {
+    position: relative;
+    display: block;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--color-trilho);
+  }
+
+  .barra-fina {
+    height: 4px;
+  }
+
+  .barra > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-primary-container);
+    transform-origin: left;
+    animation: enche var(--motion-long) var(--ease-enter) backwards;
+  }
+
+  .cabine .barra {
+    background: var(--color-cabine-linha);
+  }
+
+  .cabine .barra > span {
+    background: var(--color-cabine-texto);
+  }
+
+  /* Tecla de atalho visível. */
+  .tecla {
+    display: inline-flex;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.3rem;
+    border: 1px solid var(--color-borda-controle);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-tag);
+    background: var(--color-surface);
+    color: var(--color-on-surface-variant);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cabine .rotulo {
+    color: var(--color-cabine-texto-secundario);
+  }
+
+  .cabine .tecla {
+    border-color: var(--color-cabine-texto-secundario);
+    background: transparent;
+    color: var(--color-cabine-texto);
+  }
+
+}
+
+@layer utilities {
+  /* ---------- Movimento ---------- */
 
   .page-reveal {
     animation: page-reveal var(--motion-emphasis) var(--ease-enter) both;
   }
 
   .dashboard-stagger {
-    animation: dashboard-rise 520ms var(--ease-enter) both;
+    animation: dashboard-rise 460ms var(--ease-enter) both;
   }
 
   .chart-grow {
@@ -285,23 +413,29 @@
   .rolagem-discreta::-webkit-scrollbar-track {
     background: transparent;
   }
+
+  .sem-barra-de-rolagem {
+    scrollbar-width: none;
+  }
+
+  .sem-barra-de-rolagem::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .premium-interactive:hover {
-    transform: translateY(-2px);
-    border-color: rgba(10, 110, 209, 0.24);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.98),
-      var(--shadow-realce);
+    border-color: var(--color-primary-fixed-dim);
   }
 
   :where(button, a)[class*="bg-primary-container"]:not(:disabled):hover {
-    transform: translateY(-2px);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.28),
-      0 14px 30px -12px rgba(8, 84, 160, 0.72);
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
   }
+}
+
+@keyframes enche {
+  from { transform: scaleX(0); }
 }
 
 @keyframes esqueleto-brilho {
@@ -312,7 +446,7 @@
 @keyframes page-reveal {
   from {
     opacity: 0;
-    transform: translateY(7px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -323,11 +457,11 @@
 @keyframes dashboard-rise {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.985);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -344,10 +478,10 @@
 
 @keyframes pulso-agora {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(10, 110, 209, 0.18);
+    box-shadow: 0 0 0 0 rgba(10, 110, 209, 0.28);
   }
   50% {
-    box-shadow: 0 0 0 7px rgba(10, 110, 209, 0);
+    box-shadow: 0 0 0 6px rgba(10, 110, 209, 0);
   }
 }
 
@@ -364,7 +498,8 @@
   .page-reveal,
   .dashboard-stagger,
   .chart-grow,
-  .now-pulse {
+  .now-pulse,
+  .barra > span {
     animation: none !important;
   }
 }

@@ -39,15 +39,15 @@ function CartaoConfiguracao({ secao }: { secao: Secao }) {
         <span
           className={
             disponivel
-              ? "flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/55 bg-linear-to-br from-white to-primary-fixed/55 text-primary shadow-[var(--shadow-primary)]"
-              : "flex size-11 shrink-0 items-center justify-center rounded-2xl border border-card-border/80 bg-surface-container-low text-outline"
+              ? "flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-primary-fixed text-primary"
+              : "flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-card-border bg-surface-container-low text-outline"
           }
         >
           <Icone aria-hidden="true" size={20} strokeWidth={1.65} />
         </span>
 
         {disponivel ? (
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-outline transition-[transform,background-color,color] duration-150 group-hover:translate-x-0.5 group-hover:bg-primary-fixed/55 group-hover:text-primary">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-surface-container-low text-outline transition-[transform,background-color,color] duration-150 group-hover:translate-x-0.5 group-hover:bg-primary-fixed group-hover:text-primary">
             <ChevronRight aria-hidden="true" size={17} strokeWidth={1.7} />
           </span>
         ) : (
@@ -61,7 +61,7 @@ function CartaoConfiguracao({ secao }: { secao: Secao }) {
       </div>
 
       {secao.resumo ? (
-        <div className="mt-4 border-t border-card-border/65 pt-3">
+        <div className="mt-4 border-t border-card-border pt-3">
           <span className="text-xs font-semibold text-primary">{secao.resumo}</span>
         </div>
       ) : null}
@@ -69,13 +69,12 @@ function CartaoConfiguracao({ secao }: { secao: Secao }) {
   );
 
   const classe = disponivel
-    ? "premium-interactive group relative isolate block h-full overflow-hidden rounded-[var(--radius-painel)] border border-card-border/75 bg-surface/72 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),var(--shadow-cartao)]"
-    : "relative block h-full rounded-[var(--radius-painel)] border border-dashed border-outline-variant/80 bg-surface-container-low/55 p-5";
+    ? "premium-interactive group relative isolate block h-full overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-5"
+    : "relative block h-full rounded-[var(--radius-painel)] border border-dashed border-outline-variant bg-surface-container-low p-5";
 
   if (secao.href) {
     return (
       <Link href={secao.href} className={classe}>
-        <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-primary-fixed/35 blur-2xl transition-transform duration-300 group-hover:scale-125" />
         {conteudo}
       </Link>
     );
@@ -158,7 +157,7 @@ export default async function PaginaConfiguracoes() {
       <section aria-labelledby="configuracoes-disponiveis">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <p className="rotulo text-primary/80">Operação</p>
+            <p className="rotulo text-primary">Operação</p>
             <h2 id="configuracoes-disponiveis" className="mt-1 text-xl font-semibold tracking-[-0.025em] text-on-surface">
               Áreas do sistema
             </h2>

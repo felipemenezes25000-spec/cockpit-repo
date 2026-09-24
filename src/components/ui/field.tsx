@@ -30,10 +30,11 @@ function ligarAoControle(
   });
 }
 
+/** Campo: fundo branco, contorno de controle (3:1), foco em anel azul de ação. */
 const CONTROLE_BASE =
-  "peer rounded-[var(--radius-controle)] border border-card-border bg-white/82 text-on-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.98),0_1px_2px_rgba(15,35,58,0.025)] transition-[border-color,box-shadow,background-color,transform] duration-200 placeholder:text-outline placeholder:italic hover:border-outline-variant hover:bg-white focus-visible:border-primary/50 focus-visible:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary focus-visible:shadow-[0_0_0_4px_rgba(10,110,209,0.07),0_10px_26px_-18px_rgba(8,84,160,0.52)] aria-[invalid=true]:border-error aria-[invalid=true]:bg-error-container/20 aria-[invalid=true]:shadow-[0_0_0_4px_rgba(186,26,26,0.055)] disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline disabled:shadow-none";
+  "peer rounded-[var(--radius-controle)] border border-borda-controle bg-surface text-on-surface transition-[border-color,background-color] duration-150 placeholder:text-outline hover:border-on-surface-variant focus-visible:border-primary-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-[invalid=true]:border-error aria-[invalid=true]:bg-error-container disabled:cursor-not-allowed disabled:border-card-border disabled:bg-surface-container-low disabled:text-outline";
 
-const ALTURA = { padrao: "h-11", compacta: "h-9" } as const;
+const ALTURA = { padrao: "h-11 sm:h-10", compacta: "h-9" } as const;
 const LARGURA = { cheia: "w-full", auto: "w-auto", nenhuma: "" } as const;
 const RECUO = { padrao: "px-3.5", icone: "pr-3.5 pl-10", busca: "pr-10 pl-11", buscaCompacta: "pr-9 pl-10" } as const;
 const TEXTO = { sm: "text-sm", xs: "text-xs" } as const;
@@ -56,15 +57,15 @@ export function Campo({ id, rotulo, dica, erro, obrigatorio = false, children, c
       <label
         htmlFor={id}
         className={cn(
-          "flex items-center text-[0.72rem] font-semibold tracking-[0.055em] uppercase transition-colors duration-200 group-focus-within/campo:text-primary",
-          erro ? "text-error" : "text-on-surface-variant",
+          "flex items-center text-[0.8125rem] font-semibold transition-colors duration-150 group-focus-within/campo:text-primary",
+          erro ? "text-error" : "text-on-surface",
         )}
       >
         {rotulo}
         {obrigatorio ? (
           <span aria-hidden="true" className="ml-1 text-atencao-acento">*</span>
         ) : (
-          <span className="ml-2 rounded-full border border-card-border/70 bg-surface/65 px-1.5 py-0.5 text-[0.58rem] font-medium tracking-normal text-outline lowercase shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+          <span className="ml-1.5 text-xs font-normal text-outline">
             opcional
           </span>
         )}
@@ -88,14 +89,13 @@ export function GrupoDeCampos({ titulo, descricao, children, className }: { titu
   return (
     <fieldset
       className={cn(
-        "relative overflow-hidden rounded-[var(--radius-painel)] border border-card-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.74),rgba(248,251,255,0.48))] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] sm:px-5 sm:py-6",
+        "rounded-[var(--radius-painel)] border border-card-border bg-surface px-4 py-5 sm:px-6 sm:py-6",
         className,
       )}
     >
       <legend className="sr-only">{titulo}</legend>
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/95" />
-      <div className="mb-5 border-b border-card-border/60 pb-4">
-        <p className="text-sm font-semibold tracking-[-0.015em] text-primary">{titulo}</p>
+      <div className="mb-5 border-b border-card-border pb-4">
+        <p className="titulo-secao text-primary">{titulo}</p>
         {descricao ? <p className="mt-1.5 max-w-2xl text-xs leading-5 text-outline">{descricao}</p> : null}
       </div>
       {children}

@@ -135,10 +135,9 @@ export function FormularioNovaSenha() {
 
   if (situacao === "validando") {
     return (
-      <div role="status" className="relative overflow-hidden rounded-[16px] border border-card-border/70 bg-white/68 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)]">
-        <span aria-hidden="true" className="pointer-events-none absolute -top-12 -right-10 size-28 rounded-full bg-primary-fixed/45 blur-2xl" />
+      <div role="status" className="relative overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface px-4 py-4">
         <div className="relative flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-primary/10 bg-primary-fixed/55 text-primary shadow-[var(--shadow-cartao)]">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-cartao)] border border-primary-fixed bg-primary-fixed text-primary">
             <LoaderCircle aria-hidden="true" size={19} className="animate-spin" />
           </span>
           <span>
@@ -153,9 +152,9 @@ export function FormularioNovaSenha() {
   if (situacao === "invalido") {
     return (
       <div className="space-y-4 text-sm">
-        <div role="alert" className="relative overflow-hidden rounded-[16px] border border-negativo-borda bg-negativo-fundo/82 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        <div role="alert" className="relative overflow-hidden rounded-[var(--radius-painel)] border border-negativo-borda bg-negativo-fundo px-4 py-4">
           <div className="flex items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-negativo-borda/70 bg-white/52 text-negativo">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-negativo-borda bg-surface text-negativo">
               <CircleAlert aria-hidden="true" size={17} strokeWidth={1.8} />
             </span>
             <span>
@@ -164,7 +163,7 @@ export function FormularioNovaSenha() {
             </span>
           </div>
         </div>
-        <Link href="/recuperar-senha" className="group inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] border border-primary/20 bg-primary-fixed/42 px-4 font-semibold text-primary shadow-[var(--shadow-cartao)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary-fixed/65 hover:shadow-[var(--shadow-realce)] active:translate-y-px">
+        <Link href="/recuperar-senha" className="group inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] border border-primary-fixed-dim bg-selecao px-4 font-semibold text-primary transition-[transform,background-color] duration-150 hover:bg-primary-fixed active:translate-y-px">
           Pedir outro link
           <ArrowRight aria-hidden="true" size={16} strokeWidth={1.8} className="transition-transform duration-150 group-hover:translate-x-0.5" />
         </Link>
@@ -177,7 +176,7 @@ export function FormularioNovaSenha() {
 
   return (
     <form onSubmit={salvar} className="flex flex-col gap-4">
-      <div className="rounded-[14px] border border-positivo-borda/55 bg-positivo-fundo/48 px-3.5 py-3 text-xs leading-5 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+      <div className="rounded-[var(--radius-cartao)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3 text-xs leading-5 text-on-surface-variant">
         <span className="flex items-center gap-2 font-semibold text-positivo">
           <ShieldCheck aria-hidden="true" size={15} strokeWidth={1.8} />
           Link confirmado
@@ -186,7 +185,7 @@ export function FormularioNovaSenha() {
       </div>
 
       <div className="group/campo flex flex-col gap-1.5">
-        <label htmlFor="nova-senha" className="rotulo transition-colors duration-200 group-focus-within/campo:text-primary">Nova senha</label>
+        <label htmlFor="nova-senha" className="text-[0.8125rem] font-semibold text-on-surface transition-colors duration-150 group-focus-within/campo:text-primary">Nova senha</label>
         <div className="relative">
           <LockKeyhole aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors group-focus-within/campo:text-primary" />
           <input
@@ -202,7 +201,7 @@ export function FormularioNovaSenha() {
             onChange={(evento) => definirSenha(evento.target.value)}
             className={`${ENTRADA} pr-11 pl-10`}
           />
-          <button type="button" onClick={() => definirMostrarSenha((valor) => !valor)} aria-label={mostrarSenha ? "Ocultar nova senha" : "Mostrar nova senha"} aria-pressed={mostrarSenha} className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95">
+          <button type="button" onClick={() => definirMostrarSenha((valor) => !valor)} aria-label={mostrarSenha ? "Ocultar nova senha" : "Mostrar nova senha"} aria-pressed={mostrarSenha} className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95">
             {mostrarSenha ? <EyeOff aria-hidden="true" size={17} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={17} strokeWidth={1.65} />}
           </button>
         </div>
@@ -213,7 +212,7 @@ export function FormularioNovaSenha() {
       </div>
 
       <div className="group/campo flex flex-col gap-1.5">
-        <label htmlFor="confirmacao-senha" className="rotulo transition-colors duration-200 group-focus-within/campo:text-primary">Confirme a nova senha</label>
+        <label htmlFor="confirmacao-senha" className="text-[0.8125rem] font-semibold text-on-surface transition-colors duration-150 group-focus-within/campo:text-primary">Confirme a nova senha</label>
         <div className="relative">
           <LockKeyhole aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors group-focus-within/campo:text-primary" />
           <input
@@ -228,7 +227,7 @@ export function FormularioNovaSenha() {
             onChange={(evento) => definirConfirmacao(evento.target.value)}
             className={`${ENTRADA} pr-11 pl-10`}
           />
-          <button type="button" onClick={() => definirMostrarConfirmacao((valor) => !valor)} aria-label={mostrarConfirmacao ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"} aria-pressed={mostrarConfirmacao} className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95">
+          <button type="button" onClick={() => definirMostrarConfirmacao((valor) => !valor)} aria-label={mostrarConfirmacao ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"} aria-pressed={mostrarConfirmacao} className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95">
             {mostrarConfirmacao ? <EyeOff aria-hidden="true" size={17} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={17} strokeWidth={1.65} />}
           </button>
         </div>
@@ -241,14 +240,13 @@ export function FormularioNovaSenha() {
       </div>
 
       {erro ? (
-        <p id="erro-nova-senha" role="alert" className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+        <p id="erro-nova-senha" role="alert" className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-on-error-container">
           <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
           {erro}
         </p>
       ) : null}
 
-      <button type="submit" disabled={salvando} className="group relative inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary/10 bg-linear-to-b from-primary-container to-primary px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,box-shadow,filter] duration-180 hover:-translate-y-0.5 hover:brightness-[0.97] hover:shadow-[0_12px_28px_-12px_rgba(10,110,209,0.72)] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
-        <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/45" />
+      <button type="submit" disabled={salvando} className="group relative inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary transition-colors duration-150 hover:border-primary-hover hover:bg-primary-hover active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
         {salvando ? (
           <><LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> Salvando…</>
         ) : (

@@ -18,9 +18,8 @@ function BotaoEntrar() {
       type="submit"
       disabled={pending}
       aria-busy={pending || undefined}
-      className="group relative inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary/10 bg-linear-to-b from-primary-container to-primary px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,box-shadow,filter] duration-180 hover:-translate-y-0.5 hover:brightness-[0.97] hover:shadow-[0_12px_28px_-12px_rgba(10,110,209,0.72)] active:translate-y-px active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0"
+      className="group relative inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary transition-colors duration-150 hover:border-primary-hover hover:bg-primary-hover active:translate-y-px active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/45" />
       {pending ? (
         <>
           <LoaderCircle aria-hidden="true" size={18} className="animate-spin" />
@@ -48,7 +47,7 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
       <input type="hidden" name="proximo" value={proximo} />
 
       <div className="group/campo flex flex-col gap-1.5">
-        <label htmlFor="email" className="rotulo transition-colors duration-200 group-focus-within/campo:text-primary">E-mail</label>
+        <label htmlFor="email" className="text-[0.8125rem] font-semibold text-on-surface transition-colors duration-150 group-focus-within/campo:text-primary">E-mail</label>
         <div className="relative">
           <Mail aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors group-focus-within/campo:text-primary" />
           <input
@@ -72,8 +71,8 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
 
       <div className="group/campo flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-3">
-          <label htmlFor="senha" className="rotulo transition-colors duration-200 group-focus-within/campo:text-primary">Senha</label>
-          <Link href="/recuperar-senha" className="inline-flex min-h-7 items-center rounded-lg px-1.5 text-xs font-semibold text-primary transition-[background-color,transform] duration-150 hover:bg-primary-fixed/40 active:scale-[0.98]">
+          <label htmlFor="senha" className="text-[0.8125rem] font-semibold text-on-surface transition-colors duration-150 group-focus-within/campo:text-primary">Senha</label>
+          <Link href="/recuperar-senha" className="inline-flex min-h-7 items-center rounded-[var(--radius-controle)] px-1.5 text-xs font-semibold text-primary transition-[background-color,transform] duration-150 hover:bg-selecao active:scale-[0.98]">
             Esqueci minha senha
           </Link>
         </div>
@@ -94,7 +93,7 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
             onClick={() => setMostrarSenha((valor) => !valor)}
             aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
             aria-pressed={mostrarSenha}
-            className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+            className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
           >
             {mostrarSenha ? <EyeOff aria-hidden="true" size={17} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={17} strokeWidth={1.65} />}
           </button>
@@ -102,7 +101,7 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
       </div>
 
       {estado.erro ? (
-        <p id="erro-login" role="alert" className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+        <p id="erro-login" role="alert" className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-on-error-container">
           <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
           {estado.erro}
         </p>

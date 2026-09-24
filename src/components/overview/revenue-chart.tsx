@@ -19,18 +19,17 @@ export function EvolucaoRecebimentos({ serie, exemplo }: { serie: PontoMensal[];
       </figcaption>
 
       <div className="mt-4 grid grid-cols-2 gap-2.5 sm:max-w-lg">
-        <div className="rounded-[13px] border border-primary/10 bg-primary-fixed/28 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)]">
+        <div className="rounded-[var(--radius-cartao)] border border-primary-fixed bg-selecao px-3 py-2.5">
           <p className="text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase">Mês atual</p>
           <p className="tabular mt-1 text-sm font-semibold text-primary">{formatarMoeda(atual?.recebido ?? 0)}</p>
         </div>
-        <div className="rounded-[13px] border border-card-border/75 bg-white/62 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3 py-2.5">
           <p className="text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase">Maior no período</p>
           <p className="tabular mt-1 text-sm font-semibold text-on-surface">{formatarMoeda(pico?.recebido ?? 0)}</p>
         </div>
       </div>
 
-      <div className="relative mt-4 rounded-[16px] border border-card-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(247,250,253,0.58))] px-3 pt-4 pb-3 sm:px-4">
-        <span aria-hidden="true" className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+      <div className="relative mt-4 rounded-[var(--radius-painel)] border border-card-border bg-surface px-3 pt-4 pb-3 sm:px-4">
         <ul className="flex h-[154px] items-end gap-2 sm:gap-3">
           {serie.map((ponto, indice) => {
             const emAndamento = mesmoMes(ponto.data, agora);
@@ -52,12 +51,11 @@ export function EvolucaoRecebimentos({ serie, exemplo }: { serie: PontoMensal[];
                   <span className="truncate">{formatarMoeda(ponto.recebido)}</span>
                 </span>
 
-                <span aria-hidden="true" className="relative flex h-[112px] w-full items-end overflow-hidden rounded-t-[10px] bg-primary-fixed/18">
+                <span aria-hidden="true" className="relative flex h-[112px] w-full items-end overflow-hidden rounded-t-[var(--radius-controle)] bg-selecao">
                   <span
                     className={cn(
-                      "chart-grow absolute inset-x-0 bottom-0 rounded-t-[10px] shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] transition-[filter,transform] duration-200 group-hover:brightness-[0.97]",
-                      emAndamento ? hachura : "bg-[linear-gradient(180deg,var(--color-primary-container),var(--color-primary))]",
-                      ehPico && !emAndamento && "shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_0_18px_rgba(10,110,209,0.18)]",
+                      "chart-grow absolute inset-x-0 bottom-0 rounded-t-[var(--radius-controle)]",
+                      emAndamento ? hachura : "bg-primary-container",
                     )}
                     style={{ height: `${altura}%`, animationDelay: `${indice * 80 + 80}ms` }}
                   />
@@ -67,7 +65,7 @@ export function EvolucaoRecebimentos({ serie, exemplo }: { serie: PontoMensal[];
           })}
         </ul>
 
-        <div className="mt-2 border-t border-card-border/80 pt-2">
+        <div className="mt-2 border-t border-card-border pt-2">
           <ul className="flex gap-2 sm:gap-3" aria-hidden="true">
             {serie.map((ponto) => (
               <li key={ponto.data.toISOString()} className={cn("min-w-0 flex-1 truncate text-center text-xs", mesmoMes(ponto.data, agora) ? "font-semibold text-primary" : "text-outline")}>
@@ -79,7 +77,7 @@ export function EvolucaoRecebimentos({ serie, exemplo }: { serie: PontoMensal[];
       </div>
 
       <p className="mt-3 flex items-center gap-2 text-xs text-outline">
-        <span aria-hidden="true" className={cn("inline-block h-2.5 w-4 rounded-[3px] border border-primary/10", hachura)} />
+        <span aria-hidden="true" className={cn("inline-block h-2.5 w-4 rounded-[var(--radius-tag)] border border-primary-fixed", hachura)} />
         Mês em andamento — ainda vai receber lançamentos
       </p>
     </figure>

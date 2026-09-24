@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   Cake,
   CalendarCheck,
   ClipboardList,
@@ -85,7 +86,7 @@ function mesDaUrl(valor: string | string[] | undefined): number {
 
 function Linha({ children, acoes }: { children: React.ReactNode; acoes: React.ReactNode }) {
   return (
-    <li className="premium-interactive flex flex-wrap items-start justify-between gap-x-4 gap-y-3 rounded-[var(--radius-cartao)] border border-card-border/75 bg-surface/68 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
+    <li className="premium-interactive flex flex-wrap items-start justify-between gap-x-4 gap-y-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface px-4 py-4">
       <div className="min-w-[12rem] flex-1">{children}</div>
       <div className="flex flex-wrap items-center gap-2">{acoes}</div>
     </li>
@@ -175,7 +176,7 @@ function ContatoDaConfirmacao({ item }: { item: Confirmacao }) {
           href={whatsapp}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-7 items-center gap-1.5 rounded-lg border border-positivo-borda/65 bg-positivo-fundo/70 px-2.5 font-semibold text-positivo transition-[transform,background-color] duration-150 hover:-translate-y-0.5 hover:bg-positivo-fundo"
+          className="inline-flex min-h-7 items-center gap-1.5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-2.5 font-semibold text-positivo transition-[transform,background-color] duration-150 hover:bg-positivo-fundo"
         >
           <MessageCircle aria-hidden="true" size={12} strokeWidth={1.8} />
           WhatsApp
@@ -236,19 +237,17 @@ function Indicador({
   return (
     <Link
       href={href}
-      className="premium-interactive group relative isolate overflow-hidden rounded-[var(--radius-painel)] border border-card-border/75 bg-surface/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] sm:p-5"
+      className="group flex flex-col rounded-[var(--radius-controle)] p-3 transition-colors hover:bg-cabine-profunda sm:p-4"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute -top-12 -right-10 -z-10 size-28 rounded-full bg-primary-fixed/40 blur-2xl transition-transform duration-300 group-hover:scale-125" />
-      <div className="flex items-start justify-between gap-3">
-        <span className="flex size-9 items-center justify-center rounded-xl border border-primary-fixed-dim/50 bg-primary-fixed/45 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-          <Icone aria-hidden="true" size={18} strokeWidth={1.7} />
+      <span className="flex items-center justify-between gap-3">
+        <Icone aria-hidden="true" size={18} strokeWidth={1.9} />
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-cabine-texto-secundario transition-colors group-hover:text-cabine-texto">
+          Abrir
+          <ArrowRight aria-hidden="true" size={13} strokeWidth={2} className="transition-transform duration-150 group-hover:translate-x-0.5" />
         </span>
-        <span className="text-xs font-medium text-outline transition-colors group-hover:text-primary">Abrir</span>
-      </div>
-      <span className="mt-5 block">
-        <span className="tabular block text-3xl font-semibold tracking-[-0.035em] text-on-surface">{valor}</span>
-        <span className="mt-1 block text-xs font-medium text-on-surface-variant">{titulo}</span>
       </span>
+      <span className="numero mt-4 block">{valor}</span>
+      <span className="mt-1 block text-sm text-cabine-texto-secundario">{titulo}</span>
     </Link>
   );
 }
@@ -317,12 +316,12 @@ export default async function PaginaRelacionamento({
 
       {aba === "visao" ? (
         <>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <section aria-label="O acompanhamento de relance" className="cabine grid grid-cols-2 gap-1 p-2 sm:p-3 xl:grid-cols-4">
             <Indicador href="/relacionamento?aba=confirmacoes" titulo="A confirmar" valor={confirmacoes.length} icone={CalendarCheck} />
             <Indicador href="/relacionamento?aba=retornos" titulo="Retornos na data" valor={retornosNoPrazo.length} icone={Repeat2} />
             <Indicador href="/relacionamento?aba=tarefas" titulo="Tarefas abertas" valor={abertas.length} icone={ClipboardList} />
             <Indicador href="/relacionamento?aba=avaliacoes" titulo="Convites de avaliação" valor={candidatas.length} icone={Star} />
-          </div>
+          </section>
 
           <Card>
             <CardCabecalho titulo="Fila de acompanhamento" descricao="Tarefas abertas e retornos que chegaram à data combinada." />
@@ -441,7 +440,7 @@ async function Aniversarios({ mes }: { mes: number }) {
             <select id="mes" name="mes" defaultValue={mes} className={classeDeEntrada({ altura: "compacta", largura: "auto" })}>
               {MESES.map((nome, i) => <option key={nome} value={i + 1}>{nome}</option>)}
             </select>
-            <button type="submit" className="premium-interactive inline-flex h-9 items-center rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-sm font-medium text-primary shadow-[var(--shadow-cartao)] hover:border-primary-fixed-dim">
+            <button type="submit" className="premium-interactive inline-flex h-9 items-center rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-sm font-medium text-primary hover:border-primary-fixed-dim">
               Ver
             </button>
           </form>
@@ -502,7 +501,7 @@ async function Avaliacoes() {
           ) : (
             <ul className="flex flex-col gap-2.5">
               {convites.map((c) => (
-                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/58 px-3.5 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3 text-sm">
                   <Link href={`/pacientes/${c.pacienteId}`} className="inline-flex min-h-6 items-center font-semibold text-primary underline-offset-4 hover:underline">{c.paciente}</Link>
                   <time dateTime={c.quando.toISOString()} className="tabular text-xs text-outline">{formatarData(c.quando)} às {formatarHora(c.quando)}</time>
                 </li>

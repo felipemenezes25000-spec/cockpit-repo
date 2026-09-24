@@ -79,7 +79,7 @@ export function ListaDespesas({
             // borda tracejada, como em Configurações.
             despesa.situacao === "cancelada"
               ? "border-dashed border-outline-variant bg-surface-container-low"
-              : "border-card-border bg-surface shadow-[var(--shadow-cartao)]",
+              : "border-card-border bg-surface",
           )}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">

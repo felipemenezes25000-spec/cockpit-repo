@@ -38,9 +38,9 @@ export function HistoricoAtendimentos({
             {atendimentos.map((atendimento, indice) => (
               <li
                 key={atendimento.id}
-                className="premium-interactive relative flex gap-3 rounded-[var(--radius-painel)] border border-card-border/70 bg-surface/62 px-3.5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] sm:px-4"
+                className="premium-interactive relative flex gap-3 rounded-[var(--radius-painel)] border border-card-border bg-surface px-3.5 py-4 sm:px-4"
               >
-                <span className="relative z-[1] mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl border border-card-border bg-surface text-[0.68rem] font-bold text-primary shadow-[var(--shadow-cartao)]">
+                <span className="relative z-[1] mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-[0.68rem] font-bold text-primary">
                   {atendimentos.length - indice}
                 </span>
 
@@ -56,21 +56,21 @@ export function HistoricoAtendimentos({
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-outline">
-                    <span className="rounded-lg bg-surface-container-low/75 px-2.5 py-1">{atendimento.profissional}</span>
-                    <span className="tabular rounded-lg bg-surface-container-low/75 px-2.5 py-1">{atendimento.duracaoMin} min</span>
-                    <span className="tabular rounded-lg bg-surface-container-low/75 px-2.5 py-1">
+                    <span className="rounded-[var(--radius-controle)] bg-surface-container-low px-2.5 py-1">{atendimento.profissional}</span>
+                    <span className="tabular rounded-[var(--radius-controle)] bg-surface-container-low px-2.5 py-1">{atendimento.duracaoMin} min</span>
+                    <span className="tabular rounded-[var(--radius-controle)] bg-surface-container-low px-2.5 py-1">
                       {formatarMoeda(atendimento.valor)}{exemplo ? " · demonstrativo" : ""}
                     </span>
                   </div>
 
                   {atendimento.observacoes ? (
-                    <p className="mt-3 rounded-[var(--radius-controle)] border border-card-border/60 bg-surface-container-low/42 px-3 py-2.5 text-sm leading-6 text-on-surface-variant">
+                    <p className="mt-3 rounded-[var(--radius-controle)] border border-card-border bg-surface-container-low px-3 py-2.5 text-sm leading-6 text-on-surface-variant">
                       {atendimento.observacoes}
                     </p>
                   ) : null}
 
                   {podeProntuario ? (
-                    <div className="mt-3 border-t border-card-border/65 pt-3">
+                    <div className="mt-3 border-t border-card-border pt-3">
                       <BotaoLink href={`/prontuarios/novo?atendimento=${atendimento.id}`} variante="contorno" tamanho="sm">
                         <ClipboardPlus aria-hidden="true" size={16} strokeWidth={1.75} />
                         Registrar prontuário

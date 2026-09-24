@@ -30,12 +30,12 @@ function Registrar({ preparado, registrado, dica }: { preparado: boolean; regist
       // Mesma condição que desenha a dica: nunca aponta para um id ausente.
       aria-describedby={!preparado && !registrado ? dica : undefined}
       className={cn(
-        "group inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] border px-3.5 text-xs font-semibold transition-[transform,background-color,border-color,color,box-shadow] duration-180 active:scale-[0.985] disabled:cursor-not-allowed disabled:shadow-none",
+        "group inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] border px-3.5 text-xs font-semibold transition-[transform,background-color,border-color,color] duration-180 active:scale-[0.985] disabled:cursor-not-allowed disabled:shadow-none",
         registrado
-          ? "border-positivo-borda/80 bg-positivo-fundo/75 text-positivo"
+          ? "border-positivo-borda bg-positivo-fundo text-positivo"
           : preparado
-            ? "border-primary/15 bg-white/78 text-primary shadow-[var(--shadow-cartao)] hover:-translate-y-px hover:bg-primary-fixed/35 hover:shadow-[var(--shadow-realce)]"
-            : "border-card-border/75 bg-surface-container-low/70 text-outline opacity-65",
+            ? "border-primary-fixed bg-surface text-primary hover:bg-selecao"
+            : "border-dashed border-outline-variant bg-surface-container-low text-outline",
       )}
     >
       {pending ? (
@@ -43,7 +43,7 @@ function Registrar({ preparado, registrado, dica }: { preparado: boolean; regist
       ) : registrado ? (
         <CheckCircle2 aria-hidden="true" size={15} strokeWidth={1.8} />
       ) : (
-        <Check aria-hidden="true" size={14} strokeWidth={1.8} className="transition-transform duration-150 group-hover:scale-[1.06]" />
+        <Check aria-hidden="true" size={14} strokeWidth={1.8} className="transition-transform duration-150" />
       )}
       {pending ? "Registrando…" : registrado ? "Contato registrado" : "Marcar como enviada"}
     </button>
@@ -86,15 +86,14 @@ export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setPreparado(true)}
-            className="group relative inline-flex min-h-10 items-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-positivo-borda bg-[linear-gradient(135deg,var(--color-positivo),#0b8f45)] px-3.5 text-xs font-semibold text-on-primary shadow-[0_10px_22px_-15px_rgba(14,118,57,0.62)] transition-[transform,filter,box-shadow] duration-180 hover:-translate-y-px hover:brightness-[1.02] hover:shadow-[0_14px_26px_-14px_rgba(14,118,57,0.68)] active:translate-y-0 active:scale-[0.985]"
+            className="group relative inline-flex min-h-10 items-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo px-3.5 text-xs font-semibold text-on-primary transition-[transform,filter] duration-180 hover:brightness-[0.92] active:translate-y-0 active:scale-[0.985]"
           >
-            <span aria-hidden="true" className="pointer-events-none absolute inset-x-5 top-0 h-px bg-white/45" />
-            <MessageCircle aria-hidden="true" size={15} strokeWidth={1.8} className="relative transition-transform duration-150 group-hover:scale-[1.05]" />
+            <MessageCircle aria-hidden="true" size={15} strokeWidth={1.8} className="relative transition-transform duration-150" />
             <span className="relative">Abrir WhatsApp</span>
             <span className="sr-only"> (abre em nova aba)</span>
           </a>
         ) : (
-          <span className="inline-flex min-h-10 items-center rounded-[var(--radius-controle)] border border-dashed border-outline-variant/80 bg-surface-container-low/65 px-3 text-xs font-medium text-outline">Sem telefone válido</span>
+          <span className="inline-flex min-h-10 items-center rounded-[var(--radius-controle)] border border-dashed border-outline-variant bg-surface-container-low px-3 text-xs font-medium text-outline">Sem telefone válido</span>
         )}
 
         <button
@@ -102,13 +101,13 @@ export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
           onClick={copiar}
           aria-live="polite"
           className={cn(
-            "group inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] border px-3.5 text-xs font-semibold transition-[transform,background-color,border-color,color,box-shadow] duration-180 active:scale-[0.985]",
+            "group inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] border px-3.5 text-xs font-semibold transition-[transform,background-color,border-color,color] duration-180 active:scale-[0.985]",
             copia === "copiada"
-              ? "border-positivo-borda bg-positivo-fundo text-positivo shadow-[0_8px_18px_-13px_rgba(14,118,57,0.5)]"
-              : "border-card-border/85 bg-white/72 text-primary shadow-[var(--shadow-cartao)] hover:-translate-y-px hover:border-primary/15 hover:bg-white hover:shadow-[var(--shadow-realce)]",
+              ? "border-positivo-borda bg-positivo-fundo text-positivo"
+              : "border-card-border bg-surface text-primary hover:border-primary-fixed hover:bg-selecao",
           )}
         >
-          {copia === "copiada" ? <Check aria-hidden="true" size={15} strokeWidth={1.9} /> : <Copy aria-hidden="true" size={14} strokeWidth={1.75} className="transition-transform duration-150 group-hover:scale-[1.05]" />}
+          {copia === "copiada" ? <Check aria-hidden="true" size={15} strokeWidth={1.9} /> : <Copy aria-hidden="true" size={14} strokeWidth={1.75} className="transition-transform duration-150" />}
           {copia === "copiada" ? "Copiada ✓" : "Copiar mensagem"}
         </button>
 
@@ -120,7 +119,7 @@ export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
       </div>
 
       {copia === "falhou" ? (
-        <span role="alert" className="inline-flex w-fit rounded-[9px] bg-negativo-fundo/72 px-2.5 py-1.5 text-xs text-negativo">Não foi possível copiar. Use o WhatsApp.</span>
+        <span role="alert" className="inline-flex w-fit rounded-[var(--radius-controle)] bg-negativo-fundo px-2.5 py-1.5 text-xs text-negativo">Não foi possível copiar. Use o WhatsApp.</span>
       ) : null}
 
       {!preparado && !registrado ? (
@@ -132,10 +131,10 @@ export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
       ) : null}
 
       {!estado.ok && estado.mensagem ? (
-        <span role="alert" className="inline-flex w-fit rounded-[9px] bg-negativo-fundo/72 px-2.5 py-1.5 text-xs text-negativo">{estado.mensagem}</span>
+        <span role="alert" className="inline-flex w-fit rounded-[var(--radius-controle)] bg-negativo-fundo px-2.5 py-1.5 text-xs text-negativo">{estado.mensagem}</span>
       ) : null}
       {estado.ok && estado.mensagem ? (
-        <span role="status" className="inline-flex w-fit items-center gap-1.5 rounded-[9px] bg-positivo-fundo/72 px-2.5 py-1.5 text-xs font-medium text-positivo"><CheckCircle2 aria-hidden="true" size={13} />{estado.mensagem}</span>
+        <span role="status" className="inline-flex w-fit items-center gap-1.5 rounded-[var(--radius-controle)] bg-positivo-fundo px-2.5 py-1.5 text-xs font-medium text-positivo"><CheckCircle2 aria-hidden="true" size={13} />{estado.mensagem}</span>
       ) : null}
     </div>
   );

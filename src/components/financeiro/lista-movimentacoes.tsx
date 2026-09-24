@@ -44,7 +44,7 @@ export function ListaMovimentacoes({
 
         const conteudo = (
           <>
-            <span className={cn("relative z-[1] flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/70 shadow-[var(--shadow-cartao)]", estilo.classes)}>
+            <span className={cn("relative z-[1] flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border", estilo.classes)}>
               <Icone aria-hidden="true" size={16} strokeWidth={1.75} />
             </span>
 
@@ -63,10 +63,10 @@ export function ListaMovimentacoes({
 
             <span
               className={cn(
-                "tabular shrink-0 self-center rounded-lg px-2.5 py-1.5 text-sm font-semibold",
+                "tabular shrink-0 self-center rounded-[var(--radius-controle)] px-2.5 py-1.5 text-sm font-semibold",
                 !ehCaixa && "bg-surface-container-low text-outline",
-                ehCaixa && item.valor >= 0 && "bg-positivo-fundo/75 text-positivo",
-                ehCaixa && item.valor < 0 && "bg-negativo-fundo/75 text-negativo",
+                ehCaixa && item.valor >= 0 && "bg-positivo-fundo text-positivo",
+                ehCaixa && item.valor < 0 && "bg-negativo-fundo text-negativo",
               )}
             >
               {ehCaixa && item.valor > 0 ? "+ " : ""}
@@ -76,7 +76,7 @@ export function ListaMovimentacoes({
           </>
         );
 
-        const classes = "premium-interactive relative flex items-center gap-3 rounded-[var(--radius-cartao)] border border-card-border/65 bg-surface/60 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)]";
+        const classes = "premium-interactive relative flex items-center gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3";
 
         return (
           <li key={`${item.tipo}-${item.data.getTime()}-${i}`}>

@@ -84,9 +84,8 @@ function GrupoDaPergunta({
       aria-labelledby={idRotulo}
       aria-describedby={descricao}
       disabled={somenteLeitura}
-      className="group/pergunta relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-[16px] border border-card-border/75 bg-white/58 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-primary/18 focus-within:bg-white/78 focus-within:shadow-[var(--shadow-cartao)] sm:p-5"
+      className="group/pergunta relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 transition-[border-color,background-color] duration-200 focus-within:border-primary-fixed focus-within:bg-surface sm:p-5"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
       <legend id={idRotulo} className="relative rotulo mb-1.5">
         {rotulo}
         {obrigatorio ? (
@@ -121,11 +120,11 @@ function GrupoDaPergunta({
  */
 function classeDaOpcao(marcada: boolean, somenteLeitura: boolean): string {
   return cn(
-    "rounded-[var(--radius-cartao)] border text-sm text-on-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.78)] transition-[transform,background-color,border-color,box-shadow] duration-180",
+    "rounded-[var(--radius-cartao)] border text-sm text-on-surface transition-[transform,background-color,border-color] duration-180",
     somenteLeitura ? "cursor-not-allowed" : "cursor-pointer active:scale-[0.99]",
     marcada
-      ? "border-primary/25 bg-primary-fixed/58 shadow-[var(--shadow-cartao)]"
-      : cn("border-card-border/85 bg-white/66", !somenteLeitura && "hover:-translate-y-px hover:border-primary/18 hover:bg-white hover:shadow-[var(--shadow-cartao)]"),
+      ? "border-primary-fixed-dim bg-primary-fixed"
+      : cn("border-card-border bg-surface", !somenteLeitura && "hover:border-primary-fixed hover:bg-selecao"),
   );
 }
 
@@ -359,8 +358,7 @@ export function FormularioAnamnese({
 
   return (
     <form onSubmit={salvar} className="flex flex-col gap-5">
-      <section className="relative overflow-hidden rounded-[18px] border border-card-border/75 bg-[linear-gradient(135deg,rgba(209,232,255,0.26),rgba(255,255,255,0.72))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),var(--shadow-cartao)] sm:p-5" aria-label="Progresso da anamnese">
-        <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-36 rounded-full bg-primary-fixed/42 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-selecao p-4 sm:p-5" aria-label="Progresso da anamnese">
         <div className="relative flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-on-surface">Preenchimento da anamnese</p>
@@ -370,10 +368,10 @@ export function FormularioAnamnese({
                 : "Você pode salvar parcialmente e voltar depois enquanto o formulário estiver disponível."}
             </p>
           </div>
-          <span className="tabular rounded-full border border-primary/10 bg-white/75 px-2.5 py-1 text-xs font-bold text-primary shadow-[var(--shadow-cartao)]">{progresso}%</span>
+          <span className="tabular rounded-full border border-primary-fixed bg-surface px-2.5 py-1 text-xs font-bold text-primary">{progresso}%</span>
         </div>
-        <div className="relative mt-4 h-2 overflow-hidden rounded-full border border-primary/8 bg-white/64 shadow-[inset_0_1px_2px_rgba(15,35,58,0.04)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso} aria-label={`${feitas} de ${campos.length} perguntas respondidas`}>
-          <span className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,var(--color-primary-container),var(--color-primary))] transition-[width] duration-300 ease-out" style={{ width: `${progresso}%` }} />
+        <div className="relative mt-4 h-2 overflow-hidden rounded-full border border-primary-fixed bg-surface" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso} aria-label={`${feitas} de ${campos.length} perguntas respondidas`}>
+          <span className="absolute inset-y-0 left-0 rounded-full bg-primary-container transition-[width] duration-300 ease-out" style={{ width: `${progresso}%` }} />
         </div>
         <div className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
           <span className="tabular font-medium text-on-surface-variant">{feitas} respondidas</span>
@@ -434,8 +432,7 @@ export function FormularioAnamnese({
           }
 
           return (
-            <div key={campo.chave} className="relative overflow-hidden rounded-[16px] border border-card-border/75 bg-white/58 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-primary/18 focus-within:bg-white/78 focus-within:shadow-[var(--shadow-cartao)] sm:p-5">
-              <span aria-hidden="true" className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+            <div key={campo.chave} className="relative overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 transition-[border-color,background-color] duration-200 focus-within:border-primary-fixed focus-within:bg-surface sm:p-5">
               <div className="relative">
                 <Campo
                   id={idCampo}
@@ -475,7 +472,7 @@ export function FormularioAnamnese({
       {erro ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
+          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erro}
@@ -484,16 +481,15 @@ export function FormularioAnamnese({
 
       {somenteLeitura ? null : (
         <div className={cn(
-          "sticky z-20 flex flex-wrap items-center gap-3 overflow-hidden rounded-[16px] border border-card-border/85 bg-white/90 px-3 py-3 shadow-[0_16px_42px_-24px_rgba(8,41,76,0.42),inset_0_1px_0_rgba(255,255,255,0.96)] backdrop-blur-xl sm:px-4",
+          "sticky z-20 flex flex-wrap items-center gap-3 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface px-3 py-3 sm:px-4",
           destino.tipo === "link" ? "bottom-3" : "bottom-[calc(5.15rem+env(safe-area-inset-bottom))] lg:bottom-3",
         )}>
-          <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
           <button
             type="submit"
             disabled={salvando}
             className={cn(
               "relative inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55",
-              salvo ? "border border-positivo-borda bg-positivo-fundo text-positivo shadow-[var(--shadow-cartao)]" : "bg-primary-container text-on-primary hover:bg-primary",
+              salvo ? "border border-positivo-borda bg-positivo-fundo text-positivo" : "bg-primary-container text-on-primary hover:bg-primary-hover",
             )}
           >
             {salvando ? (

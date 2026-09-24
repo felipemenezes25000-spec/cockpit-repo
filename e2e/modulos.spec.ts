@@ -193,7 +193,10 @@ test.describe("busca", () => {
 
   test("termo sem resultado diz que não achou, sem quebrar a tela", async ({ browser }) => {
     const pagina = await comoPerfil(browser, "recepcao");
-    await pagina.goto(`/busca?q=${encodeURIComponent(`zzz-sem-resultado-${SUFIXO}`)}`);
+    // Sem dígitos: a busca também casa os dígitos do termo com o telefone, e
+    // um sufixo como "mug0ag07" achava a paciente de telefone final 0007.
+    const semDigitos = SUFIXO.replace(/[0-9]/g, "z");
+    await pagina.goto(`/busca?q=${encodeURIComponent(`zzz-sem-resultado-${semDigitos}`)}`);
     await expect(pagina.getByText("Nenhuma paciente encontrada")).toBeVisible();
     await fechar(pagina);
   });
@@ -206,7 +209,7 @@ test.describe("erros", () => {
     // já começou a responder (200, em streaming) quando o `notFound()` roda.
     // O que a pessoa vê é o que importa — e nada da ficha pode vazar.
     await pagina.goto("/pacientes/00000000-0000-4000-8000-000000000000");
-    await expect(pagina.getByText("Página não encontrada").first()).toBeVisible();
+    await expect(pagina.getByRole("heading", { level: 1, name: "Este endereço não existe no sistema" })).toBeVisible();
     await expect(pagina.getByRole("button", { name: "Arquivar paciente" })).toHaveCount(0);
     await fechar(pagina);
   });

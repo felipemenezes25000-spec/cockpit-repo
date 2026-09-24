@@ -22,17 +22,17 @@ const CASOS: Caso[] = [
   // Recepção: nada de despesa, fluxo, taxas, importação, tabela ou prontuário.
   { papel: "recepcao", rota: "/financeiro/despesas/nova", aviso: "Área do financeiro e da administradora", semBotao: "Registrar despesa" },
   { papel: "recepcao", rota: "/financeiro/fluxo", aviso: "Área do financeiro e da administradora" },
-  { papel: "recepcao", rota: "/financeiro/taxas/nova", aviso: "Só a administradora altera a tabela", semBotao: "Cadastrar taxa" },
+  { papel: "recepcao", rota: "/financeiro/taxas/nova", aviso: "Só a administradora altera esta tabela", semBotao: "Cadastrar taxa" },
   { papel: "recepcao", rota: "/pacientes/importar", aviso: "Importação restrita à administradora", semBotao: "Analisar arquivo" },
-  { papel: "recepcao", rota: "/configuracoes/procedimentos/novo", aviso: "Só a administradora altera a tabela", semBotao: "Cadastrar procedimento" },
+  { papel: "recepcao", rota: "/configuracoes/procedimentos/novo", aviso: "Só a administradora altera esta tabela", semBotao: "Cadastrar procedimento" },
   { papel: "recepcao", rota: "/prontuarios/novo", aviso: "Prontuário clínico restrito", semBotao: "Salvar prontuário" },
-  { papel: "recepcao", rota: "/formularios/modelos/novo", aviso: "Só a administradora altera a tabela", semBotao: "Criar modelo" },
+  { papel: "recepcao", rota: "/formularios/modelos/novo", aviso: "Só a administradora altera esta tabela", semBotao: "Criar modelo" },
   // Financeiro: caixa sim; clínica, importação e tabelas de configuração não.
   { papel: "financeiro", rota: "/prontuarios", aviso: "Prontuário clínico restrito" },
   { papel: "financeiro", rota: "/prontuarios/novo", aviso: "Prontuário clínico restrito", semBotao: "Salvar prontuário" },
   { papel: "financeiro", rota: "/pacientes/importar", aviso: "Importação restrita à administradora", semBotao: "Analisar arquivo" },
-  { papel: "financeiro", rota: "/configuracoes/procedimentos/novo", aviso: "Só a administradora altera a tabela", semBotao: "Cadastrar procedimento" },
-  { papel: "financeiro", rota: "/financeiro/taxas/nova", aviso: "Só a administradora altera a tabela", semBotao: "Cadastrar taxa" },
+  { papel: "financeiro", rota: "/configuracoes/procedimentos/novo", aviso: "Só a administradora altera esta tabela", semBotao: "Cadastrar procedimento" },
+  { papel: "financeiro", rota: "/financeiro/taxas/nova", aviso: "Só a administradora altera esta tabela", semBotao: "Cadastrar taxa" },
 ];
 
 test.describe("permissões por perfil, pela URL", () => {

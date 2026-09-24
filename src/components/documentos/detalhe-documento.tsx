@@ -34,8 +34,8 @@ function Metadado({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary-fixed/45 text-primary">
+    <div className="flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
         <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
       </span>
       <div className="min-w-0">
@@ -48,7 +48,7 @@ function Metadado({
 
 function Evidencia({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
-    <div className="grid gap-1 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
+    <div className="grid gap-1 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
       <span className="rotulo text-[0.65rem] text-outline">{rotulo}</span>
       <span className="text-sm leading-5 break-words text-on-surface">{valor}</span>
     </div>
@@ -112,13 +112,13 @@ export function DetalheDocumento({
             />
             <CardCorpo>
               {documento.situacao === "cancelado" ? (
-                <p className="mb-5 rounded-[var(--radius-controle)] border border-negativo-borda/70 bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo">
+                <p className="mb-5 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo">
                   <strong className="font-semibold">Documento cancelado.</strong> {documento.motivoCancelamento}
                 </p>
               ) : null}
 
-              <article className="relative mx-auto max-w-4xl rounded-[calc(var(--radius-painel)-2px)] border border-card-border/85 bg-white px-5 py-6 shadow-[0_22px_60px_-44px_rgba(8,41,76,0.42),inset_0_1px_0_rgba(255,255,255,1)] sm:px-8 sm:py-8">
-                <span aria-hidden="true" className="absolute inset-x-10 top-0 h-px bg-primary-fixed/75" />
+              <article className="relative mx-auto max-w-4xl rounded-[var(--radius-painel)] border border-card-border bg-surface px-5 py-6 sm:px-8 sm:py-8">
+                <span aria-hidden="true" className="absolute inset-x-10 top-0 h-px bg-primary-fixed" />
                 <p className="whitespace-pre-wrap text-[0.94rem] leading-7 text-on-surface">
                   {documento.corpo}
                 </p>
@@ -232,7 +232,7 @@ export function DetalheDocumento({
                 </div>
 
                 {assinatura.hashAssinado !== documento.hash ? (
-                  <p role="alert" className="mt-5 rounded-[var(--radius-controle)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
+                  <p role="alert" className="mt-5 rounded-[var(--radius-controle)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
                     O hash registrado na assinatura não corresponde ao texto atual do documento. Isso não deveria acontecer — o banco impede alteração do texto. Avise quem cuida do sistema.
                   </p>
                 ) : null}
@@ -260,7 +260,7 @@ export function DetalheDocumento({
 
               <Link
                 href={`/pacientes/${documento.pacienteId}`}
-                className="mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] px-3 text-sm font-medium text-primary transition-colors hover:bg-primary-fixed/40"
+                className="mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] px-3 text-sm font-medium text-primary transition-colors hover:bg-selecao"
               >
                 Abrir ficha da paciente
               </Link>
@@ -268,7 +268,7 @@ export function DetalheDocumento({
               {documento.documentoAnteriorId ? (
                 <Link
                   href={`/formularios/${documento.documentoAnteriorId}`}
-                  className="mt-2 flex items-start gap-2 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 text-sm text-on-surface-variant transition-colors hover:border-primary-fixed-dim hover:text-primary"
+                  className="mt-2 flex items-start gap-2 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3 text-sm text-on-surface-variant transition-colors hover:border-primary-fixed-dim hover:text-primary"
                 >
                   <Replace aria-hidden="true" size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
                   Este documento corrige um anterior
@@ -280,7 +280,7 @@ export function DetalheDocumento({
           <Card as="div">
             <CardCabecalho titulo="Integridade do registro" />
             <CardCorpo className="flex flex-col gap-3">
-              <p className="flex items-start gap-2 rounded-[var(--radius-controle)] bg-primary-fixed/25 px-3 py-3 text-sm leading-6 text-on-surface-variant">
+              <p className="flex items-start gap-2 rounded-[var(--radius-controle)] bg-selecao px-3 py-3 text-sm leading-6 text-on-surface-variant">
                 <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.75} className="mt-0.5 shrink-0 text-primary" />
                 {anamnese
                   ? "O enunciado e as perguntas são a cópia congelada do que foi perguntado. Corrigir o modelo depois não reescreve esta anamnese — só as respostas mudam."

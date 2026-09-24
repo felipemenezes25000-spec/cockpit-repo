@@ -118,19 +118,18 @@ export function SeletorPaciente({
       <input ref={oculto} type="hidden" name="paciente_id" value={escolhida?.id ?? ""} />
 
       {escolhida ? (
-        <div className="premium-interactive group relative isolate flex items-center justify-between gap-3 overflow-hidden rounded-[16px] border border-positivo-borda/75 bg-[linear-gradient(145deg,rgba(233,248,238,0.86),rgba(255,255,255,0.92))] px-3.5 py-3 shadow-[var(--shadow-cartao)]">
-          <span aria-hidden="true" className="pointer-events-none absolute -top-12 -right-10 -z-10 size-28 rounded-full bg-positivo-fundo blur-2xl" />
+        <div className="premium-interactive group relative isolate flex items-center justify-between gap-3 overflow-hidden rounded-[var(--radius-painel)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3">
           <span className="flex min-w-0 items-center gap-3 text-sm text-on-surface">
             <span className="relative shrink-0">
               <Avatar nome={escolhida.nome} tamanho="sm" />
-              <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full border-2 border-white bg-positivo text-on-primary shadow-sm">
+              <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full border-2 border-surface bg-positivo text-on-primary">
                 <Check aria-hidden="true" size={9} strokeWidth={2.4} />
               </span>
             </span>
             <span className="min-w-0">
               <span className="block truncate font-semibold tracking-[-0.01em]">{escolhida.nome}</span>
               <span className="mt-0.5 block truncate text-xs text-outline">{escolhida.detalhe}</span>
-              <span className="mt-1.5 inline-flex rounded-full border border-positivo-borda/70 bg-white/58 px-2 py-0.5 text-[0.62rem] font-semibold text-positivo">Paciente selecionada</span>
+              <span className="mt-1.5 inline-flex rounded-full border border-positivo-borda bg-surface px-2 py-0.5 text-[0.62rem] font-semibold text-positivo">Paciente selecionada</span>
             </span>
           </span>
           <button
@@ -142,7 +141,7 @@ export function SeletorPaciente({
               aoEscolher?.(null);
               requestAnimationFrame(() => campo.current?.focus());
             }}
-            className="flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-card-border/70 bg-white/65 text-outline transition-[transform,background-color,color,border-color] duration-150 hover:border-primary-fixed-dim hover:bg-white hover:text-primary active:scale-95"
+            className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline transition-[transform,background-color,color,border-color] duration-150 hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary active:scale-95"
             aria-label={`Trocar a paciente (${escolhida.nome})`}
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
@@ -177,8 +176,8 @@ export function SeletorPaciente({
           {buscando ? <LoaderCircle aria-hidden="true" size={16} className="absolute top-1/2 right-3.5 -translate-y-1/2 animate-spin text-primary" /> : null}
 
           {listaAberta ? (
-            <div className="glass-surface page-reveal absolute z-30 mt-2 w-full overflow-hidden rounded-[18px] border border-white/80 shadow-[0_24px_60px_-24px_rgba(7,35,66,0.42),var(--shadow-flutuante)]">
-              <div className="flex items-center justify-between gap-3 border-b border-card-border/70 bg-white/42 px-3.5 py-2 text-[0.65rem] text-outline">
+            <div className="glass-surface page-reveal absolute z-30 mt-2 w-full overflow-hidden rounded-[var(--radius-painel)] border border-card-border shadow-flutuante">
+              <div className="flex items-center justify-between gap-3 border-b border-card-border bg-surface px-3.5 py-2 text-[0.65rem] text-outline">
                 <span>{opcoes.length === 1 ? "1 paciente encontrada" : `${opcoes.length} pacientes encontradas`}</span>
                 <span className="hidden sm:inline">↑ ↓ escolher · Enter confirmar</span>
               </div>
@@ -195,10 +194,10 @@ export function SeletorPaciente({
                     }}
                     onMouseEnter={() => setDestacada(indice)}
                     className={cn(
-                      "group flex cursor-pointer items-center gap-3 rounded-[13px] border px-3 py-2.5 text-left transition-[transform,background-color,border-color,box-shadow] duration-150",
+                      "group flex cursor-pointer items-center gap-3 rounded-[var(--radius-cartao)] border px-3 py-2.5 text-left transition-[transform,background-color,border-color] duration-150",
                       indice === destacada
-                        ? "border-primary/12 bg-primary-fixed/48 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]"
-                        : "border-transparent hover:bg-white/60",
+                        ? "border-primary-fixed bg-selecao"
+                        : "border-transparent hover:bg-surface-container-low",
                     )}
                   >
                     <Avatar nome={opcao.nome} tamanho="sm" />

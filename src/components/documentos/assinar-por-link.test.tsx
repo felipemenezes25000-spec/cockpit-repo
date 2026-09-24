@@ -148,3 +148,35 @@ describe("AssinarPorLink — clínica fora do ar ao abrir o link", () => {
     expect(screen.queryByText(/sua internet/i)).toBeNull();
   });
 });
+
+describe("AssinarPorLink — a data de nascimento vale mesmo sem evento do navegador", () => {
+  beforeEach(() => {
+    abrirDocumentoParaAssinatura.mockReset();
+    assinarPorLink.mockReset();
+  });
+
+  it("preenchimento automático (sem evento de digitação) ainda abre o documento", async () => {
+    abrirDocumentoParaAssinatura.mockResolvedValue(documento({}));
+    const usuario = userEvent.setup();
+    render(<AssinarPorLink token={TOKEN} tipo="contrato" situacaoInicial="ok" />);
+
+    // Como o autofill do Safari: o valor aparece no campo sem o React ouvir.
+    const campo = screen.getByLabelText(/Sua data de nascimento/) as HTMLInputElement;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(campo, "1990-05-10");
+
+    const botao = screen.getByRole("button", { name: "Abrir documento" });
+    expect(botao).toBeEnabled();
+    await usuario.click(botao);
+
+    await waitFor(() => expect(abrirDocumentoParaAssinatura).toHaveBeenCalledWith(TOKEN, "1990-05-10"));
+  });
+
+  it("sem data, não chama o servidor (o campo obrigatório barra o envio)", async () => {
+    const usuario = userEvent.setup();
+    render(<AssinarPorLink token={TOKEN} tipo="contrato" situacaoInicial="ok" />);
+
+    await usuario.click(screen.getByRole("button", { name: "Abrir documento" }));
+
+    expect(abrirDocumentoParaAssinatura).not.toHaveBeenCalled();
+  });
+});

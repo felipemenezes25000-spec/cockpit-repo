@@ -16,7 +16,7 @@ export function FormularioRetorno() {
 
   return <form action={enviar} noValidate className="space-y-5">
     {erros.geral ? (
-      <p role="alert" className="rounded-[14px] border border-negativo-borda/70 bg-negativo-fundo/72 px-4 py-3 text-sm leading-6 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">{erros.geral}</p>
+      <p role="alert" className="rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo">{erros.geral}</p>
     ) : null}
 
     <SeletorPaciente inicial={null} erro={erros.paciente_id} />
@@ -29,11 +29,11 @@ export function FormularioRetorno() {
       <textarea id="observacoes" name="observacoes" maxLength={2000} defaultValue={valores.observacoes} className={cn(AREA_TEXTO, erros.observacoes && ENTRADA_ERRO)} />
     </Campo>
 
-    <p className="rounded-[12px] border border-informativo-borda/55 bg-informativo-fundo/42 px-3.5 py-2.5 text-xs leading-5 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
+    <p className="rounded-[var(--radius-cartao)] border border-informativo-borda bg-informativo-fundo px-3.5 py-2.5 text-xs leading-5 text-on-surface-variant">
       A data é informada pela equipe; o sistema não sugere prazo clínico.
     </p>
 
-    <div className="flex flex-wrap items-center gap-3 border-t border-card-border/70 pt-6">
+    <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
       <BotaoDeAcao
         tom="primario"
         tamanho="md"

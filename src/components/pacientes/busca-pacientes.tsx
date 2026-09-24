@@ -83,9 +83,8 @@ export function BuscaPacientes({
         evento.preventDefault();
         navegar(termo, situacao);
       }}
-      className="premium-panel relative flex flex-col gap-4 overflow-hidden rounded-[16px] border p-3.5 shadow-[var(--shadow-cartao)] lg:flex-row lg:items-center lg:justify-between"
+      className="premium-panel relative flex flex-col gap-4 overflow-hidden rounded-[var(--radius-painel)] border p-3.5 lg:flex-row lg:items-center lg:justify-between"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-36 rounded-full bg-primary-fixed/30 blur-3xl" />
 
       <div className="relative w-full lg:max-w-md">
         <Search aria-hidden="true" size={18} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
@@ -97,11 +96,11 @@ export function BuscaPacientes({
           maxLength={80}
           aria-label="Buscar paciente por nome, telefone, e-mail ou CPF"
           placeholder="Buscar por nome, telefone, e-mail ou CPF"
-          className={`${classeDeEntrada({ recuo: "busca" })} bg-white/78 shadow-[var(--shadow-cartao)]`}
+          className={`${classeDeEntrada({ recuo: "busca" })} bg-surface`}
         />
 
         {pendente ? (
-          <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[8px] bg-white/88 px-2 py-1 text-[0.65rem] font-medium text-outline shadow-[var(--shadow-cartao)]">
+          <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[var(--radius-controle)] bg-surface px-2 py-1 text-[0.65rem] font-medium text-outline">
             <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
             buscando
           </span>
@@ -113,7 +112,7 @@ export function BuscaPacientes({
               navegar("", situacao);
             }}
             aria-label="Limpar busca"
-            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[9px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
@@ -121,7 +120,7 @@ export function BuscaPacientes({
       </div>
 
       <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span aria-live="polite" className="inline-flex items-center gap-1.5 rounded-full border border-card-border/75 bg-white/68 px-2.5 py-1.5 text-xs whitespace-nowrap text-outline shadow-[var(--shadow-cartao)] tabular">
+        <span aria-live="polite" className="inline-flex items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1.5 text-xs whitespace-nowrap text-outline tabular">
           <Users aria-hidden="true" size={13} strokeWidth={1.65} className="text-primary" />
           {total === 1 ? "1 paciente" : `${total} pacientes`}
         </span>
@@ -131,7 +130,7 @@ export function BuscaPacientes({
           Situação
         </div>
 
-        <div role="group" aria-label="Filtrar por situação" className={`${SEGMENTO_GRUPO} bg-white/58 shadow-[var(--shadow-cartao)]`}>
+        <div role="group" aria-label="Filtrar por situação" className={`${SEGMENTO_GRUPO} bg-surface`}>
           {FILTROS.map((filtro) => {
             const ativo = filtro.valor === situacao;
             return (

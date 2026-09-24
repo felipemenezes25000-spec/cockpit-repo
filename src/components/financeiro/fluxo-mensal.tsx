@@ -16,23 +16,22 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
               key={mes.mes.getTime()}
               style={{ animationDelay: `${Math.min(i * 55, 280)}ms` }}
               className={cn(
-                "dashboard-stagger premium-interactive relative overflow-hidden rounded-[16px] border px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)]",
+                "dashboard-stagger premium-interactive relative overflow-hidden rounded-[var(--radius-painel)] border px-4 py-4",
                 ultimo
-                  ? "border-primary-fixed-dim/65 bg-[linear-gradient(145deg,rgba(209,232,255,0.26),rgba(255,255,255,0.78))]"
-                  : "border-card-border/70 bg-white/60",
+                  ? "border-primary-fixed-dim bg-selecao"
+                  : "border-card-border bg-surface",
               )}
             >
-              {ultimo ? <span aria-hidden="true" className="pointer-events-none absolute -top-12 -right-10 size-28 rounded-full bg-primary-fixed/42 blur-3xl" /> : null}
               <div className="relative flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-on-surface">{capitalizar(formatarMesAno(mes.mes))}</p>
-                {ultimo ? <span className="rounded-full border border-primary/10 bg-primary-fixed/60 px-2.5 py-1 text-[0.68rem] font-semibold text-primary shadow-[var(--shadow-cartao)]">Em curso</span> : null}
+                {ultimo ? <span className="rounded-full border border-primary-fixed bg-primary-fixed px-2.5 py-1 text-[0.68rem] font-semibold text-primary">Em curso</span> : null}
               </div>
 
               <div className="relative mt-3 h-1.5 overflow-hidden rounded-full bg-surface-container">
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "chart-grow absolute inset-y-0 left-0 rounded-full shadow-[0_0_10px_currentColor]",
+                    "chart-grow absolute inset-y-0 left-0 rounded-full",
                     mes.resultado > 0 ? "bg-positivo" : mes.resultado < 0 ? "bg-negativo" : "bg-outline-variant",
                   )}
                   style={{ width: `${proporcao}%`, animationDelay: `${120 + i * 55}ms` }}
@@ -51,14 +50,14 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
       </ul>
 
       <div
-        className="rolagem-discreta hidden overflow-x-auto rounded-[16px] border border-card-border/70 bg-white/58 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] sm:block"
+        className="rolagem-discreta hidden overflow-x-auto rounded-[var(--radius-painel)] border border-card-border bg-surface sm:block"
         role="region"
         aria-label="Fluxo mensal, tabela"
         tabIndex={0}
       >
         <table className="w-full min-w-[40rem] text-sm">
-          <thead className="bg-surface-container-low/65 backdrop-blur-sm">
-            <tr className="border-b border-card-border/75 text-left">
+          <thead className="bg-surface-container-low">
+            <tr className="border-b border-card-border text-left">
               <th scope="col" className="rotulo px-4 py-3.5">Mês</th>
               <th scope="col" className="rotulo px-4 py-3.5 text-right">Recebido líquido</th>
               <th scope="col" className="rotulo px-4 py-3.5 text-right">Despesas pagas</th>
@@ -74,15 +73,15 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
                 <tr
                   key={mes.mes.getTime()}
                   className={cn(
-                    "group border-b border-card-border/65 transition-colors last:border-b-0 hover:bg-primary-fixed/12",
-                    ultimo && "bg-primary-fixed/18 font-medium hover:bg-primary-fixed/28",
+                    "group border-b border-card-border transition-colors last:border-b-0 hover:bg-selecao",
+                    ultimo && "bg-selecao font-medium hover:bg-selecao",
                   )}
                 >
                   <th scope="row" className={cn("px-4 py-3.5 text-left text-on-surface", ultimo ? "font-semibold" : "font-medium")}>
                     <div className="flex items-center gap-2.5">
                       <span className={cn("size-2 rounded-full", mes.resultado > 0 ? "bg-positivo" : mes.resultado < 0 ? "bg-negativo" : "bg-outline-variant")} />
                       <span>{capitalizar(formatarMesAno(mes.mes))}</span>
-                      {ultimo ? <span className="rounded-full border border-primary/10 bg-primary-fixed/60 px-2 py-0.5 text-[0.66rem] font-semibold text-primary">em curso</span> : null}
+                      {ultimo ? <span className="rounded-full border border-primary-fixed bg-primary-fixed px-2 py-0.5 text-[0.66rem] font-semibold text-primary">em curso</span> : null}
                     </div>
                     <div aria-hidden="true" className="mt-2 ml-[1.125rem] h-1 w-24 overflow-hidden rounded-full bg-surface-container">
                       <span className={cn("block h-full rounded-full transition-[width] duration-500", mes.resultado > 0 ? "bg-positivo" : mes.resultado < 0 ? "bg-negativo" : "bg-outline-variant")} style={{ width: `${proporcao}%` }} />
@@ -104,7 +103,7 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
 
 function Valor({ rotulo, valor, classe }: { rotulo: string; valor: number; classe: string }) {
   return (
-    <div className="rounded-[12px] border border-card-border/55 bg-white/58 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)]">
+    <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3 py-2.5">
       <dt className="text-[0.68rem] font-medium text-outline">{rotulo}</dt>
       <dd className={cn("tabular mt-1 font-semibold", classe)}>{formatarMoedaCompacta(valor)}</dd>
     </div>

@@ -39,13 +39,12 @@ export function ListaProntuarios({
       {prontuarios.map((prontuario) => (
         <li
           key={prontuario.id}
-          className="premium-interactive relative isolate overflow-hidden rounded-[var(--radius-cartao)] border border-card-border/85 bg-linear-to-br from-white/95 to-surface-container-low/45 p-4 shadow-[var(--shadow-cartao)] sm:p-5"
+          className="premium-interactive relative isolate overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 sm:p-5"
         >
-          <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-secondary-fixed/30 blur-3xl" />
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-start gap-3.5">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/55 bg-primary-fixed/35 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-selecao text-primary">
                 <FileText aria-hidden="true" size={20} strokeWidth={1.65} />
               </span>
 
@@ -58,7 +57,7 @@ export function ListaProntuarios({
                     {prontuario.titulo}
                   </Link>
                   {prontuario.exemplo ? (
-                    <span className="rounded-full border border-atencao-borda/70 bg-atencao-fundo/75 px-2 py-0.5 text-[0.68rem] font-medium text-atencao">
+                    <span className="rounded-full border border-atencao-borda bg-atencao-fundo px-2 py-0.5 text-[0.68rem] font-medium text-atencao">
                       exemplo
                     </span>
                   ) : null}
@@ -70,20 +69,20 @@ export function ListaProntuarios({
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-outline">
-                  <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border/75 bg-surface/70 px-2.5">
-                    <CalendarDays aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary/70" />
+                  <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5">
+                    <CalendarDays aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
                     {formatarData(prontuario.dataRegistro)}
                   </span>
 
                   {prontuario.ultimaVersao ? (
-                    <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border/75 bg-surface/70 px-2.5">
-                      <History aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary/70" />
+                    <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5">
+                      <History aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
                       Versão {prontuario.ultimaVersao.numero} · {formatarData(prontuario.ultimaVersao.criadoEm)} às {formatarHora(prontuario.ultimaVersao.criadoEm)}
                     </span>
                   ) : null}
 
                   {prontuario.atendimento ? (
-                    <span className="inline-flex min-h-7 items-center rounded-full border border-card-border/75 bg-surface/70 px-2.5">
+                    <span className="inline-flex min-h-7 items-center rounded-full border border-card-border bg-surface px-2.5">
                       {prontuario.atendimento.procedimento ?? "Atendimento"} · {formatarData(prontuario.atendimento.inicio)}
                     </span>
                   ) : null}

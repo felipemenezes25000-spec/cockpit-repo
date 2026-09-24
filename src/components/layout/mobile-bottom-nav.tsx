@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 type Item = {
@@ -30,6 +31,10 @@ function estaAtivo(caminho: string, href: string): boolean {
   return caminho === href || caminho.startsWith(`${href}/`);
 }
 
+const CLASSE_ITEM =
+  "relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[var(--radius-controle)] px-0.5 text-[0.625rem] font-semibold transition-colors duration-150 active:bg-surface-container-low min-[360px]:text-[0.6875rem]";
+
+/** A barra inferior do celular e do tablet: os quatro módulos do dia e "Mais". */
 export function NavegacaoInferiorMobile({
   aoAbrirMenu,
   pendenciasAltas = 0,
@@ -43,9 +48,9 @@ export function NavegacaoInferiorMobile({
   return (
     <nav
       aria-label="Navegação rápida"
-      className="glass-surface fixed inset-x-2 bottom-2 z-40 rounded-[22px] border border-white/85 px-1.5 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] shadow-[0_22px_58px_-20px_rgba(8,41,76,0.4),inset_0_1px_0_rgba(255,255,255,0.98)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-card-border bg-surface px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] lg:hidden"
     >
-      <div className="grid grid-cols-5 gap-1">
+      <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
         {ITENS.map((item) => {
           const Icone = item.icone;
           const ativo = estaAtivo(caminho, item.href);
@@ -56,29 +61,16 @@ export function NavegacaoInferiorMobile({
               href={item.href}
               aria-current={ativo ? "page" : undefined}
               aria-label={mostrarPendencias ? `${item.rotulo} — ${pendenciasAltas} ${pendenciasAltas === 1 ? "pendência prioritária" : "pendências prioritárias"}` : undefined}
-              className={cn(
-                "group relative flex min-h-14 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[15px] px-1 text-[0.61rem] font-semibold transition-[transform,background-color,color] duration-180 active:scale-[0.965]",
-                ativo ? "text-primary" : "text-outline hover:bg-white/50 hover:text-primary",
-              )}
+              className={cn(CLASSE_ITEM, ativo ? "text-primary" : "text-on-surface-variant hover:text-primary")}
             >
-              {ativo ? (
-                <>
-                  <span aria-hidden="true" className="absolute inset-x-1 inset-y-0 rounded-[14px] bg-[linear-gradient(180deg,rgba(209,232,255,0.62),rgba(255,255,255,0.48))]" />
-                  <span aria-hidden="true" className="absolute inset-x-4 top-0 h-[2px] rounded-full bg-primary-container shadow-[0_0_9px_rgba(10,110,209,0.28)]" />
-                </>
+              <Marcador ativo={ativo} />
+              <Icone aria-hidden="true" size={21} strokeWidth={ativo ? 2 : 1.7} />
+              {mostrarPendencias ? (
+                <span aria-hidden="true" className="tabular absolute top-1.5 left-1/2 ml-1.5 flex min-w-4.5 items-center justify-center rounded-full border-2 border-surface bg-negativo px-1 text-[0.6rem] leading-3.5 font-bold text-on-primary">
+                  {pendenciasAltas > 9 ? "9+" : pendenciasAltas}
+                </span>
               ) : null}
-              <span className={cn(
-                "relative flex size-8 items-center justify-center rounded-[10px] transition-[transform,background-color,box-shadow] duration-180 group-active:scale-95",
-                ativo ? "bg-white/78 shadow-[var(--shadow-cartao)]" : "bg-transparent",
-              )}>
-                <Icone aria-hidden="true" size={19} strokeWidth={ativo ? 1.9 : 1.55} />
-                {mostrarPendencias ? (
-                  <span aria-hidden="true" className="tabular absolute -top-1.5 -right-2 flex min-w-4.5 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[0.54rem] font-bold leading-3.5 text-on-primary shadow-[0_2px_8px_rgba(187,0,0,0.22)]">
-                    {pendenciasAltas > 9 ? "9+" : pendenciasAltas}
-                  </span>
-                ) : null}
-              </span>
-              <span className="relative max-w-full truncate leading-tight">{item.rotulo}</span>
+              <span className="max-w-full truncate leading-tight">{item.rotulo}</span>
             </Link>
           );
         })}
@@ -86,28 +78,20 @@ export function NavegacaoInferiorMobile({
         <button
           type="button"
           onClick={aoAbrirMenu}
-          className={cn(
-            "group relative flex min-h-14 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[15px] px-1 text-[0.61rem] font-semibold transition-[transform,background-color,color] duration-180 active:scale-[0.965]",
-            maisAtivo ? "text-primary" : "text-outline hover:bg-white/50 hover:text-primary",
-          )}
+          className={cn(CLASSE_ITEM, maisAtivo ? "text-primary" : "text-on-surface-variant hover:text-primary")}
           aria-label="Abrir todos os módulos"
           aria-current={maisAtivo ? "page" : undefined}
         >
-          {maisAtivo ? (
-            <>
-              <span aria-hidden="true" className="absolute inset-x-1 inset-y-0 rounded-[14px] bg-[linear-gradient(180deg,rgba(209,232,255,0.62),rgba(255,255,255,0.48))]" />
-              <span aria-hidden="true" className="absolute inset-x-4 top-0 h-[2px] rounded-full bg-primary-container shadow-[0_0_9px_rgba(10,110,209,0.28)]" />
-            </>
-          ) : null}
-          <span className={cn(
-            "relative flex size-8 items-center justify-center rounded-[10px] transition-[transform,background-color,box-shadow] duration-180 group-active:scale-95",
-            maisAtivo ? "bg-white/78 shadow-[var(--shadow-cartao)]" : "bg-transparent",
-          )}>
-            <Menu aria-hidden="true" size={19} strokeWidth={maisAtivo ? 1.9 : 1.6} />
-          </span>
-          <span className="relative leading-tight">Mais</span>
+          <Marcador ativo={maisAtivo} />
+          <Menu aria-hidden="true" size={21} strokeWidth={maisAtivo ? 2 : 1.7} />
+          <span className="leading-tight">Mais</span>
         </button>
       </div>
     </nav>
   );
+}
+
+function Marcador({ ativo }: { ativo: boolean }): ReactNode {
+  if (!ativo) return null;
+  return <span aria-hidden="true" className="absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-b-full bg-primary-container" />;
 }

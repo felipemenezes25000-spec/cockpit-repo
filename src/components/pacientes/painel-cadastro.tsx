@@ -14,9 +14,9 @@ function Dado({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/58 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)]">
+    <div className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3">
       <div className="flex items-start gap-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary-fixed/40 text-primary">{icone}</span>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">{icone}</span>
         <div className="min-w-0 flex-1">
           <p className="rotulo mb-1.5 text-[0.64rem] text-outline">{rotulo}</p>
           <div className="text-sm leading-6 break-words text-on-surface">{children}</div>
@@ -43,7 +43,7 @@ export function PainelCadastro({ paciente }: { paciente: PacienteCompleto }) {
                 {formatarTelefone(paciente.telefone)}
               </a>
               {whatsapp ? (
-                <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-7 items-center gap-1.5 rounded-lg border border-positivo-borda/65 bg-positivo-fundo/70 px-2.5 text-xs font-semibold text-positivo transition-[transform,background-color] duration-150 hover:-translate-y-0.5 hover:bg-positivo-fundo">
+                <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-7 items-center gap-1.5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-2.5 text-xs font-semibold text-positivo transition-[transform,background-color] duration-150 hover:bg-positivo-fundo">
                   <MessageCircle aria-hidden="true" size={12} strokeWidth={1.8} />
                   WhatsApp
                 </a>

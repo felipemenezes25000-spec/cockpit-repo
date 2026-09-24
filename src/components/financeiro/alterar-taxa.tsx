@@ -28,9 +28,8 @@ function Botao() {
     <button
       type="submit"
       disabled={pending}
-      className="group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:shadow-[0_12px_28px_-12px_rgba(8,84,160,0.68)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+      className="group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary transition-[transform,background-color,border-color] duration-200 hover:border-primary hover:bg-primary-hover active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/60" />
       {pending ? (
         <>
           <LoaderCircle aria-hidden="true" size={18} className="animate-spin" />
@@ -56,7 +55,7 @@ function ValorFinanceiro({
   tom?: "neutro" | "positivo" | "negativo" | "atencao";
 }) {
   return (
-    <div className="rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/60 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
+    <div className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3">
       <p className="rotulo text-[0.64rem] text-outline">{rotulo}</p>
       <p
         className={cn(
@@ -106,15 +105,15 @@ export function AlterarTaxa({
       {erros.geral ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-error/25 bg-error-container px-3.5 py-3 text-sm text-on-error-container shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
+          className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-error bg-error-container px-3.5 py-3 text-sm text-on-error-container"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erros.geral}
         </p>
       ) : null}
 
-      <section aria-labelledby="taxa-atual" className="rounded-[var(--radius-painel)] border border-card-border/70 bg-surface-container-low/48 p-4 sm:p-5">
-        <p id="taxa-atual" className="rotulo text-primary/80">Cenário atual</p>
+      <section aria-labelledby="taxa-atual" className="rounded-[var(--radius-painel)] border border-card-border bg-surface-container-low p-4 sm:p-5">
+        <p id="taxa-atual" className="rotulo text-primary">Cenário atual</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <ValorFinanceiro
             rotulo="Taxa padrão da tabela"
@@ -167,7 +166,7 @@ export function AlterarTaxa({
       </div>
 
       {efeito && recebimentoConfirmado !== null ? (
-        <div className="rounded-[var(--radius-controle)] border border-atencao-borda/85 bg-atencao-fundo px-4 py-3 text-xs leading-5 text-atencao shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        <div className="rounded-[var(--radius-controle)] border border-atencao-borda bg-atencao-fundo px-4 py-3 text-xs leading-5 text-atencao">
           <p className="font-semibold">O recebimento já foi confirmado.</p>
           <p className="mt-1">
             O registro original fica intacto
@@ -204,11 +203,11 @@ export function AlterarTaxa({
         />
       </Campo>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border/70 pt-6">
+      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
         <Botao />
         <Link
           href={`/financeiro/vendas/${venda.id}`}
-          className="premium-interactive inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface/75 px-6 text-sm font-semibold text-on-surface-variant shadow-[var(--shadow-cartao)] hover:border-primary-fixed-dim hover:text-primary"
+          className="premium-interactive inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface px-6 text-sm font-semibold text-on-surface-variant hover:border-primary-fixed-dim hover:text-primary"
         >
           Cancelar
         </Link>

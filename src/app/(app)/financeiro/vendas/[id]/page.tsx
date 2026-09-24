@@ -46,7 +46,7 @@ function Linha({
     <div
       className={cn(
         "flex items-baseline justify-between gap-3 rounded-[var(--radius-controle)] px-3 py-2.5 text-sm",
-        destaque ? "bg-primary-fixed/24" : "bg-surface/48",
+        destaque ? "bg-selecao" : "bg-surface",
       )}
     >
       <span className={destaque ? "font-medium text-on-surface" : "text-on-surface-variant"}>{rotulo}</span>
@@ -67,10 +67,10 @@ function Metrica({
   tom?: "neutro" | "positivo" | "negativo" | "atencao";
 }) {
   return (
-    <div className="rounded-[var(--radius-cartao)] border border-card-border/70 bg-surface/58 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
+    <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="rotulo text-[0.65rem] text-outline">{rotulo}</span>
-        <span className="flex size-8 items-center justify-center rounded-xl bg-primary-fixed/40 text-primary">
+        <span className="flex size-8 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
           <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
         </span>
       </div>
@@ -116,12 +116,16 @@ export default async function PaginaVenda({ params }: Props) {
         acoes={
           podeFinanceiro ? (
             <>
-              <BotaoLink href={`/financeiro/vendas/${venda.id}/alterar-pagamento`} variante="secundaria" tamanho="sm">
+              {/* Sem pré-carregamento: as duas telas dependem de o recebimento
+                  estar confirmado, e a confirmação acontece nesta mesma tela.
+                  Pré-carregada antes, a de pagamento abria dizendo
+                  "Recebimento ainda ajustável" depois de confirmado. */}
+              <BotaoLink href={`/financeiro/vendas/${venda.id}/alterar-pagamento`} prefetch={false} variante="secundaria" tamanho="sm">
                 <Repeat aria-hidden="true" size={15} strokeWidth={1.75} />
-                Alterar pagamento
+                Alterar forma de pagamento
               </BotaoLink>
               {formaUsaCartao(venda.forma) ? (
-                <BotaoLink href={`/financeiro/vendas/${venda.id}/alterar-taxa`} variante="contorno" tamanho="sm">
+                <BotaoLink href={`/financeiro/vendas/${venda.id}/alterar-taxa`} prefetch={false} variante="contorno" tamanho="sm">
                   <PencilLine aria-hidden="true" size={15} strokeWidth={1.75} />
                   Alterar taxa
                 </BotaoLink>
@@ -169,7 +173,7 @@ export default async function PaginaVenda({ params }: Props) {
             {venda.desconto > 0 ? <Linha rotulo="Desconto">− {formatarMoeda(venda.desconto)}</Linha> : null}
             <Linha rotulo="Valor final negociado" destaque>{formatarMoeda(venda.valorFinal)}</Linha>
 
-            <div className="my-1 border-t border-card-border/70" />
+            <div className="my-1 border-t border-card-border" />
             <Linha rotulo="Forma de pagamento">
               {ROTULO_FORMA[venda.forma]}{venda.parcelas > 1 ? ` em ${venda.parcelas}x` : ""}
             </Linha>
@@ -183,7 +187,7 @@ export default async function PaginaVenda({ params }: Props) {
                   <span className="text-positivo">{formatarMoeda(venda.valorLiquido)}</span>
                 </Linha>
                 {venda.parcelas > 1 ? (
-                  <p className="rounded-[var(--radius-controle)] bg-informativo-fundo/65 px-3 py-2.5 text-xs leading-5 text-informativo-texto">
+                  <p className="rounded-[var(--radius-controle)] bg-informativo-fundo px-3 py-2.5 text-xs leading-5 text-informativo-texto">
                     A operadora antecipa: {venda.parcelas} parcelas da paciente e um repasse único para a clínica.
                   </p>
                 ) : null}
@@ -195,14 +199,14 @@ export default async function PaginaVenda({ params }: Props) {
             )}
 
             {venda.taxaManual ? (
-              <div className="mt-1 flex flex-col gap-1.5 rounded-[var(--radius-controle)] border border-atencao-borda/70 bg-atencao-fundo p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+              <div className="mt-1 flex flex-col gap-1.5 rounded-[var(--radius-controle)] border border-atencao-borda bg-atencao-fundo p-3">
                 <MarcaTaxaManual />
                 {venda.taxaJustificativa ? <p className="text-xs leading-5 text-atencao">{venda.taxaJustificativa}</p> : null}
               </div>
             ) : null}
 
             {venda.observacoes ? (
-              <div className="mt-1 border-t border-card-border/70 pt-3">
+              <div className="mt-1 border-t border-card-border pt-3">
                 <p className="rotulo text-[0.65rem] text-outline">Observações</p>
                 <p className="mt-2 text-xs leading-5 whitespace-pre-line text-on-surface-variant">{venda.observacoes}</p>
               </div>
@@ -215,7 +219,7 @@ export default async function PaginaVenda({ params }: Props) {
           <CardCorpo className="flex flex-col gap-4">
             {recebimento ? (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
                   <ChipRecebimento situacao={recebimento.situacao} />
                   <span className="tabular text-xs text-outline">
                     {recebimento.recebidoEm
@@ -238,7 +242,7 @@ export default async function PaginaVenda({ params }: Props) {
                 </div>
 
                 {emAberto && podeFinanceiro ? (
-                  <div className="border-t border-card-border/70 pt-4">
+                  <div className="border-t border-card-border pt-4">
                     <ConfirmarRecebimento
                       recebimentoId={recebimento.id}
                       vendaId={venda.id}
@@ -274,17 +278,17 @@ export default async function PaginaVenda({ params }: Props) {
                 ) : null}
               </>
             ) : (
-              <div className="rounded-[var(--radius-controle)] border border-negativo-borda/65 bg-negativo-fundo px-3.5 py-3 text-sm text-negativo">
+              <div className="rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm text-negativo">
                 O recebimento desta venda foi cancelado.
               </div>
             )}
 
             {venda.ajustes.length > 0 ? (
-              <div className="border-t border-card-border/70 pt-4">
+              <div className="border-t border-card-border pt-4">
                 <p className="rotulo mb-3">Ajustes financeiros</p>
                 <ul className="flex flex-col gap-2.5">
                   {venda.ajustes.map((ajuste) => (
-                    <li key={ajuste.id} className="rounded-[var(--radius-controle)] border border-card-border/65 bg-surface/55 px-3 py-2.5 text-sm">
+                    <li key={ajuste.id} className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-2.5 text-sm">
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="text-on-surface-variant">{formatarData(ajuste.em)}{ajuste.por ? ` · ${ajuste.por}` : ""}</span>
                         <span className={cn("tabular font-semibold", ajuste.valor >= 0 ? "text-positivo" : "text-negativo")}>
@@ -307,8 +311,8 @@ export default async function PaginaVenda({ params }: Props) {
           <CardCorpo>
             <ol className="relative flex flex-col gap-3 before:absolute before:top-4 before:bottom-4 before:left-[1.05rem] before:w-px before:bg-card-border">
               {venda.alteracoes.map((alteracao, i) => (
-                <li key={i} className="relative flex items-start gap-3 rounded-[var(--radius-cartao)] border border-card-border/65 bg-surface/55 px-3.5 py-3 text-sm">
-                  <span className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-xl border border-card-border bg-surface text-outline shadow-[var(--shadow-cartao)]">
+                <li key={i} className="relative flex items-start gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3 text-sm">
+                  <span className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline">
                     <History aria-hidden="true" size={14} strokeWidth={1.75} />
                   </span>
                   <div className="min-w-0 pt-0.5">

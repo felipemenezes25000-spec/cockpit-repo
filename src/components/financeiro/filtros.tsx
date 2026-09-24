@@ -60,17 +60,16 @@ export function FiltrosFinanceiro({
   const quantidadeAtivos = grupos.reduce((total, grupo) => total + (parametros?.get(grupo.param) ? 1 : 0), 0) + (busca && termo ? 1 : 0);
 
   return (
-    <div className="premium-panel relative overflow-hidden rounded-[16px] border p-3.5 shadow-[var(--shadow-cartao)]">
-      <span aria-hidden="true" className="pointer-events-none absolute -top-14 -right-10 size-32 rounded-full bg-primary-fixed/32 blur-3xl" />
+    <div className="premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-3.5">
       <div className="relative mb-3 flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.05em] text-on-surface-variant uppercase">
-          <span className="flex size-7 items-center justify-center rounded-[9px] border border-card-border/70 bg-white/68 text-primary shadow-[var(--shadow-cartao)]">
+          <span className="flex size-7 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-primary">
             <SlidersHorizontal aria-hidden="true" size={14} strokeWidth={1.7} />
           </span>
           Filtros
         </span>
         {quantidadeAtivos > 0 ? (
-          <span className="tabular rounded-full border border-primary/10 bg-primary-fixed/42 px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
+          <span className="tabular rounded-full border border-primary-fixed bg-selecao px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
             {quantidadeAtivos} {quantidadeAtivos === 1 ? "ativo" : "ativos"}
           </span>
         ) : null}
@@ -87,7 +86,7 @@ export function FiltrosFinanceiro({
               maxLength={80}
               aria-label={busca.placeholder}
               placeholder={busca.placeholder}
-              className={cn(classeDeEntrada({ altura: "compacta", recuo: "buscaCompacta" }), "bg-white/78 shadow-[var(--shadow-cartao)]")}
+              className={cn(classeDeEntrada({ altura: "compacta", recuo: "buscaCompacta" }), "bg-surface")}
             />
             {termo ? (
               <button
@@ -98,7 +97,7 @@ export function FiltrosFinanceiro({
                   navegar({ [busca.param]: "" });
                 }}
                 aria-label="Limpar busca"
-                className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[9px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+                className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
               >
                 <X aria-hidden="true" size={14} strokeWidth={1.75} />
               </button>
@@ -116,7 +115,7 @@ export function FiltrosFinanceiro({
                 <select
                   value={atual}
                   onChange={(e) => navegar({ [grupo.param]: e.target.value })}
-                  className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "min-w-0 flex-1 bg-white/78 font-medium shadow-[var(--shadow-cartao)] sm:flex-none")}
+                  className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "min-w-0 flex-1 bg-surface font-medium sm:flex-none")}
                 >
                   {grupo.opcoes.map((opcao) => (
                     <option key={opcao.valor} value={opcao.valor}>{opcao.rotulo}</option>
@@ -127,7 +126,7 @@ export function FiltrosFinanceiro({
           }
 
           return (
-            <div key={grupo.param} role="group" aria-label={grupo.rotulo} className={cn(SEGMENTO_GRUPO, "w-full bg-white/56 shadow-[var(--shadow-cartao)] sm:w-auto")}> 
+            <div key={grupo.param} role="group" aria-label={grupo.rotulo} className={cn(SEGMENTO_GRUPO, "w-full bg-surface sm:w-auto")}>
               {grupo.opcoes.map((opcao) => {
                 const ativa = atual === opcao.valor;
                 return (
@@ -149,7 +148,7 @@ export function FiltrosFinanceiro({
         })}
 
         {pendente ? (
-          <span role="status" className="inline-flex items-center gap-1.5 rounded-[9px] border border-card-border/70 bg-white/65 px-2.5 py-1.5 text-xs text-outline shadow-[var(--shadow-cartao)]">
+          <span role="status" className="inline-flex items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-2.5 py-1.5 text-xs text-outline">
             <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
             Atualizando…
           </span>

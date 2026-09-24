@@ -114,10 +114,10 @@ function Grupo({
   semRegistro?: boolean;
 }) {
   return (
-    <section aria-labelledby={id} className="rounded-[var(--radius-painel)] border border-card-border/70 bg-surface/50 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] sm:p-5">
+    <section aria-labelledby={id} className="rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="rotulo text-primary/80">Conferência</p>
+          <p className="rotulo text-primary">Conferência</p>
           <h3 id={id} className="mt-2 text-lg font-semibold tracking-[-0.02em] text-on-surface">{titulo}</h3>
         </div>
         <SeloHero tom={sobras.length > 0 ? "atencao" : "positivo"}>{sobras.length}</SeloHero>
@@ -125,7 +125,7 @@ function Grupo({
       <p className="mt-2 text-sm leading-6 text-on-surface-variant">{explicacao}</p>
 
       {sobras.length === 0 ? (
-        <div className="mt-4 flex items-center gap-2 rounded-[var(--radius-controle)] border border-positivo-borda/65 bg-positivo-fundo/65 px-3 py-3 text-sm text-positivo">
+        <div className="mt-4 flex items-center gap-2 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-3 py-3 text-sm text-positivo">
           <ShieldCheck aria-hidden="true" size={16} strokeWidth={1.75} />
           Nenhum item.
         </div>
@@ -134,10 +134,10 @@ function Grupo({
           {sobras.map((sobra) => (
             <li
               key={`${sobra.situacao}-${sobra.caminho}`}
-              className="rounded-[var(--radius-cartao)] border border-card-border/70 bg-surface/72 px-3.5 py-3.5 shadow-[var(--shadow-cartao)]"
+              className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3.5"
             >
               <div className="flex items-start gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-outline">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-surface-container-low text-outline">
                   <ImageOff aria-hidden="true" size={15} strokeWidth={1.6} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -154,11 +154,11 @@ function Grupo({
                 </div>
               </div>
 
-              <div className="mt-3 border-t border-card-border/65 pt-3 text-right">
+              <div className="mt-3 border-t border-card-border pt-3 text-right">
                 {semRegistro ? (
                   <span className="text-xs font-medium text-outline">{sobra.recente ? "Aguarde uma hora" : "Conferir no Supabase"}</span>
                 ) : sobra.prontuarioId ? (
-                  <Link href={`/prontuarios/${sobra.prontuarioId}`} className="inline-flex min-h-8 items-center rounded-lg bg-primary-fixed/35 px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-fixed/60">
+                  <Link href={`/prontuarios/${sobra.prontuarioId}`} className="inline-flex min-h-8 items-center rounded-[var(--radius-controle)] bg-selecao px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-fixed">
                     Abrir prontuário
                   </Link>
                 ) : (

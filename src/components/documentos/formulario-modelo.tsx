@@ -42,7 +42,7 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
 
           <CardCorpo className="flex flex-col gap-5">
             {edicao ? (
-              <div className="rounded-[16px] border border-informativo-borda/55 bg-informativo-fundo/42 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <div className="rounded-[var(--radius-painel)] border border-informativo-borda bg-informativo-fundo px-4 py-3">
                 <p className="rotulo text-informativo-texto">Tipo preservado</p>
                 <p className="mt-1 text-sm font-semibold text-on-surface">{ROTULO_TIPO[modelo.tipo]}</p>
                 <p className="mt-1 text-xs leading-5 text-outline">O tipo não muda porque decide quem pode emitir. Para outra natureza, crie um modelo novo.</p>
@@ -67,7 +67,7 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
               <textarea id="corpo" name="corpo" required maxLength={LIMITE.corpo} rows={18} defaultValue={valor("corpo", modelo?.versaoAtual?.corpo ?? "")} className={cn(AREA_TEXTO, "min-h-[28rem] font-mono text-[0.8125rem] leading-6", estado.erros.corpo && "border-error")} />
             </Campo>
 
-            <div className="rounded-[16px] border border-card-border/70 bg-white/48 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] sm:p-5">
+            <div className="rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 sm:p-5">
               <EditorDeCampos key={modelo?.id ?? tipo} iniciais={modelo?.versaoAtual?.campos ?? []} obrigatorio={tipo === "anamnese"} />
             </div>
 
@@ -78,7 +78,7 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
             ) : null}
 
             {estado.erros.geral ? (
-              <p role="alert" className="flex items-start gap-2 rounded-[14px] border border-negativo-borda/70 bg-negativo-fundo/72 px-3.5 py-3 text-sm leading-6 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+              <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-negativo">
                 <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
                 {estado.erros.geral}
               </p>
@@ -99,20 +99,20 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
           <CardCabecalho titulo="Histórico de versões" descricao={`${modelo.versoes.length} ${modelo.versoes.length === 1 ? "versão" : "versões"}`} />
           <CardCorpo className="space-y-2">
             {modelo.versoes.map((versao, indice) => (
-              <details key={versao.id} className="group overflow-hidden rounded-[14px] border border-card-border/70 bg-white/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] open:border-primary/15 open:bg-primary-fixed/12">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-white/55">
+              <details key={versao.id} className="group overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface open:border-primary-fixed open:bg-selecao">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-surface-container-low">
                   <span className="min-w-0">
                     <span className="flex items-center gap-2 text-sm font-semibold text-on-surface">
                       Versão {versao.numero}
-                      {indice === 0 ? <span className="rounded-full border border-primary/10 bg-primary-fixed/55 px-2 py-0.5 text-[0.62rem] font-semibold text-primary">mais recente</span> : null}
+                      {indice === 0 ? <span className="rounded-full border border-primary-fixed bg-primary-fixed px-2 py-0.5 text-[0.62rem] font-semibold text-primary">mais recente</span> : null}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-outline">{versao.motivo} · {formatarData(versao.criadoEm)} às {formatarHora(versao.criadoEm)}{versao.criadoPor ? ` · ${versao.criadoPor}` : ""}</span>
                   </span>
                   <span className="text-xs font-semibold text-primary group-open:hidden">Abrir</span>
                   <span className="hidden text-xs font-semibold text-primary group-open:inline">Fechar</span>
                 </summary>
-                <div className="border-t border-card-border/60 p-3 sm:p-4">
-                  <div className="rolagem-discreta max-h-96 overflow-y-auto rounded-[12px] border border-card-border/60 bg-white/70 px-4 py-4">
+                <div className="border-t border-card-border p-3 sm:p-4">
+                  <div className="rolagem-discreta max-h-96 overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface px-4 py-4">
                     <p className="whitespace-pre-wrap text-sm leading-7 text-on-surface">{versao.corpo}</p>
                   </div>
                 </div>

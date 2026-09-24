@@ -65,14 +65,26 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 
 ### Estrutura e navegação
 
-- Estrutura principal reutilizável, com menu lateral, cabeçalho e área de conteúdo.
-- Menu lateral com os nove módulos, indicação da página atual (cor de fundo, texto
-  em negrito na cor da marca, barra à direita do item e `aria-current`),
-  recolhimento para faixa de ícones no computador e gaveta sobreposta no celular
-  e no tablet.
-- Cabeçalho com título da página, data de hoje por extenso, busca global para
-  pacientes, atendimentos, documentos e prontuários conforme o perfil, ícone de
-  notificações com a contagem de pendências de prioridade alta e menu do usuário.
+- Estrutura principal reutilizável (desde setembro de 2026, sistema "Cockpit"):
+  **barra de módulos no topo**, **faixa do agora** logo abaixo e a área de
+  conteúdo. Não há mais menu lateral.
+- Barra de módulos com os sete módulos do dia a dia e "Mais" (Relatórios e
+  Configurações), indicação da página atual (azul claro de apoio, sublinhado no
+  azul de ação e `aria-current`). No computador largo cada módulo mostra ícone e
+  nome; entre 1280 e 1535 px, só o nome; entre 1024 e 1279 px, só o ícone.
+  Abaixo de 1024 px os módulos vão para a gaveta (botão de menu) e para a barra
+  inferior (Início, Agenda, Pacientes, Financeiro, Mais).
+- Na barra: busca e comandos (Ctrl K ou "/"), ícone de notificações com a
+  contagem de pendências de prioridade alta e menu do usuário. O título da tela
+  não mora mais na barra: cada tela traz o seu `<h1>`.
+- **Faixa do agora**: a hora atual, quem está em atendimento e quanto falta,
+  quem é a próxima e em quanto tempo, quem vem depois e o atalho "Ver o dia".
+  Prazo vai escrito em frase ("em 53 min", "faltam 18 min"); a hora é lida só
+  no navegador e renovada a cada 30 s.
+- **Atalhos de uma tecla** em qualquer tela logada, com o foco fora de campo:
+  N (nova paciente), A (novo agendamento), V (registrar venda), T (criar
+  tarefa). Dá para desligar no painel de atalhos da Visão Geral (WCAG 2.1.4); a
+  escolha fica no navegador.
 - Faixa de demonstração no topo da área de conteúdo, montada pelo layout: "**Ambiente
   de demonstração.** Pacientes, valores e agendamentos marcados como *exemplo*
   são fictícios." Aparece enquanto houver paciente marcada como
@@ -82,19 +94,21 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 
 ### Visão Geral
 
-- **Ações rápidas** — atalhos que navegam de verdade para os fluxos dos módulos:
-  Nova paciente, Novo agendamento, Registrar atendimento, Registrar venda e
-  Criar tarefa. "Registrar atendimento" (prontuário) só aparece para a
-  administradora; recepção e financeiro veem quatro.
-- **Indicadores** — seis cartões, todos calculados a partir dos dados fictícios:
-  atendimentos de hoje, confirmados, confirmações pendentes, pacientes aguardando
-  retorno, recebido no mês e valores a receber.
-- **Agenda de hoje** — os atendimentos na ordem do relógio sobre uma linha do
-  tempo, com o intervalo livre entre eles ganhando altura proporcional à duração,
-  marcador "agora", destaque no atendimento em curso e legenda das situações.
-- **Pendências da clínica** — tipo, paciente, detalhe, prazo, prioridade e botão
-  que leva ao módulo responsável.
-- **Próximos retornos** — até cinco retornos em aberto (nem agendados nem
+- **Cabine do dia** — o bloco azul que se lê de relance, a única cor cheia da
+  tela. O agora (quem está em atendimento, com uma barra lisa do tempo previsto
+  e "faltam N min"; ou a próxima paciente e "em N min"), os atendimentos de hoje
+  ("2 de 10 concluídos", com barra, confirmados e confirmações pendentes), o
+  recebido no mês com o que falta receber e o vencido, e a **fila do dia**: um
+  cartão por atendimento, na ordem do relógio, com hora, paciente e situação em
+  texto e ícone, e um marcador "agora" entre o que passou e o que vem. A fila
+  rola de lado e abre já mostrando a hora atual.
+- **Atalhos** — Novo agendamento, Nova paciente, Registrar atendimento,
+  Registrar venda e Criar tarefa, com a tecla de cada um à vista e a opção de
+  desligar os atalhos de uma tecla. "Registrar atendimento" (prontuário) só
+  aparece para a administradora; recepção e financeiro veem quatro.
+- **Pede atenção** — as pendências: tipo, paciente, detalhe, prazo, prioridade e
+  botão que leva ao módulo responsável.
+- **Voltam em breve** — até cinco retornos em aberto (nem agendados nem
   recusados), com paciente, procedimento do retorno, situação do acompanhamento
   e uma barra mostrando onde a paciente está dentro do período sugerido de
   contato. A data exibida como "último atendimento" não vem da agenda: é a data
@@ -102,9 +116,9 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
   há procedimento ou intervalo. Por isso um retorno criado em
   `/relacionamento/retornos/novo`, que nasce sem procedimento, aparece como
   "Procedimento" e com uma data 90 dias antes da combinada.
-- **Resumo financeiro** — entradas, despesas, valores pendentes e a evolução dos
-  recebimentos nos últimos seis meses.
-- **Aniversariantes do mês** — nome, data, último atendimento e botão de contato.
+- **Caixa do mês** — entradas, despesas, valores pendentes (com a parcela
+  vencida numa barra lisa) e a evolução dos recebimentos nos últimos seis meses.
+- **Aniversários do mês** — nome, data, último atendimento e botão de contato.
 
 ### Prontuários
 
@@ -139,10 +153,28 @@ botão de volta para a Visão Geral. Esse texto vem do item `/relatorios` em
 
 ### Identidade visual
 
-A estrutura, a tipografia e o espaçamento vêm do mockup em `docs/redesign`,
-gerado no Google Stitch. **A paleta não**: o mockup era verde sobre branco, e o
-verde passou a significar "deu certo" — não podia continuar sendo também a cor
-do menu e dos botões.
+**Desde setembro de 2026 vale o sistema "Cockpit"**: claro, plano e no azul da
+marca. As regras de leitura:
+
+- **Painel não tem sombra: tem uma linha de 1px.** Sombra só no que flutua sobre
+  a tela (menu, paleta de comandos, gaveta, rodapé fixo de formulário).
+- **Nada de vidro, desfoque, degradê decorativo ou transparência** em estado.
+  O único degradê é o da **cabine** (do azul de ação ao azul de texto), um bloco
+  por tela com o que se lê de relance: o dia na Visão Geral, o caixa no
+  Financeiro, o acompanhamento no Relacionamento e o cabeçalho da ficha da
+  paciente.
+- **Raios**: 12 px no painel e na cabine, 10 px no cartão, 8 px no controle,
+  4 px no selo retangular e na tecla. Nada maior que isso.
+- **Números** em três tamanhos (destaque, número, número de apoio), sempre com
+  a frase que diz o que contam. Proporção vai numa barra lisa; nada de
+  mostrador, régua ou metáfora de instrumento.
+- **Uma ação principal por área**, no azul de ação chapado; as outras com
+  contorno de controle (3:1 sobre branco).
+
+A estrutura original, a tipografia e o espaçamento vieram do mockup em
+`docs/redesign`, gerado no Google Stitch. **A paleta não**: o mockup era verde
+sobre branco, e o verde passou a significar "deu certo" — não podia continuar
+sendo também a cor do menu e dos botões.
 
 Duas famílias de cor, com papéis que não se misturam.
 
@@ -265,9 +297,9 @@ Nenhuma recomendação clínica automática é exibida, por decisão de escopo.
 4. **Definição de "atendimento do dia".** Hoje o indicador desconsidera os
    cancelados e conta o restante. Falta confirmar se é assim que a clínica pensa.
 5. **Canal de contato preferencial** para confirmação, retorno e aniversário.
-6. **Horário de funcionamento.** A Linha do Dia hoje se ajusta aos atendimentos
+6. **Horário de funcionamento.** A fila do dia hoje se ajusta aos atendimentos
    existentes. Com o horário oficial definido, ela pode passar a mostrar o
-   expediente inteiro, inclusive as pontas vazias do dia.
+   expediente inteiro, inclusive os horários livres.
 7. ~~**Tratamento do fuso horário.**~~ Definido: todo cálculo de dia usa o relógio
    de São Paulo (`lib/dates.ts`), qualquer que seja o fuso do servidor — e os
    testes rodam de propósito com o processo em UTC, como na Vercel.
@@ -314,11 +346,13 @@ src/
       relatorios/         página provisória
       configuracoes/      hub e tabela de procedimentos (lista, novo, editar)
   components/
-    layout/               estrutura, menu, cabeçalho, perfil, selo, placeholder, tela de erro
+    layout/               estrutura, barra de módulos, faixa do agora, gaveta, barra
+                          inferior, atalhos de tecla, perfil, selo, placeholder, tela de erro
     ui/                   cartão, botão, campo, formulário de ação, abas, seletor segmentado,
-                          situação, prioridade, lista, avatar, vazio
-    overview/             indicadores, Linha do Dia, pendências, retornos, financeiro,
-                          gráfico, aniversariantes, ações rápidas
+                          situação, prioridade, lista, avatar, vazio, cabeçalho de página,
+                          aviso de tela, indicador
+    overview/             cabine do dia, agora na cabine, fila do dia, atalhos, pendências,
+                          retornos, caixa do mês, gráfico, aniversários
     pacientes/            busca, lista, paginação, formulário, ficha, importador
     agenda/               lista do dia, navegação de dias, formulário, seletor de
                           paciente, botões de situação

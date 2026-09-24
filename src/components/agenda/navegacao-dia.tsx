@@ -72,7 +72,7 @@ export function NavegacaoDia({
   }
 
   const seta =
-    "group flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-card-border/80 bg-white/72 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.92),var(--shadow-cartao)] transition-[transform,background-color,border-color,box-shadow,color] duration-150 hover:-translate-y-px hover:border-primary/20 hover:bg-white hover:text-primary hover:shadow-[var(--shadow-realce)] active:translate-y-px active:scale-[0.97]";
+    "group flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-cartao)] border border-card-border bg-surface text-on-surface-variant transition-[transform,background-color,border-color,color] duration-150 hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary active:translate-y-px active:scale-[0.97]";
 
   const temFiltro = profissionais.length > 1;
 
@@ -86,7 +86,7 @@ export function NavegacaoDia({
         evento.preventDefault();
         navegar(valor, filtro);
       }}
-      className="premium-panel flex flex-wrap items-center gap-2 rounded-[16px] border p-2.5 shadow-[var(--shadow-cartao)]"
+      className="premium-panel flex flex-wrap items-center gap-2 rounded-[var(--radius-painel)] border p-2.5"
     >
       <div className="flex items-center gap-2">
         <Link
@@ -101,7 +101,7 @@ export function NavegacaoDia({
         </Link>
 
         <div className="relative">
-          {ehHoje ? <span aria-hidden="true" className="absolute -top-1 -right-1 z-10 size-2.5 rounded-full border-2 border-white bg-primary-container shadow-[0_0_8px_rgba(10,110,209,0.3)]" /> : null}
+          {ehHoje ? <span aria-hidden="true" className="absolute -top-1 -right-1 z-10 size-2.5 rounded-full border-2 border-surface bg-primary-container" /> : null}
           <input
             type="date"
             name="dia"
@@ -123,7 +123,7 @@ export function NavegacaoDia({
               navegar(valor, filtro);
             }}
             aria-label="Escolher o dia"
-            className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "tabular bg-white/78 font-medium shadow-[var(--shadow-cartao)]")}
+            className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "tabular bg-surface font-medium")}
           />
         </div>
 
@@ -149,7 +149,7 @@ export function NavegacaoDia({
             navegar(valor, escolhido);
           }}
           aria-label="Filtrar por quem atende"
-          className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "max-w-full bg-white/78 font-medium shadow-[var(--shadow-cartao)]")}
+          className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "max-w-full bg-surface font-medium")}
         >
           <option value="">Todas as profissionais</option>
           {profissionais.map((p) => (
@@ -161,17 +161,17 @@ export function NavegacaoDia({
       ) : null}
 
       {comJavaScript ? null : (
-        <button type="submit" className="inline-flex h-10 items-center rounded-[12px] border border-card-border bg-white/75 px-3 text-sm font-semibold text-primary shadow-[var(--shadow-cartao)] transition-[transform,background-color] hover:-translate-y-px hover:bg-white active:translate-y-px">
+        <button type="submit" className="inline-flex h-10 items-center rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3 text-sm font-semibold text-primary transition-[transform,background-color] hover:bg-selecao active:translate-y-px">
           Ver
         </button>
       )}
 
       {!ehHoje ? (
-        <Link href={enderecoDaAgenda(null, profissional)} className="inline-flex h-10 items-center rounded-[12px] border border-primary/10 bg-primary-fixed/38 px-3 text-sm font-semibold text-primary transition-[transform,background-color] hover:-translate-y-px hover:bg-primary-fixed/60 active:translate-y-px">
+        <Link href={enderecoDaAgenda(null, profissional)} className="inline-flex h-10 items-center rounded-[var(--radius-cartao)] border border-primary-fixed bg-selecao px-3 text-sm font-semibold text-primary transition-[transform,background-color] hover:bg-primary-fixed active:translate-y-px">
           Voltar para hoje
         </Link>
       ) : (
-        <span className="hidden items-center gap-1.5 rounded-[10px] border border-positivo-borda/55 bg-positivo-fundo/55 px-2.5 py-1.5 text-xs font-semibold text-positivo sm:inline-flex">
+        <span className="hidden items-center gap-1.5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-2.5 py-1.5 text-xs font-semibold text-positivo sm:inline-flex">
           <span aria-hidden="true" className="size-1.5 rounded-full bg-positivo" />
           Hoje
         </span>

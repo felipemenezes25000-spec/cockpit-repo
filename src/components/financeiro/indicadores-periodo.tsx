@@ -9,6 +9,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { Indicador } from "@/components/ui/indicador";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 import type { IndicadoresDoPeriodo } from "@/server/consultas/painel-financeiro";
@@ -79,32 +80,82 @@ export function IndicadoresPeriodo({
     },
   ];
 
-  return (
-    <section aria-labelledby="indicadores-titulo">
-      <h2 id="indicadores-titulo" className="sr-only">Indicadores do período</h2>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-        {cartoes.map((cartao) => {
-          const Icone = cartao.icone;
-          const destaque = cartao.rotulo === "Líquido recebido" || cartao.rotulo === "Resultado de caixa";
+  // A cabine leva o que se lê de relance; a grade, o detalhe.
+  const naCabine = new Set(["Líquido recebido", "Resultado de caixa", "A receber"]);
+  const naGrade = cartoes.filter((cartao) => !naCabine.has(cartao.rotulo));
+  const proporcaoVencida = n.aReceber > 0 ? n.aReceberVencido / n.aReceber : 0;
+  const proporcaoDasSaidas =
+    n.despesasPagas !== null && n.liquidoRecebido > 0 ? Math.min(1, n.despesasPagas / n.liquidoRecebido) : null;
 
+  return (
+    <section aria-labelledby="indicadores-titulo" className="flex flex-col gap-4">
+      <h2 id="indicadores-titulo" className="sr-only">Indicadores do período</h2>
+
+      <div className="cabine grid gap-6 p-5 sm:p-6 md:grid-cols-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)] lg:gap-0">
+        <Indicador
+          className="md:col-span-2 lg:col-span-1 lg:pr-6"
+          rotulo={exemplo ? "Líquido recebido · demonstrativo" : "Líquido recebido"}
+          tamanho="numero"
+          valor={formatarMoeda(n.liquidoRecebido)}
+          frase={
+            <>
+              {formatarMoeda(n.totalRecebidoBruto)} recebidos; {formatarMoeda(n.taxasDeCartao)} ficaram em taxas de cartão
+              {n.ajustes !== 0 ? `; inclui ${formatarMoeda(n.ajustes)} de ajustes` : ""}.
+            </>
+          }
+        />
+        <Indicador
+          className="lg:border-l lg:border-cabine-linha lg:px-6"
+          rotulo="Resultado de caixa"
+          tamanho="numero-sm"
+          valor={n.resultadoDeCaixa === null ? "—" : formatarMoeda(n.resultadoDeCaixa)}
+          proporcao={proporcaoDasSaidas ?? undefined}
+          descricaoDaBarra={
+            proporcaoDasSaidas === null
+              ? undefined
+              : `${Math.round(proporcaoDasSaidas * 100)}% do líquido recebido saiu em despesas pagas`
+          }
+          frase={
+            n.resultadoDeCaixa === null
+              ? RESTRITO
+              : proporcaoDasSaidas === null
+                ? "líquido recebido − despesas pagas"
+                : `${Math.round(proporcaoDasSaidas * 100)}% do líquido saiu em despesas pagas`
+          }
+        />
+        <Indicador
+          className="lg:border-l lg:border-cabine-linha lg:pl-6"
+          rotulo="A receber"
+          tamanho="numero-sm"
+          valor={formatarMoeda(n.aReceber)}
+          proporcao={n.aReceber > 0 ? proporcaoVencida : undefined}
+          descricaoDaBarra={`${Math.round(proporcaoVencida * 100)}% do que falta receber já venceu`}
+          frase={
+            n.aReceberVencido > 0 ? (
+              <strong className="font-semibold">{formatarMoeda(n.aReceberVencido)} já vencido</strong>
+            ) : (
+              "nada vencido"
+            )
+          }
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
+        {naGrade.map((cartao) => {
+          const Icone = cartao.icone;
           return (
             <article
               key={cartao.rotulo}
-              className={cn(
-                "premium-panel premium-interactive relative isolate flex min-w-0 flex-col overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5",
-                destaque && "bg-linear-to-br from-white to-primary-fixed/22",
-              )}
+              className="premium-panel flex min-w-0 flex-col rounded-[var(--radius-painel)] border p-4 sm:p-5"
             >
-              <span aria-hidden="true" className="pointer-events-none absolute -top-8 -right-8 -z-10 size-28 rounded-full bg-primary-fixed/35 blur-2xl" />
-
               <div className="mb-5 flex items-start justify-between gap-3">
                 <h3 className="rotulo leading-4">{cartao.rotulo}</h3>
                 <span
                   className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-xl border bg-surface/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
-                    cartao.tom === "positivo" && "border-positivo-borda/70 bg-positivo-fundo/65 text-positivo",
-                    cartao.tom === "negativo" && "border-negativo-borda/70 bg-negativo-fundo/65 text-negativo",
-                    !cartao.tom && "border-card-border/80 text-primary",
+                    "flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border",
+                    cartao.tom === "positivo" && "border-positivo-borda bg-positivo-fundo text-positivo",
+                    cartao.tom === "negativo" && "border-negativo-borda bg-negativo-fundo text-negativo",
+                    !cartao.tom && "border-card-border bg-surface text-primary",
                   )}
                 >
                   <Icone aria-hidden="true" size={17} strokeWidth={1.65} />
@@ -113,7 +164,7 @@ export function IndicadoresPeriodo({
 
               <span
                 className={cn(
-                  "tabular mt-auto text-[clamp(1.12rem,2vw,1.45rem)] leading-tight font-semibold tracking-[-0.025em]",
+                  "numero-sm mt-auto break-words",
                   cartao.valor === null && "text-outline",
                   cartao.tom === "positivo" && "text-positivo",
                   cartao.tom === "negativo" && "text-negativo",

@@ -49,7 +49,7 @@ export function FormularioEmissao({
 
         <CardCorpo className="flex flex-col gap-6">
           {corrigeId ? (
-            <p className="flex items-start gap-2 rounded-[14px] border border-informativo-borda/60 bg-informativo-fundo/48 px-3.5 py-3 text-sm leading-6 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
+            <p className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-informativo-borda bg-informativo-fundo px-3.5 py-3 text-sm leading-6 text-on-surface-variant">
               <Replace aria-hidden="true" size={16} className="mt-1 shrink-0 text-informativo-texto" />
               Este documento vai corrigir um anterior. Ao emitir, o antigo passa a &quot;substituído&quot; — a menos que já esteja assinado, e aí ele permanece como está.
             </p>
@@ -69,7 +69,7 @@ export function FormularioEmissao({
           </Campo>
 
           {estado.erros.geral ? (
-            <p role="alert" className="flex items-start gap-2 rounded-[14px] border border-negativo-borda/70 bg-negativo-fundo/72 px-3.5 py-3 text-sm leading-6 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+            <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-negativo">
               <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
               {estado.erros.geral}
             </p>
@@ -91,11 +91,11 @@ export function FormularioEmissao({
         <Card as="div">
           <CardCabecalho titulo="Prévia do texto" descricao={`${escolhido.nome} · versão ${escolhido.versao}`} />
           <CardCorpo>
-            <p className="mb-4 flex items-start gap-2 rounded-[14px] border border-informativo-borda/55 bg-informativo-fundo/42 px-3.5 py-3 text-xs leading-5 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            <p className="mb-4 flex items-start gap-2 rounded-[var(--radius-cartao)] border border-informativo-borda bg-informativo-fundo px-3.5 py-3 text-xs leading-5 text-on-surface-variant">
               <FileText aria-hidden="true" size={14} className="mt-0.5 shrink-0 text-informativo-texto" />
               Confira antes de emitir. O texto gravado é lido do banco na hora da emissão, não daqui.
             </p>
-            <div className="rolagem-discreta max-h-96 overflow-y-auto rounded-[16px] border border-card-border/75 bg-white/68 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+            <div className="rolagem-discreta max-h-96 overflow-y-auto rounded-[var(--radius-painel)] border border-card-border bg-surface px-5 py-4">
               <p className="whitespace-pre-wrap text-sm leading-7 text-on-surface">{escolhido.corpo}</p>
             </div>
           </CardCorpo>

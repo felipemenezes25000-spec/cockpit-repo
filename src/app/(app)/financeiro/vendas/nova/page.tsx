@@ -75,7 +75,7 @@ export default async function PaginaNovaVenda({
           titulo="Dados da venda"
           descricao="No cartão, a paciente parcela e a clínica recebe um repasse só, já líquido de taxa."
         />
-        <CardCorpo className="py-7 sm:py-8 [&_form>div:last-child]:sticky [&_form>div:last-child]:bottom-[calc(5.15rem+env(safe-area-inset-bottom))] [&_form>div:last-child]:z-20 [&_form>div:last-child]:-mx-1 [&_form>div:last-child]:overflow-hidden [&_form>div:last-child]:rounded-[16px] [&_form>div:last-child]:border [&_form>div:last-child]:border-card-border/85 [&_form>div:last-child]:bg-white/90 [&_form>div:last-child]:px-3 [&_form>div:last-child]:py-3 [&_form>div:last-child]:shadow-[0_16px_42px_-24px_rgba(8,41,76,0.42),inset_0_1px_0_rgba(255,255,255,0.96)] [&_form>div:last-child]:backdrop-blur-xl lg:[&_form>div:last-child]:bottom-3 sm:[&_form>div:last-child]:px-4">
+        <CardCorpo className="py-7 sm:py-8 [&_form>div:last-child]:sticky [&_form>div:last-child]:bottom-[calc(5.15rem+env(safe-area-inset-bottom))] [&_form>div:last-child]:z-20 [&_form>div:last-child]:-mx-1 [&_form>div:last-child]:overflow-hidden [&_form>div:last-child]:rounded-[var(--radius-painel)] [&_form>div:last-child]:border [&_form>div:last-child]:border-card-border [&_form>div:last-child]:bg-surface [&_form>div:last-child]:px-3 [&_form>div:last-child]:py-3 lg:[&_form>div:last-child]:bottom-3 sm:[&_form>div:last-child]:px-4">
           <FormularioVenda
             procedimentos={catalogo.procedimentos}
             taxas={taxas}

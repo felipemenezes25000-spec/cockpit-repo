@@ -19,7 +19,7 @@ export async function PendenciasDaClinica() {
   if (todas.length === 0) {
     return (
       <Card>
-        <CardCabecalho titulo="Pendências da clínica" />
+        <CardCabecalho titulo="Pede atenção" />
         <EstadoVazio
           icone={CheckCircle2}
           titulo="Nada em aberto"
@@ -31,9 +31,8 @@ export async function PendenciasDaClinica() {
 
   return (
     <Card className="relative flex flex-col overflow-hidden">
-      <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-14 size-48 rounded-full bg-atencao-fundo/70 blur-3xl" />
       <CardCabecalho
-        titulo="Pendências da clínica"
+        titulo="Pede atenção"
         descricao={
           atrasadas > 0 ? (
             <>
@@ -55,15 +54,15 @@ export async function PendenciasDaClinica() {
               <ItemLista
                 key={pendencia.id}
                 className={cn(
-                  "premium-interactive relative overflow-hidden border bg-white/62 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-                  atrasada ? "border-negativo-borda/55 bg-negativo-fundo/28" : "border-card-border/75",
+                  "premium-interactive relative overflow-hidden border bg-surface",
+                  atrasada ? "border-negativo-borda" : "border-card-border",
                 )}
               >
                 <span
                   aria-hidden="true"
                   className={cn(
                     "absolute inset-y-3 left-0 w-[3px] rounded-r-full",
-                    atrasada ? "bg-negativo" : "bg-primary-container/55",
+                    atrasada ? "bg-negativo" : "bg-primary-fixed-dim",
                   )}
                 />
 
@@ -71,8 +70,8 @@ export async function PendenciasDaClinica() {
                   <span className={cn(
                     "rounded-[var(--radius-tag)] border px-2 py-1 text-[0.625rem] font-bold tracking-wider uppercase",
                     atrasada
-                      ? "border-negativo-borda/60 bg-negativo-fundo/70 text-negativo"
-                      : "border-card-border/75 bg-white/60 text-outline",
+                      ? "border-negativo-borda bg-negativo-fundo text-negativo"
+                      : "border-card-border bg-surface text-outline",
                   )}>
                     {ROTULO_PENDENCIA[pendencia.tipo]}
                   </span>
@@ -81,10 +80,10 @@ export async function PendenciasDaClinica() {
                     href={pendencia.destino}
                     aria-label={`Resolver: ${pendencia.descricao}`}
                     className={cn(
-                      "group inline-flex shrink-0 items-center gap-1 rounded-[11px] px-3 py-1.5 text-xs font-semibold shadow-[var(--shadow-cartao)] transition-[transform,background-color,border-color,box-shadow] duration-150 hover:-translate-y-px active:translate-y-px active:scale-[0.985]",
+                      "group inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-controle)] px-3 py-1.5 text-xs font-semibold transition-[transform,background-color,border-color] duration-150 active:translate-y-px active:scale-[0.985]",
                       atrasada
-                        ? "border border-primary/10 bg-primary-container text-on-primary hover:bg-primary"
-                        : "border border-primary/15 bg-white/75 text-primary hover:border-primary/25 hover:bg-white hover:shadow-[var(--shadow-realce)]",
+                        ? "border border-primary-container bg-primary-container text-on-primary hover:bg-primary-hover"
+                        : "border border-borda-controle bg-surface text-primary hover:border-primary-container hover:bg-selecao",
                     )}
                   >
                     Resolver

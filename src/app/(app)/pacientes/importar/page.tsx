@@ -65,21 +65,20 @@ export default async function PaginaImportarPacientes() {
         }
       />
 
-      <section aria-label="Etapas da importação" className="premium-panel relative overflow-hidden rounded-[20px] border p-3 sm:p-4">
-        <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-40 rounded-full bg-primary-fixed/30 blur-3xl" />
+      <section aria-label="Etapas da importação" className="premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-3 sm:p-4">
         <ol className="relative grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {ETAPAS.map((etapa, indice) => {
             const Icone = etapa.icone;
             return (
-              <li key={etapa.numero} className="group relative overflow-hidden rounded-[15px] border border-card-border/70 bg-white/58 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition-[transform,border-color,box-shadow,background-color] duration-200 hover:-translate-y-px hover:border-primary/15 hover:bg-white/76 hover:shadow-[var(--shadow-cartao)]">
+              <li key={etapa.numero} className="group relative overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3.5 transition-[transform,border-color,background-color] duration-200 hover:border-primary-fixed hover:bg-surface-container-low">
                 <div className="flex items-start gap-3">
-                  <span className="relative flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-primary/10 bg-primary-fixed/48 text-primary shadow-[var(--shadow-cartao)]">
+                  <span className="relative flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary">
                     <Icone aria-hidden="true" size={17} strokeWidth={1.65} />
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="tabular text-[0.62rem] font-bold tracking-[0.1em] text-outline uppercase">{etapa.numero}</span>
-                      {indice < ETAPAS.length - 1 ? <span aria-hidden="true" className="hidden h-px flex-1 bg-gradient-to-r from-card-border to-transparent xl:block" /> : null}
+                      {indice < ETAPAS.length - 1 ? <span aria-hidden="true" className="hidden h-px flex-1 bg-card-border xl:block" /> : null}
                     </div>
                     <p className="mt-1 text-sm font-semibold tracking-[-0.01em] text-on-surface">{etapa.titulo}</p>
                     <p className="mt-1 text-xs leading-5 text-outline">{etapa.descricao}</p>

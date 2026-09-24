@@ -22,22 +22,22 @@ const FASE = {
     rotulo: "Ainda cedo",
     barra: "bg-outline-variant",
     texto: "text-outline",
-    fundo: "bg-white/58",
-    borda: "border-card-border/75",
+    fundo: "bg-surface",
+    borda: "border-card-border",
   },
   no_periodo: {
     rotulo: "No período",
     barra: "bg-informativo",
     texto: "text-informativo-texto",
-    fundo: "bg-informativo-fundo/28",
-    borda: "border-informativo-borda/45",
+    fundo: "bg-surface",
+    borda: "border-card-border",
   },
   passou: {
     rotulo: "Passou do período",
     barra: "bg-atencao-acento",
     texto: "text-atencao",
-    fundo: "bg-atencao-fundo/32",
-    borda: "border-atencao-borda/45",
+    fundo: "bg-surface",
+    borda: "border-atencao-borda",
   },
 } as const;
 
@@ -55,14 +55,14 @@ function BarraJanela({ janela }: { janela: JanelaContato }) {
   return (
     <div className="mt-4">
       <div
-        className="relative h-2 w-full overflow-hidden rounded-full border border-card-border/55 bg-white/58 shadow-[inset_0_1px_2px_rgba(15,35,58,0.05)]"
+        className="relative h-2 w-full overflow-hidden rounded-full bg-trilho"
         role="img"
         aria-label={`${fase.rotulo}, dentro de um intervalo sugerido de ${janela.intervaloSugerido} dias`}
       >
-        <span aria-hidden="true" className="absolute inset-y-0 right-0 left-[85%] bg-secondary-fixed/75" />
+        <span aria-hidden="true" className="absolute inset-y-0 right-0 left-[85%] bg-selecao" />
         <span
           aria-hidden="true"
-          className={cn("absolute inset-y-0 left-0 rounded-full shadow-[0_0_14px_currentColor] transition-[width] duration-500 ease-out", fase.barra)}
+          className={cn("absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out", fase.barra)}
           style={{ width: `${largura}%` }}
         />
       </div>
@@ -87,7 +87,7 @@ export async function ProximosRetornos() {
   if (retornos.length === 0) {
     return (
       <Card>
-        <CardCabecalho titulo="Próximos retornos" />
+        <CardCabecalho titulo="Voltam em breve" />
         <EstadoVazio
           icone={Repeat2}
           titulo="Nenhum retorno em aberto"
@@ -99,9 +99,8 @@ export async function ProximosRetornos() {
 
   return (
     <Card className="relative overflow-hidden">
-      <span aria-hidden="true" className="pointer-events-none absolute -top-24 -right-16 size-52 rounded-full bg-secondary-fixed/38 blur-3xl" />
       <CardCabecalho
-        titulo="Próximos retornos"
+        titulo="Voltam em breve"
         descricao="Oportunidades de acompanhamento, das mais antigas para as mais recentes."
       />
 
@@ -113,7 +112,7 @@ export async function ProximosRetornos() {
               <ItemLista
                 key={retorno.id}
                 className={cn(
-                  "premium-interactive relative overflow-hidden border shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  "premium-interactive relative overflow-hidden border",
                   fase.fundo,
                   fase.borda,
                 )}
@@ -123,7 +122,7 @@ export async function ProximosRetornos() {
                   <span className="truncate text-sm font-semibold text-on-surface">
                     {retorno.paciente}
                   </span>
-                  <span className="rounded-[var(--radius-tag)] border border-card-border/70 bg-white/65 px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                  <span className="rounded-[var(--radius-tag)] border border-card-border bg-surface px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
                     {ROTULO_ACOMPANHAMENTO[retorno.situacao]}
                   </span>
                 </div>

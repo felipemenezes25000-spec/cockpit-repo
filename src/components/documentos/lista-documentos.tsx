@@ -16,25 +16,24 @@ function Linha({ documento, indice }: { documento: DocumentoDaLista; indice: num
       <Link
         href={`/formularios/${documento.id}`}
         className={cn(
-          "premium-interactive group relative isolate flex flex-col gap-3 overflow-hidden rounded-[18px] border p-4 shadow-[var(--shadow-cartao)] sm:flex-row sm:items-center sm:justify-between sm:p-5",
+          "premium-interactive group relative isolate flex flex-col gap-3 overflow-hidden rounded-[var(--radius-cartao)] border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5",
           assinado
-            ? "border-positivo-borda/45 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(234,245,234,0.28))]"
+            ? "border-card-border bg-surface"
             : encerrado
-              ? "border-card-border/68 bg-surface-container-low/44"
-              : "border-card-border/85 bg-linear-to-br from-white/95 to-primary-fixed/8",
+              ? "border-card-border bg-surface-container-low"
+              : "border-card-border bg-surface",
         )}
       >
-        <span aria-hidden="true" className={cn("pointer-events-none absolute -top-12 -right-10 -z-10 size-28 rounded-full blur-2xl", assinado ? "bg-positivo-fundo/65" : encerrado ? "bg-surface-container-high/45" : "bg-primary-fixed/28")} />
         <span aria-hidden="true" className={cn("absolute inset-y-4 left-0 w-[3px] rounded-r-full transition-colors duration-200", assinado ? "bg-positivo" : encerrado ? "bg-outline-variant" : "bg-primary-fixed-dim group-hover:bg-primary-container")} />
 
         <div className="flex min-w-0 items-start gap-3.5 pl-0.5">
           <span className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-2xl border shadow-[inset_0_1px_0_rgba(255,255,255,0.86),var(--shadow-cartao)] transition-[transform,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:scale-[1.025]",
+            "flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border transition-[transform] duration-200",
             assinado
-              ? "border-positivo-borda/55 bg-positivo-fundo/58 text-positivo"
+              ? "border-positivo-borda bg-positivo-fundo text-positivo"
               : encerrado
-                ? "border-card-border/70 bg-white/58 text-outline"
-                : "border-primary-fixed-dim/55 bg-primary-fixed/32 text-primary",
+                ? "border-card-border bg-surface text-outline"
+                : "border-primary-fixed-dim bg-selecao text-primary",
           )}>
             <FileSignature aria-hidden="true" size={20} strokeWidth={1.65} />
           </span>
@@ -56,7 +55,7 @@ function Linha({ documento, indice }: { documento: DocumentoDaLista; indice: num
           </div>
         </div>
 
-        <span className="flex size-9 shrink-0 items-center justify-center self-end rounded-xl border border-card-border/75 bg-surface/75 text-outline-variant shadow-[var(--shadow-cartao)] transition-[transform,color,border-color,background-color,box-shadow] duration-200 group-hover:translate-x-0.5 group-hover:border-primary-fixed-dim group-hover:bg-primary-fixed/35 group-hover:text-primary group-hover:shadow-[var(--shadow-realce)] sm:self-auto">
+        <span className="flex size-9 shrink-0 items-center justify-center self-end rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline-variant transition-[transform,color,border-color,background-color] duration-200 group-hover:translate-x-0.5 group-hover:border-primary-fixed-dim group-hover:bg-selecao group-hover:text-primary sm:self-auto">
           <ChevronRight aria-hidden="true" size={18} strokeWidth={1.5} />
         </span>
       </Link>

@@ -16,7 +16,7 @@ export function FormularioTarefa() {
 
   return <form action={enviar} noValidate className="space-y-5">
     {erros.geral ? (
-      <p role="alert" className="rounded-[14px] border border-negativo-borda/70 bg-negativo-fundo/72 px-4 py-3 text-sm leading-6 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">{erros.geral}</p>
+      <p role="alert" className="rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo">{erros.geral}</p>
     ) : null}
 
     <div className="grid gap-5 sm:grid-cols-2">
@@ -44,7 +44,7 @@ export function FormularioTarefa() {
       <input id="prazo" name="prazo" type="date" defaultValue={valores.prazo} className={cn(ENTRADA, erros.prazo && ENTRADA_ERRO)} />
     </Campo>
 
-    <div className="flex flex-wrap items-center gap-3 border-t border-card-border/70 pt-6">
+    <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
       <BotaoDeAcao
         tom="primario"
         tamanho="md"

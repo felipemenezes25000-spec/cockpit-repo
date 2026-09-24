@@ -14,43 +14,43 @@ export const ESTILO_SITUACAO: Record<SituacaoAtendimento, Estilo> = {
   agendado: {
     rotulo: "Agendado",
     icone: Circle,
-    classes: "border border-informativo-borda/75 bg-informativo-fundo/72 text-informativo-texto",
+    classes: "border border-informativo-borda bg-informativo-fundo text-informativo-texto",
     marcador: "bg-informativo-borda",
   },
   aguardando_confirmacao: {
     rotulo: "Aguardando confirmação",
     icone: Clock3,
-    classes: "border border-atencao-borda/80 bg-atencao-fundo/78 text-atencao",
+    classes: "border border-atencao-borda bg-atencao-fundo text-atencao",
     marcador: "bg-atencao-acento",
   },
   confirmado: {
     rotulo: "Confirmado",
     icone: Check,
-    classes: "border border-positivo-borda/85 bg-positivo-fundo/78 text-positivo",
+    classes: "border border-positivo-borda bg-positivo-fundo text-positivo",
     marcador: "bg-positivo",
   },
   em_atendimento: {
     rotulo: "Em atendimento",
     icone: Activity,
-    classes: "border border-informativo bg-informativo font-semibold text-on-primary shadow-[0_5px_14px_-9px_rgba(10,110,209,0.7)]",
+    classes: "border border-informativo bg-informativo text-on-primary",
     marcador: "bg-on-primary",
   },
   concluido: {
     rotulo: "Concluído",
     icone: CheckCheck,
-    classes: "border border-positivo-borda/75 bg-positivo-fundo/72 text-positivo",
+    classes: "border border-positivo-borda bg-positivo-fundo text-positivo",
     marcador: "bg-positivo-borda",
   },
   cancelado: {
     rotulo: "Cancelado",
     icone: X,
-    classes: "border border-negativo-borda/75 bg-negativo-fundo/72 text-negativo",
+    classes: "border border-negativo-borda bg-negativo-fundo text-negativo",
     marcador: "bg-negativo",
   },
   ausente: {
     rotulo: "Paciente não compareceu",
     icone: Slash,
-    classes: "border border-negativo-borda/85 bg-surface/80 text-negativo",
+    classes: "border border-dashed border-negativo bg-surface text-negativo",
     marcador: "bg-negativo-borda",
   },
 };
@@ -71,20 +71,15 @@ export function SituacaoChip({
   return (
     <span
       className={cn(
-        "inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.72rem] font-medium whitespace-nowrap shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
+        "inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.75rem] font-semibold whitespace-nowrap",
         estilo.classes,
         className,
       )}
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "size-1.5 shrink-0 rounded-full",
-          estilo.marcador,
-          situacao === "em_atendimento" && "now-pulse",
-        )}
-      />
-      <Icone aria-hidden="true" size={13} strokeWidth={1.8} />
+      {situacao === "em_atendimento" ? (
+        <span aria-hidden="true" className="now-pulse size-1.5 shrink-0 rounded-full bg-on-primary" />
+      ) : null}
+      <Icone aria-hidden="true" size={13} strokeWidth={2} />
       {rotulo}
     </span>
   );

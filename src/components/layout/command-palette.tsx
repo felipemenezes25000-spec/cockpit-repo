@@ -173,7 +173,7 @@ export function CommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-start justify-center bg-[#08192b]/32 px-3 pt-[10vh] backdrop-blur-[7px] sm:px-6 sm:pt-[14vh]"
+      className="fixed inset-0 z-[80] flex items-start justify-center bg-on-surface/40 px-3 pt-[10vh] sm:px-6 sm:pt-[14vh]"
       role="presentation"
       onMouseDown={(evento) => {
         if (evento.target === evento.currentTarget) aoFechar();
@@ -185,12 +185,11 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Comandos rápidos"
         onKeyDown={aoTeclar}
-        className="page-reveal glass-surface w-full max-w-[680px] overflow-hidden rounded-[24px] border border-white/80 shadow-[0_32px_90px_-28px_rgba(7,35,66,0.48),0_12px_32px_-20px_rgba(7,35,66,0.32)]"
+        className="page-reveal glass-surface w-full max-w-[680px] overflow-hidden rounded-[var(--radius-painel)] border border-card-border"
       >
-        <div className="relative border-b border-card-border/80 px-4 py-4 sm:px-5">
-          <div aria-hidden="true" className="pointer-events-none absolute -top-16 right-12 size-40 rounded-full bg-primary-fixed/45 blur-3xl" />
+        <div className="relative border-b border-card-border px-4 py-4 sm:px-5">
           <div className="relative flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-[13px] border border-primary/10 bg-white/75 text-primary shadow-[var(--shadow-cartao)]">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-cartao)] border border-primary-fixed bg-surface text-primary">
               <Search aria-hidden="true" size={19} strokeWidth={1.7} />
             </span>
             <input
@@ -209,7 +208,7 @@ export function CommandPalette({
               type="button"
               onClick={aoFechar}
               aria-label="Fechar comandos rápidos"
-              className="flex size-9 shrink-0 items-center justify-center rounded-[11px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-white/75 hover:text-primary active:scale-95"
+              className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-surface-container-low hover:text-primary active:scale-95"
             >
               <X aria-hidden="true" size={18} strokeWidth={1.7} />
             </button>
@@ -223,13 +222,13 @@ export function CommandPalette({
               onMouseEnter={() => setSelecionado(0)}
               onClick={() => navegar(`/busca?q=${encodeURIComponent(termo.trim())}`)}
               className={cn(
-                "group mb-1 flex w-full items-center gap-3 rounded-[15px] border px-3 py-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-150 active:scale-[0.99] sm:px-4",
+                "group mb-1 flex w-full items-center gap-3 rounded-[var(--radius-cartao)] border px-3 py-3 text-left transition-[transform,background-color,border-color] duration-150 active:scale-[0.99] sm:px-4",
                 selecionado === 0
-                  ? "border-primary/15 bg-primary-fixed/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)]"
-                  : "border-transparent hover:bg-white/60",
+                  ? "border-primary-fixed bg-selecao"
+                  : "border-transparent hover:bg-surface-container-low",
               )}
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-[11px] bg-primary text-on-primary shadow-[var(--shadow-primary)]">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-primary text-on-primary">
                 <Sparkles aria-hidden="true" size={17} strokeWidth={1.7} />
               </span>
               <span className="min-w-0 flex-1">
@@ -255,15 +254,15 @@ export function CommandPalette({
                       onMouseEnter={() => setSelecionado(indiceReal)}
                       onClick={() => navegar(acao.href)}
                       className={cn(
-                        "group flex min-w-0 items-center gap-3 rounded-[15px] border px-3 py-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-150 active:scale-[0.99]",
+                        "group flex min-w-0 items-center gap-3 rounded-[var(--radius-cartao)] border px-3 py-3 text-left transition-[transform,background-color,border-color] duration-150 active:scale-[0.99]",
                         ativo
-                          ? "border-primary/15 bg-primary-fixed/38 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),var(--shadow-cartao)]"
-                          : "border-transparent hover:bg-white/55",
+                          ? "border-primary-fixed bg-selecao"
+                          : "border-transparent hover:bg-surface-container-low",
                       )}
                     >
                       <span className={cn(
-                        "flex size-9 shrink-0 items-center justify-center rounded-[11px] border transition-[transform,background-color,color] duration-150 group-hover:scale-[1.03]",
-                        ativo ? "border-primary/10 bg-white/85 text-primary" : "border-card-border/80 bg-white/60 text-on-surface-variant",
+                        "flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border transition-[transform,background-color,color] duration-150",
+                        ativo ? "border-primary-fixed bg-surface text-primary" : "border-card-border bg-surface text-on-surface-variant",
                       )}>
                         <Icone aria-hidden="true" size={18} strokeWidth={1.65} />
                       </span>
@@ -293,22 +292,22 @@ export function CommandPalette({
                     onMouseEnter={() => setSelecionado(indiceReal)}
                     onClick={() => navegar(item.href)}
                     className={cn(
-                      "group flex w-full items-center gap-3 rounded-[15px] border px-3 py-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-150 active:scale-[0.99] sm:px-4",
+                      "group flex w-full items-center gap-3 rounded-[var(--radius-cartao)] border px-3 py-3 text-left transition-[transform,background-color,border-color] duration-150 active:scale-[0.99] sm:px-4",
                       ativo
-                        ? "border-primary/15 bg-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),var(--shadow-cartao)]"
-                        : "border-transparent hover:bg-white/55",
+                        ? "border-primary-fixed bg-surface"
+                        : "border-transparent hover:bg-surface-container-low",
                     )}
                   >
                     <span className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-[11px] border transition-[transform,background-color,color] duration-150 group-hover:scale-[1.03]",
-                      ativo ? "border-primary/10 bg-primary-fixed/60 text-primary" : "border-card-border/80 bg-white/65 text-on-surface-variant",
+                      "flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border transition-[transform,background-color,color] duration-150",
+                      ativo ? "border-primary-fixed bg-primary-fixed text-primary" : "border-card-border bg-surface text-on-surface-variant",
                     )}>
                       <Icone aria-hidden="true" size={18} strokeWidth={1.65} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2 text-sm font-semibold text-on-surface">
                         {item.rotulo}
-                        {item.emConstrucao ? <span className="rounded-[6px] border border-card-border bg-white/70 px-1.5 py-0.5 text-[0.58rem] font-semibold tracking-wide text-outline uppercase">em breve</span> : null}
+                        {item.emConstrucao ? <span className="rounded-[var(--radius-tag)] border border-card-border bg-surface px-1.5 py-0.5 text-[0.58rem] font-semibold tracking-wide text-outline uppercase">em breve</span> : null}
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-outline">{item.finalidade}</span>
                     </span>
@@ -325,9 +324,9 @@ export function CommandPalette({
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-card-border/75 bg-white/40 px-4 py-2.5 text-[0.64rem] text-outline sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-card-border bg-surface px-4 py-2.5 text-[0.64rem] text-outline sm:px-5">
           <span>↑ ↓ navegar · Enter abrir · Esc fechar</span>
-          <span className="inline-flex items-center gap-1.5"><kbd className="rounded-[6px] border border-card-border bg-white/80 px-1.5 py-0.5 font-semibold">Ctrl K</kbd> comandos rápidos</span>
+          <span className="inline-flex items-center gap-1.5"><kbd className="rounded-[var(--radius-tag)] border border-card-border bg-surface px-1.5 py-0.5 font-semibold">Ctrl K</kbd> comandos rápidos</span>
         </div>
       </div>
     </div>

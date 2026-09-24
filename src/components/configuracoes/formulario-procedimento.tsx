@@ -37,7 +37,7 @@ export function FormularioProcedimento({
       {procedimentoId ? <input type="hidden" name="id" value={procedimentoId} /> : null}
 
       {erros.geral ? (
-        <p role="alert" className="flex items-start gap-2 rounded-[14px] border border-negativo-borda/70 bg-negativo-fundo/72 px-3.5 py-3 text-sm leading-6 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-negativo">
           <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
           {erros.geral}
         </p>
@@ -61,7 +61,7 @@ export function FormularioProcedimento({
         </Campo>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border/70 pt-6">
+      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
         <BotaoDeAcao tom="primario" tamanho="md" icone={<Save aria-hidden="true" strokeWidth={1.75} />} rotuloPendente="Salvando procedimento…">
           {rotuloSalvar}
         </BotaoDeAcao>

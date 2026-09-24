@@ -43,7 +43,7 @@ export function FormularioTaxa({
       {taxaId ? <input type="hidden" name="id" value={taxaId} /> : null}
 
       {erros.geral ? (
-        <p role="alert" className="flex items-start gap-2 rounded-[14px] border border-negativo-borda/70 bg-negativo-fundo/72 px-3.5 py-3 text-sm leading-6 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-negativo">
           <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
           {erros.geral}
         </p>
@@ -70,11 +70,11 @@ export function FormularioTaxa({
         </Campo>
       </div>
 
-      <p className="rounded-[14px] border border-informativo-borda/55 bg-informativo-fundo/45 px-3.5 py-3 text-xs leading-5 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+      <p className="rounded-[var(--radius-cartao)] border border-informativo-borda bg-informativo-fundo px-3.5 py-3 text-xs leading-5 text-on-surface-variant">
         Alterar a tabela vale só para as próximas vendas: cada venda guarda a própria cópia da taxa do momento.
       </p>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border/70 pt-6">
+      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
         <BotaoDeAcao tom="primario" tamanho="md" icone={<Save aria-hidden="true" strokeWidth={1.75} />} rotuloPendente="Salvando taxa…">
           {rotuloSalvar}
         </BotaoDeAcao>

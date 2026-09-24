@@ -95,7 +95,7 @@ Seis princípios atravessam o código inteiro:
 
 | Módulo | Rota | O que faz hoje | Estado |
 |---|---|---|:-:|
-| **Visão Geral** | `/` | Indicadores do dia e do mês, Linha do Dia com marcador "agora", pendências, próximos retornos, resumo financeiro e aniversariantes | ✅ Pronto |
+| **Visão Geral** | `/` | Cabine do dia (quem está em atendimento, a próxima, os números do dia e do mês e a fila do dia com marcador "agora"), atalhos de teclado, pendências, retornos, caixa do mês e aniversários | ✅ Pronto |
 | **Agenda** | `/agenda` | Marcar, remarcar e acompanhar o dia; sete situações com trilha gravada por gatilho; choque de horário recusado pelo banco | ✅ Pronto |
 | **Pacientes** | `/pacientes` | Cadastro com CPF validado, busca, ficha com histórico, arquivamento e importação de planilha em dois passos | ✅ Pronto |
 | **Prontuários** | `/prontuarios` | Registro clínico versionado e fotos de evolução em bucket privado — só a administradora | ✅ Pronto |
@@ -145,7 +145,7 @@ Seis princípios atravessam o código inteiro:
 
 - **Relacionamento**: fila de acompanhamento, confirmações dos próximos 15 dias, retornos com data escolhida pela equipe (o sistema **não** recomenda período clínico), tarefas de contato, aniversários e convites para avaliação no Google — texto pronto para abrir no WhatsApp ou copiar. O envio é manual e a equipe marca quando enviou.
 - **Busca global**: formulário GET em `/busca?q=`, a partir de 2 caracteres e até 80; datas em `dd/mm/aaaa` interpretadas no fuso da clínica; nunca lê conteúdo clínico nem consolidado financeiro.
-- **Visão Geral**: seis indicadores, Linha do Dia com o intervalo livre proporcional à duração, pendências, retornos, resumo financeiro com os últimos seis meses e aniversariantes do mês.
+- **Visão Geral**: a cabine do dia (o agora, os números do dia e do mês e a fila do dia em cartões), atalhos N/A/V/T que dá para desligar, pendências, retornos, caixa do mês com os últimos seis meses e aniversários do mês. Em toda tela, a barra de módulos no topo e a faixa do agora logo abaixo.
 
 </details>
 

@@ -21,7 +21,7 @@ export default async function PaginaEntrar({
       descricao="Use o e-mail cadastrado pela clínica para acessar sua área de trabalho."
     >
       {senha === "alterada" ? (
-        <p role="status" className="mb-5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3 text-sm text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+        <p role="status" className="mb-5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3 text-sm text-positivo">
           Senha alterada. Entre com sua nova senha.
         </p>
       ) : null}

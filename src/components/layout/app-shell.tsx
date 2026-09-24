@@ -2,25 +2,31 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { BarraLateral } from "./sidebar";
-import { BarraSuperior } from "./topbar";
-import { NavegacaoInferiorMobile } from "./mobile-bottom-nav";
+import type { AtendimentoDoAgora } from "@/lib/agora";
 import type { UsuarioAtual } from "@/lib/perfil";
+import { FaixaDoAgora } from "./faixa-do-agora";
+import { NavegacaoInferiorMobile } from "./mobile-bottom-nav";
+import { GavetaDeModulos } from "./sidebar";
+import { BarraSuperior } from "./topbar";
 
-const CHAVE_SIDEBAR = "cockpit-sidebar-recolhida";
-
+/**
+ * A estrutura de toda tela logada: a barra de módulos no topo, a faixa do
+ * agora logo abaixo e o conteúdo. Abaixo de 1024 px os módulos vão para a
+ * gaveta (botão de menu) e para a barra inferior.
+ */
 export function EstruturaApp({
   children,
   usuario,
   pendenciasAltas,
+  agenda,
   aviso,
 }: {
   children: ReactNode;
   usuario: UsuarioAtual;
   pendenciasAltas: number;
+  agenda: AtendimentoDoAgora[] | null;
   aviso?: ReactNode;
 }) {
-  const [recolhida, setRecolhida] = useState(false);
   const [gavetaAberta, setGavetaAberta] = useState(false);
   const gatilhoGaveta = useRef<HTMLButtonElement>(null);
   const caminho = usePathname();
@@ -28,26 +34,6 @@ export function EstruturaApp({
   const fecharGaveta = useCallback(() => {
     setGavetaAberta(false);
     gatilhoGaveta.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    try {
-      setRecolhida(window.localStorage.getItem(CHAVE_SIDEBAR) === "sim");
-    } catch {
-      // Preferência visual não pode impedir o uso do Cockpit.
-    }
-  }, []);
-
-  const alternarSidebar = useCallback(() => {
-    setRecolhida((atual) => {
-      const proxima = !atual;
-      try {
-        window.localStorage.setItem(CHAVE_SIDEBAR, proxima ? "sim" : "nao");
-      } catch {
-        // Navegação continua funcionando mesmo sem armazenamento local.
-      }
-      return proxima;
-    });
   }, []);
 
   useEffect(() => {
@@ -73,33 +59,25 @@ export function EstruturaApp({
   }, [gavetaAberta]);
 
   return (
-    <div className="relative flex min-h-screen bg-transparent">
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-20 bg-[radial-gradient(circle,rgba(10,110,209,0.07)_1px,transparent_1px)] opacity-30 [background-size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
-      <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_42%_0%,rgba(10,110,209,0.075),transparent_52%)]" />
-      <div aria-hidden="true" className="pointer-events-none fixed -bottom-40 left-[22%] -z-10 size-[32rem] rounded-full bg-secondary-fixed/18 blur-3xl motion-safe:animate-[pulse_14s_ease-in-out_infinite]" />
-      <a href="#conteudo" className="sr-only rounded-[var(--radius-cartao)] bg-primary px-4 py-2 text-on-primary shadow-[var(--shadow-flutuante)] focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">Ir para o conteúdo</a>
+    <div className="flex min-h-screen flex-col bg-fundo">
+      <a href="#conteudo" className="sr-only rounded-[var(--radius-controle)] bg-primary-container px-4 py-2 font-semibold text-on-primary shadow-flutuante focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">Ir para o conteúdo</a>
 
-      <BarraLateral
-        recolhida={recolhida}
-        aoAlternarRecolhida={alternarSidebar}
-        gavetaAberta={gavetaAberta}
-        aoFecharGaveta={fecharGaveta}
+      <BarraSuperior
+        ref={gatilhoGaveta}
+        aoAbrirGaveta={() => setGavetaAberta(true)}
+        usuario={usuario}
+        pendenciasAltas={pendenciasAltas}
       />
+      <FaixaDoAgora atendimentos={agenda} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <BarraSuperior
-          ref={gatilhoGaveta}
-          aoAbrirGaveta={() => setGavetaAberta(true)}
-          usuario={usuario}
-          pendenciasAltas={pendenciasAltas}
-        />
-        <main id="conteudo" className="relative flex-1 px-3 pt-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-7 lg:pb-7 xl:px-10 2xl:px-14">
-          <div key={caminho} className="page-reveal mx-auto w-full max-w-[1600px]">
-            {aviso}
-            {children}
-          </div>
-        </main>
-      </div>
+      <GavetaDeModulos aberta={gavetaAberta} aoFechar={fecharGaveta} />
+
+      <main id="conteudo" className="relative flex-1 px-3 pt-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-7 lg:pb-10 xl:px-10 2xl:px-14">
+        <div key={caminho} className="page-reveal mx-auto w-full max-w-[1600px]">
+          {aviso}
+          {children}
+        </div>
+      </main>
 
       <NavegacaoInferiorMobile
         aoAbrirMenu={() => setGavetaAberta(true)}

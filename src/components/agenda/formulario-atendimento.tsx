@@ -101,7 +101,7 @@ export function FormularioAtendimento({
       ) : null}
 
       {erros.geral ? (
-        <p role="alert" tabIndex={-1} data-erro-geral className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
+        <p role="alert" tabIndex={-1} data-erro-geral className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erros.geral}
         </p>
@@ -150,7 +150,7 @@ export function FormularioAtendimento({
 
       <RodapeAcoesFormulario>
         <BotaoSalvar rotulo={rotuloSalvar} indisponivel={semProfissional || semProcedimento} />
-        <Link href={cancelarPara} className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] hover:bg-primary-fixed/35 hover:text-primary active:scale-[0.985]">
+        <Link href={cancelarPara} className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] hover:bg-selecao hover:text-primary active:scale-[0.985]">
           Voltar sem salvar
         </Link>
       </RodapeAcoesFormulario>

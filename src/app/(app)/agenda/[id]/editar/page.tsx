@@ -65,11 +65,11 @@ export default async function PaginaEditarAtendimento({
             descricao="Ajuste os dados do horário. A paciente permanece vinculada ao atendimento atual."
           />
           <CardCorpo className="flex flex-col gap-6 py-7 sm:py-8">
-            <FocoAposAcao situacao={atendimento.situacao} className="rounded-[var(--radius-cartao)] border border-card-border/70 bg-surface/55 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
+            <FocoAposAcao situacao={atendimento.situacao} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3.5">
               <BotoesSituacao atendimentoId={atendimento.id} situacao={atendimento.situacao} />
             </FocoAposAcao>
 
-            <div className="border-t border-card-border/70 pt-6">
+            <div className="border-t border-card-border pt-6">
               <FormularioAtendimento
                 acao={atualizarAtendimento}
                 catalogo={catalogo}
@@ -106,8 +106,8 @@ export default async function PaginaEditarAtendimento({
               {atendimento.trilha.length > 0 ? (
                 <ol className="relative flex flex-col gap-3 before:absolute before:top-4 before:bottom-4 before:left-[0.95rem] before:w-px before:bg-card-border">
                   {atendimento.trilha.map((mudanca, i) => (
-                    <li key={`${mudanca.em.getTime()}-${i}`} className="relative flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border/65 bg-surface/55 px-3 py-3">
-                      <span className="relative z-[1] flex size-7 shrink-0 items-center justify-center rounded-xl border border-card-border bg-surface text-outline shadow-[var(--shadow-cartao)]">
+                    <li key={`${mudanca.em.getTime()}-${i}`} className="relative flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+                      <span className="relative z-[1] flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline">
                         <History aria-hidden="true" size={13} strokeWidth={1.75} />
                       </span>
                       <div className="min-w-0">

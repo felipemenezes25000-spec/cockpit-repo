@@ -221,7 +221,7 @@ function ViaAssinada({
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover"
         >
           <Printer aria-hidden="true" size={18} strokeWidth={1.75} />
           Salvar em PDF ou imprimir
@@ -303,15 +303,26 @@ export function AssinarPorLink({
 
   const jaAssinado = situacaoInicial === "ja_assinado";
 
-  async function abrir(evento: React.FormEvent) {
+  async function abrir(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (abrindo) return;
+
+    // A data vem do próprio campo, não só do estado: no Safari o
+    // preenchimento automático (`bday`) e a digitação no seletor nativo de
+    // data podem mudar o valor sem o React ouvir o evento — o botão ficava
+    // desabilitado para sempre com a data à vista.
+    const lida = String(new FormData(evento.currentTarget).get("nascimento") ?? "") || nascimento;
+    if (!lida) {
+      setErroPorta("Informe a sua data de nascimento.");
+      return;
+    }
+    if (lida !== nascimento) setNascimento(lida);
 
     setAbrindo(true);
     setErroPorta(null);
 
     try {
-      const resposta = await abrirDocumentoParaAssinatura(token, nascimento);
+      const resposta = await abrirDocumentoParaAssinatura(token, lida);
 
       if (resposta.situacao === "data_incorreta") {
         setErroPorta(
@@ -410,11 +421,14 @@ export function AssinarPorLink({
           <Campo id="nascimento" rotulo="Sua data de nascimento" obrigatorio>
             <input
               id="nascimento"
+              name="nascimento"
               type="date"
               // `bday`: o navegador sugere a data da própria pessoa, que é
               // exatamente a que se pede aqui.
               autoComplete="bday"
-              value={nascimento}
+              // Não controlado: o campo guarda o que a pessoa escolheu mesmo
+              // quando o navegador não avisa o React (ver `abrir`).
+              defaultValue={nascimento}
               onChange={(evento) => setNascimento(evento.target.value)}
               required
               className={cn(ENTRADA, erroPorta && ENTRADA_ERRO)}
@@ -430,8 +444,8 @@ export function AssinarPorLink({
 
         <button
           type="submit"
-          disabled={abrindo || !nascimento}
-          className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-55"
+          disabled={abrindo}
+          className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-55"
         >
           {abrindo ? (
             <>
@@ -597,7 +611,7 @@ export function AssinarPorLink({
         {estado?.erros.geral ? (
           <p
             role="alert"
-            className="mt-4 flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
+            className="mt-4 flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
           >
             <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
             {estado.erros.geral}
@@ -607,7 +621,7 @@ export function AssinarPorLink({
         {estado?.situacao && estado.situacao !== "ok" && estado.situacao !== "ja_assinado" ? (
           <p
             role="alert"
-            className="mt-4 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
+            className="mt-4 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
           >
             {/* O que sobra sem frase própria é recusa de campo que escapou da
                 conferência daqui (`nome_invalido`, `cpf_invalido`): o link
@@ -620,7 +634,7 @@ export function AssinarPorLink({
         <button
           type="submit"
           disabled={assinando}
-          className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
+          className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
         >
           {assinando ? (
             <>

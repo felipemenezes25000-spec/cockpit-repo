@@ -44,12 +44,12 @@ function BotaoDeAcao({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-transparent px-2.5 text-xs font-medium transition-[transform,background-color,border-color,box-shadow,color] duration-180 active:scale-[0.98]",
+        "inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-transparent px-2.5 text-xs font-medium transition-[transform,background-color,border-color,color] duration-180 active:scale-[0.98]",
         perigo
-          ? "text-outline hover:border-negativo-borda/45 hover:bg-negativo-fundo hover:text-negativo"
-          : "text-outline hover:border-primary/10 hover:bg-white/70 hover:text-primary hover:shadow-[var(--shadow-cartao)]",
-        ativo && !perigo && "border-primary/10 bg-primary-fixed/45 text-primary shadow-[var(--shadow-cartao)]",
-        ativo && perigo && "border-negativo-borda/55 bg-negativo-fundo text-negativo shadow-[var(--shadow-cartao)]",
+          ? "text-outline hover:border-negativo-borda hover:bg-negativo-fundo hover:text-negativo"
+          : "text-outline hover:border-primary-fixed hover:bg-surface-container-low hover:text-primary",
+        ativo && !perigo && "border-primary-fixed bg-selecao text-primary",
+        ativo && perigo && "border-negativo-borda bg-negativo-fundo text-negativo",
       )}
     >
       {children}
@@ -65,10 +65,10 @@ function Salvar({ rotulo, perigo = false }: { rotulo: string; perigo?: boolean }
       type="submit"
       disabled={pending}
       className={cn(
-        "inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border px-4 text-sm font-semibold transition-[transform,background-color,border-color,box-shadow] duration-180 active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none",
+        "inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius-controle)] border px-4 text-sm font-semibold transition-[transform,background-color,border-color] duration-180 active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none",
         perigo
-          ? "border-negativo bg-negativo text-on-primary shadow-[0_8px_20px_-12px_rgba(187,0,0,0.6)] hover:-translate-y-px hover:bg-error hover:shadow-[0_12px_26px_-14px_rgba(187,0,0,0.72)]"
-          : "border-primary-container bg-primary-container text-on-primary shadow-[var(--shadow-primary)] hover:-translate-y-px hover:bg-primary",
+          ? "border-negativo bg-negativo text-on-primary hover:bg-error"
+          : "border-primary-container bg-primary-container text-on-primary hover:bg-primary-hover",
       )}
     >
       {pending ? (
@@ -87,7 +87,7 @@ function BotaoArquivar({ arquivada }: { arquivada: boolean }) {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-transparent px-2.5 text-xs font-medium text-outline transition-[transform,background-color,border-color,box-shadow,color] duration-180 hover:border-primary/10 hover:bg-white/70 hover:text-primary hover:shadow-[var(--shadow-cartao)] active:scale-[0.98] disabled:opacity-55"
+      className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-transparent px-2.5 text-xs font-medium text-outline transition-[transform,background-color,border-color,color] duration-180 hover:border-primary-fixed hover:bg-surface-container-low hover:text-primary active:scale-[0.98] disabled:opacity-55"
     >
       {pending ? (
         <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
@@ -131,14 +131,14 @@ export function FotoDaEvolucao({
   return (
     <li
       className={cn(
-        "group/foto relative flex flex-col overflow-hidden rounded-[18px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-px hover:shadow-[var(--shadow-realce)]",
+        "group/foto relative flex flex-col overflow-hidden rounded-[var(--radius-painel)] border transition-[transform,border-color] duration-200",
         // Arquivada não usa opacidade no cartão: derrubaria o texto terciário
         // para ~3,2:1 (§7.4). O estado vem da borda tracejada, do fundo recuado
         // e do selo "· arquivada" na data; só a foto esmaece. A ativa usa o
         // token de superfície (§7.3), translúcido como o resto do vidro.
         imagem.arquivada
           ? "border-dashed border-outline-variant bg-surface-container-low"
-          : "border-card-border/80 bg-surface/72 hover:border-primary/15",
+          : "border-card-border bg-surface hover:border-primary-fixed",
       )}
     >
       {imagem.url ? (
@@ -155,12 +155,11 @@ export function FotoDaEvolucao({
             width={imagem.largura ?? undefined}
             height={imagem.altura ?? undefined}
             className={cn(
-              "size-full object-cover transition-[transform,filter] duration-300 group-hover:scale-[1.025] group-hover:brightness-[0.97]",
+              "size-full object-cover transition-[transform,filter] duration-300 group-hover:brightness-[0.97]",
               imagem.arquivada && "opacity-70",
             )}
           />
-          <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071d33]/18 via-transparent to-white/6 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-          <span className="pointer-events-none absolute right-3 bottom-3 translate-y-1 rounded-full border border-white/75 bg-white/82 px-2.5 py-1 text-[0.65rem] font-semibold text-primary opacity-0 shadow-[var(--shadow-cartao)] backdrop-blur-md transition-[transform,opacity] duration-200 group-hover:translate-y-0 group-hover:opacity-100">Ampliar</span>
+          <span className="pointer-events-none absolute right-3 bottom-3 translate-y-1 rounded-full border border-card-border bg-surface px-2.5 py-1 text-[0.65rem] font-semibold text-primary opacity-0 transition-[transform,opacity] duration-200 group-hover:translate-y-0 group-hover:opacity-100">Ampliar</span>
         </button>
       ) : (
         <div className="flex aspect-4/3 w-full flex-col items-center justify-center gap-2 bg-negativo-fundo px-4 text-center">
@@ -228,7 +227,7 @@ export function FotoDaEvolucao({
         {painel === "editar" ? (
           <form
             action={salvarEdicao}
-            className="flex flex-col gap-3 rounded-[14px] border border-primary/10 bg-primary-fixed/18 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
+            className="flex flex-col gap-3 rounded-[var(--radius-cartao)] border border-primary-fixed bg-selecao p-3"
           >
             <input type="hidden" name="id" value={imagem.id} />
             <input type="hidden" name="prontuario_id" value={prontuarioId} />
@@ -267,7 +266,7 @@ export function FotoDaEvolucao({
               <button
                 type="button"
                 onClick={() => setPainel("nenhum")}
-                className="h-9 rounded-[9px] px-3 text-sm font-medium text-outline transition-colors hover:bg-white/60 hover:text-primary"
+                className="h-9 rounded-[var(--radius-controle)] px-3 text-sm font-medium text-outline transition-colors hover:bg-surface-container-low hover:text-primary"
               >
                 Cancelar
               </button>
@@ -278,7 +277,7 @@ export function FotoDaEvolucao({
         {painel === "eliminar" ? (
           <form
             action={eliminar}
-            className="relative flex flex-col gap-3 overflow-hidden rounded-[14px] border border-negativo-borda bg-negativo-fundo/74 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]"
+            className="relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo p-3"
           >
             <span aria-hidden="true" className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-negativo" />
             <input type="hidden" name="id" value={imagem.id} />
@@ -306,7 +305,7 @@ export function FotoDaEvolucao({
               />
             </Campo>
 
-            <label className="flex items-start gap-2 rounded-[10px] border border-negativo-borda/60 bg-white/45 p-2.5 text-xs text-negativo">
+            <label className="flex items-start gap-2 rounded-[var(--radius-controle)] border border-negativo-borda bg-surface p-2.5 text-xs text-negativo">
               <input
                 type="checkbox"
                 name="confirmacao"
@@ -328,7 +327,7 @@ export function FotoDaEvolucao({
               <button
                 type="button"
                 onClick={() => setPainel("nenhum")}
-                className="h-9 rounded-[9px] px-3 text-sm font-medium text-negativo transition-colors hover:bg-white/48 hover:underline"
+                className="h-9 rounded-[var(--radius-controle)] px-3 text-sm font-medium text-negativo transition-colors hover:bg-surface-container-low hover:underline"
               >
                 Cancelar
               </button>
@@ -343,10 +342,10 @@ export function FotoDaEvolucao({
           onClick={(evento) => {
             if (evento.target === ampliada.current) ampliada.current?.close();
           }}
-          className="m-auto max-h-[92vh] max-w-[92vw] overflow-hidden rounded-[22px] border border-white/70 bg-white/92 p-0 shadow-[0_32px_90px_-30px_rgba(3,24,47,0.55)] backdrop:bg-[#071d33]/72 backdrop:backdrop-blur-sm"
+          className="m-auto max-h-[92vh] max-w-[92vw] overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-0 backdrop:bg-on-surface/72"
         >
           <div className="flex max-h-[92vh] flex-col">
-            <div className="flex items-start justify-between gap-4 border-b border-card-border/80 bg-white/86 px-4 py-3 backdrop-blur-md">
+            <div className="flex items-start justify-between gap-4 border-b border-card-border bg-surface px-4 py-3">
               <div className="min-w-0">
                 <p className="tabular text-xs text-outline">
                   {formatarData(imagem.dataCaptura)}
@@ -359,7 +358,7 @@ export function FotoDaEvolucao({
                 type="button"
                 onClick={() => ampliada.current?.close()}
                 aria-label="Fechar"
-                className="flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-card-border/70 bg-white/72 text-outline shadow-[var(--shadow-cartao)] transition-[transform,background-color,color] hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+                className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline transition-[transform,background-color,color] hover:bg-selecao hover:text-primary active:scale-95"
               >
                 <X aria-hidden="true" size={18} strokeWidth={1.75} />
               </button>
@@ -368,7 +367,7 @@ export function FotoDaEvolucao({
             <img
               src={imagem.url}
               alt={descricao}
-              className="max-h-[calc(92vh-4.5rem)] w-auto max-w-full bg-[#07111d] object-contain"
+              className="max-h-[calc(92vh-4.5rem)] w-auto max-w-full bg-surface-container-low object-contain"
             />
           </div>
         </dialog>

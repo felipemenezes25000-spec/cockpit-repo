@@ -6,17 +6,17 @@ import type { Prioridade } from "@/lib/dominio";
 const ESTILO: Record<Prioridade, { rotulo: string; classes: string; icone: LucideIcon }> = {
   alta: {
     rotulo: "Prioridade alta",
-    classes: "border-negativo-borda/80 bg-negativo-fundo/72 text-negativo",
+    classes: "border-negativo-borda bg-negativo-fundo text-negativo",
     icone: SignalHigh,
   },
   media: {
     rotulo: "Prioridade média",
-    classes: "border-atencao-borda/80 bg-atencao-fundo/72 text-atencao",
+    classes: "border-atencao-borda bg-atencao-fundo text-atencao",
     icone: SignalMedium,
   },
   baixa: {
     rotulo: "Prioridade baixa",
-    classes: "border-card-border/80 bg-surface/72 text-outline",
+    classes: "border-card-border bg-surface text-outline",
     icone: SignalLow,
   },
 };
@@ -28,7 +28,7 @@ export function PrioridadeTag({ prioridade, className }: { prioridade: Prioridad
   return (
     <span
       className={cn(
-        "inline-flex min-h-6 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.7rem] font-medium whitespace-nowrap shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
+        "inline-flex min-h-6 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.75rem] font-semibold whitespace-nowrap",
         estilo.classes,
         className,
       )}

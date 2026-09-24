@@ -797,7 +797,8 @@ Toda regra de acesso é verificada em três lugares, e as três precisam existir
 Onde estão:
 
 - Interface: `src/components/**/somente-*.tsx`, checagens de papel nas páginas.
-  O menu lateral (`MENU` em `lib/nav.ts`) é o mesmo para os três perfis: quem
+  O menu (`MENU` em `lib/nav.ts`, lido pela barra de módulos, pela gaveta e
+  pela paleta de comandos) é o mesmo para os três perfis: quem
   abre Prontuários sem ser administradora recebe `AcessoRestritoProntuario`.
   Dentro dos módulos a porta é escondida — abas do Financeiro e botões de
   escrita dependem do papel —, e quem chega pela URL a uma tela fora do seu
@@ -991,9 +992,11 @@ src/
       pacientes/  agenda/  prontuarios/  financeiro/  formularios/ (Documentos e Contratos)
       relacionamento/  busca/  relatorios/  configuracoes/
   components/
-    layout/               estrutura, menu, cabeçalho, perfil, faixa de demonstração, tela de erro
+    layout/               estrutura, barra de módulos, faixa do agora, gaveta, barra inferior,
+                          atalhos de tecla, perfil, faixa de demonstração, tela de erro
     ui/                   cartão, botão, campo, formulário de ação, abas, seletor segmentado,
-                          chip de situação, prioridade, lista, avatar, vazio
+                          chip de situação, prioridade, lista, avatar, vazio, cabeçalho de
+                          página (o h1), aviso de tela, indicador
     overview/  pacientes/  agenda/  financeiro/  configuracoes/  prontuarios/  documentos/
     relacionamento/
   server/
@@ -1014,7 +1017,8 @@ src/
     cn.ts                 junta classes condicionais, sem biblioteca externa
     csv.ts  importacao.ts leitor de planilha e validação da importação
     busca.ts  relacionamento.ts   busca segura e validação do acompanhamento
-    nav.ts                fonte única do menu + identidade da clínica
+    nav.ts                fonte única do menu, da barra de módulos e dos atalhos + identidade da clínica
+    agora.ts              o retrato do agora (em atendimento, próxima, depois) e as frases de prazo
     erros-banco.ts        erro do Postgres → frase em português (nada cru na tela)
     registro.ts           log técnico sanitizado + falha de consulta (server-only)
     acao.ts               `ResultadoAcao`, o contrato das ações de botão
@@ -1296,6 +1300,39 @@ dedução do líquido, mostrada como "−" na conta da venda.
 O laranja tem dois tons de propósito: `#e9730c` em ícone e borda, `#8f4700` em
 texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
 
+**O sistema visual "Cockpit" (setembro de 2026)** — claro, plano, no azul da marca:
+
+- **Painel não tem sombra: tem uma linha de 1px** (`card-border`). `shadow-cartao`,
+  `shadow-realce` e `shadow-primary` continuam como nome, sem efeito. Sombra só
+  no que flutua (`shadow-flutuante`): menu, paleta, gaveta, rodapé fixo de
+  formulário. `premium-panel` e `glass-surface` são hoje fundo branco com linha.
+- **Nada de vidro, desfoque, degradê decorativo, bolha desfocada, luz que segue
+  o mouse ou elevação no hover.** Transparência não entra em cor de estado,
+  texto nem linha: fundo de estado é o token sólido (`bg-positivo-fundo`), azul
+  claro é `bg-primary-fixed` (forte) ou `bg-selecao` (fraco). Linha inteira de
+  lista não ganha fundo de estado: fica branca, e o estado vai no selo e na
+  barrinha à esquerda.
+- **A cabine** (`.cabine`, do azul de ação `cabine` ao azul de texto
+  `cabine-profunda`) é o único degradê e a única cor cheia de cada tela: um bloco
+  com o que se lê de relance. Dentro dela o texto é `cabine-texto` (5,04:1 no
+  pior ponto) e `cabine-texto-secundario`; `.rotulo`, `.barra` e `.tecla` se
+  ajustam sozinhos. Hoje há cabine na Visão Geral, no topo do Financeiro, no
+  Relacionamento, na ficha da paciente e no painel azul das telas de acesso.
+- **Raios:** `--radius-painel` 12px, `--radius-cartao` 10px, `--radius-controle`
+  8px, `--radius-tag` 4px. Nada maior; nada de `rounded-2xl`, `rounded-[20px]`.
+- **Classes do sistema** (`@layer components` em `globals.css`, então as
+  utilitárias do Tailwind as sobrescrevem): `.titulo-tela` (o `<h1>`),
+  `.titulo-secao`, `.numero-destaque`, `.numero`, `.numero-sm`, `.rotulo`,
+  `.cabine`, `.barra` (barra lisa de proporção; `.barra-fina`) e `.tecla`.
+- **Tokens novos:** `fundo`, `selecao`, `trilho`, `borda-controle` (contorno de
+  campo e botão secundário, 3,2:1), `primary-hover` (hover do botão principal) e
+  a família `cabine*`.
+- **`cn()` só junta classes, não resolve conflito.** Duas classes da mesma
+  propriedade (`bg-surface` na base e `bg-positivo-fundo` na condição, ou
+  `size-10` do componente e `size-16` no `className`) ficam à mercê da ordem do
+  CSS. Ponha cada valor numa condição só, ou dê ao componente uma variante (o
+  `Avatar` tem `tamanho="lg"` e `tom="cabine"` por isso).
+
 ### 7.4 Acessibilidade
 
 - Todo par texto/fundo **precisa** passar no **WCAG AA** (mínimo 4.5:1).
@@ -1311,10 +1348,10 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
   opacidade sobre texto: usa fundo
   `surface-container-low`, borda tracejada e um selo em texto. Módulo
   provisório no menu é marcado por `ItemMenu.emConstrucao` (`lib/nav.ts`) e
-  mostra "em breve". Exceção ainda aberta: o botão desabilitado "Marcar como
-  enviada" do Relacionamento fica em 2,71:1 por `opacity-55` — a WCAG isenta
-  controle inativo, mas ele carrega significado ("abra a mensagem antes");
-  mudar o estilo é decisão de UI.
+  mostra "em breve". O botão desabilitado "Marcar como enviada" do
+  Relacionamento, que ficava em 2,71:1 por opacidade, segue a mesma regra
+  desde setembro de 2026 (tracejado, `text-outline`, 5,5:1), assim como os
+  botões "Anterior"/"Próxima" indisponíveis da paginação.
 - **Cor nunca comunica sozinha.** Todo estado leva também texto, ícone próprio
   e forma (preenchido, contornado).
 - Foco sempre visível.
@@ -1326,6 +1363,19 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
   pelo teclado: `tabIndex={0}`, `role="region"` e nome (ver
   `financeiro/fluxo-mensal.tsx`), ou virar lista no celular.
 - `aria-current` na navegação; atalho "Ir para o conteúdo".
+- **Toda tela tem exatamente um `<h1>`, visível**, e ele não mora na barra do
+  topo: é o `CabecalhoDePagina` (`ui/page-hero.tsx`), o `AvisoDeTela`
+  (`ui/aviso-de-tela.tsx`, para acesso restrito, erro e 404), o nome da paciente
+  na ficha, o "Visão Geral" da página inicial ou o título do formulário nas
+  telas de acesso (`ui/auth-shell.tsx`). A tela de assinatura por link é a
+  exceção conhecida: a página e o componente trazem um `<h1>` cada.
+- **Atalhos de uma tecla** (N, A, V, T; `ATALHOS` em `lib/nav.ts`) só valem com
+  o foco fora de campo e **podem ser desligados** no painel de atalhos da Visão
+  Geral (WCAG 2.1.4; preferência no `localStorage`, em
+  `layout/atalhos-de-tecla.ts`). Ctrl K e "/" abrem a paleta de comandos.
+- A fila do dia e a faixa do agora rolam de lado ou cortam texto dentro do
+  próprio contêiner; a página nunca rola na horizontal. A fila rola com o
+  teclado porque cada cartão é um link.
 - `prefers-reduced-motion` respeitado.
 - **Botão que não executa nada fica visivelmente indisponível, com a razão à
   vista** (no `title`). Não some, não engana. A primitiva para isso é
@@ -1342,7 +1392,7 @@ coluna, migrações e mensagens de commit: **tudo em português**.
 **Nome de arquivo é a exceção, e ela tem forma.** Em `components/ui/`,
 `components/layout/` e `components/overview/`, os arquivos mais antigos têm nome
 em inglês e o símbolo exportado em português: `button.tsx` exporta `BotaoLink`,
-`empty-state.tsx` exporta `EstadoVazio`, `day-rail.tsx` exporta `LinhaDoDia`. Os
+`empty-state.tsx` exporta `EstadoVazio`, `birthdays-panel.tsx` exporta `Aniversariantes`. Os
 acrescentados depois já nasceram em português (`ui/abas.tsx`,
 `ui/formulario-acao.tsx`, `ui/segmento.ts`, `layout/botao-sair.tsx`,
 `layout/tela-de-erro.tsx`). Nos módulos de
@@ -1648,6 +1698,12 @@ volta para 6% deixa +R$ 30,00 num caixa que não mudou, numa venda de
 R$ 1.000,00). As telas Alterar forma e Alterar taxa mostram o ajuste que o
 banco vai gravar (`novo líquido − valor_recebido`); para recebimento
 cancelado, nada.
+
+**Os links para essas duas telas não pré-carregam** (`prefetch={false}` no
+cabeçalho da venda). Elas dependem de o recebimento estar confirmado, e a
+confirmação acontece na própria tela da venda: pré-carregada antes, a de
+pagamento abria dizendo "Recebimento ainda ajustável" e escondia o ajuste
+(falhava 1 em cada 3 execuções do E2E no Chromium).
 
 > Quem decide isso é a função SQL `venda_alterar_pagamento` (migração 0008,
 > recriada na 0020 e `SECURITY DEFINER` desde a 0023), não a aplicação.
@@ -1967,13 +2023,25 @@ por migração nova.
 
 ### 8.6 Visão Geral
 
-Agrega tudo: indicadores do dia e do mês, linha do dia com marcador "agora",
-pendências, próximos retornos, resumo financeiro e aniversariantes.
+Ordem de leitura: o `<h1>` com a saudação e a data; a **cabine do dia**
+(`overview/cabine-do-dia.tsx`) com o agora (`agora-na-cabine.tsx`), os
+atendimentos de hoje, o recebido no mês e a **fila do dia** (`fila-do-dia.tsx`);
+os **atalhos** (`atalhos-do-dia.tsx`); e os painéis "Pede atenção"
+(pendências), "Caixa de <mês>" (resumo financeiro), "Aniversários do mês" e
+"Voltam em breve" (retornos).
 
 - O indicador "atendimentos de hoje" **desconta os cancelados**. (Falta confirmar
   com a clínica se é assim que ela pensa — ver seção 10.)
-- A Linha do Dia hoje se ajusta aos atendimentos existentes, porque o **horário
+- A fila do dia hoje se ajusta aos atendimentos existentes, porque o **horário
   de funcionamento ainda não foi definido**.
+- **O agora** (`lib/agora.ts`, funções puras com teste): "em atendimento" é a
+  situação `em_atendimento` gravada, não o relógio; "próxima" é o primeiro
+  atendimento que não está encerrado nem em atendimento e cujo horário previsto
+  ainda não terminou — se o horário começou sem baixa, ela continua como
+  próxima, com "horário passou há N min" em atenção; se já terminou, sai da
+  faixa e fica para a Agenda. A mesma função alimenta a faixa do agora de toda
+  tela (a agenda de hoje vem do `(app)/layout.tsx`; se a consulta falhar, a
+  faixa avisa e o resto da tela segue).
 - **Os números** (`server/consultas/indicadores.ts`; nenhum é calculado no
   componente): "Confirmados" conta só `confirmado` de hoje; "Confirmações
   pendentes", só `aguardando_confirmacao` de hoje (`agendado` não entra);
@@ -1985,10 +2053,17 @@ pendências, próximos retornos, resumo financeiro e aniversariantes.
   leva ao Relacionamento, que não lista anamnese, termo nem pagamento; retornos,
   5 pelo progresso na janela de contato; aniversariantes, 5 na ordem do dia do
   mês, inclusive quem já fez.
-- **Linha do Dia:** vazio de 15 minutos ou mais vira "N min sem atendimento";
-  cancelados e ausentes aparecem esmaecidos e riscados. O marcador "agora" é
-  componente de cliente: não renderiza no servidor e reavalia a cada 60 s — é o
-  que evita divergência de hidratação. Não mova esse cálculo para o servidor.
+- **Fila do dia:** um cartão por atendimento, na ordem do relógio; cancelados e
+  ausentes com contorno tracejado e nome riscado; em atendimento, cheio no azul
+  da cabine. O marcador "agora" entra antes do primeiro atendimento que ainda
+  não começou e a fila rola até ele ao abrir. Tudo o que depende da hora (a
+  fila, o agora na cabine e a faixa do agora) é componente de cliente que lê o
+  relógio **só depois de montar** (`layout/use-agora.ts`) — no servidor mostra
+  a versão sem hora. É o que evita divergência de hidratação. Não mova esse
+  cálculo para o servidor.
+- **Os números não animam.** A contagem de 0 até o valor foi retirada: o
+  servidor já manda o valor final, e animar a partir de zero piscava na
+  hidratação.
 
 ### 8.7 Documentos e Contratos (migração 0013)
 
@@ -2127,6 +2202,13 @@ revela que um token existe, mas só a quem já o tem, e 256 bits não se
 adivinham. Antes da data de nascimento sai só o tipo do documento; "data
 incorreta" é a única resposta que diz o que houve, porque quem errou a própria
 data precisa corrigir.
+
+**O campo de data da porta é não controlado e lido no envio**
+(`assinar-por-link.tsx`, `abrir`). No Safari o preenchimento automático
+(`bday`) e o seletor nativo de data mudam o valor sem o React ouvir o evento;
+com o botão preso ao estado, "Abrir documento" ficava desabilitado para sempre
+com a data à vista (reproduzido no WebKit do Playwright, desktop e iPhone). O
+botão só se desabilita enquanto abre; campo vazio é barrado pelo `required`.
 
 O contrato das funções públicas: todas devolvem `nao_encontrado`, `revogado`,
 `expirado`, `bloqueado` ou `ok`; as três que recebem a data acrescentam
@@ -2486,8 +2568,8 @@ padrão para destravar.**
 3. **Definição de "atendimento do dia".** Hoje desconsidera cancelados e conta o
    restante. Falta confirmar.
 4. **Canal de contato preferencial** para confirmação, retorno e aniversário.
-5. **Horário de funcionamento.** Definido, a Linha do Dia pode mostrar o
-   expediente inteiro, com as pontas vazias.
+5. **Horário de funcionamento.** Definido, a fila do dia pode mostrar o
+   expediente inteiro, com os horários livres.
 6. **Situações do atendimento.** As sete cobrem a rotina? Falta "remarcado"?
 7. **Correção de confirmação errada.** Como corrigir valor ou data digitados
    errado ao confirmar um recebimento? Hoje não há caminho na interface (§8.4).

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 function SemResultado({ children }: { children: ReactNode }) {
-  return <p className="rounded-[var(--radius-controle)] border border-card-border/70 bg-surface-container-low/55 px-3.5 py-3 text-sm text-outline">{children}</p>;
+  return <p className="rounded-[var(--radius-controle)] border border-card-border bg-surface-container-low px-3.5 py-3 text-sm text-outline">{children}</p>;
 }
 
 function verTodos(destino: string) {
@@ -35,17 +35,17 @@ function TextoComDestaque({ texto, termo }: { texto: string; termo: string }) {
   const indice = base.indexOf(alvo);
   if (indice < 0) return texto;
   const fim = indice + alvo.length;
-  return <>{texto.slice(0, indice)}<mark className="rounded-[5px] bg-primary-fixed/72 px-0.5 text-inherit shadow-[inset_0_-1px_0_rgba(10,110,209,0.16)]">{texto.slice(indice, fim)}</mark>{texto.slice(fim)}</>;
+  return <>{texto.slice(0, indice)}<mark className="rounded-[var(--radius-tag)] bg-primary-fixed px-0.5 text-inherit">{texto.slice(indice, fim)}</mark>{texto.slice(fim)}</>;
 }
 
-const linhaResultado = "premium-interactive group relative block overflow-hidden rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/62 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] hover:border-primary/20 hover:bg-white/82";
+const linhaResultado = "premium-interactive group relative block overflow-hidden rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3 hover:border-primary-fixed-dim hover:bg-surface-container-low";
 
 function IconeResultado({ children }: { children: ReactNode }) {
-  return <span className="flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-primary/10 bg-primary-fixed/42 text-primary shadow-[var(--shadow-cartao)] transition-transform duration-150 group-hover:scale-[1.04]">{children}</span>;
+  return <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary transition-transform duration-150">{children}</span>;
 }
 
 function SetaResultado() {
-  return <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.65} className="shrink-0 text-outline-variant transition-[transform,color] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />;
+  return <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.65} className="shrink-0 text-outline-variant transition-[transform,color] duration-150 group-hover:translate-x-0.5 group-hover:text-primary" />;
 }
 
 export default async function PaginaBusca({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -68,19 +68,18 @@ export default async function PaginaBusca({ searchParams }: { searchParams: Prom
     />
 
     <form method="get" action="/busca" role="search" aria-label="Buscar em todos os módulos" className="premium-panel relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:flex-row sm:p-5">
-      <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-12 size-44 rounded-full bg-primary-fixed/45 blur-3xl" />
       <div className="relative min-w-0 flex-1"><Search aria-hidden="true" size={18} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" /><input type="search" name="q" minLength={2} maxLength={80} required defaultValue={termo} autoFocus aria-label="O que deseja buscar?" placeholder="Nome, telefone, procedimento ou data (dd/mm/aaaa)" className={classeDeEntrada({ recuo: "busca" })} /></div>
-      <button type="submit" className="relative inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary/10 bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[var(--shadow-primary)] transition-[transform,background-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:bg-primary active:translate-y-px active:scale-[0.99]"><Search aria-hidden="true" size={16} strokeWidth={1.8} />Buscar</button>
+      <button type="submit" className="relative inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary transition-[transform,background-color] duration-150 hover:bg-primary-hover active:translate-y-px active:scale-[0.99]"><Search aria-hidden="true" size={16} strokeWidth={1.8} />Buscar</button>
     </form>
 
     {!resultado ? <Card><EstadoVazio icone={Search} titulo="O que você procura?" descricao="Digite pelo menos dois caracteres. Para localizar atendimentos, use o nome da paciente, o procedimento ou a data." /></Card> : <>
       <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm text-on-surface-variant">Resultados para <strong className="text-on-surface">“{termo}”</strong></p><SeloHero>{totalVisivel} encontrados</SeloHero></div>
       <div className="grid items-start gap-5 xl:grid-cols-2">
-        <Card className="relative overflow-hidden"><span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 size-36 rounded-full bg-primary-fixed/32 blur-3xl" /><CardCabecalho titulo={`Pacientes · ${resultado.pacientes.total}`} descricao="Nome, contato ou CPF. Inclui cadastros arquivados." acao={resultado.pacientes.total > 0 ? verTodos(`/pacientes?busca=${query}&situacao=todas`) : undefined} /><CardCorpo className="relative">
+        <Card className="relative overflow-hidden"><CardCabecalho titulo={`Pacientes · ${resultado.pacientes.total}`} descricao="Nome, contato ou CPF. Inclui cadastros arquivados." acao={resultado.pacientes.total > 0 ? verTodos(`/pacientes?busca=${query}&situacao=todas`) : undefined} /><CardCorpo className="relative">
           {resultado.pacientes.itens.length === 0 ? <SemResultado>Nenhuma paciente encontrada. Tente outro nome ou contato.</SemResultado> : <ul className="flex flex-col gap-2.5">{resultado.pacientes.itens.slice(0, 6).map((p) => <li key={p.id}><Link href={`/pacientes/${p.id}`} className={linhaResultado}><span className="flex items-center gap-3"><Avatar nome={p.exibicao} tom={p.ativo ? "marca" : "neutro"} /><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="truncate font-semibold text-on-surface"><TextoComDestaque texto={p.exibicao} termo={termo} /></span>{!p.ativo ? <SeloHero className="min-h-6 px-2 py-0 text-[0.66rem]">Arquivada</SeloHero> : null}</span><span className="mt-1 block truncate text-xs text-outline">{p.telefone || p.email || "Sem contato"}</span></span><SetaResultado /></span></Link></li>)}</ul>}
         </CardCorpo></Card>
 
-        <Card className="relative overflow-hidden"><span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 size-36 rounded-full bg-secondary-fixed/30 blur-3xl" /><CardCabecalho titulo={`Atendimentos · ${resultado.atendimentos.length}${resultado.maisAtendimentos ? "+" : ""}`} descricao="Por paciente, procedimento ou data; até 8 mais recentes." /><CardCorpo className="relative">
+        <Card className="relative overflow-hidden"><CardCabecalho titulo={`Atendimentos · ${resultado.atendimentos.length}${resultado.maisAtendimentos ? "+" : ""}`} descricao="Por paciente, procedimento ou data; até 8 mais recentes." /><CardCorpo className="relative">
           {resultado.atendimentos.length === 0 ? <SemResultado>Nenhum atendimento encontrado. Busque pelo nome, procedimento ou uma data.</SemResultado> : <ul className="flex flex-col gap-2.5">{resultado.atendimentos.map((a) => <li key={a.id}><Link href={a.href} className={linhaResultado}><span className="flex items-start gap-3"><IconeResultado><CalendarClock aria-hidden="true" size={17} strokeWidth={1.65} /></IconeResultado><span className="min-w-0 flex-1"><span className="flex flex-wrap items-start justify-between gap-2"><span className="min-w-0"><span className="block truncate font-semibold text-on-surface"><TextoComDestaque texto={a.paciente} termo={termo} /></span><span className="mt-1 block text-xs text-outline"><TextoComDestaque texto={a.procedimento} termo={termo} /> · {formatarData(a.inicio)} às {formatarHora(a.inicio)}</span></span><SituacaoChip situacao={a.situacao} compacto /></span></span><SetaResultado /></span></Link></li>)}</ul>}
           {resultado.maisAtendimentos ? <p className="mt-3 text-xs text-outline">Há mais atendimentos; refine o termo para encontrá-los.</p> : null}
         </CardCorpo></Card>

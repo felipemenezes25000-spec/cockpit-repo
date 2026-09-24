@@ -39,7 +39,7 @@ export default async function preparar(config: FullConfig) {
       const pagina = await contexto.newPage();
       await pagina.goto("/entrar");
       await pagina.getByLabel("E-mail").fill(conta.email);
-      await pagina.getByLabel("Senha").fill(SENHA_LOCAL);
+      await pagina.getByLabel("Senha", { exact: true }).fill(SENHA_LOCAL);
       await pagina.getByRole("button", { name: "Entrar" }).click();
       await pagina.waitForURL((u) => !u.pathname.startsWith("/entrar"), { timeout: 60_000 });
       await contexto.storageState({ path: arquivoDaSessao(conta.papel) });

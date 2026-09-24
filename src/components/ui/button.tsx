@@ -6,22 +6,26 @@ type Variante = "primaria" | "secundaria" | "contorno" | "silenciosa";
 type Tamanho = "md" | "sm";
 
 const BASE =
-  "group relative inline-flex items-center justify-center gap-2 overflow-hidden font-medium transition-[transform,box-shadow,background-color,border-color,color] duration-200 ease-out active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:transform-none";
+  "group relative inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-150 ease-out active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 disabled:active:transform-none";
 
+/**
+ * primaria: o azul de ação chapado, um por tela. secundaria e contorno: fundo
+ * branco com contorno de controle (3:1). silenciosa: só texto.
+ */
 const VARIANTES: Record<Variante, string> = {
   primaria:
-    "border border-primary-container bg-[linear-gradient(135deg,var(--color-primary-container),var(--color-primary))] text-on-primary shadow-[var(--shadow-primary)] hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_14px_30px_-12px_rgba(8,84,160,0.72)]",
+    "border border-primary-container bg-primary-container text-on-primary hover:border-primary-hover hover:bg-primary-hover",
   secundaria:
-    "border border-primary/25 bg-surface/90 text-primary shadow-[var(--shadow-cartao)] hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary-fixed/40 hover:shadow-[var(--shadow-realce)]",
+    "border border-primary-container bg-surface text-primary hover:bg-selecao",
   contorno:
-    "border border-card-border bg-surface/90 text-primary shadow-[var(--shadow-cartao)] hover:-translate-y-0.5 hover:border-primary-fixed-dim hover:bg-surface hover:shadow-[var(--shadow-realce)]",
+    "border border-borda-controle bg-surface text-primary hover:border-primary-container hover:bg-selecao",
   silenciosa:
-    "text-on-surface-variant hover:bg-primary-fixed/40 hover:text-primary",
+    "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
 };
 
 const TAMANHOS: Record<Tamanho, string> = {
-  md: "h-11 rounded-[var(--radius-controle)] px-6 text-sm",
-  sm: "h-9 rounded-[10px] px-4 text-sm",
+  md: "h-10 rounded-[var(--radius-controle)] px-4 text-sm",
+  sm: "h-9 rounded-[var(--radius-controle)] px-3.5 text-sm",
 };
 
 export function BotaoLink({
@@ -39,14 +43,7 @@ export function BotaoLink({
 }) {
   return (
     <Link href={href} className={cn(BASE, VARIANTES[variante], TAMANHOS[tamanho], className)} {...props}>
-      {variante === "primaria" ? (
-        <>
-          <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/65" />
-          <span aria-hidden="true" className="pointer-events-none absolute top-[-50%] left-[-35%] h-[200%] w-[20%] -skew-x-[24deg] bg-white/20 blur-[1px] transition-transform duration-700 ease-out group-hover:translate-x-[700%]" />
-          <span aria-hidden="true" className="pointer-events-none absolute -right-7 -bottom-8 size-20 rounded-full bg-white/10 blur-2xl" />
-        </>
-      ) : null}
-      <span className="relative inline-flex items-center gap-2">{children}</span>
+      <span className="inline-flex items-center gap-2">{children}</span>
     </Link>
   );
 }
@@ -71,7 +68,7 @@ export function BotaoIndisponivel({
       className={cn(
         BASE,
         TAMANHOS[tamanho],
-        "cursor-not-allowed border border-dashed border-outline-variant bg-white/40 text-outline shadow-none",
+        "cursor-not-allowed border border-dashed border-outline-variant bg-surface-container-low font-medium text-outline",
         className,
       )}
     >

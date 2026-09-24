@@ -35,12 +35,11 @@ export function ListaVendas({
           key={venda.id}
           // O link cobre o cartão (after:inset-0) e não tem contorno próprio:
           // o anel de foco de teclado fica no cartão (has-[:focus-visible]).
-          className="premium-interactive group relative isolate flex min-h-40 flex-col overflow-hidden rounded-[var(--radius-painel)] border border-card-border/75 bg-surface/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] focus-within:border-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary"
+          className="premium-interactive group relative isolate flex min-h-40 flex-col overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 focus-within:border-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary"
         >
-          <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-primary-fixed/28 blur-2xl transition-transform duration-300 group-hover:scale-125" />
 
           <div className="flex items-start justify-between gap-4">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/50 bg-primary-fixed/42 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-selecao text-primary">
               <ShoppingBag aria-hidden="true" size={18} strokeWidth={1.65} />
             </span>
             <div className="flex flex-wrap justify-end gap-1.5">

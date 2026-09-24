@@ -54,9 +54,8 @@ export function BuscaProntuarios({
         evento.preventDefault();
         navegar(termo);
       }}
-      className="premium-panel relative flex flex-col gap-4 overflow-hidden rounded-[16px] border p-3.5 shadow-[var(--shadow-cartao)] sm:flex-row sm:items-center sm:justify-between"
+      className="premium-panel relative flex flex-col gap-4 overflow-hidden rounded-[var(--radius-painel)] border p-3.5 sm:flex-row sm:items-center sm:justify-between"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-36 rounded-full bg-primary-fixed/28 blur-3xl" />
 
       <div className="relative w-full sm:max-w-md">
         <Search aria-hidden="true" size={18} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
@@ -68,7 +67,7 @@ export function BuscaProntuarios({
           maxLength={80}
           aria-label="Buscar prontuário por paciente ou título"
           placeholder="Buscar por paciente ou título"
-          className={`${classeDeEntrada({ recuo: "busca" })} bg-white/78 shadow-[var(--shadow-cartao)]`}
+          className={`${classeDeEntrada({ recuo: "busca" })} bg-surface`}
         />
 
         {/* Carregando ocupa o lugar do "limpar", dentro da caixa: fora dela
@@ -76,7 +75,7 @@ export function BuscaProntuarios({
             no recuo direito do campo (pr-10), do tamanho do botão: um selo
             mais largo, com "buscando" à vista, cobria o fim do termo digitado. */}
         {pendente ? (
-          <span className="pointer-events-none absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[9px] bg-white/88 text-outline shadow-[var(--shadow-cartao)]">
+          <span className="pointer-events-none absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] bg-surface text-outline">
             <LoaderCircle aria-hidden="true" size={16} className="animate-spin" />
             <span className="sr-only">Buscando…</span>
           </span>
@@ -88,14 +87,14 @@ export function BuscaProntuarios({
               navegar("");
             }}
             aria-label="Limpar busca"
-            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[9px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
         ) : null}
       </div>
 
-      <span aria-live="polite" className="relative inline-flex items-center gap-1.5 self-start rounded-full border border-card-border/75 bg-white/68 px-2.5 py-1.5 text-xs text-outline shadow-[var(--shadow-cartao)] tabular sm:self-auto">
+      <span aria-live="polite" className="relative inline-flex items-center gap-1.5 self-start rounded-full border border-card-border bg-surface px-2.5 py-1.5 text-xs text-outline tabular sm:self-auto">
         <ClipboardPlus aria-hidden="true" size={13} strokeWidth={1.65} className="text-primary" />
         {total === 1 ? "1 prontuário" : `${total} prontuários`}
       </span>

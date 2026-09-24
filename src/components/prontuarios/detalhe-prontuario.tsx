@@ -27,8 +27,8 @@ function Metadado({
   valor: string;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border/70 bg-surface/55 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary-fixed/45 text-primary">
+    <div className="flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
         <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
       </span>
       <div className="min-w-0">
@@ -43,7 +43,7 @@ function BlocoClinico({ rotulo, valor }: { rotulo: string; valor: string }) {
   if (!valor.trim()) return null;
 
   return (
-    <section className="relative rounded-[var(--radius-cartao)] border border-card-border/70 bg-surface/58 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:px-5 sm:py-5">
+    <section className="relative rounded-[var(--radius-cartao)] border border-card-border bg-surface px-4 py-4 sm:px-5 sm:py-5">
       <span aria-hidden="true" className="absolute inset-y-4 left-0 w-0.5 rounded-full bg-primary-fixed-dim" />
       <h3 className="rotulo pl-1 text-[0.67rem] text-outline">{rotulo}</h3>
       <p className="mt-2 pl-1 whitespace-pre-wrap text-sm leading-7 text-on-surface">
@@ -68,11 +68,11 @@ function ConteudoClinico({ versao }: { versao: VersaoDoProntuario }) {
 
 function VersaoHistorico({ versao }: { versao: VersaoDoProntuario }) {
   return (
-    <details className="group rounded-[var(--radius-cartao)] border border-card-border/75 bg-surface/58 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] open:bg-surface">
+    <details className="group rounded-[var(--radius-cartao)] border border-card-border bg-surface open:bg-surface">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5">
         <span className="min-w-0">
           <span className="flex items-center gap-2 text-sm font-semibold text-on-surface">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary-fixed/45 text-[0.7rem] font-bold text-primary">
+            <span className="flex size-7 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-[0.7rem] font-bold text-primary">
               v{versao.numero}
             </span>
             Versão {versao.numero}
@@ -82,13 +82,13 @@ function VersaoHistorico({ versao }: { versao: VersaoDoProntuario }) {
             {versao.criadoPor ? ` · ${versao.criadoPor}` : ""}
           </span>
         </span>
-        <span className="rounded-full bg-surface-container-low px-2.5 py-1 text-xs font-medium text-primary transition-colors group-open:bg-primary-fixed/55">
+        <span className="rounded-full bg-surface-container-low px-2.5 py-1 text-xs font-medium text-primary transition-colors group-open:bg-primary-fixed">
           <span className="group-open:hidden">Abrir</span>
           <span className="hidden group-open:inline">Fechar</span>
         </span>
       </summary>
 
-      <div className="border-t border-card-border/70 p-4">
+      <div className="border-t border-card-border p-4">
         <ConteudoClinico versao={versao} />
       </div>
     </details>
@@ -183,14 +183,14 @@ export function DetalheProntuario({
               </dl>
 
               {prontuario.pacienteContato ? (
-                <p className="mt-4 rounded-[var(--radius-controle)] bg-surface-container-low/70 px-3 py-2 text-sm text-outline">
+                <p className="mt-4 rounded-[var(--radius-controle)] bg-surface-container-low px-3 py-2 text-sm text-outline">
                   {prontuario.pacienteContato}
                 </p>
               ) : null}
 
               <Link
                 href={`/pacientes/${prontuario.pacienteId}`}
-                className="mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] px-3 text-sm font-medium text-primary transition-colors hover:bg-primary-fixed/40"
+                className="mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] px-3 text-sm font-medium text-primary transition-colors hover:bg-selecao"
               >
                 Abrir ficha da paciente
               </Link>

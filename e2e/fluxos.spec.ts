@@ -14,13 +14,13 @@ test.describe("entrar", () => {
   test("senha errada avisa e não apaga o e-mail", async ({ page }) => {
     await page.goto("/entrar");
     await page.getByLabel("E-mail").fill("recepcao@cockpit.local");
-    await page.getByLabel("Senha").fill("senha-errada-de-proposito");
+    await page.getByLabel("Senha", { exact: true }).fill("senha-errada-de-proposito");
     await page.getByRole("button", { name: "Entrar" }).click();
 
     // Por id: o anunciador de rotas do Next também tem role="alert".
     await expect(page.locator("#erro-login")).toHaveText("E-mail ou senha incorretos.");
     await expect(page.getByLabel("E-mail")).toHaveValue("recepcao@cockpit.local");
-    await expect(page.getByLabel("Senha")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByLabel("Senha", { exact: true })).toHaveAttribute("aria-invalid", "true");
   });
 
   test("rota do sistema sem sessão leva ao login e volta ao destino", async ({ page }) => {
@@ -28,7 +28,7 @@ test.describe("entrar", () => {
     await expect(page).toHaveURL(/\/entrar\?proximo=%2Fagenda/);
 
     await page.getByLabel("E-mail").fill("recepcao@cockpit.local");
-    await page.getByLabel("Senha").fill(SENHA_LOCAL);
+    await page.getByLabel("Senha", { exact: true }).fill(SENHA_LOCAL);
     await page.getByRole("button", { name: "Entrar" }).click();
     await expect(page).toHaveURL(/\/agenda$/);
   });
@@ -39,7 +39,7 @@ test.describe("entrar", () => {
     test(`redirecionamento pós-login não sai do sistema (${proximo})`, async ({ page, baseURL }) => {
       await page.goto(`/entrar?proximo=${proximo}`);
       await page.getByLabel("E-mail").fill("recepcao@cockpit.local");
-      await page.getByLabel("Senha").fill(SENHA_LOCAL);
+      await page.getByLabel("Senha", { exact: true }).fill(SENHA_LOCAL);
       await page.getByRole("button", { name: "Entrar" }).click();
       // A raiz do próprio sistema, na porta em que ele roda (3000 no dev, a
       // do build no gate de produção) — nunca outro host.

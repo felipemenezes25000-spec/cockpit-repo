@@ -65,7 +65,7 @@ export default async function PaginaFinanceiro({
       <AbasFinanceiro podeFinanceiro={podeFinanceiro} />
 
       <div className="premium-panel flex flex-col gap-3 rounded-[var(--radius-painel)] border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <span className="rotulo text-primary/75">Período</span>
+        <span className="rotulo text-primary">Período</span>
         <NavegacaoMes periodo={periodo} />
       </div>
 

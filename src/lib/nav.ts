@@ -10,11 +10,14 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import type { Papel } from "./perfil";
 
 export type ItemMenu = {
   href: string;
   rotulo: string;
   icone: LucideIcon;
+  /** Nome curto para a barra de módulos, quando o nome inteiro não cabe. */
+  rotuloCurto?: string;
   /** Frase curta usada no cabeçalho da página e no placeholder do módulo. */
   finalidade: string;
   /** O que este módulo vai passar a fazer nas próximas etapas. */
@@ -97,6 +100,7 @@ export const MENU: ItemMenu[] = [
   {
     href: "/formularios",
     rotulo: "Documentos e Contratos",
+    rotuloCurto: "Documentos",
     icone: FileSignature,
     finalidade:
       "Contratos de prestação de serviços, anamneses, termos de consentimento e orientações entregues às pacientes.",
@@ -143,6 +147,32 @@ export const MENU: ItemMenu[] = [
       "Perfis de acesso e permissões",
     ],
   },
+];
+
+/**
+ * A barra de módulos do topo mostra os sete módulos do dia a dia; Relatórios
+ * e Configurações ficam em "Mais". A gaveta do celular mostra todos.
+ */
+export const MODULOS_DA_BARRA: ItemMenu[] = MENU.slice(0, 7);
+export const MODULOS_EM_MAIS: ItemMenu[] = MENU.slice(7);
+
+export type Atalho = {
+  tecla: string;
+  rotulo: string;
+  href: string;
+  /** Perfis que podem usar; sem a lista, todos. */
+  so?: Papel[];
+};
+
+/**
+ * Atalhos de uma tecla, válidos em qualquer tela logada quando o foco não
+ * está num campo. Dá para desligar (WCAG 2.1.4) no painel de atalhos.
+ */
+export const ATALHOS: Atalho[] = [
+  { tecla: "n", rotulo: "Nova paciente", href: "/pacientes/novo" },
+  { tecla: "a", rotulo: "Novo agendamento", href: "/agenda/novo" },
+  { tecla: "v", rotulo: "Registrar venda", href: "/financeiro/vendas/nova" },
+  { tecla: "t", rotulo: "Criar tarefa", href: "/relacionamento/tarefas/nova" },
 ];
 
 export function itemPorHref(href: string): ItemMenu | undefined {

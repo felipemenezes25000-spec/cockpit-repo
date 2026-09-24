@@ -36,7 +36,7 @@ export function ConfirmarRecebimento({
       <input type="hidden" name="venda_id" value={vendaId} />
 
       {erros.geral ? (
-        <p role="alert" className="flex items-start gap-2 rounded-[12px] border border-negativo-borda/70 bg-negativo-fundo/70 px-3 py-2.5 text-xs leading-5 text-negativo">
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3 py-2.5 text-xs leading-5 text-negativo">
           <CircleAlert aria-hidden="true" size={14} className="mt-0.5 shrink-0" />
           {erros.geral}
         </p>
@@ -53,7 +53,7 @@ export function ConfirmarRecebimento({
       </div>
 
       {divergente ? (
-        <p className="rounded-[14px] border border-atencao-borda/70 bg-atencao-fundo/72 px-3.5 py-3 text-xs leading-5 text-atencao shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        <p className="rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-3 text-xs leading-5 text-atencao">
           Valor diferente do previsto: será registrado como <strong>recebido com divergência</strong>.
           {zero ? " Atenção: você está confirmando que não entrou nada. Recebimento confirmado não se desfaz." : null}
         </p>

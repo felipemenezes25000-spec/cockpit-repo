@@ -39,7 +39,7 @@ export function FormularioProntuario({ acao, modo, inicial, prontuarioId, pacien
 
   return <form action={enviar} className="flex flex-col gap-8" noValidate>
     {prontuarioId ? <input type="hidden" name="prontuario_id" value={prontuarioId} /> : null}
-    {erros.geral || erros.prontuario_id ? <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error/25 bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"><CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />{erros.geral ?? erros.prontuario_id}</p> : null}
+    {erros.geral || erros.prontuario_id ? <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"><CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />{erros.geral ?? erros.prontuario_id}</p> : null}
 
     <GrupoDeCampos titulo="Identificação"><div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
       {modo === "versao" && pacienteInicial ? <CampoPacienteTravado paciente={pacienteInicial} erro={erros.paciente_id} /> : <SeletorPaciente inicial={pacienteInicial} erro={erros.paciente_id} />}
@@ -61,7 +61,7 @@ export function FormularioProntuario({ acao, modo, inicial, prontuarioId, pacien
 
     <RodapeAcoesFormulario>
       <BotaoSalvar rotulo={rotuloSalvar} />
-      <Link href={cancelarPara} className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] hover:bg-primary-fixed/35 hover:text-primary active:scale-[0.985]">Cancelar</Link>
+      <Link href={cancelarPara} className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] hover:bg-selecao hover:text-primary active:scale-[0.985]">Cancelar</Link>
     </RodapeAcoesFormulario>
   </form>;
 }

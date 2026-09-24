@@ -41,20 +41,17 @@ export function ListaProcedimentos({
           className={cn(
             "relative isolate flex min-h-44 flex-col overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5",
             p.ativo
-              ? "premium-interactive border-card-border/75 bg-surface/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)]"
-              : "border-dashed border-outline-variant/80 bg-surface-container-low/60",
+              ? "premium-interactive border-card-border bg-surface"
+              : "border-dashed border-outline-variant bg-surface-container-low",
           )}
         >
-          {p.ativo ? (
-            <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 -z-10 size-36 rounded-full bg-primary-fixed/32 blur-2xl" />
-          ) : null}
 
           <div className="flex items-start justify-between gap-4">
             <span
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-2xl border shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                "flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border",
                 p.ativo
-                  ? "border-primary-fixed-dim/55 bg-primary-fixed/48 text-primary"
+                  ? "border-primary-fixed-dim bg-selecao text-primary"
                   : "border-card-border bg-surface-container text-outline",
               )}
             >
@@ -80,10 +77,10 @@ export function ListaProcedimentos({
           </div>
 
           {podeEditar ? (
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-card-border/65 pt-3">
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-card-border pt-3">
               <Link
                 href={`/configuracoes/procedimentos/${p.id}/editar`}
-                className="premium-interactive inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-on-surface-variant shadow-[var(--shadow-cartao)] hover:border-primary-fixed-dim hover:text-primary"
+                className="premium-interactive inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-on-surface-variant hover:border-primary-fixed-dim hover:text-primary"
               >
                 <Pencil aria-hidden="true" size={13} strokeWidth={1.75} />
                 Editar

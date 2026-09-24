@@ -33,7 +33,7 @@ export function FormularioDeAcao({
       {children}
 
       {!estado.ok && estado.mensagem ? (
-        <p role="alert" className={cn("inline-flex max-w-sm items-start gap-2 rounded-[12px] border border-negativo-borda/70 bg-negativo-fundo/72 px-3 py-2 text-xs leading-5 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]", alinhamento === "fim" && "text-right")}>
+        <p role="alert" className={cn("inline-flex max-w-sm items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3 py-2 text-xs leading-5 text-negativo", alinhamento === "fim" && "text-right")}>
           <CircleAlert aria-hidden="true" size={14} strokeWidth={1.8} className="mt-0.5 shrink-0" />
           <span>{estado.mensagem}</span>
         </p>
@@ -55,16 +55,16 @@ export function FormularioDeAcao({
 type Tom = "neutro" | "positivo" | "negativo" | "informativo" | "silencioso" | "primario";
 
 const TONS: Record<Tom, string> = {
-  neutro: "border border-card-border/90 bg-surface/85 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:-translate-y-0.5 hover:border-primary-fixed-dim hover:bg-primary-fixed/20 hover:text-primary hover:shadow-[var(--shadow-cartao)]",
-  positivo: "border border-positivo-borda/90 bg-positivo-fundo/55 text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:-translate-y-0.5 hover:bg-positivo-fundo hover:shadow-[0_8px_18px_-12px_rgba(14,118,57,0.65)]",
-  negativo: "border border-negativo-borda/90 bg-negativo-fundo/45 text-negativo shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:-translate-y-0.5 hover:bg-negativo-fundo hover:shadow-[0_8px_18px_-12px_rgba(186,26,26,0.45)]",
-  informativo: "border border-informativo-borda/90 bg-informativo-fundo/55 text-informativo-texto shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:-translate-y-0.5 hover:bg-informativo-fundo hover:shadow-[var(--shadow-cartao)]",
-  silencioso: "text-outline hover:bg-surface/80 hover:text-primary",
-  primario: "border border-primary-container bg-linear-to-b from-primary-container to-primary text-on-primary shadow-[var(--shadow-primary)] hover:-translate-y-0.5 hover:brightness-[0.96] hover:shadow-[0_12px_28px_-12px_rgba(8,84,160,0.68)]",
+  neutro: "border border-borda-controle bg-surface text-on-surface-variant hover:border-primary-container hover:bg-selecao hover:text-primary",
+  positivo: "border border-positivo-borda bg-positivo-fundo text-positivo hover:border-positivo",
+  negativo: "border border-negativo-borda bg-negativo-fundo text-negativo hover:border-negativo",
+  informativo: "border border-informativo-borda bg-informativo-fundo text-informativo-texto hover:border-informativo",
+  silencioso: "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
+  primario: "border border-primary-container bg-primary-container text-on-primary hover:border-primary-hover hover:bg-primary-hover",
 };
 
 const TAMANHOS = {
-  md: "h-11 px-5 text-sm [&_svg]:size-4.5",
+  md: "h-10 px-4 text-sm [&_svg]:size-4.5",
   sm: "h-9 px-3.5 text-sm [&_svg]:size-4",
   xs: "h-8 px-3 text-xs [&_svg]:size-3.5",
 } as const;
@@ -102,15 +102,14 @@ export function BotaoDeAcao({
       aria-label={rotuloAcessivel}
       title={indisponivel ? motivoIndisponivel : undefined}
       className={cn(
-        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-medium whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100",
+        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100",
         TAMANHOS[tamanho],
         TONS[tom],
         className,
       )}
     >
-      {tom === "primario" ? <span aria-hidden="true" className="pointer-events-none absolute inset-x-5 top-0 h-px bg-white/45" /> : null}
       <span className="relative inline-flex items-center gap-1.5">
-        {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : icone ? <span aria-hidden="true" className="inline-flex transition-transform duration-150 group-hover:scale-[1.04]">{icone}</span> : null}
+        {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : icone ? <span aria-hidden="true" className="inline-flex transition-transform duration-150">{icone}</span> : null}
         {pending && rotuloPendente ? rotuloPendente : children}
       </span>
     </button>
