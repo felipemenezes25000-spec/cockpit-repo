@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Search, X } from "lucide-react";
+import { ClipboardPlus, LoaderCircle, Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { classeDeEntrada } from "@/components/ui/field";
@@ -18,10 +18,7 @@ export function BuscaProntuarios({
   const [termo, setTermo] = useState(busca);
   const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // A URL pode mudar por fora (voltar no navegador, link da paginação).
   useEffect(() => setTermo(busca), [busca]);
-
-  // Sair da tela no meio da pausa não pode navegar depois.
   useEffect(() => () => pararRelogio(), []);
 
   function pararRelogio() {
@@ -42,9 +39,6 @@ export function BuscaProntuarios({
     iniciar(() => router.replace(texto ? `/prontuarios?${texto}` : "/prontuarios"));
   }
 
-  // A espera fica no próprio evento de digitação, e não num efeito que
-  // observa `termo`: assim só a pessoa digitando dispara a busca, nunca a
-  // sincronização com a URL acima.
   function aoDigitar(novoTermo: string) {
     setTermo(novoTermo);
     pararRelogio();
@@ -60,15 +54,12 @@ export function BuscaProntuarios({
         evento.preventDefault();
         navegar(termo);
       }}
-      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      className="premium-panel relative flex flex-col gap-4 overflow-hidden rounded-[16px] border p-3.5 shadow-[var(--shadow-cartao)] sm:flex-row sm:items-center sm:justify-between"
     >
+      <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-36 rounded-full bg-primary-fixed/28 blur-3xl" />
+
       <div className="relative w-full sm:max-w-md">
-        <Search
-          aria-hidden="true"
-          size={18}
-          strokeWidth={1.5}
-          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline"
-        />
+        <Search aria-hidden="true" size={18} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
         <input
           type="search"
           name="busca"
@@ -77,17 +68,14 @@ export function BuscaProntuarios({
           maxLength={80}
           aria-label="Buscar prontuário por paciente ou título"
           placeholder="Buscar por paciente ou título"
-          className={classeDeEntrada({ recuo: "busca" })}
+          className={`${classeDeEntrada({ recuo: "busca" })} bg-white/78 shadow-[var(--shadow-cartao)]`}
         />
 
-        {/* Carregando ocupa o lugar do "limpar", dentro da caixa: fora dela
-            (-right-6), no celular o ícone passava da borda do cartão. */}
         {pendente ? (
-          <LoaderCircle
-            aria-hidden="true"
-            size={16}
-            className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 animate-spin text-outline"
-          />
+          <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[8px] bg-white/88 px-2 py-1 text-[0.65rem] font-medium text-outline shadow-[var(--shadow-cartao)]">
+            <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
+            buscando
+          </span>
         ) : termo ? (
           <button
             type="button"
@@ -96,14 +84,15 @@ export function BuscaProntuarios({
               navegar("");
             }}
             aria-label="Limpar busca"
-            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-tag)] text-outline transition-colors hover:bg-surface-container-low hover:text-primary"
+            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[9px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
         ) : null}
       </div>
 
-      <span aria-live="polite" className="text-xs text-outline tabular">
+      <span aria-live="polite" className="relative inline-flex items-center gap-1.5 self-start rounded-full border border-card-border/75 bg-white/68 px-2.5 py-1.5 text-xs text-outline shadow-[var(--shadow-cartao)] tabular sm:self-auto">
+        <ClipboardPlus aria-hidden="true" size={13} strokeWidth={1.65} className="text-primary" />
         {total === 1 ? "1 prontuário" : `${total} prontuários`}
       </span>
     </form>
