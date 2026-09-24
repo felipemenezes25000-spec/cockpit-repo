@@ -52,7 +52,9 @@ export function EstruturaApp({
 
   return (
     <div className="relative flex min-h-screen bg-transparent">
-      <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_42%_0%,rgba(10,110,209,0.065),transparent_52%)]" />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-20 bg-[radial-gradient(circle,rgba(10,110,209,0.07)_1px,transparent_1px)] opacity-30 [background-size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_42%_0%,rgba(10,110,209,0.075),transparent_52%)]" />
+      <div aria-hidden="true" className="pointer-events-none fixed -bottom-40 left-[22%] -z-10 size-[32rem] rounded-full bg-secondary-fixed/18 blur-3xl motion-safe:animate-[pulse_14s_ease-in-out_infinite]" />
       <a href="#conteudo" className="sr-only rounded-[var(--radius-cartao)] bg-primary px-4 py-2 text-on-primary shadow-[var(--shadow-flutuante)] focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">Ir para o conteúdo</a>
 
       <BarraLateral
@@ -69,10 +71,7 @@ export function EstruturaApp({
           usuario={usuario}
           pendenciasAltas={pendenciasAltas}
         />
-        <main
-          id="conteudo"
-          className="relative flex-1 px-3 pt-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-7 lg:pb-7 xl:px-10 2xl:px-14"
-        >
+        <main id="conteudo" className="relative flex-1 px-3 pt-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-7 lg:pb-7 xl:px-10 2xl:px-14">
           <div className="page-reveal mx-auto w-full max-w-[1600px]">
             {aviso}
             {children}
