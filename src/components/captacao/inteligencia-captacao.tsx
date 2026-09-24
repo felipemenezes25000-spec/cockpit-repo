@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   BadgeAlert,
+  CircleX,
   Megaphone,
   Route,
   Sparkles,
@@ -10,6 +11,7 @@ import { ROTULO_ETAPA } from "@/lib/captacao";
 import type {
   CampanhaDoPainel,
   GargaloDoPainel,
+  MotivoPerdaDoPainel,
   OrigemDoPainel,
 } from "@/server/consultas/captacao";
 
@@ -161,16 +163,52 @@ function Gargalo({
   );
 }
 
+function MotivosPerda({ motivos, total }: { motivos: MotivoPerdaDoPainel[]; total: number }) {
+  if (motivos.length === 0) {
+    return (
+      <div className="mt-4 rounded-[var(--radius-cartao)] border border-dashed border-card-border px-4 py-5 text-xs leading-5 text-outline">
+        Os motivos aparecem aqui quando um lead for encerrado como perdido. Se ele for reaberto depois, o motivo histórico continua preservado.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {motivos.slice(0, 4).map((item, indice) => (
+        <div key={item.motivo} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low p-4">
+          <div className="flex items-start justify-between gap-3">
+            <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-card-border bg-surface text-xs font-semibold tabular-nums text-outline">
+              {indice + 1}
+            </span>
+            <strong className="text-sm tabular-nums text-negativo">{taxa(item.percentual)}</strong>
+          </div>
+          <p className="mt-3 line-clamp-2 text-sm font-semibold leading-5 text-on-surface">{item.motivo}</p>
+          <p className="mt-2 text-xs text-outline">
+            {item.quantidade} de {total} {total === 1 ? "perda registrada" : "perdas registradas"}
+          </p>
+          <span aria-hidden="true" className="barra barra-fina mt-3">
+            <span className="chart-grow" style={{ width: `${Math.min(100, item.percentual)}%` }} />
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function InteligenciaCaptacao({
   origens,
   campanhas,
   gargalo,
   metaConfigurada,
+  motivosPerda,
+  totalPerdidos,
 }: {
   origens: OrigemDoPainel[];
   campanhas: CampanhaDoPainel[];
   gargalo: GargaloDoPainel | null;
   metaConfigurada: boolean;
+  motivosPerda: MotivoPerdaDoPainel[];
+  totalPerdidos: number;
 }) {
   return (
     <section aria-labelledby="titulo-inteligencia-captacao" className="grid min-w-0 gap-5 xl:grid-cols-12">
@@ -221,6 +259,29 @@ export function InteligenciaCaptacao({
             Agrupado pelo campo Campanha informado na entrada do lead.
           </p>
           <Campanhas campanhas={campanhas} />
+        </CardCorpo>
+      </Card>
+
+      <Card className="min-w-0 xl:col-span-12">
+        <CardCorpo>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-negativo-fundo text-negativo">
+                <CircleX size={19} strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0">
+                <p className="rotulo text-primary">Motivos de perda</p>
+                <h2 className="titulo-secao mt-1">Por que as oportunidades estão saindo do funil</h2>
+              </div>
+            </div>
+            <span className="inline-flex min-h-8 w-fit items-center rounded-full border border-card-border bg-surface-container-low px-3 text-xs font-semibold tabular-nums text-outline">
+              {totalPerdidos} {totalPerdidos === 1 ? "lead com perda" : "leads com perda"} no período
+            </span>
+          </div>
+          <p className="mt-3 max-w-3xl text-xs leading-5 text-outline">
+            Usa o último motivo de perda registrado para cada lead da coorte. O motivo fica na trilha imutável mesmo se a oportunidade for reaberta depois.
+          </p>
+          <MotivosPerda motivos={motivosPerda} total={totalPerdidos} />
         </CardCorpo>
       </Card>
     </section>
