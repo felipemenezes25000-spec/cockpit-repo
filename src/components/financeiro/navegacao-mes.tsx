@@ -6,25 +6,46 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { capitalizar, formatarMesAno } from "@/lib/format";
 import type { Periodo } from "@/lib/periodo";
 
-export function hrefDoMes(caminho: string, busca: string, chave: string | null): string {
+export function hrefDoMes(
+  caminho: string,
+  busca: string,
+  chave: string | null,
+  limpar: readonly string[] = [],
+): string {
   const query = new URLSearchParams(busca);
+  for (const parametro of limpar) query.delete(parametro);
   if (chave) query.set("mes", chave);
   else query.delete("mes");
   const texto = query.toString();
   return texto ? `${caminho}?${texto}` : caminho;
 }
 
-export function NavegacaoMes({ periodo, rotulo = "Período financeiro" }: { periodo: Periodo; rotulo?: string }) {
+export function NavegacaoMes({
+  periodo,
+  rotulo = "Período financeiro",
+  limparAoTrocar = [],
+}: {
+  periodo: Periodo;
+  rotulo?: string;
+  /**
+   * Alguns filtros pertencem ao conjunto daquele mês (ex.: campanha da
+   * Captação). Eles podem ser descartados ao navegar sem alterar o comportamento
+   * padrão do Financeiro, que continua preservando seus próprios filtros.
+   */
+  limparAoTrocar?: readonly string[];
+}) {
   const caminho = usePathname() ?? "/financeiro";
   const busca = useSearchParams()?.toString() ?? "";
 
   const seta =
     "group flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-cartao)] border border-card-border bg-surface text-on-surface-variant transition-[transform,background-color,border-color,color] duration-150 hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary active:translate-y-px active:scale-[0.97]";
 
+  const endereco = (chave: string | null) => hrefDoMes(caminho, busca, chave, limparAoTrocar);
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="premium-panel relative flex w-full items-center gap-2.5 overflow-hidden rounded-[var(--radius-painel)] border p-2 sm:w-auto">
-        <Link href={hrefDoMes(caminho, busca, periodo.chaveAnterior)} aria-label="Mês anterior" className={seta}>
+        <Link href={endereco(periodo.chaveAnterior)} aria-label="Mês anterior" className={seta}>
           <ChevronLeft aria-hidden="true" size={18} strokeWidth={1.75} className="transition-transform duration-150 group-hover:-translate-x-0.5" />
         </Link>
 
@@ -36,14 +57,14 @@ export function NavegacaoMes({ periodo, rotulo = "Período financeiro" }: { peri
           </span>
         </span>
 
-        <Link href={hrefDoMes(caminho, busca, periodo.chaveProxima)} aria-label="Mês seguinte" className={seta}>
+        <Link href={endereco(periodo.chaveProxima)} aria-label="Mês seguinte" className={seta}>
           <ChevronRight aria-hidden="true" size={18} strokeWidth={1.75} className="transition-transform duration-150 group-hover:translate-x-0.5" />
         </Link>
       </div>
 
       {!periodo.ehMesAtual ? (
         <Link
-          href={hrefDoMes(caminho, busca, null)}
+          href={endereco(null)}
           className="premium-interactive inline-flex h-10 items-center gap-2 rounded-[var(--radius-cartao)] border border-primary-fixed bg-selecao px-3.5 text-sm font-semibold text-primary hover:bg-primary-fixed"
         >
           <span aria-hidden="true" className="size-1.5 rounded-full bg-primary-container" />
