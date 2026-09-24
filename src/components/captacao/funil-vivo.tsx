@@ -1,9 +1,10 @@
 "use client";
 
 import { ArrowDown, CalendarCheck, CheckCircle2, Sparkles, UsersRound } from "lucide-react";
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useMemo, useState } from "react";
 import { ROTULO_ETAPA, type EtapaLead } from "@/lib/captacao";
 import type { EtapaDoPainel } from "@/server/consultas/captacao";
+import estilos from "./funil-vivo.module.css";
 
 const ICONE = {
   novo: UsersRound,
@@ -27,17 +28,10 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
 
   if (etapas.length === 0) return null;
 
-  function aoTeclar(evento: KeyboardEvent<HTMLButtonElement>, etapa: EtapaLead) {
-    if (evento.key === "Enter" || evento.key === " ") {
-      evento.preventDefault();
-      setAtiva(etapa);
-    }
-  }
-
   return (
-    <section className="cabine funil-palco relative min-h-[34rem] overflow-hidden p-4 sm:p-6" aria-labelledby="titulo-funil">
-      <div aria-hidden="true" className="funil-luz funil-luz-a" />
-      <div aria-hidden="true" className="funil-luz funil-luz-b" />
+    <section className={`cabine ${estilos.palco} relative min-h-[34rem] overflow-hidden p-4 sm:p-6`} aria-labelledby="titulo-funil">
+      <div aria-hidden="true" className={`${estilos.luz} ${estilos.luzA}`} />
+      <div aria-hidden="true" className={`${estilos.luz} ${estilos.luzB}`} />
 
       <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -46,7 +40,7 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
             Da atenção até a venda
           </h2>
           <p className="mt-1.5 max-w-xl text-sm leading-6 text-cabine-texto-secundario">
-            Passe pelo funil para ver volume, conversão e o esforço que ainda falta para a meta.
+            Toque em cada etapa para ver volume, conversão e o esforço que ainda falta para a meta.
           </p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-[var(--radius-controle)] border border-cabine-linha px-3 py-2 text-xs font-semibold text-cabine-texto-secundario">
@@ -57,7 +51,7 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
 
       <div className="relative z-10 mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_13.5rem] xl:items-center">
         <div className="relative mx-auto flex w-full max-w-[38rem] flex-col items-center gap-2 py-3 sm:py-5">
-          <div aria-hidden="true" className="funil-eixo" />
+          <div aria-hidden="true" className={estilos.eixo} />
           {etapas.map((etapa, indice) => {
             const Icone = ICONE[etapa.etapa];
             const atual = selecionada?.etapa === etapa.etapa;
@@ -66,13 +60,12 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
                 <button
                   type="button"
                   onClick={() => setAtiva(etapa.etapa)}
-                  onKeyDown={(evento) => aoTeclar(evento, etapa.etapa)}
                   aria-pressed={atual}
                   aria-label={`${ROTULO_ETAPA[etapa.etapa]}: ${numero(etapa.volume)}`}
-                  className="funil-segmento group relative min-h-[5.6rem] overflow-hidden px-5 py-3 text-left text-cabine-texto focus-visible:z-20"
+                  className={`${estilos.segmento} group relative min-h-[5.6rem] overflow-hidden px-5 py-3 text-left text-cabine-texto focus-visible:z-20`}
                   style={{ width: `${LARGURA[indice] ?? 47}%` }}
                 >
-                  <span aria-hidden="true" className="funil-segmento-brilho" />
+                  <span aria-hidden="true" className={estilos.brilho} />
                   <span className="relative z-10 flex h-full items-center justify-between gap-3">
                     <span className="min-w-0">
                       <span className="block text-[0.68rem] font-semibold tracking-[0.08em] text-cabine-texto-secundario uppercase">
@@ -96,13 +89,13 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
             );
           })}
 
-          <span aria-hidden="true" className="funil-particula funil-particula-1" />
-          <span aria-hidden="true" className="funil-particula funil-particula-2" />
-          <span aria-hidden="true" className="funil-particula funil-particula-3" />
+          <span aria-hidden="true" className={`${estilos.particula}`} />
+          <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula2}`} />
+          <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula3}`} />
         </div>
 
         {selecionada ? (
-          <aside className="rounded-[var(--radius-painel)] border border-cabine-linha bg-cabine-profunda/65 p-4 backdrop-blur-[2px] xl:self-stretch">
+          <aside className="rounded-[var(--radius-painel)] border border-cabine-linha bg-cabine-profunda/65 p-4 xl:self-stretch">
             <p className="rotulo">Etapa selecionada</p>
             <p className="mt-2 text-base font-semibold text-cabine-texto">{ROTULO_ETAPA[selecionada.etapa]}</p>
             <p className="numero mt-4 text-cabine-texto">{numero(selecionada.volume)}</p>
