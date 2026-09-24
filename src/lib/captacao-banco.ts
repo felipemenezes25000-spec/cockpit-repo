@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/tipos-banco";
 
 /**
- * Tipagem local das tabelas da migração 0029.
+ * Tipagem local das tabelas e funções da migração 0029.
  *
  * `tipos-banco.ts` é gerado a partir do projeto Supabase vinculado. Como a
  * migração nova ainda precisa ser aplicada antes de `npm run db:tipos`, o
@@ -112,7 +112,7 @@ type TabelaMetaComercial = {
 };
 
 export type DatabaseCaptacao = Omit<Database, "public"> & {
-  public: Omit<PublicoBase, "Tables" | "Enums"> & {
+  public: Omit<PublicoBase, "Tables" | "Enums" | "Functions"> & {
     Tables: PublicoBase["Tables"] & {
       leads: TabelaLead;
       lead_etapas: TabelaLeadEtapas;
@@ -120,6 +120,12 @@ export type DatabaseCaptacao = Omit<Database, "public"> & {
     };
     Enums: PublicoBase["Enums"] & {
       etapa_lead: EtapaLead;
+    };
+    Functions: PublicoBase["Functions"] & {
+      lead_converter_em_paciente: {
+        Args: { p_lead_id: string };
+        Returns: string;
+      };
     };
   };
 };
