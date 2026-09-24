@@ -1,8 +1,8 @@
-import { BarChart3, CalendarCheck2, Funnel, Route } from "lucide-react";
+import { BarChart3, CalendarCheck2, Filter, Route, type LucideIcon } from "lucide-react";
 import { Card, CardCorpo } from "@/components/ui/card";
 import type { OrigemDoPainel } from "@/server/consultas/captacao";
 
-function Taxa({ icone: Icone, rotulo, valor }: { icone: typeof Funnel; rotulo: string; valor: number }) {
+function Taxa({ icone: Icone, rotulo, valor }: { icone: LucideIcon; rotulo: string; valor: number }) {
   return (
     <div className="flex items-start gap-3 border-b border-card-border py-4 first:pt-0 last:border-0 last:pb-0">
       <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary">
@@ -43,7 +43,7 @@ export function MetricasCaptacao({
         </div>
 
         <div className="mt-5">
-          <Taxa icone={Funnel} rotulo="Conversão geral · lead → venda" valor={taxaGeral} />
+          <Taxa icone={Filter} rotulo="Conversão geral · lead → venda" valor={taxaGeral} />
           <Taxa icone={CalendarCheck2} rotulo="Fechamento · agendamento → venda" valor={taxaAgendamentoVenda} />
         </div>
 
