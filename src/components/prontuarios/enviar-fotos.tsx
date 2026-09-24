@@ -96,7 +96,7 @@ async function dimensoesDoArquivo(
 
 function Linha({ item }: { item: ItemDaFila }) {
   const icone = {
-    esperando: <span className="size-4 shrink-0 rounded-full border border-outline-variant" />,
+    esperando: <span className="size-4 shrink-0 rounded-full border border-outline-variant bg-white" />,
     enviando: (
       <LoaderCircle
         aria-hidden="true"
@@ -108,19 +108,31 @@ function Linha({ item }: { item: ItemDaFila }) {
     erro: <CircleAlert aria-hidden="true" size={16} className="shrink-0 text-negativo" />,
   }[item.estado];
 
+  const superficie = {
+    esperando: "border-card-border/65 bg-white/45",
+    enviando: "border-primary/15 bg-primary-fixed/22 shadow-[var(--shadow-cartao)]",
+    ok: "border-positivo-borda/55 bg-positivo-fundo/42",
+    erro: "border-negativo-borda/55 bg-negativo-fundo/34",
+  }[item.estado];
+
   return (
-    <li className="flex flex-col gap-1 border-b border-card-border px-4 py-2.5 last:border-b-0">
+    <li className={cn("relative flex flex-col gap-1 overflow-hidden rounded-[13px] border px-3.5 py-3 transition-[background-color,border-color,box-shadow] duration-200", superficie)}>
+      {item.estado === "enviando" ? (
+        <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-primary now-pulse" />
+      ) : null}
       <div className="flex items-center gap-2.5">
-        {icone}
-        <span className="min-w-0 flex-1 truncate text-sm text-on-surface">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-white/70 bg-white/70 shadow-[var(--shadow-cartao)]">
+          {icone}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-on-surface">
           {item.nome}
         </span>
-        <span className="tabular shrink-0 text-xs text-outline">
+        <span className="tabular shrink-0 rounded-full border border-card-border/65 bg-white/60 px-2 py-1 text-[0.66rem] font-medium text-outline">
           {formatarTamanho(item.tamanho)}
         </span>
       </div>
       {item.erro ? (
-        <p className="pl-6.5 text-xs text-negativo">{item.erro}</p>
+        <p className="pl-10.5 text-xs leading-5 text-negativo">{item.erro}</p>
       ) : null}
     </li>
   );
@@ -269,6 +281,8 @@ export function EnviarFotos({
 
   const gravadas = fila.filter((item) => item.estado === "ok").length;
   const recusadas = fila.filter((item) => item.estado === "erro").length;
+  const concluidas = gravadas + recusadas;
+  const progresso = fila.length > 0 ? Math.round((concluidas / fila.length) * 100) : 0;
 
   return (
     <form onSubmit={enviar} className="flex flex-col gap-5">
@@ -311,25 +325,55 @@ export function EnviarFotos({
         </Campo>
       </div>
 
-      <Campo
-        id="foto-arquivos"
-        rotulo="Fotos"
-        obrigatorio
-        dica={`JPEG, PNG ou WebP, até ${formatarTamanho(TAMANHO_MAXIMO)} cada. No máximo ${MAXIMO_POR_ENVIO} por vez.`}
-      >
-        <input
-          ref={campoArquivo}
-          id="foto-arquivos"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          onChange={aoEscolher}
-          className={cn(
-            ENTRADA,
-            "h-auto py-2.5 file:mr-3 file:cursor-pointer file:rounded-[var(--radius-tag)] file:border-0 file:bg-secondary-fixed file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary",
-          )}
-        />
-      </Campo>
+      <div className="relative overflow-hidden rounded-[18px] border border-dashed border-primary/18 bg-[linear-gradient(145deg,rgba(209,232,255,0.28),rgba(255,255,255,0.72))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] sm:p-5">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-36 rounded-full bg-primary-fixed/45 blur-3xl" />
+        <div className="relative flex items-start gap-3.5">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-[14px] border border-primary/10 bg-white/76 text-primary shadow-[var(--shadow-cartao)]">
+            <ImagePlus aria-hidden="true" size={20} strokeWidth={1.65} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <Campo
+              id="foto-arquivos"
+              rotulo="Fotos"
+              obrigatorio
+              dica={`JPEG, PNG ou WebP, até ${formatarTamanho(TAMANHO_MAXIMO)} cada. No máximo ${MAXIMO_POR_ENVIO} por vez.`}
+            >
+              <input
+                ref={campoArquivo}
+                id="foto-arquivos"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={aoEscolher}
+                className={cn(
+                  ENTRADA,
+                  "h-auto bg-white/72 py-2.5 file:mr-3 file:cursor-pointer file:rounded-[9px] file:border file:border-primary/10 file:bg-primary-fixed/50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary file:shadow-[var(--shadow-cartao)] file:transition-colors hover:file:bg-primary-fixed/75",
+                )}
+              />
+            </Campo>
+          </div>
+        </div>
+
+        {escolhidos.length > 0 && fila.length === 0 ? (
+          <div className="relative mt-4 border-t border-primary/10 pt-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-on-surface-variant">
+                {escolhidos.length === 1 ? "1 arquivo pronto" : `${escolhidos.length} arquivos prontos`}
+              </p>
+              <p className="text-[0.66rem] text-outline">A fila será enviada em ordem, uma foto por vez.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {escolhidos.map((arquivo, indice) => (
+                <span key={`${indice}-${arquivo.name}`} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-card-border/75 bg-white/72 px-2.5 py-1 text-[0.68rem] text-on-surface-variant shadow-[var(--shadow-cartao)]">
+                  <ImagePlus aria-hidden="true" size={12} className="shrink-0 text-primary" />
+                  <span className="max-w-48 truncate">{arquivo.name}</span>
+                  <span className="tabular shrink-0 text-outline">{formatarTamanho(arquivo.size)}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {falha ? (
         <p
@@ -372,18 +416,27 @@ export function EnviarFotos({
       </div>
 
       {fila.length > 0 ? (
-        <div>
-          <p className="rotulo mb-2 flex items-center gap-2">
-            <ImagePlus aria-hidden="true" size={14} strokeWidth={1.75} />
-            {enviando
-              ? "Enviando"
-              : `${gravadas} ${gravadas === 1 ? "gravada" : "gravadas"}${
-                  recusadas > 0
-                    ? ` · ${recusadas} ${recusadas === 1 ? "recusada" : "recusadas"}`
-                    : ""
-                }`}
-          </p>
-          <ul className="rounded-[var(--radius-cartao)] border border-card-border bg-surface">
+        <div className="relative overflow-hidden rounded-[18px] border border-card-border/75 bg-white/56 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.94),var(--shadow-cartao)] sm:p-4">
+          <span aria-hidden="true" className="pointer-events-none absolute -top-16 right-0 size-36 rounded-full bg-primary-fixed/28 blur-3xl" />
+          <div className="relative mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="rotulo flex items-center gap-2">
+              <ImagePlus aria-hidden="true" size={14} strokeWidth={1.75} />
+              {enviando
+                ? "Fila de envio"
+                : `${gravadas} ${gravadas === 1 ? "gravada" : "gravadas"}${
+                    recusadas > 0
+                      ? ` · ${recusadas} ${recusadas === 1 ? "recusada" : "recusadas"}`
+                      : ""
+                  }`}
+            </p>
+            <span className="tabular text-xs font-semibold text-primary">{progresso}%</span>
+          </div>
+
+          <div className="relative mb-3 h-1.5 overflow-hidden rounded-full bg-primary-fixed/36" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso} aria-label="Progresso do envio das fotos">
+            <span className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,var(--color-primary-container),var(--color-primary))] transition-[width] duration-300 ease-out" style={{ width: `${progresso}%` }} />
+          </div>
+
+          <ul className="relative flex flex-col gap-2">
             {fila.map((item) => (
               <Linha key={item.chave} item={item} />
             ))}
