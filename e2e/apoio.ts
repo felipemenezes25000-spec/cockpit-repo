@@ -112,6 +112,7 @@ export const TELAS_DO_SISTEMA = [
   "/relacionamento?aba=avaliacoes",
   "/relacionamento/retornos/novo",
   "/relacionamento/tarefas/nova",
+  "/captacao",
   "/busca?q=ana",
   "/configuracoes",
   "/configuracoes/procedimentos",
