@@ -46,12 +46,16 @@ export const listarLeadsCaptacao = cache(
     busca = "",
     etapa: FiltroEtapaLead = "todos",
     paginaRecebida = 1,
+    origem = "",
+    campanha = "",
   ): Promise<PaginaDeLeads> => {
     const base = await clienteServidor();
     const supabase = comoClienteCaptacao(base);
     let pagina = Math.max(1, Math.trunc(paginaRecebida));
     const termo = termoDeBusca(busca);
     const digitos = termo.replace(/\D/g, "");
+    const origemExata = origem.trim().slice(0, 60);
+    const campanhaExata = campanha.trim().slice(0, 120);
     const frase = "Não foi possível carregar a carteira de leads.";
 
     const montar = (contagem: { count: "exact"; head?: boolean }) => {
@@ -65,6 +69,8 @@ export const listarLeadsCaptacao = cache(
         .lt("criado_em", periodo.ate.toISOString());
 
       if (etapa !== "todos") consulta = consulta.eq("etapa", etapa);
+      if (origemExata) consulta = consulta.eq("origem", origemExata);
+      if (campanhaExata) consulta = consulta.eq("campanha", campanhaExata);
 
       if (termo) {
         const alvos = [
@@ -97,8 +103,6 @@ export const listarLeadsCaptacao = cache(
         falhaDeConsulta("consulta captação: carteira", resposta.error, frase);
       }
 
-      // `?pagina=99` não é falha operacional. Descobre a última página real e
-      // a lê, em vez de mostrar "99 de 2" com uma carteira vazia.
       const contagem = await montar({ count: "exact", head: true });
       if (contagem.error) {
         falhaDeConsulta("consulta captação: contagem da carteira", contagem.error, frase);
@@ -180,8 +184,6 @@ export const listarLeadsCaptacao = cache(
           pacienteId: lead.paciente_id,
           criadoEm: new Date(lead.criado_em),
           atualizadoEm,
-          // A clínica trabalha em dias de calendário de São Paulo, não em
-          // blocos de 24 horas do servidor. A mesma regra é usada em prazos.
           diasSemMovimento: Math.max(0, -diferencaEmDias(atualizadoEm)),
           motivoPerda: lead.motivo_perda,
           historico: historicoPorLead.get(lead.id) ?? [],
