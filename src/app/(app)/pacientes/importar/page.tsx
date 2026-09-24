@@ -1,4 +1,4 @@
-import { ShieldAlert, Upload } from "lucide-react";
+import { FileSpreadsheet, ScanSearch, ShieldAlert, Upload, UserRoundCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { Importador } from "@/components/pacientes/importador";
 import { BotaoLink } from "@/components/ui/button";
@@ -23,6 +23,13 @@ function modeloEmDataUri(): string {
   const csv = gerarCsv([[...COLUNAS_DO_MODELO], exemplo], ";");
   return `data:text/csv;charset=utf-8,${encodeURIComponent(`﻿${csv}`)}`;
 }
+
+const ETAPAS = [
+  { numero: "01", titulo: "Arquivo", descricao: "Escolha o CSV da clínica.", icone: FileSpreadsheet },
+  { numero: "02", titulo: "Análise", descricao: "O sistema reconhece e valida as colunas.", icone: ScanSearch },
+  { numero: "03", titulo: "Conferência", descricao: "Revise erros, avisos e duplicidades.", icone: Upload },
+  { numero: "04", titulo: "Importação", descricao: "Somente as linhas prontas são gravadas.", icone: UserRoundCheck },
+] as const;
 
 export default async function PaginaImportarPacientes() {
   if (!(await ehAdministradora())) {
@@ -57,6 +64,32 @@ export default async function PaginaImportarPacientes() {
           </>
         }
       />
+
+      <section aria-label="Etapas da importação" className="premium-panel relative overflow-hidden rounded-[20px] border p-3 sm:p-4">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-40 rounded-full bg-primary-fixed/30 blur-3xl" />
+        <ol className="relative grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {ETAPAS.map((etapa, indice) => {
+            const Icone = etapa.icone;
+            return (
+              <li key={etapa.numero} className="group relative overflow-hidden rounded-[15px] border border-card-border/70 bg-white/58 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition-[transform,border-color,box-shadow,background-color] duration-200 hover:-translate-y-px hover:border-primary/15 hover:bg-white/76 hover:shadow-[var(--shadow-cartao)]">
+                <div className="flex items-start gap-3">
+                  <span className="relative flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-primary/10 bg-primary-fixed/48 text-primary shadow-[var(--shadow-cartao)]">
+                    <Icone aria-hidden="true" size={17} strokeWidth={1.65} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="tabular text-[0.62rem] font-bold tracking-[0.1em] text-outline uppercase">{etapa.numero}</span>
+                      {indice < ETAPAS.length - 1 ? <span aria-hidden="true" className="hidden h-px flex-1 bg-gradient-to-r from-card-border to-transparent xl:block" /> : null}
+                    </div>
+                    <p className="mt-1 text-sm font-semibold tracking-[-0.01em] text-on-surface">{etapa.titulo}</p>
+                    <p className="mt-1 text-xs leading-5 text-outline">{etapa.descricao}</p>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
 
       <Importador modeloCsv={modeloEmDataUri()} />
     </div>
