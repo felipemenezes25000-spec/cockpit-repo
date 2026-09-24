@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -41,7 +41,7 @@ export function LuzDoCursor({
     <span
       ref={ref}
       aria-hidden="true"
-      style={{ "--cursor-glow-size": `${tamanho}px` } as React.CSSProperties}
+      style={{ "--cursor-glow-size": `${tamanho}px` } as CSSProperties}
       className={cn(
         "cursor-glow pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
         className,
