@@ -49,6 +49,7 @@ create table public.lead_etapas (
   lead_id uuid not null references public.leads (id) on delete restrict,
   de public.etapa_lead,
   para public.etapa_lead not null,
+  motivo text check (motivo is null or char_length(motivo) <= 300),
   por uuid references public.perfis (id) on delete set null,
   em timestamptz not null default now()
 );
@@ -84,6 +85,8 @@ create trigger metas_comerciais_atualizado_em
   for each row execute function public.tocar_atualizado_em();
 
 -- A trilha é escrita pelo banco. A aplicação não insere nela diretamente.
+-- Motivo de perda entra na própria trilha para não desaparecer se o lead for
+-- reaberto depois; `leads.motivo_perda` continua representando só o estado atual.
 create or replace function private.lead_registrar_etapa()
 returns trigger
 language plpgsql
@@ -92,11 +95,23 @@ set search_path = public, pg_temp
 as $$
 begin
   if tg_op = 'INSERT' then
-    insert into public.lead_etapas (lead_id, de, para, por)
-    values (new.id, null, new.etapa, auth.uid());
+    insert into public.lead_etapas (lead_id, de, para, motivo, por)
+    values (
+      new.id,
+      null,
+      new.etapa,
+      case when new.etapa = 'perdido' then new.motivo_perda else null end,
+      auth.uid()
+    );
   elsif new.etapa is distinct from old.etapa then
-    insert into public.lead_etapas (lead_id, de, para, por)
-    values (new.id, old.etapa, new.etapa, auth.uid());
+    insert into public.lead_etapas (lead_id, de, para, motivo, por)
+    values (
+      new.id,
+      old.etapa,
+      new.etapa,
+      case when new.etapa = 'perdido' then new.motivo_perda else null end,
+      auth.uid()
+    );
   end if;
   return new;
 end;
@@ -317,6 +332,6 @@ revoke all on public.leads, public.lead_etapas, public.metas_comerciais from ano
 comment on table public.leads is
   'Oportunidades comerciais antes de virarem pacientes. Não apaga; encerra como perdido.';
 comment on table public.lead_etapas is
-  'Trilha imutável das mudanças de etapa do funil, escrita por gatilho.';
+  'Trilha imutável das mudanças de etapa do funil, incluindo o motivo registrado em cada perda.';
 comment on table public.metas_comerciais is
   'Metas mensais e premissas de conversão. procedimento_id nulo significa meta geral da clínica.';
