@@ -1,6 +1,8 @@
 "use client";
 
-import { ArrowDown, CalendarCheck, CheckCircle2, Sparkles, UsersRound } from "lucide-react";
+import { ArrowDown, ArrowRight, CalendarCheck, CheckCircle2, Sparkles, UsersRound } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ROTULO_ETAPA, type EtapaLead } from "@/lib/captacao";
 import type { EtapaDoPainel } from "@/server/consultas/captacao";
@@ -21,6 +23,7 @@ function numero(valor: number): string {
 
 export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
   const [ativa, setAtiva] = useState<EtapaLead>("novo");
+  const parametros = useSearchParams();
   const selecionada = useMemo(
     () => etapas.find((etapa) => etapa.etapa === ativa) ?? etapas[0],
     [ativa, etapas],
@@ -28,6 +31,14 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
 
   if (etapas.length === 0) return null;
   const temFluxo = (etapas[0]?.volume ?? 0) > 0;
+
+  function hrefDaEtapa(etapa: string): string {
+    const query = new URLSearchParams(parametros?.toString() ?? "");
+    query.set("etapa", etapa);
+    query.delete("pagina");
+    const texto = query.toString();
+    return texto ? `/captacao?${texto}` : "/captacao";
+  }
 
   return (
     <section className={`cabine ${estilos.palco} relative min-h-[34rem] overflow-hidden p-4 sm:p-6`} aria-labelledby="titulo-funil">
@@ -100,7 +111,7 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
             <p className="rotulo">Etapa selecionada</p>
             <p className="mt-2 text-base font-semibold text-cabine-texto">{ROTULO_ETAPA[selecionada.etapa]}</p>
             <p className="numero mt-4 text-cabine-texto">{numero(selecionada.volume)}</p>
-            <p className="mt-1 text-xs text-cabine-texto-secundario">movimentações no período</p>
+            <p className="mt-1 text-xs text-cabine-texto-secundario">leads da coorte que chegaram a esta etapa</p>
 
             <div className="mt-5 border-t border-cabine-linha pt-4">
               <span className="block text-xs text-cabine-texto-secundario">Conversão da etapa</span>
@@ -116,6 +127,17 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
               </strong>
               <p className="mt-1 text-xs leading-5 text-cabine-texto-secundario">para alimentar o restante da meta com as premissas atuais.</p>
             </div>
+
+            <Link
+              href={hrefDaEtapa(selecionada.etapa)}
+              className="mt-5 inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-[var(--radius-controle)] border border-cabine-linha bg-white/10 px-3 text-xs font-semibold text-cabine-texto transition-[transform,background-color] hover:bg-white/15 active:scale-[0.985]"
+            >
+              Ver quem está nesta etapa agora
+              <ArrowRight aria-hidden="true" size={14} />
+            </Link>
+            <p className="mt-2 text-[0.65rem] leading-4 text-cabine-texto-secundario">
+              A carteira filtra pelo estágio atual; o volume acima mede quem chegou à etapa no período.
+            </p>
           </aside>
         ) : null}
       </div>
