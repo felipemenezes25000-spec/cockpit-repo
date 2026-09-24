@@ -53,6 +53,7 @@ export function CommandPalette({
   const router = useRouter();
   const painelRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLInputElement>(null);
+  const focoAnteriorRef = useRef<HTMLElement | null>(null);
   const [termo, setTermo] = useState("");
   const [selecionado, setSelecionado] = useState(0);
 
@@ -84,6 +85,7 @@ export function CommandPalette({
 
   useEffect(() => {
     if (!aberta) return;
+    focoAnteriorRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setTermo("");
     setSelecionado(0);
     const id = window.requestAnimationFrame(() => campoRef.current?.focus());
@@ -93,6 +95,11 @@ export function CommandPalette({
     return () => {
       window.cancelAnimationFrame(id);
       document.body.style.overflow = overflowAnterior;
+      const anterior = focoAnteriorRef.current;
+      focoAnteriorRef.current = null;
+      if (anterior?.isConnected) {
+        window.requestAnimationFrame(() => anterior.focus());
+      }
     };
   }, [aberta]);
 
