@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Search, X } from "lucide-react";
+import { LoaderCircle, Search, SlidersHorizontal, Users, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { classeDeEntrada } from "@/components/ui/field";
@@ -13,15 +13,6 @@ const FILTROS: { valor: FiltroSituacao; rotulo: string }[] = [
   { valor: "todas", rotulo: "Todas" },
 ];
 
-/**
- * Busca e filtro da listagem, guardados na própria URL.
- *
- * Estado na URL e não em memória: a recepção pode deixar a busca aberta em uma
- * aba, recarregar ou mandar o link para outra pessoa e chegar na mesma tela.
- *
- * O formulário é um `form method="get"` de verdade — sem JavaScript, o Enter
- * ainda busca. Com JavaScript, a digitação navega sozinha depois de uma pausa.
- */
 export function BuscaPacientes({
   busca,
   situacao,
@@ -35,17 +26,9 @@ export function BuscaPacientes({
   const parametros = useSearchParams();
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
-
-  // O último termo que esta caixa mandou para a URL. Quando a URL responde com
-  // ele, nada muda na caixa: a pessoa pode ter seguido digitando enquanto a
-  // consulta rodava, e a URL chega sem o espaço final ("ana " vira "ana") —
-  // sobrescrever apagaria o que ela acabou de digitar.
   const [enviada, setEnviada] = useState(busca);
   const [buscaAnterior, setBuscaAnterior] = useState(busca);
 
-  // A URL pode mudar por fora (voltar no navegador, link colado): aí sim a
-  // caixa acompanha. Ajuste feito na renderização, como o React recomenda
-  // para estado derivado de prop.
   if (busca !== buscaAnterior) {
     setBuscaAnterior(busca);
     if (busca !== enviada) {
@@ -61,7 +44,6 @@ export function BuscaPacientes({
     relogio.current = null;
   }
 
-  // Saiu da tela com uma busca agendada: ela não deve navegar depois.
   useEffect(() => {
     const espera = relogio;
     return () => {
@@ -80,15 +62,12 @@ export function BuscaPacientes({
     if (novaSituacao !== "ativas") query.set("situacao", novaSituacao);
     else query.delete("situacao");
 
-    // Mudou o critério: a página 3 do resultado anterior não quer dizer nada.
     query.delete("pagina");
-
     setEnviada(limpo);
     const texto = query.toString();
     iniciar(() => router.replace(texto ? `/pacientes?${texto}` : "/pacientes"));
   }
 
-  // Espera a pessoa parar de digitar antes de consultar o banco.
   function digitar(valor: string) {
     setTermo(valor);
     cancelarEspera();
@@ -104,15 +83,12 @@ export function BuscaPacientes({
         evento.preventDefault();
         navegar(termo, situacao);
       }}
-      className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+      className="premium-panel relative flex flex-col gap-4 overflow-hidden rounded-[16px] border p-3.5 shadow-[var(--shadow-cartao)] lg:flex-row lg:items-center lg:justify-between"
     >
+      <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-36 rounded-full bg-primary-fixed/30 blur-3xl" />
+
       <div className="relative w-full lg:max-w-md">
-        <Search
-          aria-hidden="true"
-          size={18}
-          strokeWidth={1.5}
-          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline"
-        />
+        <Search aria-hidden="true" size={18} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
         <input
           type="search"
           name="busca"
@@ -121,17 +97,14 @@ export function BuscaPacientes({
           maxLength={80}
           aria-label="Buscar paciente por nome, telefone, e-mail ou CPF"
           placeholder="Buscar por nome, telefone, e-mail ou CPF"
-          className={classeDeEntrada({ recuo: "busca" })}
+          className={`${classeDeEntrada({ recuo: "busca" })} bg-white/78 shadow-[var(--shadow-cartao)]`}
         />
 
-        {/* Carregando ocupa o lugar do "limpar", dentro da caixa: fora dela,
-            a 360 px o ícone passava da borda do cartão. */}
         {pendente ? (
-          <LoaderCircle
-            aria-hidden="true"
-            size={16}
-            className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 animate-spin text-outline"
-          />
+          <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[8px] bg-white/88 px-2 py-1 text-[0.65rem] font-medium text-outline shadow-[var(--shadow-cartao)]">
+            <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
+            buscando
+          </span>
         ) : termo ? (
           <button
             type="button"
@@ -140,26 +113,25 @@ export function BuscaPacientes({
               navegar("", situacao);
             }}
             aria-label="Limpar busca"
-            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-tag)] text-outline transition-colors hover:bg-surface-container-low hover:text-primary"
+            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[9px] text-outline transition-[transform,background-color,color] duration-150 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
         ) : null}
       </div>
 
-      {/* Contador e segmento quebram entre si, nunca por dentro: a 320 px o
-          segmento cortava "Todas" e, a 768, "33 pacientes" ia para duas linhas. */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span aria-live="polite" className="text-xs whitespace-nowrap text-outline tabular">
+      <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span aria-live="polite" className="inline-flex items-center gap-1.5 rounded-full border border-card-border/75 bg-white/68 px-2.5 py-1.5 text-xs whitespace-nowrap text-outline shadow-[var(--shadow-cartao)] tabular">
+          <Users aria-hidden="true" size={13} strokeWidth={1.65} className="text-primary" />
           {total === 1 ? "1 paciente" : `${total} pacientes`}
         </span>
 
-        {/* Grupo de rádio, não abas: sem JavaScript ainda dá para escolher e enviar. */}
-        <div
-          role="group"
-          aria-label="Filtrar por situação"
-          className={SEGMENTO_GRUPO}
-        >
+        <div className="inline-flex items-center gap-1.5 text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">
+          <SlidersHorizontal aria-hidden="true" size={13} />
+          Situação
+        </div>
+
+        <div role="group" aria-label="Filtrar por situação" className={`${SEGMENTO_GRUPO} bg-white/58 shadow-[var(--shadow-cartao)]`}>
           {FILTROS.map((filtro) => {
             const ativo = filtro.valor === situacao;
             return (
