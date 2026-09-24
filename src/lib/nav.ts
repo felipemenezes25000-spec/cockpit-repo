@@ -3,10 +3,10 @@ import {
   ChartNoAxesColumn,
   ClipboardPlus,
   FileSignature,
-  Funnel,
   LayoutGrid,
   MessageCircleHeart,
   Settings,
+  Target,
   Users,
   Wallet,
   type LucideIcon,
@@ -117,7 +117,7 @@ export const MENU: ItemMenu[] = [
   {
     href: "/captacao",
     rotulo: "Captação",
-    icone: Funnel,
+    icone: Target,
     finalidade:
       "Funil de novos contatos, meta financeira, conversões e origem dos leads até a venda.",
     proximosPassos: [
