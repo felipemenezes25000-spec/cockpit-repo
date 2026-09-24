@@ -145,6 +145,23 @@ describe("mudarEtapaLead", () => {
     expect(falso.chamadas).toHaveLength(0);
   });
 
+  it("não deixa a carteira fabricar uma venda concluída", async () => {
+    const falso = supabaseFalso();
+    banco.cliente = falso.cliente;
+    const { mudarEtapaLead } = await import("./captacao");
+
+    const r = await mudarEtapaLead(
+      ACAO_INICIAL,
+      formulario({ id: LEAD, para: "ganho", motivo: "" }),
+    );
+
+    expect(r).toEqual({
+      ok: false,
+      mensagem: "Venda concluída só é registrada quando existe uma venda no Financeiro.",
+    });
+    expect(falso.chamadas).toHaveLength(0);
+  });
+
   it("mudança válida confere a linha e revalida", async () => {
     const falso = supabaseFalso({ leads: { data: { id: LEAD } } });
     banco.cliente = falso.cliente;
