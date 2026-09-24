@@ -4,7 +4,7 @@ import { LoaderCircle, Search, SlidersHorizontal, UsersRound, X } from "lucide-r
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { classeDeEntrada } from "@/components/ui/field";
-import { ETAPAS_FUNIL, ROTULO_ETAPA } from "@/lib/captacao";
+import { ETAPAS_FUNIL, ORIGENS_CAPTACAO, ROTULO_ETAPA } from "@/lib/captacao";
 import type { FiltroEtapaLead } from "@/server/consultas/captacao-leads";
 
 type EstadoFiltros = {
@@ -17,22 +17,16 @@ type EstadoFiltros = {
 export function FiltrosLeads({
   busca,
   etapa,
-  origem,
-  campanha,
-  origens,
-  campanhas,
   total,
 }: {
   busca: string;
   etapa: FiltroEtapaLead;
-  origem: string;
-  campanha: string;
-  origens: string[];
-  campanhas: string[];
   total: number;
 }) {
   const router = useRouter();
   const parametros = useSearchParams();
+  const origem = parametros?.get("origem")?.slice(0, 60) ?? "";
+  const campanha = parametros?.get("campanha")?.slice(0, 120) ?? "";
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
   const [enviado, setEnviado] = useState(busca);
@@ -95,6 +89,8 @@ export function FiltrosLeads({
     if (valor.trim() === enviado) return;
     relogio.current = setTimeout(() => navegar(atuais(valor)), 350);
   }
+
+  const temFiltroEstruturado = etapa !== "todos" || Boolean(origem) || Boolean(campanha);
 
   return (
     <form
@@ -176,24 +172,23 @@ export function FiltrosLeads({
             className={classeDeEntrada({ altura: "compacta", texto: "xs" })}
           >
             <option value="">Todas as origens</option>
-            {origens.map((item) => <option key={item} value={item}>{item}</option>)}
+            {ORIGENS_CAPTACAO.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>
 
-        <label className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-44 sm:max-w-64">
-          <span className="text-[0.62rem] font-semibold tracking-[0.055em] text-outline uppercase">Campanha</span>
-          <select
-            name="campanha"
-            value={campanha}
-            onChange={(evento) => navegar({ ...atuais(), campanha: evento.target.value })}
-            className={classeDeEntrada({ altura: "compacta", texto: "xs" })}
+        {campanha ? (
+          <button
+            type="button"
+            onClick={() => navegar({ ...atuais(), campanha: "" })}
+            title={campanha}
+            className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-primary-fixed bg-selecao px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary-fixed"
           >
-            <option value="">Todas as campanhas</option>
-            {campanhas.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-        </label>
+            <span className="max-w-52 truncate">Campanha: {campanha}</span>
+            <X aria-hidden="true" size={13} className="shrink-0" />
+          </button>
+        ) : null}
 
-        {etapa !== "todos" || origem || campanha ? (
+        {temFiltroEstruturado ? (
           <button
             type="button"
             onClick={() => navegar({ termo, etapa: "todos", origem: "", campanha: "" })}
