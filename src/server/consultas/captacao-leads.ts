@@ -47,7 +47,7 @@ export const listarLeadsCaptacao = cache(
   ): Promise<PaginaDeLeads> => {
     const base = await clienteServidor();
     const supabase = comoClienteCaptacao(base);
-    const pagina = Math.max(1, Math.trunc(paginaRecebida));
+    let pagina = Math.max(1, Math.trunc(paginaRecebida));
     const termo = termoDeBusca(busca);
     const digitos = termo.replace(/\D/g, "");
     const frase = "Não foi possível carregar a carteira de leads.";
@@ -78,12 +78,15 @@ export const listarLeadsCaptacao = cache(
       return consulta;
     };
 
-    const de = (pagina - 1) * LEADS_POR_PAGINA;
-    const resposta = await montar({ count: "exact" })
-      .order("criado_em", { ascending: false })
-      .order("id", { ascending: true })
-      .range(de, de + LEADS_POR_PAGINA - 1);
+    const lerPagina = (numero: number) => {
+      const de = (numero - 1) * LEADS_POR_PAGINA;
+      return montar({ count: "exact" })
+        .order("criado_em", { ascending: false })
+        .order("id", { ascending: true })
+        .range(de, de + LEADS_POR_PAGINA - 1);
+    };
 
+    let resposta = await lerPagina(pagina);
     let linhas = resposta.data ?? [];
     let total = resposta.count ?? 0;
 
@@ -92,12 +95,27 @@ export const listarLeadsCaptacao = cache(
         falhaDeConsulta("consulta captação: carteira", resposta.error, frase);
       }
 
+      // `?pagina=99` não é falha operacional. Descobre a última página real e
+      // a lê, em vez de mostrar "99 de 2" com uma carteira vazia.
       const contagem = await montar({ count: "exact", head: true });
       if (contagem.error) {
         falhaDeConsulta("consulta captação: contagem da carteira", contagem.error, frase);
       }
-      linhas = [];
+
       total = contagem.count ?? 0;
+      const paginasDisponiveis = Math.max(1, Math.ceil(total / LEADS_POR_PAGINA));
+      pagina = Math.min(pagina, paginasDisponiveis);
+
+      if (total > 0) {
+        resposta = await lerPagina(pagina);
+        if (resposta.error) {
+          falhaDeConsulta("consulta captação: carteira corrigida", resposta.error, frase);
+        }
+        linhas = resposta.data ?? [];
+      } else {
+        pagina = 1;
+        linhas = [];
+      }
     }
 
     const ids = linhas.map((lead) => lead.id);
