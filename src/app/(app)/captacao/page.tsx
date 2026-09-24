@@ -67,6 +67,7 @@ export default async function PaginaCaptacao({
 
   const podeEditarLeads = usuario?.papel === "administradora" || usuario?.papel === "recepcao";
   const podeEditarMeta = usuario?.papel === "administradora" || usuario?.papel === "financeiro";
+  const metaConfigurada = painel.meta.id !== null;
 
   const parametrosPaginacao: Record<string, string> = {};
   if (!periodo.ehMesAtual) parametrosPaginacao.mes = periodo.chave;
@@ -85,7 +86,7 @@ export default async function PaginaCaptacao({
             <SeloHero tom="informativo"><Sparkles aria-hidden="true" size={13} /> Funil vivo</SeloHero>
             <SeloHero>{painel.vendasNoMes} vendas no período</SeloHero>
             {painel.estruturaDisponivel ? <SeloHero>{carteira.total} leads no recorte</SeloHero> : null}
-            {painel.meta.id ? <SeloHero tom="positivo">Meta configurada</SeloHero> : <SeloHero tom="atencao">Meta ainda não definida</SeloHero>}
+            {metaConfigurada ? <SeloHero tom="positivo">Meta configurada</SeloHero> : <SeloHero tom="atencao">Meta ainda não definida</SeloHero>}
           </>
         }
       />
@@ -142,12 +143,14 @@ export default async function PaginaCaptacao({
             ticketReal={painel.ticketMedioReal}
             ticketPlanejado={painel.meta.ticketMedioPlanejado}
             metaFaturamento={painel.meta.metaFaturamento}
+            metaConfigurada={metaConfigurada}
           />
 
           <InteligenciaCaptacao
             origens={painel.origens}
             campanhas={painel.campanhas}
             gargalo={painel.gargalo}
+            metaConfigurada={metaConfigurada}
           />
 
           <LeadsDoFunil
