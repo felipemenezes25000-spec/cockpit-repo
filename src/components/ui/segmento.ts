@@ -1,26 +1,15 @@
 import { cn } from "@/lib/cn";
 
-/**
- * Seletor segmentado: um grupo de rádio com cara de botões ("Todas ·
- * Pendentes · Pagas"). É rádio de verdade, não abas — sem JavaScript ainda dá
- * para escolher e enviar o formulário.
- *
- * Duas coisas que o desenho anterior deixava escapar, e que agora valem para
- * todo seletor assim:
- *
- * - No celular, cinco opções não cabem em 360 px. O grupo rola dentro de si
- *   mesmo, em vez de empurrar a página para o lado.
- * - O rádio é invisível (`sr-only`), então o foco do teclado caía num
- *   elemento que ninguém vê. O contorno de foco vai para o rótulo visível,
- *   por dentro, para a rolagem não cortá-lo.
- */
+/** Seletor segmentado acessível, responsivo e com identidade do Cockpit. */
 export const SEGMENTO_GRUPO =
-  "rolagem-discreta flex max-w-full overflow-x-auto rounded-[var(--radius-controle)] border border-outline-variant p-0.5";
+  "rolagem-discreta flex max-w-full overflow-x-auto rounded-[13px] border border-card-border/80 bg-white/54 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]";
 
 export function classeDaOpcao(ativa: boolean): string {
   return cn(
-    "shrink-0 cursor-pointer rounded-[var(--radius-cartao)] px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+    "group relative shrink-0 cursor-pointer overflow-hidden rounded-[9px] border border-transparent px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-[transform,background-color,border-color,box-shadow,color] duration-180 active:scale-[0.98]",
     "has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-primary",
-    ativa ? "bg-secondary-fixed text-primary" : "text-on-surface-variant hover:text-primary",
+    ativa
+      ? "border-primary/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(209,232,255,0.58))] font-semibold text-primary shadow-[0_1px_2px_rgba(15,35,58,0.05),0_5px_12px_-9px_rgba(8,84,160,0.42)]"
+      : "text-on-surface-variant hover:border-primary/8 hover:bg-white/60 hover:text-primary",
   );
 }
