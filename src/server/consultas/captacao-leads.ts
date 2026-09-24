@@ -13,8 +13,21 @@ export const LEADS_POR_PAGINA = 15;
 
 export type FiltroEtapaLead = EtapaLead | "todos";
 
+export type MovimentoLead = {
+  de: EtapaLead | null;
+  para: EtapaLead;
+  em: Date;
+};
+
+export type LeadDaCarteira = LeadDoPainel & {
+  atualizadoEm: Date;
+  diasSemMovimento: number;
+  motivoPerda: string | null;
+  historico: MovimentoLead[];
+};
+
 export type PaginaDeLeads = {
-  itens: LeadDoPainel[];
+  itens: LeadDaCarteira[];
   total: number;
   pagina: number;
   paginas: number;
@@ -43,7 +56,7 @@ export const listarLeadsCaptacao = cache(
       let consulta = supabase
         .from("leads")
         .select(
-          "id, nome, telefone, email, origem, campanha, procedimento_interesse_id, paciente_id, etapa, criado_em",
+          "id, nome, telefone, email, origem, campanha, procedimento_interesse_id, paciente_id, etapa, motivo_perda, criado_em, atualizado_em",
           contagem,
         )
         .gte("criado_em", periodo.de.toISOString())
@@ -87,34 +100,75 @@ export const listarLeadsCaptacao = cache(
       total = contagem.count ?? 0;
     }
 
-    const { data: procedimentos, error: erroProcedimentos } = await base
-      .from("procedimentos")
-      .select("id, nome");
-    if (erroProcedimentos) {
+    const ids = linhas.map((lead) => lead.id);
+    const [procedimentosResposta, historicoResposta] = await Promise.all([
+      base.from("procedimentos").select("id, nome"),
+      ids.length > 0
+        ? supabase
+            .from("lead_etapas")
+            .select("lead_id, de, para, em")
+            .in("lead_id", ids)
+            .order("em", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (procedimentosResposta.error) {
       falhaDeConsulta(
         "consulta captação: procedimentos da carteira",
-        erroProcedimentos,
+        procedimentosResposta.error,
         "Não foi possível carregar os procedimentos dos leads.",
       );
     }
+    if (historicoResposta.error) {
+      falhaDeConsulta(
+        "consulta captação: histórico da carteira",
+        historicoResposta.error,
+        "Não foi possível carregar o histórico dos leads.",
+      );
+    }
 
-    const nomesProcedimento = new Map((procedimentos ?? []).map((item) => [item.id, item.nome]));
+    const nomesProcedimento = new Map(
+      (procedimentosResposta.data ?? []).map((item) => [item.id, item.nome]),
+    );
+    const historicoPorLead = new Map<string, MovimentoLead[]>();
+
+    for (const passo of historicoResposta.data ?? []) {
+      const atual = historicoPorLead.get(passo.lead_id) ?? [];
+      atual.push({
+        de: passo.de,
+        para: passo.para,
+        em: new Date(passo.em),
+      });
+      historicoPorLead.set(passo.lead_id, atual);
+    }
+
+    const agora = Date.now();
 
     return {
-      itens: linhas.map((lead) => ({
-        id: lead.id,
-        nome: lead.nome,
-        telefone: lead.telefone,
-        email: lead.email,
-        origem: lead.origem,
-        campanha: lead.campanha,
-        etapa: lead.etapa,
-        procedimento: lead.procedimento_interesse_id
-          ? nomesProcedimento.get(lead.procedimento_interesse_id) ?? null
-          : null,
-        pacienteId: lead.paciente_id,
-        criadoEm: new Date(lead.criado_em),
-      })),
+      itens: linhas.map((lead) => {
+        const atualizadoEm = new Date(lead.atualizado_em);
+        return {
+          id: lead.id,
+          nome: lead.nome,
+          telefone: lead.telefone,
+          email: lead.email,
+          origem: lead.origem,
+          campanha: lead.campanha,
+          etapa: lead.etapa,
+          procedimento: lead.procedimento_interesse_id
+            ? nomesProcedimento.get(lead.procedimento_interesse_id) ?? null
+            : null,
+          pacienteId: lead.paciente_id,
+          criadoEm: new Date(lead.criado_em),
+          atualizadoEm,
+          diasSemMovimento: Math.max(
+            0,
+            Math.floor((agora - atualizadoEm.getTime()) / 86_400_000),
+          ),
+          motivoPerda: lead.motivo_perda,
+          historico: historicoPorLead.get(lead.id) ?? [],
+        };
+      }),
       total,
       pagina,
       paginas: Math.max(1, Math.ceil(total / LEADS_POR_PAGINA)),
