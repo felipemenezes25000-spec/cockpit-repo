@@ -33,7 +33,7 @@ export const ESTILO_SITUACAO: Record<SituacaoAtendimento, Estilo> = {
     rotulo: "Em atendimento",
     icone: Activity,
     classes: "border border-informativo bg-informativo font-semibold text-on-primary shadow-[0_5px_14px_-9px_rgba(10,110,209,0.7)]",
-    marcador: "bg-informativo",
+    marcador: "bg-on-primary",
   },
   concluido: {
     rotulo: "Concluído",
@@ -76,6 +76,14 @@ export function SituacaoChip({
         className,
       )}
     >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "size-1.5 shrink-0 rounded-full",
+          estilo.marcador,
+          situacao === "em_atendimento" && "now-pulse",
+        )}
+      />
       <Icone aria-hidden="true" size={13} strokeWidth={1.8} />
       {rotulo}
     </span>
