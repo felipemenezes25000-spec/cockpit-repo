@@ -60,7 +60,7 @@ export default async function PaginaCaptacao({
 
       {!painel.estruturaDisponivel ? (
         <Card>
-          <CardCorpo className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
+          <CardCorpo className="flex min-h-72 flex-col items-center justify-center text-center">
             <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-[var(--radius-painel)] bg-atencao-fundo text-atencao">
               <Database size={26} strokeWidth={1.7} />
             </span>
