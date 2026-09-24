@@ -51,7 +51,9 @@ export function FormularioDespesa({
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         <Campo id="categoria" rotulo="Categoria" obrigatorio erro={erros.categoria}>
-          <select id="categoria" name="categoria" required defaultValue={de("categoria")} className={cn(ENTRADA, erros.categoria && ENTRADA_ERRO)}>
+          {/* `key`: o React 19 reinicia o formulário depois da ação, e o <select> só lê o
+              defaultValue ao montar — sem remontar, a escolha se perderia num erro. */}
+          <select key={`categoria-${de("categoria")}`} id="categoria" name="categoria" required defaultValue={de("categoria")} className={cn(ENTRADA, erros.categoria && ENTRADA_ERRO)}>
             {CATEGORIAS_EM_ORDEM.map((c) => <option key={c} value={c}>{ROTULO_CATEGORIA[c]}</option>)}
           </select>
         </Campo>

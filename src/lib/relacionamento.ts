@@ -52,6 +52,18 @@ export function linkWhatsApp(telefone: string | null, mensagem: string): string 
   return numero ? `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}` : null;
 }
 
+/**
+ * Pedido de confirmação de um atendimento; `dia` e `hora` já formatados.
+ *
+ * Sem o nome do procedimento: é dado de saúde, e a mensagem vai na URL do
+ * wa.me e para o telefone cadastrado (que pode estar desatualizado ou ser de
+ * outra pessoa). Dia e hora bastam para confirmar.
+ */
+export function mensagemConfirmacao(nome: string, dia: string, hora: string): string {
+  const primeiroNome = nome.trim().split(/\s+/)[0] || "Olá";
+  return `Olá, ${primeiroNome}! Aqui é da clínica da Dra. Érika Passos. Podemos confirmar o seu atendimento em ${dia} às ${hora}?`;
+}
+
 export function mensagemAniversario(nome: string): string {
   const primeiroNome = nome.trim().split(/\s+/)[0] || "Olá";
   return `Olá, ${primeiroNome}! A equipe da Dra. Érika Passos deseja a você um feliz aniversário!`;

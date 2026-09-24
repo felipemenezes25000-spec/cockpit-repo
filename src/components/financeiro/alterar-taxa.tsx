@@ -124,7 +124,8 @@ export function AlterarTaxa({
           <ValorFinanceiro
             rotulo="Aplicada nesta venda"
             valor={`${formatarPercentual(bpAtual)} · ${formatarMoeda(venda.taxaValor)}`}
-            tom={venda.taxaValor > 0 ? "negativo" : "neutro"}
+            // Taxa é dedução do líquido, não despesa: sem o vermelho (AGENTS §7.3).
+            tom="neutro"
           />
           <ValorFinanceiro rotulo="Líquido atual" valor={formatarMoeda(venda.valorLiquido)} tom="positivo" />
         </div>
@@ -154,7 +155,8 @@ export function AlterarTaxa({
           <ValorFinanceiro
             rotulo="Novo custo"
             valor={taxaNovaCent !== null ? formatarMoeda(taxaNovaCent / 100) : "—"}
-            tom={taxaNovaCent !== null && taxaNovaCent > 0 ? "negativo" : "neutro"}
+            // Mesma grandeza de "Aplicada nesta venda": dedução do líquido, sem vermelho (AGENTS §7.3).
+            tom="neutro"
           />
           <ValorFinanceiro
             rotulo="Novo líquido"

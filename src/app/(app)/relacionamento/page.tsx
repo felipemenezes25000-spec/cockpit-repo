@@ -3,6 +3,7 @@ import {
   CalendarCheck,
   ClipboardList,
   HeartHandshake,
+  MessageCircle,
   Repeat2,
   Star,
   type LucideIcon,
@@ -23,7 +24,7 @@ import { SituacaoChip } from "@/components/ui/status-chip";
 import { diferencaEmDias, partesDoDia } from "@/lib/dates";
 import { descreverPrazo, formatarData, formatarHora } from "@/lib/format";
 import type { SituacaoAcompanhamento } from "@/lib/dominio";
-import { ROTULO_TAREFA } from "@/lib/relacionamento";
+import { ROTULO_TAREFA, linkWhatsApp, mensagemConfirmacao } from "@/lib/relacionamento";
 import {
   confirmarPelaLista,
   mudarSituacaoRetorno,
@@ -36,6 +37,7 @@ import {
   contatosRegistrados,
   retornosParaContato,
   tarefasDeContato,
+  type Confirmacao,
   type RetornoRelacionamento,
   type TarefaRelacionamento,
 } from "@/server/consultas/relacionamento";
@@ -155,6 +157,32 @@ function PassoRetorno({
         {rotulo}
       </BotaoDeAcao>
     </FormularioDeAcao>
+  );
+}
+
+/** Telefone com o WhatsApp já aberto no pedido de confirmação: a recepção
+ *  confirma a partir da lista, sem copiar número nem redigir a mensagem. */
+function ContatoDaConfirmacao({ item }: { item: Confirmacao }) {
+  const whatsapp = linkWhatsApp(
+    item.telefone,
+    mensagemConfirmacao(item.paciente, formatarData(item.inicio), formatarHora(item.inicio)),
+  );
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-2.5 text-xs text-outline">
+      <span className="tabular">{item.telefone || item.email || "Sem contato cadastrado"}</span>
+      {whatsapp ? (
+        <a
+          href={whatsapp}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-7 items-center gap-1.5 rounded-lg border border-positivo-borda/65 bg-positivo-fundo/70 px-2.5 font-semibold text-positivo transition-[transform,background-color] duration-150 hover:-translate-y-0.5 hover:bg-positivo-fundo"
+        >
+          <MessageCircle aria-hidden="true" size={12} strokeWidth={1.8} />
+          WhatsApp
+          <span className="sr-only"> de {item.paciente} (abre em nova aba)</span>
+        </a>
+      ) : null}
+    </div>
   );
 }
 
@@ -355,7 +383,7 @@ export default async function PaginaRelacionamento({
                       {item.paciente}
                     </Link>
                     <p className="mt-1.5 text-xs text-outline">{item.procedimento} · {formatarData(item.inicio)} às {formatarHora(item.inicio)}</p>
-                    <p className="mt-1 text-xs text-outline">{item.telefone || item.email || "Sem contato cadastrado"}</p>
+                    <ContatoDaConfirmacao item={item} />
                   </Linha>
                 ))}
               </ul>

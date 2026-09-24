@@ -21,12 +21,14 @@ export function FormularioTarefa() {
 
     <div className="grid gap-5 sm:grid-cols-2">
       <Campo id="tipo" rotulo="Tipo" obrigatorio erro={erros.tipo}>
-        <select id="tipo" name="tipo" defaultValue={valores.tipo || "retorno"} className={cn(ENTRADA, erros.tipo && ENTRADA_ERRO)}>
+        {/* `key`: o React 19 reinicia o formulário depois da ação, e o <select> só lê o
+            defaultValue ao montar — sem remontar, a escolha se perderia num erro. */}
+        <select key={`tipo-${valores.tipo}`} id="tipo" name="tipo" defaultValue={valores.tipo || "retorno"} className={cn(ENTRADA, erros.tipo && ENTRADA_ERRO)}>
           {TIPOS_TAREFA.map((tipo) => <option key={tipo} value={tipo}>{ROTULO_TAREFA[tipo]}</option>)}
         </select>
       </Campo>
       <Campo id="prioridade" rotulo="Prioridade" obrigatorio erro={erros.prioridade}>
-        <select id="prioridade" name="prioridade" defaultValue={valores.prioridade || "media"} className={cn(ENTRADA, erros.prioridade && ENTRADA_ERRO)}>
+        <select key={`prioridade-${valores.prioridade}`} id="prioridade" name="prioridade" defaultValue={valores.prioridade || "media"} className={cn(ENTRADA, erros.prioridade && ENTRADA_ERRO)}>
           {PRIORIDADES.map((prioridade) => <option key={prioridade} value={prioridade}>{prioridade === "media" ? "Média" : prioridade === "alta" ? "Alta" : "Baixa"}</option>)}
         </select>
       </Campo>

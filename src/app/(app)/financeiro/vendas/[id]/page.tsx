@@ -146,8 +146,10 @@ export default async function PaginaVenda({ params }: Props) {
           <Metrica
             icone={BadgePercent}
             rotulo="Taxa"
-            valor={formaUsaCartao(venda.forma) ? formatarMoeda(venda.taxaValor) : formatarMoeda(0)}
-            tom={venda.taxaValor > 0 ? "negativo" : "neutro"}
+            // A taxa não é despesa: é dedução do líquido, com "−" e sem o vermelho
+            // do dinheiro que sai (AGENTS §7.3).
+            valor={formaUsaCartao(venda.forma) && venda.taxaValor > 0 ? `− ${formatarMoeda(venda.taxaValor)}` : formatarMoeda(0)}
+            tom="neutro"
           />
           <Metrica icone={Wallet} rotulo="Líquido clínica" valor={formatarMoeda(venda.valorLiquido)} tom="positivo" />
           <Metrica
@@ -175,7 +177,7 @@ export default async function PaginaVenda({ params }: Props) {
             {formaUsaCartao(venda.forma) ? (
               <>
                 <Linha rotulo={`Taxa do cartão (${formatarPercentual(bpDoBanco(venda.taxaPercentual))})`}>
-                  <span className="text-negativo">− {formatarMoeda(venda.taxaValor)}</span>
+                  − {formatarMoeda(venda.taxaValor)}
                 </Linha>
                 <Linha rotulo="Líquido para a clínica" destaque>
                   <span className="text-positivo">{formatarMoeda(venda.valorLiquido)}</span>
@@ -224,7 +226,7 @@ export default async function PaginaVenda({ params }: Props) {
 
                 <div className="flex flex-col gap-2">
                   <Linha rotulo="Bruto">{formatarMoeda(recebimento.valor)}</Linha>
-                  {recebimento.taxaValor > 0 ? <Linha rotulo="Taxa"><span className="text-negativo">− {formatarMoeda(recebimento.taxaValor)}</span></Linha> : null}
+                  {recebimento.taxaValor > 0 ? <Linha rotulo="Taxa">− {formatarMoeda(recebimento.taxaValor)}</Linha> : null}
                   <Linha rotulo="Líquido previsto" destaque>{formatarMoeda(recebimento.valorLiquido)}</Linha>
                   {recebimento.valorRecebido !== null ? (
                     <Linha rotulo="Efetivamente recebido" destaque>

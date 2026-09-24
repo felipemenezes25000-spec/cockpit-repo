@@ -47,7 +47,7 @@ export default async function PaginaAssinar({ params }: { params: Promise<{ toke
           </span>
         </header>
 
-        <section className="sem-impressao premium-panel group relative isolate overflow-hidden rounded-[24px] border px-5 py-6 sm:px-7 sm:py-7">
+        <section className="sem-impressao premium-panel group relative isolate overflow-hidden rounded-[24px] border px-5 py-5 sm:px-7 sm:py-7">
           <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-16 -z-10 size-52 rounded-full bg-primary-fixed/38 blur-3xl motion-safe:animate-[pulse_9s_ease-in-out_infinite]" />
           <Sparkles aria-hidden="true" strokeWidth={0.7} className="pointer-events-none absolute -right-7 -bottom-9 -z-10 size-40 text-primary/[0.04] transition-transform duration-700 group-hover:-translate-x-2 group-hover:-translate-y-2 group-hover:scale-105" />
           <span aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.98),transparent)]" />
@@ -57,10 +57,12 @@ export default async function PaginaAssinar({ params }: { params: Promise<{ toke
             Leia com calma antes de continuar
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-on-surface-variant">
-            Para proteger o documento, o conteúdo só é liberado após a conferência solicitada pela clínica. Esta página não pede senha do sistema nem dados de pagamento.
+            O documento só abre depois que você confirma a sua data de nascimento. Esta página não pede senha do sistema nem dados de pagamento.
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-card-border/65 pt-4">
+          {/* No celular, os selos saem: o rodapé já diz o mesmo, e o documento sobe para a
+              primeira tela em vez de ficar abaixo de um cartão que ocupava a tela inteira. */}
+          <div className="mt-5 hidden flex-wrap gap-2 border-t border-card-border/65 pt-4 sm:flex">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-positivo-borda/70 bg-positivo-fundo/65 px-3 py-1.5 text-xs font-medium text-positivo">
               <ShieldCheck aria-hidden="true" size={13} strokeWidth={1.75} />
               Acesso protegido

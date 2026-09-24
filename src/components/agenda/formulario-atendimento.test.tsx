@@ -101,3 +101,40 @@ describe("FormularioAtendimento", () => {
     expect(screen.getByLabelText(/^Valor/)).toHaveValue("900,00");
   });
 });
+
+describe("FormularioAtendimento — erro da ação não apaga as escolhas", () => {
+  // O React 19 reinicia o formulário quando a ação termina. O <input> volta ao
+  // defaultValue atual (que já traz o que foi digitado), mas o <select> só lê o
+  // defaultValue ao montar: sem remontar, procedimento e profissional voltavam a
+  // "Escolher…" depois de um choque de horário, e a recepção tinha de escolher
+  // tudo de novo.
+  const CATALOGO_CHOQUE = {
+    profissionais: [
+      { id: "prof-marina", nome: "Dra. Marina Rocha" },
+      { id: "prof-erika", nome: "Dra. Érika Passos" },
+    ],
+    procedimentos: [
+      { id: "proc-toxina", nome: "Toxina botulínica", duracaoMin: 45, valorPadrao: 1450 },
+      { id: "proc-peeling", nome: "Peeling químico", duracaoMin: 40, valorPadrao: 540 },
+    ],
+  };
+
+  it("depois de um choque de horário, procedimento e profissional continuam escolhidos", async () => {
+    const acao = vi.fn(async (_anterior: EstadoAtendimento, dados: FormData): Promise<EstadoAtendimento> => ({
+      erros: { hora: "Choca com o atendimento de Aline Bastos às 20:00." },
+      valores: Object.fromEntries([...dados.entries()].map(([k, v]) => [k, String(v)])),
+    }));
+    const { container } = desenhar(acao, CATALOGO_CHOQUE);
+
+    fireEvent.change(screen.getByLabelText(/^Procedimento/), { target: { value: "proc-toxina" } });
+    fireEvent.change(screen.getByLabelText(/^Quem atende/), { target: { value: "prof-marina" } });
+    fireEvent.change(screen.getByLabelText(/^Hora/), { target: { value: "20:15" } });
+    await enviar(container);
+
+    expect(acao).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/Choca com o atendimento/)).toBeInTheDocument();
+    expect(screen.getByLabelText<HTMLSelectElement>(/^Procedimento/).value).toBe("proc-toxina");
+    expect(screen.getByLabelText<HTMLSelectElement>(/^Quem atende/).value).toBe("prof-marina");
+    expect(screen.getByLabelText<HTMLInputElement>(/^Hora/).value).toBe("20:15");
+  });
+});

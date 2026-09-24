@@ -6,6 +6,7 @@ import {
   TIPOS_CONTATO,
   linkWhatsApp,
   mensagemAniversario,
+  mensagemConfirmacao,
   telefoneParaWhatsApp,
   tipoContatoDaOrigem,
 } from "./relacionamento";
@@ -40,6 +41,14 @@ describe("linkWhatsApp", () => {
 
   it("sem telefone válido não há link", () => {
     expect(linkWhatsApp("abc", "oi")).toBeNull();
+  });
+});
+
+describe("mensagemConfirmacao", () => {
+  it("usa o primeiro nome e traz dia e hora, sem o procedimento (dado de saúde)", () => {
+    const texto = mensagemConfirmacao(" Otávia Bezerra ", "24/09/2026", "17:15");
+    expect(texto).toMatch(/^Olá, Otávia!/);
+    expect(texto).toContain("atendimento em 24/09/2026 às 17:15?");
   });
 });
 

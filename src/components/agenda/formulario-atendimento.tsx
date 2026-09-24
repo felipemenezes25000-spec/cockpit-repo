@@ -111,14 +111,17 @@ export function FormularioAtendimento({
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Campo id="procedimento_id" rotulo="Procedimento" obrigatorio erro={erros.procedimento_id}>
-          <select id="procedimento_id" name="procedimento_id" required defaultValue={de("procedimento_id")} onChange={(e) => aoTrocarProcedimento(e.target.value)} className={cn(ENTRADA, erros.procedimento_id && ENTRADA_ERRO)} {...marcar("procedimento_id")}>
+          {/* `key`: o React 19 reinicia o formulário depois da ação, e o <select> só lê o
+             defaultValue ao montar. Sem remontar com o valor devolvido pela ação, a
+             escolha voltaria a "Escolher…" depois de um erro (ex.: choque de horário). */}
+          <select key={`procedimento-${de("procedimento_id")}`} id="procedimento_id" name="procedimento_id" required defaultValue={de("procedimento_id")} onChange={(e) => aoTrocarProcedimento(e.target.value)} className={cn(ENTRADA, erros.procedimento_id && ENTRADA_ERRO)} {...marcar("procedimento_id")}>
             <option value="">Escolher…</option>
             {catalogo.procedimentos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
         </Campo>
 
         <Campo id="profissional_id" rotulo="Quem atende" obrigatorio erro={erros.profissional_id}>
-          <select id="profissional_id" name="profissional_id" required defaultValue={de("profissional_id") || (catalogo.profissionais.length === 1 ? catalogo.profissionais[0].id : "")} className={cn(ENTRADA, erros.profissional_id && ENTRADA_ERRO)} {...marcar("profissional_id")}>
+          <select key={`profissional-${de("profissional_id")}`} id="profissional_id" name="profissional_id" required defaultValue={de("profissional_id") || (catalogo.profissionais.length === 1 ? catalogo.profissionais[0].id : "")} className={cn(ENTRADA, erros.profissional_id && ENTRADA_ERRO)} {...marcar("profissional_id")}>
             <option value="">Escolher…</option>
             {catalogo.profissionais.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>

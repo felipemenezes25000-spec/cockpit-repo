@@ -72,13 +72,15 @@ export function FormularioPaciente({ acao, inicial, pacienteId, rotuloSalvar = "
           <Campo id="complemento" rotulo="Complemento" className="sm:col-span-3"><input id="complemento" name="complemento" type="text" maxLength={60} defaultValue={de("complemento")} placeholder="Apto 32, bloco B" className={ENTRADA} /></Campo>
           <Campo id="bairro" rotulo="Bairro" className="sm:col-span-3"><input id="bairro" name="bairro" type="text" maxLength={120} defaultValue={de("bairro")} className={ENTRADA} /></Campo>
           <Campo id="cidade" rotulo="Cidade" className="sm:col-span-4"><input id="cidade" name="cidade" type="text" maxLength={120} autoComplete="address-level2" defaultValue={de("cidade")} className={ENTRADA} /></Campo>
-          <Campo id="uf" rotulo="UF" erro={erros.uf} className="sm:col-span-2"><select id="uf" name="uf" defaultValue={de("uf")} className={cn(ENTRADA, erros.uf && ENTRADA_ERRO)} {...marcar("uf")}><option value="">—</option>{UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}</select></Campo>
+          <Campo id="uf" rotulo="UF" erro={erros.uf} className="sm:col-span-2"><select key={`uf-${de("uf")}`} id="uf" name="uf" defaultValue={de("uf")} className={cn(ENTRADA, erros.uf && ENTRADA_ERRO)} {...marcar("uf")}><option value="">—</option>{UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}</select></Campo>
         </div>
       </GrupoDeCampos>
 
+      {/* Os <select> deste formulário levam `key` com o valor devolvido pela ação: o React 19
+          reinicia o formulário depois dela, e o <select> só lê o defaultValue ao montar. */}
       <GrupoDeCampos titulo="Acompanhamento">
         <div className="flex flex-col gap-5">
-          <Campo id="origem" rotulo="Como conheceu a clínica" dica="Lista fechada de propósito: texto livre não vira relatório depois." className="sm:max-w-xs"><select id="origem" name="origem" defaultValue={origem} className={ENTRADA}><option value="">—</option>{origemForaDaLista ? <option value={origem}>{origem} (importada)</option> : null}{ORIGENS.map((o) => <option key={o} value={o}>{o}</option>)}</select></Campo>
+          <Campo id="origem" rotulo="Como conheceu a clínica" dica="Lista fechada de propósito: texto livre não vira relatório depois." className="sm:max-w-xs"><select key={`origem-${origem}`} id="origem" name="origem" defaultValue={origem} className={ENTRADA}><option value="">—</option>{origemForaDaLista ? <option value={origem}>{origem} (importada)</option> : null}{ORIGENS.map((o) => <option key={o} value={o}>{o}</option>)}</select></Campo>
           <Campo id="observacoes" rotulo="Observações administrativas" dica="Preferência de horário, forma de contato, quem indicou. Conteúdo clínico vai no prontuário, não aqui."><textarea id="observacoes" name="observacoes" maxLength={2000} defaultValue={de("observacoes")} className={AREA_TEXTO} /></Campo>
         </div>
       </GrupoDeCampos>
