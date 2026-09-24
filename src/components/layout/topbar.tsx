@@ -67,14 +67,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
             <span aria-hidden="true" className="hidden items-center gap-1 xl:flex">
               <kbd className="rounded-[7px] border border-card-border bg-white/75 px-1.5 py-0.5 text-[0.62rem] font-semibold text-outline shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">/</kbd>
               <span className="text-[0.58rem] text-outline/75">busca</span>
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => setComandosAbertos(true)}
-                className="ml-1 rounded-[7px] border border-card-border bg-white/75 px-1.5 py-0.5 text-[0.62rem] font-semibold text-outline shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:text-primary"
-              >
-                Ctrl K
-              </button>
+              <button type="button" tabIndex={-1} onClick={() => setComandosAbertos(true)} className="ml-1 rounded-[7px] border border-card-border bg-white/75 px-1.5 py-0.5 text-[0.62rem] font-semibold text-outline shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:text-primary">Ctrl K</button>
             </span>
           </form>
 
@@ -88,7 +81,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
         </div>
       </header>
 
-      <CommandPalette aberta={comandosAbertos} aoFechar={() => setComandosAbertos(false)} />
+      <CommandPalette aberta={comandosAbertos} aoFechar={() => setComandosAbertos(false)} papel={usuario.papel} />
     </>
   );
 });
