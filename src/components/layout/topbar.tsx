@@ -1,7 +1,6 @@
 "use client";
 
 import { Bell, Menu, Search } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { CommandPalette } from "./command-palette";
@@ -39,9 +38,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
         return;
       }
 
-      if (evento.key === "Escape" && document.activeElement === buscaRef.current) {
-        buscaRef.current?.blur();
-      }
+      if (evento.key === "Escape" && document.activeElement === buscaRef.current) buscaRef.current?.blur();
     }
 
     window.addEventListener("keydown", atalho);
@@ -60,7 +57,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-4">
-          <Link href="/busca" aria-label="Abrir busca global" className="flex size-10 items-center justify-center rounded-[12px] text-on-surface-variant transition-[transform,background-color,color] hover:bg-primary-fixed/40 hover:text-primary active:scale-95 lg:hidden"><Search aria-hidden="true" size={20} strokeWidth={1.6} /></Link>
+          <button type="button" onClick={() => setComandosAbertos(true)} aria-label="Abrir busca e comandos rápidos" className="flex size-10 items-center justify-center rounded-[12px] text-on-surface-variant transition-[transform,background-color,color] hover:bg-primary-fixed/40 hover:text-primary active:scale-95 lg:hidden"><Search aria-hidden="true" size={20} strokeWidth={1.6} /></button>
           <form method="get" action="/busca" role="search" aria-label="Busca do cabeçalho" className="group hidden h-11 w-56 items-center gap-2 rounded-[14px] border border-card-border/90 bg-white/70 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),var(--shadow-cartao)] transition-[width,border-color,box-shadow,background-color] duration-300 focus-within:w-72 focus-within:border-primary/40 focus-within:bg-white/90 focus-within:shadow-[0_0_0_4px_rgba(10,110,209,0.08),var(--shadow-realce)] lg:flex xl:w-80 xl:focus-within:w-96">
             <button type="submit" aria-label="Buscar" className="flex size-7 shrink-0 items-center justify-center rounded-[8px] text-outline transition-colors group-focus-within:text-primary hover:text-primary"><Search aria-hidden="true" size={18} strokeWidth={1.6} /></button>
             <input ref={buscaRef} type="search" name="q" minLength={2} maxLength={80} required aria-label="Buscar no sistema" placeholder="Paciente, atendimento, documento…" className="min-w-0 flex-1 bg-transparent text-sm text-on-surface outline-none placeholder:text-outline" />
