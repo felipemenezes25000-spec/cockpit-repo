@@ -9,6 +9,7 @@ import {
   type RitmoMensal,
 } from "@/lib/captacao";
 import { comoClienteCaptacao, type EtapaLead } from "@/lib/captacao-banco";
+import { diferencaEmDias } from "@/lib/dates";
 import { estruturaAusente } from "@/lib/erros-banco";
 import { falhaDeConsulta } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
@@ -81,6 +82,11 @@ export type PainelCaptacao = {
   faturamentoAtual: number;
   vendasNoMes: number;
   ticketMedioReal: number;
+  receitaAtribuida: number;
+  receitaSemAtribuicao: number;
+  percentualReceitaAtribuida: number;
+  leadsAbertos: number;
+  leadsParados: number;
   plano: PlanoDaMeta;
   ritmo: RitmoMensal;
   etapas: EtapaDoPainel[];
@@ -117,6 +123,11 @@ function painelSemEstrutura(periodo: Periodo): PainelCaptacao {
     faturamentoAtual: 0,
     vendasNoMes: 0,
     ticketMedioReal: 0,
+    receitaAtribuida: 0,
+    receitaSemAtribuicao: 0,
+    percentualReceitaAtribuida: 0,
+    leadsAbertos: 0,
+    leadsParados: 0,
     plano,
     ritmo: calcularRitmoMensal({
       inicio: periodo.de,
@@ -171,7 +182,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
       (inicio, fim) =>
         supabase
           .from("leads")
-          .select("id, origem, campanha, etapa, venda_id, criado_em")
+          .select("id, origem, campanha, etapa, venda_id, criado_em, atualizado_em")
           .gte("criado_em", periodo.de.toISOString())
           .lt("criado_em", periodo.ate.toISOString())
           .order("criado_em", { ascending: false })
@@ -222,6 +233,27 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
   const vendasNoMes = vendas.length;
   const ticketMedioReal = vendasNoMes > 0 ? faturamentoAtual / vendasNoMes : 0;
   const valorVendaPorId = new Map(vendas.map((venda) => [venda.id, Number(venda.valor_final)]));
+  const idsVendasAtribuidas = new Set(
+    leads
+      .map((lead) => lead.venda_id)
+      .filter((id): id is string => Boolean(id) && valorVendaPorId.has(id)),
+  );
+  const receitaAtribuida = [...idsVendasAtribuidas].reduce(
+    (soma, id) => soma + (valorVendaPorId.get(id) ?? 0),
+    0,
+  );
+  const receitaSemAtribuicao = Math.max(0, faturamentoAtual - receitaAtribuida);
+  const percentualReceitaAtribuida =
+    faturamentoAtual > 0 ? percentual(receitaAtribuida, faturamentoAtual) : 0;
+  const leadsAbertos = leads.filter(
+    (lead) => lead.etapa !== "ganho" && lead.etapa !== "perdido",
+  ).length;
+  const leadsParados = leads.filter(
+    (lead) =>
+      lead.etapa !== "ganho" &&
+      lead.etapa !== "perdido" &&
+      -diferencaEmDias(new Date(lead.atualizado_em)) >= 3,
+  ).length;
 
   const plano = calcularPlanoDaMeta({
     metaFaturamento: meta.metaFaturamento,
@@ -382,6 +414,11 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     faturamentoAtual,
     vendasNoMes,
     ticketMedioReal,
+    receitaAtribuida,
+    receitaSemAtribuicao,
+    percentualReceitaAtribuida,
+    leadsAbertos,
+    leadsParados,
     plano,
     ritmo,
     etapas,
