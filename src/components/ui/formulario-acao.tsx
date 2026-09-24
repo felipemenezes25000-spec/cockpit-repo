@@ -74,6 +74,8 @@ export function BotaoDeAcao({
   className,
   rotuloAcessivel,
   rotuloPendente,
+  indisponivel = false,
+  motivoIndisponivel,
 }: {
   children: ReactNode;
   icone?: ReactNode;
@@ -82,17 +84,22 @@ export function BotaoDeAcao({
   className?: string;
   rotuloAcessivel?: string;
   rotuloPendente?: ReactNode;
+  indisponivel?: boolean;
+  motivoIndisponivel?: string;
 }) {
   const { pending } = useFormStatus();
+  const desabilitado = pending || indisponivel;
 
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={desabilitado}
       aria-busy={pending || undefined}
+      aria-disabled={indisponivel || undefined}
       aria-label={rotuloAcessivel}
+      title={indisponivel ? motivoIndisponivel : undefined}
       className={cn(
-        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-medium whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-wait disabled:opacity-60 disabled:active:translate-y-0 disabled:active:scale-100",
+        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-medium whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100",
         TAMANHOS[tamanho],
         TONS[tom],
         className,
