@@ -9,13 +9,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { NumeroAnimado } from "@/components/ui/animated-number";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 import { indicadores } from "@/server/consultas/indicadores";
 
 type Indicador = {
   rotulo: string;
-  valor: string;
+  valor: number;
+  tipoValor?: "inteiro" | "moeda";
   apoio: string;
   icone: LucideIcon;
   href: string;
@@ -28,12 +30,12 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
   const n = await indicadores();
   const proporcao = (parte: number, total: number) => total > 0 ? Math.max(0, Math.min(1, parte / total)) : 0;
   const lista: Indicador[] = [
-    { rotulo: "Atendimentos de hoje", valor: String(n.atendimentosHoje), apoio: `${n.concluidos} já ${n.concluidos === 1 ? "concluído" : "concluídos"}`, icone: CalendarDays, href: "/agenda", progresso: proporcao(n.concluidos, n.atendimentosHoje) },
-    { rotulo: "Confirmados", valor: String(n.confirmados), apoio: `de ${n.atendimentosHoje} na agenda de hoje`, icone: BadgeCheck, href: "/agenda", progresso: proporcao(n.confirmados, n.atendimentosHoje) },
-    { rotulo: "Confirmações pendentes", valor: String(n.confirmacoesPendentes), apoio: n.confirmacoesPendentes > 0 ? "precisam de contato hoje" : "nenhuma em aberto", icone: Clock3, href: "/agenda", enfase: n.confirmacoesPendentes > 0 ? "atencao" : undefined },
-    { rotulo: "Aguardando retorno", valor: String(n.aguardandoRetorno), apoio: "pacientes na janela de contato", icone: Repeat2, href: "/relacionamento" },
-    { rotulo: "Recebido no mês", valor: formatarMoeda(n.recebidoNoMes), apoio: "lançamentos já quitados", icone: Wallet, href: "/financeiro", financeiro: true },
-    { rotulo: "A receber", valor: formatarMoeda(n.aReceber), apoio: n.vencido > 0 ? `${formatarMoeda(n.vencido)} já vencido` : "nada vencido", icone: CalendarClock, href: "/financeiro", financeiro: true, enfase: n.vencido > 0 ? "negativo" : undefined },
+    { rotulo: "Atendimentos de hoje", valor: n.atendimentosHoje, apoio: `${n.concluidos} já ${n.concluidos === 1 ? "concluído" : "concluídos"}`, icone: CalendarDays, href: "/agenda", progresso: proporcao(n.concluidos, n.atendimentosHoje) },
+    { rotulo: "Confirmados", valor: n.confirmados, apoio: `de ${n.atendimentosHoje} na agenda de hoje`, icone: BadgeCheck, href: "/agenda", progresso: proporcao(n.confirmados, n.atendimentosHoje) },
+    { rotulo: "Confirmações pendentes", valor: n.confirmacoesPendentes, apoio: n.confirmacoesPendentes > 0 ? "precisam de contato hoje" : "nenhuma em aberto", icone: Clock3, href: "/agenda", enfase: n.confirmacoesPendentes > 0 ? "atencao" : undefined },
+    { rotulo: "Aguardando retorno", valor: n.aguardandoRetorno, apoio: "pacientes na janela de contato", icone: Repeat2, href: "/relacionamento" },
+    { rotulo: "Recebido no mês", valor: n.recebidoNoMes, tipoValor: "moeda", apoio: "lançamentos já quitados", icone: Wallet, href: "/financeiro", financeiro: true },
+    { rotulo: "A receber", valor: n.aReceber, tipoValor: "moeda", apoio: n.vencido > 0 ? `${formatarMoeda(n.vencido)} já vencido` : "nada vencido", icone: CalendarClock, href: "/financeiro", financeiro: true, enfase: n.vencido > 0 ? "negativo" : undefined },
   ];
 
   return (
@@ -73,7 +75,7 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
                   ? "mt-auto text-[1.45rem] leading-tight font-semibold tracking-[-0.035em]"
                   : "text-[2.3rem] leading-none font-semibold tracking-[-0.045em]",
               )}>
-                {ind.valor}
+                <NumeroAnimado valor={ind.valor} tipo={ind.tipoValor ?? "inteiro"} duracao={620 + indice * 65} />
               </span>
 
               {typeof ind.progresso === "number" ? (
