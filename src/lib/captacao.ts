@@ -1,3 +1,4 @@
+import { diferencaEmDias, inicioDoDia } from "./dates";
 import { apenasDigitos, ORIGENS, telefoneValido } from "./paciente";
 import type { EtapaLead } from "./captacao-banco";
 
@@ -131,6 +132,97 @@ export function calcularPlanoDaMeta(p: PremissasMeta): PlanoDaMeta {
     agendamentosNecessarios,
     qualificadosNecessarios,
     leadsNecessarios,
+  };
+}
+
+export type RitmoMensal = {
+  situacao: "atual" | "passado" | "futuro";
+  diasNoMes: number;
+  diasDecorridos: number;
+  diasRestantes: number;
+  mediaFaturamentoDia: number;
+  ritmoFinanceiroDia: number;
+  vendasPorDia: number;
+  leadsPorDia: number;
+  projecaoFaturamento: number;
+  projecaoPercentualMeta: number;
+};
+
+function umaCasa(valor: number): number {
+  return Math.round(valor * 10) / 10;
+}
+
+/**
+ * Ritmo operacional da meta. Para o mês corrente, a projeção é uma extensão
+ * linear simples do realizado até hoje — não é previsão estatística e por isso
+ * fica nomeada como "projeção no ritmo atual" na interface.
+ *
+ * `diasRestantes` inclui o dia de hoje. Isso evita assumir horário comercial,
+ * sábado útil ou feriado: a clínica decide como distribuir o esforço restante.
+ */
+export function calcularRitmoMensal({
+  inicio,
+  fim,
+  referencia = new Date(),
+  faturamentoAtual,
+  metaFaturamento,
+  plano,
+}: {
+  inicio: Date;
+  fim: Date;
+  referencia?: Date;
+  faturamentoAtual: number;
+  metaFaturamento: number;
+  plano: PlanoDaMeta;
+}): RitmoMensal {
+  const diasNoMes = Math.max(1, diferencaEmDias(fim, inicio));
+  const hoje = inicioDoDia(referencia);
+  const situacao: RitmoMensal["situacao"] =
+    hoje.getTime() < inicio.getTime()
+      ? "futuro"
+      : hoje.getTime() >= fim.getTime()
+        ? "passado"
+        : "atual";
+
+  const diasDecorridos =
+    situacao === "futuro"
+      ? 0
+      : situacao === "passado"
+        ? diasNoMes
+        : Math.min(diasNoMes, Math.max(1, diferencaEmDias(hoje, inicio) + 1));
+
+  const diasRestantes =
+    situacao === "passado"
+      ? 0
+      : situacao === "futuro"
+        ? diasNoMes
+        : Math.max(1, diasNoMes - diasDecorridos + 1);
+
+  const realizado = Math.max(0, Number.isFinite(faturamentoAtual) ? faturamentoAtual : 0);
+  const meta = Math.max(0, Number.isFinite(metaFaturamento) ? metaFaturamento : 0);
+  const mediaFaturamentoDia = diasDecorridos > 0 ? realizado / diasDecorridos : 0;
+  const projecaoFaturamento =
+    situacao === "atual"
+      ? mediaFaturamentoDia * diasNoMes
+      : situacao === "passado"
+        ? realizado
+        : 0;
+  const divisorRitmo = Math.max(1, diasRestantes);
+
+  return {
+    situacao,
+    diasNoMes,
+    diasDecorridos,
+    diasRestantes,
+    mediaFaturamentoDia,
+    ritmoFinanceiroDia:
+      situacao === "passado" ? 0 : plano.gapFinanceiro / divisorRitmo,
+    vendasPorDia:
+      situacao === "passado" ? 0 : umaCasa(plano.vendasNecessarias / divisorRitmo),
+    leadsPorDia:
+      situacao === "passado" ? 0 : umaCasa(plano.leadsNecessarios / divisorRitmo),
+    projecaoFaturamento,
+    projecaoPercentualMeta: meta > 0 ? (projecaoFaturamento / meta) * 100 : 0,
   };
 }
 
