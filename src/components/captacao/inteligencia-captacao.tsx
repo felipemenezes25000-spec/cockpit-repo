@@ -93,7 +93,13 @@ function Campanhas({ campanhas }: { campanhas: CampanhaDoPainel[] }) {
   );
 }
 
-function Gargalo({ gargalo }: { gargalo: GargaloDoPainel | null }) {
+function Gargalo({
+  gargalo,
+  metaConfigurada,
+}: {
+  gargalo: GargaloDoPainel | null;
+  metaConfigurada: boolean;
+}) {
   if (!gargalo) {
     return (
       <div className="mt-4 rounded-[var(--radius-cartao)] border border-dashed border-card-border px-4 py-5">
@@ -103,7 +109,7 @@ function Gargalo({ gargalo }: { gargalo: GargaloDoPainel | null }) {
     );
   }
 
-  const abaixo = gargalo.taxaAtual < gargalo.taxaPlanejada;
+  const abaixo = metaConfigurada && gargalo.taxaAtual < gargalo.taxaPlanejada;
 
   return (
     <div className="mt-4 rounded-[var(--radius-painel)] border border-card-border bg-surface-container-low p-4">
@@ -116,26 +122,34 @@ function Gargalo({ gargalo }: { gargalo: GargaloDoPainel | null }) {
             <span>{ROTULO_ETAPA[gargalo.para]}</span>
           </div>
         </div>
-        <span
-          className={`inline-flex min-h-7 items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
-            abaixo
-              ? "border-atencao-borda bg-atencao-fundo text-atencao"
-              : "border-positivo-borda bg-positivo-fundo text-positivo"
-          }`}
-        >
-          {desvio(gargalo.taxaAtual, gargalo.taxaPlanejada)} vs. plano
-        </span>
+        {metaConfigurada ? (
+          <span
+            className={`inline-flex min-h-7 items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              abaixo
+                ? "border-atencao-borda bg-atencao-fundo text-atencao"
+                : "border-positivo-borda bg-positivo-fundo text-positivo"
+            }`}
+          >
+            {desvio(gargalo.taxaAtual, gargalo.taxaPlanejada)} vs. plano
+          </span>
+        ) : (
+          <span className="inline-flex min-h-7 items-center rounded-full border border-card-border bg-surface px-2.5 py-1 text-xs font-semibold text-outline">
+            sem meta para comparar
+          </span>
+        )}
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-2">
+      <div className={`mt-5 grid gap-2 ${metaConfigurada ? "grid-cols-3" : "grid-cols-2"}`}>
         <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3">
           <p className="text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">Atual</p>
           <p className="mt-1 text-xl font-semibold tabular-nums text-on-surface">{taxa(gargalo.taxaAtual)}</p>
         </div>
-        <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3">
-          <p className="text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">Planejada</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums text-on-surface">{taxa(gargalo.taxaPlanejada)}</p>
-        </div>
+        {metaConfigurada ? (
+          <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3">
+            <p className="text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">Planejada</p>
+            <p className="mt-1 text-xl font-semibold tabular-nums text-on-surface">{taxa(gargalo.taxaPlanejada)}</p>
+          </div>
+        ) : null}
         <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3">
           <p className="text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">Não avançaram</p>
           <p className="mt-1 text-xl font-semibold tabular-nums text-on-surface">{gargalo.quantidadeNaoAvancou}</p>
@@ -149,10 +163,12 @@ export function InteligenciaCaptacao({
   origens,
   campanhas,
   gargalo,
+  metaConfigurada,
 }: {
   origens: OrigemDoPainel[];
   campanhas: CampanhaDoPainel[];
   gargalo: GargaloDoPainel | null;
+  metaConfigurada: boolean;
 }) {
   return (
     <section aria-labelledby="titulo-inteligencia-captacao" className="grid gap-5 xl:grid-cols-12">
@@ -167,7 +183,7 @@ export function InteligenciaCaptacao({
               <h2 id="titulo-inteligencia-captacao" className="titulo-secao mt-1">Onde o funil perde força</h2>
             </div>
           </div>
-          <Gargalo gargalo={gargalo} />
+          <Gargalo gargalo={gargalo} metaConfigurada={metaConfigurada} />
         </CardCorpo>
       </Card>
 
