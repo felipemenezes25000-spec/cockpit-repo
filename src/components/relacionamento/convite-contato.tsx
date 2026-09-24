@@ -13,6 +13,12 @@ import {
 import { registrarContato } from "@/server/acoes/relacionamento";
 import { cn } from "@/lib/cn";
 
+/**
+ * Botão de envio: filho do `<form>` porque `useFormStatus` só enxerga o
+ * formulário ancestral. Fica indisponível enquanto a ação roda (clique duplo
+ * não vira dois registros) e até a mensagem ter sido aberta ou copiada — trava
+ * de interface; a ação não tem como saber se a mensagem saiu de fato.
+ */
 function Registrar({ preparado, registrado, dica }: { preparado: boolean; registrado: boolean; dica: string }) {
   const { pending } = useFormStatus();
   const indisponivel = pending || !preparado || registrado;
@@ -21,7 +27,8 @@ function Registrar({ preparado, registrado, dica }: { preparado: boolean; regist
       type="submit"
       disabled={indisponivel}
       aria-busy={pending || undefined}
-      aria-describedby={!preparado ? dica : undefined}
+      // Mesma condição que desenha a dica: nunca aponta para um id ausente.
+      aria-describedby={!preparado && !registrado ? dica : undefined}
       className={cn(
         "group inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] border px-3.5 text-xs font-semibold transition-[transform,background-color,border-color,color,box-shadow] duration-180 active:scale-[0.985] disabled:cursor-not-allowed disabled:shadow-none",
         registrado
@@ -64,6 +71,8 @@ export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
       setPreparado(true);
       window.setTimeout(() => setCopia("nada"), 2400);
     } catch {
+      // Navegador sem permissão de área de transferência: a pessoa é avisada
+      // e ainda pode abrir o WhatsApp.
       setCopia("falhou");
     }
   }
@@ -115,6 +124,10 @@ export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
       ) : null}
 
       {!preparado && !registrado ? (
+        // À vista, não só para o leitor de tela: o botão desabilitado sai do
+        // Tab e, apagado, não diz por quê (mesmo princípio do
+        // BotaoIndisponivel). "Registrar o contato" casa com o rótulo
+        // "Contato registrado" que o botão ganha depois.
         <span id={dica} className="text-xs leading-5 text-outline">Abra o WhatsApp ou copie a mensagem antes de registrar o contato.</span>
       ) : null}
 

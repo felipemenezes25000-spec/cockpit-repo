@@ -16,6 +16,10 @@ export function FormularioRecuperacao() {
     definirEnviando(true);
 
     try {
+      // O cliente do Supabase no navegador pesa ~70 kB e só serve no envio:
+      // carregado aqui, a tela abre com o JS da base (o `next build` media
+      // 178 kB de First Load contra ~105 kB das outras telas públicas). Se o
+      // pedaço não baixar, cai no mesmo aviso de falha de conexão.
       const { clienteNavegador } = await import("@/lib/supabase/client");
       const { error } = await clienteNavegador().auth.resetPasswordForEmail(
         email.trim(),
@@ -31,6 +35,7 @@ export function FormularioRecuperacao() {
         return;
       }
 
+      // A confirmação é igual para e-mails cadastrados e desconhecidos.
       definirEnviado(true);
     } catch {
       definirErro("Não foi possível conectar ao serviço de e-mail. Tente novamente mais tarde.");
@@ -75,8 +80,10 @@ export function FormularioRecuperacao() {
             autoCapitalize="none"
             spellCheck={false}
             required
+            // Os erros daqui são do serviço (limite, conexão), não do e-mail
+            // digitado: o aviso fica ligado ao campo sem marcá-lo inválido
+            // (aria-invalid também pintaria a borda de vermelho em ENTRADA).
             aria-describedby={erro ? "erro-recuperacao" : "dica-recuperacao"}
-            aria-invalid={erro ? true : undefined}
             value={email}
             onChange={(evento) => definirEmail(evento.target.value)}
             className={`${ENTRADA} pl-10`}

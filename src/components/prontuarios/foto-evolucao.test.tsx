@@ -48,6 +48,8 @@ describe("FotoDaEvolucao — arquivada", () => {
     expect(cartao).toHaveClass("border-dashed", "bg-surface-container-low");
     expect(screen.getByText("Sem legenda").closest("[class*='opacity-']")).toBeNull();
     expect(screen.getByRole("img")).toHaveClass("opacity-70");
+    // Cor nunca comunica sozinha (§7.4): o estado também vem escrito.
+    expect(screen.getByText(/·\s*arquivada/)).toBeInTheDocument();
   });
 
   it("ativa segue com o cartão normal", () => {
@@ -60,7 +62,17 @@ describe("FotoDaEvolucao — arquivada", () => {
         />
       </ul>,
     );
-    expect(screen.getByRole("listitem")).toHaveClass("border-card-border", "bg-surface");
+    const cartao = screen.getByRole("listitem");
+    const classes = Array.from(cartao.classList);
+    // Cartão normal: borda do token de cartão e fundo de superfície, com ou sem
+    // opacidade de vidro — o que importa é a família do token, não o alfa.
+    expect(classes).toContainEqual(expect.stringMatching(/^border-card-border(\/\d+)?$/));
+    expect(classes).toContainEqual(expect.stringMatching(/^bg-surface(\/\d+)?$/));
+    // E nada do que distingue a arquivada.
+    expect(cartao).not.toHaveClass("border-dashed");
+    expect(cartao).not.toHaveClass("bg-surface-container-low");
+    expect(cartao.className).not.toMatch(/(^|\s)opacity-/);
+    expect(screen.queryByText(/·\s*arquivada/)).toBeNull();
     expect(screen.getByRole("img")).not.toHaveClass("opacity-70");
   });
 });

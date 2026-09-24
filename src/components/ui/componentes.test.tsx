@@ -13,6 +13,20 @@ import { Paginacao } from "./paginacao";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
+/** O texto que o leitor de tela lê no elemento: todos os nós juntos, menos o que é `aria-hidden`. */
+function textoFalado(elemento: Element): string {
+  const copia = elemento.cloneNode(true) as Element;
+  copia.querySelectorAll('[aria-hidden="true"]').forEach((oculto) => oculto.remove());
+  return (copia.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+/** Acha o elemento mais interno que o leitor de tela lê como `frase`, mesmo com o texto partido em vários nós. */
+const falado = (frase: string) => (_: string, elemento: Element | null) =>
+  !!elemento &&
+  !elemento.closest('[aria-hidden="true"]') &&
+  textoFalado(elemento) === frase &&
+  !Array.from(elemento.children).some((filho) => textoFalado(filho) === frase);
+
 describe("Campo — rótulo, erro e obrigatório ligados ao controle", () => {
   it("o rótulo nomeia o controle", () => {
     render(
@@ -234,7 +248,8 @@ describe("Paginacao — uma só para as três listas", () => {
       "href",
       "/prontuarios?busca=ana&situacao=todas&pagina=3",
     );
-    expect(screen.getByText("Página 2 de 3")).toHaveAttribute("aria-current", "page");
+    // A pílula mostra "2 de 3"; o leitor de tela ouve a frase inteira, marcada como a página atual.
+    expect(screen.getByText(falado("Página 2 de 3"))).toHaveAttribute("aria-current", "page");
   });
 
   it("na última página, 'Próxima' não é link", () => {

@@ -71,10 +71,14 @@ export function BuscaProntuarios({
           className={`${classeDeEntrada({ recuo: "busca" })} bg-white/78 shadow-[var(--shadow-cartao)]`}
         />
 
+        {/* Carregando ocupa o lugar do "limpar", dentro da caixa: fora dela
+            (-right-6), no celular o ícone passava da borda do cartão. E cabe
+            no recuo direito do campo (pr-10), do tamanho do botão: um selo
+            mais largo, com "buscando" à vista, cobria o fim do termo digitado. */}
         {pendente ? (
-          <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[8px] bg-white/88 px-2 py-1 text-[0.65rem] font-medium text-outline shadow-[var(--shadow-cartao)]">
-            <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
-            buscando
+          <span className="pointer-events-none absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[9px] bg-white/88 text-outline shadow-[var(--shadow-cartao)]">
+            <LoaderCircle aria-hidden="true" size={16} className="animate-spin" />
+            <span className="sr-only">Buscando…</span>
           </span>
         ) : termo ? (
           <button

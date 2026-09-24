@@ -132,9 +132,13 @@ export function FotoDaEvolucao({
     <li
       className={cn(
         "group/foto relative flex flex-col overflow-hidden rounded-[18px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.9),var(--shadow-cartao)] transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-px hover:shadow-[var(--shadow-realce)]",
+        // Arquivada não usa opacidade no cartão: derrubaria o texto terciário
+        // para ~3,2:1 (§7.4). O estado vem da borda tracejada, do fundo recuado
+        // e do selo "· arquivada" na data; só a foto esmaece. A ativa usa o
+        // token de superfície (§7.3), translúcido como o resto do vidro.
         imagem.arquivada
           ? "border-dashed border-outline-variant bg-surface-container-low"
-          : "border-card-border/80 bg-white/72 hover:border-primary/15",
+          : "border-card-border/80 bg-surface/72 hover:border-primary/15",
       )}
     >
       {imagem.url ? (

@@ -13,10 +13,13 @@ describe("ConviteContato — Marcar como enviada", () => {
 
     const botao = screen.getByRole("button", { name: "Marcar como enviada" });
     expect(botao).toBeDisabled();
-    const motivo = screen.getByText("Abra o WhatsApp ou copie a mensagem antes de registrar.");
+    const motivo = screen.getByText("Abra o WhatsApp ou copie a mensagem antes de registrar o contato.");
     // Visível: não é texto só de leitor de tela.
     expect(motivo).not.toHaveClass("sr-only");
+    expect(motivo).toBeVisible();
+    // Ligado ao botão: quem chega nele pelo leitor de tela ouve o motivo.
     expect(botao).toHaveAttribute("aria-describedby", motivo.id);
+    expect(botao).toHaveAccessibleDescription("Abra o WhatsApp ou copie a mensagem antes de registrar o contato.");
   });
 
   it("depois de abrir o WhatsApp, o botão libera e o motivo some", () => {
@@ -26,7 +29,10 @@ describe("ConviteContato — Marcar como enviada", () => {
     link.addEventListener("click", (evento) => evento.preventDefault());
     fireEvent.click(link);
 
-    expect(screen.getByRole("button", { name: "Marcar como enviada" })).toBeEnabled();
+    const botao = screen.getByRole("button", { name: "Marcar como enviada" });
+    expect(botao).toBeEnabled();
     expect(screen.queryByText(/antes de registrar/)).toBeNull();
+    // Sem dica, sem referência pendurada a um id que não existe mais.
+    expect(botao).not.toHaveAttribute("aria-describedby");
   });
 });

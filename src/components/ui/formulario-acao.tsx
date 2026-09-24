@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, CircleAlert, LoaderCircle } from "lucide-react";
+import { CircleAlert, LoaderCircle } from "lucide-react";
 import { useActionState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { ACAO_INICIAL, type AcaoDeBotao } from "@/lib/acao";
@@ -39,10 +39,13 @@ export function FormularioDeAcao({
         </p>
       ) : null}
 
+      {/* O sucesso é só para o leitor de tela: quem enxerga já vê a lista
+          mudar. Visível, a frase repetia a mudança da linha ("Resolvida") e,
+          quando o formulário sobrevive à revalidação — "Concluir" vira
+          "Reabrir" na mesma tarefa —, ficava colada ao botão novo. */}
       {estado.ok && estado.mensagem ? (
-        <p role="status" className={cn("inline-flex max-w-sm items-start gap-2 rounded-[12px] border border-positivo-borda/70 bg-positivo-fundo/72 px-3 py-2 text-xs leading-5 text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]", alinhamento === "fim" && "text-right")}>
-          <CheckCircle2 aria-hidden="true" size={14} strokeWidth={1.8} className="mt-0.5 shrink-0" />
-          <span>{estado.mensagem}</span>
+        <p role="status" className="sr-only">
+          {estado.mensagem}
         </p>
       ) : null}
     </form>

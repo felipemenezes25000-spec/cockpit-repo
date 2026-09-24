@@ -2,6 +2,20 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Paginacao } from "./paginacao";
 
+/** O texto que o leitor de tela lê no elemento: todos os nós juntos, menos o que é `aria-hidden`. */
+function textoFalado(elemento: Element): string {
+  const copia = elemento.cloneNode(true) as Element;
+  copia.querySelectorAll('[aria-hidden="true"]').forEach((oculto) => oculto.remove());
+  return (copia.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+/** Acha o elemento mais interno que o leitor de tela lê como `frase`, mesmo com o texto partido em vários nós. */
+const falado = (frase: string) => (_: string, elemento: Element | null) =>
+  !!elemento &&
+  !elemento.closest('[aria-hidden="true"]') &&
+  textoFalado(elemento) === frase &&
+  !Array.from(elemento.children).some((filho) => textoFalado(filho) === frase);
+
 describe("Paginacao", () => {
   const props = { paginas: 15, parametros: { busca: "ana" }, caminho: "/pacientes", rotulo: "Paginação dos pacientes" };
 
@@ -21,7 +35,10 @@ describe("Paginacao", () => {
       const palavra = screen.getByText(nome);
       expect(palavra).toHaveClass("sr-only", "sm:not-sr-only");
     }
-    expect(screen.getByText("Página 12 de 15")).toHaveClass("whitespace-nowrap");
+    // A pílula mostra "12 de 15" e o leitor de tela ouve "Página 12 de 15"; a contagem não quebra linha.
+    const contagem = screen.getByText(falado("Página 12 de 15"));
+    expect(contagem).toHaveAttribute("aria-current", "page");
+    expect(contagem).toHaveClass("whitespace-nowrap");
   });
 
   it("uma página só não mostra navegação", () => {

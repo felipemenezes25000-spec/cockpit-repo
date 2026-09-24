@@ -44,8 +44,12 @@ export function Paginacao({
         </span>
       )}
 
+      {/* A pílula mostra "12 de 15"; o leitor de tela ouve "Página 12 de 15" —
+          sem a palavra, "12 de 15" não diz do que é a contagem. Não quebra
+          linha: a 320 px sobram 254 px para os três itens. */}
       <span className="min-w-[7.25rem] text-center">
         <span aria-current="page" className="tabular inline-flex rounded-full border border-card-border/70 bg-surface-container-low/70 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]">
+          <span className="sr-only">Página </span>
           {pagina} <span className="ml-1 font-normal text-outline">de {paginas}</span>
         </span>
         <span aria-hidden="true" className="mt-2 block h-1 overflow-hidden rounded-full bg-primary-fixed/38">

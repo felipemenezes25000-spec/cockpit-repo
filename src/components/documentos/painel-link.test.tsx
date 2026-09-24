@@ -24,6 +24,20 @@ function mensagemDoWhatsapp(): string {
   return new URL(endereco).searchParams.get("text") ?? "";
 }
 
+/**
+ * A validade que o painel mostra na tela ("Vale até…", "Válido até…"): o
+ * elemento mais interno cujo texto, somando os nós, diz "vál… até <data>".
+ * Assim o teste protege a data prometida, não a redação nem a quebra em nós.
+ */
+function validadeNaTela(data: string): HTMLElement {
+  const padrao = new RegExp(`v[aá]l\\S*\\s+até\\s+${data.replaceAll("/", "\\/")}`, "i");
+  return screen.getByText(
+    (_, elemento) =>
+      padrao.test(elemento?.textContent ?? "") &&
+      !Array.from(elemento?.children ?? []).some((filho) => padrao.test(filho.textContent ?? "")),
+  );
+}
+
 function renderizar(links: LinkDeAssinatura[] = []) {
   return render(
     <PainelLink
@@ -68,7 +82,9 @@ describe("PainelLink — a validade da mensagem é a do link criado", () => {
     await usuario.selectOptions(screen.getByLabelText(/Validade do link/), "30");
     expect(mensagemDoWhatsapp()).toContain("O link vale até 30/09/2026.");
     expect(mensagemDoWhatsapp()).not.toContain("23/10/2026");
-    expect(screen.getByText("Vale até 30/09/2026.")).toBeInTheDocument();
+    expect(validadeNaTela("30/09/2026")).toBeInTheDocument();
+    // Nada na tela promete o prazo do select (23/09 + 30 dias).
+    expect(document.body.textContent).not.toContain("23/10/2026");
   });
 
   it("quando a página revalida, vale o expira_em gravado no banco", async () => {
