@@ -31,7 +31,10 @@ create table public.leads (
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
   check (etapa <> 'perdido' or motivo_perda is not null),
-  check (etapa <> 'ganho' or motivo_perda is null)
+  check (etapa <> 'ganho' or motivo_perda is null),
+  -- Venda concluída não é uma opinião da carteira: é uma venda que existe no
+  -- Financeiro. A equivalência também impede "desvender" só mudando a etapa.
+  check ((etapa = 'ganho') = (venda_id is not null))
 );
 
 create index leads_criado_em on public.leads (criado_em desc);
@@ -330,7 +333,7 @@ grant update (
 revoke all on public.leads, public.lead_etapas, public.metas_comerciais from anon, public;
 
 comment on table public.leads is
-  'Oportunidades comerciais antes de virarem pacientes. Não apaga; encerra como perdido.';
+  'Oportunidades comerciais antes de virarem pacientes. Ganho exige venda real no Financeiro; não apaga, encerra como perdido.';
 comment on table public.lead_etapas is
   'Trilha imutável das mudanças de etapa do funil, incluindo o motivo registrado em cada perda.';
 comment on table public.metas_comerciais is
