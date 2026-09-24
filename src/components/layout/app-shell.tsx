@@ -94,7 +94,7 @@ export function EstruturaApp({
           pendenciasAltas={pendenciasAltas}
         />
         <main id="conteudo" className="relative flex-1 px-3 pt-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-7 lg:pb-7 xl:px-10 2xl:px-14">
-          <div className="page-reveal mx-auto w-full max-w-[1600px]">
+          <div key={caminho} className="page-reveal mx-auto w-full max-w-[1600px]">
             {aviso}
             {children}
           </div>
