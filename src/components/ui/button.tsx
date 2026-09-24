@@ -10,7 +10,7 @@ const BASE =
 
 const VARIANTES: Record<Variante, string> = {
   primaria:
-    "border border-primary-container bg-primary-container text-on-primary shadow-[var(--shadow-primary)] hover:border-primary hover:bg-primary hover:shadow-[0_12px_28px_-12px_rgba(8,84,160,0.68)]",
+    "border border-primary-container bg-[linear-gradient(135deg,var(--color-primary-container),var(--color-primary))] text-on-primary shadow-[var(--shadow-primary)] hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_14px_30px_-12px_rgba(8,84,160,0.72)]",
   secundaria:
     "border border-primary/25 bg-surface/90 text-primary shadow-[var(--shadow-cartao)] hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary-fixed/40 hover:shadow-[var(--shadow-realce)]",
   contorno:
@@ -38,16 +38,13 @@ export function BotaoLink({
   children: ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className={cn(BASE, VARIANTES[variante], TAMANHOS[tamanho], className)}
-      {...props}
-    >
+    <Link href={href} className={cn(BASE, VARIANTES[variante], TAMANHOS[tamanho], className)} {...props}>
       {variante === "primaria" ? (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/60"
-        />
+        <>
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/65" />
+          <span aria-hidden="true" className="pointer-events-none absolute top-[-50%] left-[-35%] h-[200%] w-[20%] -skew-x-[24deg] bg-white/20 blur-[1px] transition-transform duration-700 ease-out group-hover:translate-x-[700%]" />
+          <span aria-hidden="true" className="pointer-events-none absolute -right-7 -bottom-8 size-20 rounded-full bg-white/10 blur-2xl" />
+        </>
       ) : null}
       <span className="relative inline-flex items-center gap-2">{children}</span>
     </Link>
