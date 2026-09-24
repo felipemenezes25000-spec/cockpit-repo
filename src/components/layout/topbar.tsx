@@ -25,8 +25,9 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
         Boolean(alvo?.isContentEditable);
 
       const abrirBusca =
-        (!editando && evento.key === "/") ||
-        ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === "k");
+        !editando &&
+        (evento.key === "/" ||
+          ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === "k"));
 
       if (abrirBusca) {
         evento.preventDefault();
@@ -62,7 +63,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
           <span aria-hidden="true" className="hidden items-center gap-1 xl:flex">
             <kbd className="rounded-[7px] border border-card-border bg-white/75 px-1.5 py-0.5 text-[0.62rem] font-semibold text-outline shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">/</kbd>
             <span className="text-[0.58rem] text-outline/75">ou</span>
-            <kbd className="rounded-[7px] border border-card-border bg-white/75 px-1.5 py-0.5 text-[0.62rem] font-semibold text-outline shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">⌘K</kbd>
+            <kbd className="rounded-[7px] border border-card-border bg-white/75 px-1.5 py-0.5 text-[0.62rem] font-semibold text-outline shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">Ctrl K</kbd>
           </span>
         </form>
 
