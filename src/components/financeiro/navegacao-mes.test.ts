@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hrefDoMes } from "./navegacao-mes";
 
 describe("hrefDoMes", () => {
-  // Antes, as setas levavam só `?mes=`: trocar de mês zerava situação,
-  // forma e busca — e o estado vazio filtrado sugere justamente trocar o mês.
-  it("mantém os filtros da tela ao trocar de mês", () => {
+  it("mantém os filtros da tela ao trocar de mês por padrão", () => {
     expect(hrefDoMes("/financeiro/vendas", "situacao=abertas&busca=ana", "2026-08")).toBe(
       "/financeiro/vendas?situacao=abertas&busca=ana&mes=2026-08",
     );
@@ -21,5 +19,16 @@ describe("hrefDoMes", () => {
       "/financeiro/vendas?forma=pix",
     );
     expect(hrefDoMes("/financeiro", "mes=2026-07", null)).toBe("/financeiro");
+  });
+
+  it("pode limpar filtros que pertencem ao conjunto do mês", () => {
+    expect(
+      hrefDoMes(
+        "/captacao",
+        "mes=2026-08&pagina=3&origem=Instagram&campanha=Botox+agosto",
+        "2026-07",
+        ["pagina", "origem", "campanha"],
+      ),
+    ).toBe("/captacao?mes=2026-07");
   });
 });
