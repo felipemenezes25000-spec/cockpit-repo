@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ShieldCheck, UserRound } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/avatar";
 import { BotaoSair } from "./botao-sair";
@@ -17,27 +17,35 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
   const [aberto, setAberto] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const gatilho = useRef<HTMLButtonElement>(null);
+  const painel = useRef<HTMLDivElement>(null);
+
+  const fechar = useCallback((devolverFoco = true) => {
+    setAberto(false);
+    if (devolverFoco) window.requestAnimationFrame(() => gatilho.current?.focus());
+  }, []);
 
   useEffect(() => {
     if (!aberto) return;
+    const id = window.requestAnimationFrame(() => painel.current?.focus());
 
     function aoTeclar(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setAberto(false);
-        gatilho.current?.focus();
+        e.preventDefault();
+        fechar();
       }
     }
     function aoClicarFora(e: MouseEvent) {
-      if (!container.current?.contains(e.target as Node)) setAberto(false);
+      if (!container.current?.contains(e.target as Node)) fechar(false);
     }
 
     document.addEventListener("keydown", aoTeclar);
     document.addEventListener("mousedown", aoClicarFora);
     return () => {
+      window.cancelAnimationFrame(id);
       document.removeEventListener("keydown", aoTeclar);
       document.removeEventListener("mousedown", aoClicarFora);
     };
-  }, [aberto]);
+  }, [aberto, fechar]);
 
   return (
     <div ref={container} className="relative">
@@ -78,8 +86,12 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
 
       {aberto ? (
         <div
+          ref={painel}
           id="menu-perfil"
-          className="glass-surface page-reveal absolute right-0 z-40 mt-3 w-[19rem] overflow-hidden rounded-[20px] border border-white/80 shadow-[0_28px_70px_-26px_rgba(7,35,66,0.45),var(--shadow-flutuante)]"
+          role="dialog"
+          aria-label="Conta e perfil"
+          tabIndex={-1}
+          className="glass-surface page-reveal absolute right-0 z-40 mt-3 w-[19rem] overflow-hidden rounded-[20px] border border-white/80 outline-none shadow-[0_28px_70px_-26px_rgba(7,35,66,0.45),var(--shadow-flutuante)] focus-visible:shadow-[0_0_0_3px_rgba(10,110,209,0.08),0_28px_70px_-26px_rgba(7,35,66,0.45),var(--shadow-flutuante)]"
         >
           <div className="relative overflow-hidden border-b border-card-border/75 px-4 py-4">
             <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 size-40 rounded-full bg-primary-fixed/55 blur-3xl" />
@@ -100,11 +112,10 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
             <ul className="space-y-1">
               {EM_BREVE.map(({ rotulo, icone: Icone }) => (
                 <li key={rotulo}>
-                  <button
-                    type="button"
+                  <span
                     aria-disabled="true"
                     title="Disponível em uma próxima etapa"
-                    className="group flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm text-outline transition-colors hover:bg-white/45"
+                    className="group flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm text-outline"
                   >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-card-border/80 bg-white/55 text-outline-variant">
                       <Icone aria-hidden="true" size={16} strokeWidth={1.55} />
@@ -113,7 +124,7 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
                       <span className="block font-medium">{rotulo}</span>
                       <span className="mt-0.5 block text-[0.65rem] text-outline-variant">Em preparação</span>
                     </span>
-                  </button>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -122,7 +133,7 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
           <div className="border-t border-card-border/75 bg-white/32 p-2.5">
             <BotaoSair
               comIcone
-              className="w-full rounded-[12px] px-3 py-2.5 text-left text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] hover:bg-white/70 hover:text-primary active:scale-[0.99]"
+              className="w-full rounded-[12px] px-3 py-2.5 text-left text-sm font-medium text-on-surface-variant transition-[transform,background-color,color,box-shadow] hover:bg-white/70 hover:text-primary hover:shadow-[var(--shadow-cartao)] active:scale-[0.99]"
             />
           </div>
         </div>
