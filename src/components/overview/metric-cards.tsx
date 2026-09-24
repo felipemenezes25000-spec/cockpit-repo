@@ -48,6 +48,7 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
         {lista.map((ind, indice) => {
           const Icone = ind.icone;
           const destaque = indice === 0 || ind.financeiro;
+          const percentual = typeof ind.progresso === "number" ? Math.round(ind.progresso * 100) : null;
           return (
             <Link
               key={ind.rotulo}
@@ -64,9 +65,21 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
 
               <div className="relative mb-5 flex items-start justify-between gap-3">
                 <h3 className="rotulo max-w-[12rem] leading-[1.25]">{ind.rotulo}</h3>
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-primary/10 bg-white/72 text-primary shadow-[var(--shadow-cartao)] transition-[transform,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:scale-[1.04] group-hover:shadow-[var(--shadow-realce)]">
-                  <Icone aria-hidden="true" size={18} strokeWidth={1.65} />
-                </span>
+                {percentual !== null ? (
+                  <span
+                    className="relative flex size-11 shrink-0 items-center justify-center rounded-full p-[2px] shadow-[var(--shadow-cartao)] transition-[transform,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:scale-[1.04] group-hover:shadow-[var(--shadow-realce)]"
+                    style={{ background: `conic-gradient(var(--color-primary-container) ${percentual}%, var(--color-primary-fixed) ${percentual}% 100%)` }}
+                    title={`${percentual}%`}
+                  >
+                    <span className="flex size-full items-center justify-center rounded-full border border-white/80 bg-white/92 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
+                      <Icone aria-hidden="true" size={18} strokeWidth={1.7} />
+                    </span>
+                  </span>
+                ) : (
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] border border-primary/10 bg-white/72 text-primary shadow-[var(--shadow-cartao)] transition-[transform,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:scale-[1.04] group-hover:shadow-[var(--shadow-realce)]">
+                    <Icone aria-hidden="true" size={18} strokeWidth={1.65} />
+                  </span>
+                )}
               </div>
 
               <span className={cn(
@@ -80,10 +93,7 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
 
               {typeof ind.progresso === "number" ? (
                 <span aria-hidden="true" className="relative mb-2.5 mt-1 h-1.5 overflow-hidden rounded-full bg-primary-fixed/45">
-                  <span
-                    className="block h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary-container),var(--color-primary))] shadow-[0_0_10px_rgba(10,110,209,0.2)] transition-[width] duration-500"
-                    style={{ width: `${Math.round(ind.progresso * 100)}%` }}
-                  />
+                  <span className="block h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary-container),var(--color-primary))] shadow-[0_0_10px_rgba(10,110,209,0.2)] transition-[width] duration-500" style={{ width: `${percentual ?? 0}%` }} />
                 </span>
               ) : null}
 
@@ -102,9 +112,7 @@ export async function CartoesIndicadores({ exemplo }: { exemplo: boolean }) {
                 <ArrowUpRight aria-hidden="true" size={15} className="mb-0.5 shrink-0 text-outline-variant transition-[transform,color] duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
               </div>
 
-              {ind.financeiro && exemplo ? (
-                <span className="relative mt-1.5 text-[0.61rem] font-semibold tracking-[0.08em] text-outline uppercase">Valor demonstrativo</span>
-              ) : null}
+              {ind.financeiro && exemplo ? <span className="relative mt-1.5 text-[0.61rem] font-semibold tracking-[0.08em] text-outline uppercase">Valor demonstrativo</span> : null}
             </Link>
           );
         })}
