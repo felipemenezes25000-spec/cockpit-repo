@@ -27,6 +27,7 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
   );
 
   if (etapas.length === 0) return null;
+  const temFluxo = (etapas[0]?.volume ?? 0) > 0;
 
   return (
     <section className={`cabine ${estilos.palco} relative min-h-[34rem] overflow-hidden p-4 sm:p-6`} aria-labelledby="titulo-funil">
@@ -41,8 +42,8 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
           </p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-[var(--radius-controle)] border border-cabine-linha px-3 py-2 text-xs font-semibold text-cabine-texto-secundario">
-          <span className="now-pulse size-2 rounded-full bg-cabine-texto" />
-          dados do período
+          <span className={temFluxo ? "now-pulse size-2 rounded-full bg-cabine-texto" : "size-2 rounded-full border border-cabine-texto-secundario"} />
+          {temFluxo ? "fluxo do período" : "aguardando entradas"}
         </span>
       </div>
 
@@ -85,9 +86,13 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
             );
           })}
 
-          <span aria-hidden="true" className={estilos.particula} />
-          <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula2}`} />
-          <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula3}`} />
+          {temFluxo ? (
+            <>
+              <span aria-hidden="true" className={estilos.particula} />
+              <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula2}`} />
+              <span aria-hidden="true" className={`${estilos.particula} ${estilos.particula3}`} />
+            </>
+          ) : null}
         </div>
 
         {selecionada ? (
