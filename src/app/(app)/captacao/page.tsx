@@ -9,13 +9,38 @@ import { NavegacaoMes } from "@/components/financeiro/navegacao-mes";
 import { Card, CardCorpo } from "@/components/ui/card";
 import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { usuarioAtual } from "@/lib/auth";
+import { ETAPAS_FUNIL } from "@/lib/captacao";
 import { dataParaColuna, lerMes } from "@/lib/periodo";
 import { painelCaptacao } from "@/server/consultas/captacao";
+import {
+  listarLeadsCaptacao,
+  type FiltroEtapaLead,
+  type PaginaDeLeads,
+} from "@/server/consultas/captacao-leads";
 import { listarProcedimentos } from "@/server/consultas/procedimentos";
 
 export const metadata: Metadata = {
   title: "Captação",
   description: "Funil comercial, meta financeira, conversão e origem dos novos contatos.",
+};
+
+function lerTexto(valor: string | string[] | undefined, limite = 80): string {
+  const texto = Array.isArray(valor) ? valor[0] : valor;
+  return (texto ?? "").slice(0, limite);
+}
+
+function lerEtapa(valor: string | string[] | undefined): FiltroEtapaLead {
+  const texto = lerTexto(valor, 20);
+  return texto === "todos" || (ETAPAS_FUNIL as readonly string[]).includes(texto)
+    ? (texto as FiltroEtapaLead)
+    : "todos";
+}
+
+const CARTEIRA_VAZIA: PaginaDeLeads = {
+  itens: [],
+  total: 0,
+  pagina: 1,
+  paginas: 1,
 };
 
 export default async function PaginaCaptacao({
@@ -25,14 +50,27 @@ export default async function PaginaCaptacao({
 }) {
   const parametros = await searchParams;
   const periodo = lerMes(parametros.mes);
+  const busca = lerTexto(parametros.busca);
+  const etapa = lerEtapa(parametros.etapa);
+  const pagina = Math.max(1, Number(lerTexto(parametros.pagina, 8)) || 1);
+
   const [painel, procedimentos, usuario] = await Promise.all([
     painelCaptacao(periodo),
     listarProcedimentos(),
     usuarioAtual(),
   ]);
 
+  const carteira = painel.estruturaDisponivel
+    ? await listarLeadsCaptacao(periodo, busca, etapa, pagina)
+    : CARTEIRA_VAZIA;
+
   const podeEditarLeads = usuario?.papel === "administradora" || usuario?.papel === "recepcao";
   const podeEditarMeta = usuario?.papel === "administradora" || usuario?.papel === "financeiro";
+
+  const parametrosPaginacao: Record<string, string> = {};
+  if (!periodo.ehMesAtual) parametrosPaginacao.mes = periodo.chave;
+  if (busca) parametrosPaginacao.busca = busca;
+  if (etapa !== "todos") parametrosPaginacao.etapa = etapa;
 
   return (
     <div className="flex flex-col gap-5 pb-8 sm:gap-6">
@@ -45,6 +83,7 @@ export default async function PaginaCaptacao({
           <>
             <SeloHero tom="informativo"><Sparkles aria-hidden="true" size={13} /> Funil vivo</SeloHero>
             <SeloHero>{painel.vendasNoMes} vendas no período</SeloHero>
+            {painel.estruturaDisponivel ? <SeloHero>{carteira.total} leads no recorte</SeloHero> : null}
             {painel.meta.id ? <SeloHero tom="positivo">Meta configurada</SeloHero> : <SeloHero tom="atencao">Meta ainda não definida</SeloHero>}
           </>
         }
@@ -103,9 +142,15 @@ export default async function PaginaCaptacao({
           />
 
           <LeadsDoFunil
-            leads={painel.leadsRecentes}
+            leads={carteira.itens}
             procedimentos={procedimentos}
             podeEditar={podeEditarLeads}
+            total={carteira.total}
+            pagina={carteira.pagina}
+            paginas={carteira.paginas}
+            busca={busca}
+            etapa={etapa}
+            parametrosPaginacao={parametrosPaginacao}
           />
         </>
       )}
