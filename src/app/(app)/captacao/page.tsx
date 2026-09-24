@@ -174,10 +174,6 @@ export default async function PaginaCaptacao({
             paginas={carteira.paginas}
             busca={busca}
             etapa={etapa}
-            origem={origem}
-            campanha={campanha}
-            origens={origensDisponiveis}
-            campanhas={campanhasDisponiveis}
             parametrosPaginacao={parametrosPaginacao}
           />
         </>
