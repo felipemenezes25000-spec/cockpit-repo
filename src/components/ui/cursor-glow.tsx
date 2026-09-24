@@ -37,13 +37,21 @@ export function LuzDoCursor({
     return () => pai.removeEventListener("pointermove", mover);
   }, []);
 
+  const estilo = {
+    "--cursor-x": "50%",
+    "--cursor-y": "35%",
+    "--cursor-glow-size": `${tamanho}px`,
+    background:
+      "radial-gradient(circle var(--cursor-glow-size) at var(--cursor-x) var(--cursor-y), rgba(209,232,255,0.34), rgba(167,205,242,0.12) 32%, transparent 68%)",
+  } as CSSProperties;
+
   return (
     <span
       ref={ref}
       aria-hidden="true"
-      style={{ "--cursor-glow-size": `${tamanho}px` } as CSSProperties}
+      style={estilo}
       className={cn(
-        "cursor-glow pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+        "pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
         className,
       )}
     />
