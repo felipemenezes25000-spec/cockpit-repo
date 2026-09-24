@@ -16,6 +16,7 @@ export type FiltroEtapaLead = EtapaLead | "todos";
 export type MovimentoLead = {
   de: EtapaLead | null;
   para: EtapaLead;
+  motivo: string | null;
   em: Date;
 };
 
@@ -124,7 +125,7 @@ export const listarLeadsCaptacao = cache(
       ids.length > 0
         ? supabase
             .from("lead_etapas")
-            .select("lead_id, de, para, em")
+            .select("lead_id, de, para, motivo, em")
             .in("lead_id", ids)
             .order("em", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
@@ -155,6 +156,7 @@ export const listarLeadsCaptacao = cache(
       atual.push({
         de: passo.de,
         para: passo.para,
+        motivo: passo.motivo,
         em: new Date(passo.em),
       });
       historicoPorLead.set(passo.lead_id, atual);
