@@ -5,6 +5,7 @@ import { InteligenciaCaptacao } from "@/components/captacao/inteligencia-captaca
 import { LeadsDoFunil } from "@/components/captacao/leads-do-funil";
 import { MetaFinanceira } from "@/components/captacao/meta-financeira";
 import { MetricasCaptacao } from "@/components/captacao/metricas-captacao";
+import { PulsoComercial } from "@/components/captacao/pulso-comercial";
 import { RitmoDaMeta } from "@/components/captacao/ritmo-da-meta";
 import { NavegacaoMes } from "@/components/financeiro/navegacao-mes";
 import { Card, CardCorpo } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { dataParaColuna, lerMes } from "@/lib/periodo";
 import { painelCaptacao } from "@/server/consultas/captacao";
 import {
   listarLeadsCaptacao,
+  type FiltroAtencaoLead,
   type FiltroEtapaLead,
   type PaginaDeLeads,
 } from "@/server/consultas/captacao-leads";
@@ -37,6 +39,10 @@ function lerEtapa(valor: string | string[] | undefined): FiltroEtapaLead {
     : "todos";
 }
 
+function lerAtencao(valor: string | string[] | undefined): FiltroAtencaoLead {
+  return lerTexto(valor, 20) === "parados" ? "parados" : "todos";
+}
+
 const CARTEIRA_VAZIA: PaginaDeLeads = {
   itens: [],
   total: 0,
@@ -53,6 +59,7 @@ export default async function PaginaCaptacao({
   const periodo = lerMes(parametros.mes);
   const busca = lerTexto(parametros.busca);
   const etapa = lerEtapa(parametros.etapa);
+  const atencao = lerAtencao(parametros.atencao);
   const origemSolicitada = lerTexto(parametros.origem, 60);
   const campanhaSolicitada = lerTexto(parametros.campanha, 120);
   const pagina = Math.max(1, Number(lerTexto(parametros.pagina, 8)) || 1);
@@ -69,19 +76,21 @@ export default async function PaginaCaptacao({
   const campanha = campanhasDisponiveis.includes(campanhaSolicitada) ? campanhaSolicitada : "";
 
   const carteira = painel.estruturaDisponivel
-    ? await listarLeadsCaptacao(periodo, busca, etapa, pagina, origem, campanha)
+    ? await listarLeadsCaptacao(periodo, busca, etapa, pagina, origem, campanha, atencao)
     : CARTEIRA_VAZIA;
 
   const podeEditarLeads = usuario?.papel === "administradora" || usuario?.papel === "recepcao";
   const podeEditarMeta = usuario?.papel === "administradora" || usuario?.papel === "financeiro";
   const metaConfigurada = painel.meta.id !== null;
+  const mesDoRecorte = periodo.ehMesAtual ? null : periodo.chave;
 
   const parametrosPaginacao: Record<string, string> = {};
-  if (!periodo.ehMesAtual) parametrosPaginacao.mes = periodo.chave;
+  if (mesDoRecorte) parametrosPaginacao.mes = mesDoRecorte;
   if (busca) parametrosPaginacao.busca = busca;
   if (etapa !== "todos") parametrosPaginacao.etapa = etapa;
   if (origem) parametrosPaginacao.origem = origem;
   if (campanha) parametrosPaginacao.campanha = campanha;
+  if (atencao !== "todos") parametrosPaginacao.atencao = atencao;
 
   return (
     <div className="flex flex-col gap-5 pb-8 sm:gap-6">
@@ -95,6 +104,7 @@ export default async function PaginaCaptacao({
             <SeloHero tom="informativo"><Sparkles aria-hidden="true" size={13} /> Funil vivo</SeloHero>
             <SeloHero>{painel.vendasNoMes} vendas no período</SeloHero>
             {painel.estruturaDisponivel ? <SeloHero>{carteira.total} leads no recorte</SeloHero> : null}
+            {painel.leadsParados > 0 ? <SeloHero tom="atencao">{painel.leadsParados} pedindo atenção</SeloHero> : null}
             {metaConfigurada ? <SeloHero tom="positivo">Meta configurada</SeloHero> : <SeloHero tom="atencao">Meta ainda não definida</SeloHero>}
           </>
         }
@@ -108,7 +118,7 @@ export default async function PaginaCaptacao({
         <NavegacaoMes
           periodo={periodo}
           rotulo="Período comercial"
-          limparAoTrocar={["pagina", "busca", "etapa", "origem", "campanha"]}
+          limparAoTrocar={["pagina", "busca", "etapa", "origem", "campanha", "atencao"]}
         />
       </div>
 
@@ -150,6 +160,16 @@ export default async function PaginaCaptacao({
             </div>
           </div>
 
+          <PulsoComercial
+            faturamentoAtual={painel.faturamentoAtual}
+            receitaAtribuida={painel.receitaAtribuida}
+            receitaSemAtribuicao={painel.receitaSemAtribuicao}
+            percentualReceitaAtribuida={painel.percentualReceitaAtribuida}
+            leadsAbertos={painel.leadsAbertos}
+            leadsParados={painel.leadsParados}
+            mes={mesDoRecorte}
+          />
+
           <RitmoDaMeta
             plano={painel.plano}
             ritmo={painel.ritmo}
@@ -166,7 +186,7 @@ export default async function PaginaCaptacao({
             metaConfigurada={metaConfigurada}
             motivosPerda={painel.motivosPerda}
             totalPerdidos={painel.perdidos}
-            mes={periodo.ehMesAtual ? null : periodo.chave}
+            mes={mesDoRecorte}
           />
 
           <LeadsDoFunil
