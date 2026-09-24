@@ -21,7 +21,7 @@ function BotaoAdicionar() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-55"
+      className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
     >
       {pending ? <LoaderCircle aria-hidden="true" size={16} className="animate-spin" /> : <Plus aria-hidden="true" size={16} />}
       {pending ? "Adicionando…" : "Adicionar ao funil"}
