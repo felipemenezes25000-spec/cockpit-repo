@@ -20,12 +20,14 @@ import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
 import { FiltrosLeads } from "@/components/captacao/filtros-leads";
 import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
 import { Campo, classeDeAreaDeTexto, classeDeEntrada } from "@/components/ui/field";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { Paginacao } from "@/components/ui/paginacao";
 import { ACAO_INICIAL } from "@/lib/acao";
 import { ETAPAS_FUNIL, ORIGENS_CAPTACAO, ROTULO_ETAPA } from "@/lib/captacao";
 import { formatarData, formatarHora } from "@/lib/format";
 import { formatarTelefone, linkWhatsapp } from "@/lib/paciente";
 import {
+  converterLeadEmPaciente,
   criarLead,
   mudarEtapaLead,
   vincularPacienteLead,
@@ -209,10 +211,35 @@ function VincularPaciente({ lead }: { lead: LeadDaCarteira }) {
           ) : null}
         </div>
         <p className="text-[0.68rem] leading-5 text-outline">
-          Depois do vínculo, agendamento e venda desta paciente avançam o funil automaticamente.
+          Use esta opção quando a pessoa já tiver cadastro. Agendamento e venda passam a avançar o lead automaticamente.
         </p>
       </form>
     </details>
+  );
+}
+
+function CriarPacienteDoLead({ lead }: { lead: LeadDaCarteira }) {
+  const perdido = lead.etapa === "perdido";
+  return (
+    <FormularioDeAcao
+      acao={converterLeadEmPaciente}
+      campos={{ id: lead.id }}
+      confirmacao={`Criar uma nova paciente usando os dados de ${lead.nome}? Se ela já estiver cadastrada, cancele e use “Vincular a uma paciente”.`}
+      alinhamento="fim"
+      className="w-full lg:max-w-[22rem]"
+    >
+      <BotaoDeAcao
+        tom="primario"
+        tamanho="xs"
+        icone={<UserRoundPlus />}
+        rotuloPendente="Criando paciente…"
+        indisponivel={perdido}
+        motivoIndisponivel="Reabra o lead antes de criar a paciente."
+        className="w-full"
+      >
+        Criar paciente com dados do lead
+      </BotaoDeAcao>
+    </FormularioDeAcao>
   );
 }
 
@@ -240,10 +267,11 @@ function AcoesDaPaciente({ lead, podeEditar }: { lead: LeadDaCarteira; podeEdita
           </Link>
         </div>
       ) : podeEditar ? (
-        <div className="w-full lg:max-w-[22rem]">
-          <p className="mb-2 text-[0.68rem] leading-5 text-outline">
-            Ainda não existe cadastro clínico ligado a esta oportunidade.
+        <div className="flex w-full flex-col gap-2 lg:max-w-[22rem]">
+          <p className="text-[0.68rem] leading-5 text-outline">
+            Sem cadastro clínico. Crie um novo usando estes dados ou vincule se a paciente já existir.
           </p>
+          <CriarPacienteDoLead lead={lead} />
         </div>
       ) : null}
 
@@ -362,7 +390,7 @@ export function LeadsDoFunil({
       <Card>
         <CardCabecalho
           titulo="Carteira comercial"
-          descricao="Busque toda a carteira do período, vincule o cadastro clínico e acompanhe o avanço até agenda e venda sem perder o histórico do lead."
+          descricao="Busque toda a carteira do período, converta ou vincule o cadastro clínico e acompanhe o avanço até agenda e venda sem perder o histórico do lead."
           acao={<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary"><Route aria-hidden="true" size={15} /> {total} no recorte</span>}
         />
         <CardCorpo className="flex flex-col gap-4">
