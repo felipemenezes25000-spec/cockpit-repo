@@ -3,6 +3,8 @@
 import {
   CalendarPlus2,
   CircleAlert,
+  Clock3,
+  History,
   Link2,
   LoaderCircle,
   MessageCircle,
@@ -21,7 +23,7 @@ import { Campo, classeDeAreaDeTexto, classeDeEntrada } from "@/components/ui/fie
 import { Paginacao } from "@/components/ui/paginacao";
 import { ACAO_INICIAL } from "@/lib/acao";
 import { ETAPAS_FUNIL, ORIGENS_CAPTACAO, ROTULO_ETAPA } from "@/lib/captacao";
-import { formatarData } from "@/lib/format";
+import { formatarData, formatarHora } from "@/lib/format";
 import { formatarTelefone, linkWhatsapp } from "@/lib/paciente";
 import {
   criarLead,
@@ -29,8 +31,10 @@ import {
   vincularPacienteLead,
   type EstadoLead,
 } from "@/server/acoes/captacao";
-import type { LeadDoPainel } from "@/server/consultas/captacao";
-import type { FiltroEtapaLead } from "@/server/consultas/captacao-leads";
+import type {
+  FiltroEtapaLead,
+  LeadDaCarteira,
+} from "@/server/consultas/captacao-leads";
 import type { Procedimento } from "@/server/consultas/procedimentos";
 
 const INICIAL: EstadoLead = { erros: {} };
@@ -123,7 +127,7 @@ function BotaoMover({ desabilitado }: { desabilitado: boolean }) {
   );
 }
 
-function MoverLead({ lead }: { lead: LeadDoPainel }) {
+function MoverLead({ lead }: { lead: LeadDaCarteira }) {
   const [estado, executar] = useActionState(mudarEtapaLead, ACAO_INICIAL);
   const [para, setPara] = useState(lead.etapa);
 
@@ -174,7 +178,7 @@ function BotaoVincular({ desabilitado }: { desabilitado: boolean }) {
   );
 }
 
-function VincularPaciente({ lead }: { lead: LeadDoPainel }) {
+function VincularPaciente({ lead }: { lead: LeadDaCarteira }) {
   const [estado, executar] = useActionState(vincularPacienteLead, ACAO_INICIAL);
   const [selecionada, setSelecionada] = useState(false);
 
@@ -212,7 +216,7 @@ function VincularPaciente({ lead }: { lead: LeadDoPainel }) {
   );
 }
 
-function AcoesDaPaciente({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar: boolean }) {
+function AcoesDaPaciente({ lead, podeEditar }: { lead: LeadDaCarteira; podeEditar: boolean }) {
   return (
     <div className="flex w-full flex-col gap-2 lg:items-end">
       {lead.pacienteId ? (
@@ -248,8 +252,40 @@ function AcoesDaPaciente({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar:
   );
 }
 
-function LinhaLead({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar: boolean }) {
+function HistoricoDoLead({ lead }: { lead: LeadDaCarteira }) {
+  if (lead.historico.length === 0) return null;
+
+  return (
+    <details className="group mt-3 max-w-xl rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low px-3 py-2">
+      <summary className="flex min-h-7 cursor-pointer list-none items-center gap-1.5 text-xs font-semibold text-primary">
+        <History aria-hidden="true" size={14} />
+        Histórico do funil
+        <span className="font-normal text-outline">· {lead.historico.length}</span>
+      </summary>
+      <ol className="mt-2 border-t border-card-border pt-2">
+        {lead.historico.slice(0, 8).map((passo, indice) => (
+          <li key={`${passo.em.toISOString()}-${indice}`} className="flex gap-2 border-b border-card-border py-2 text-xs last:border-0">
+            <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary-container" />
+            <span className="min-w-0 flex-1 text-on-surface-variant">
+              <span className="font-semibold text-on-surface">
+                {passo.de ? `${ROTULO_ETAPA[passo.de]} → ` : "Entrada → "}
+                {ROTULO_ETAPA[passo.para]}
+              </span>
+              <span className="ml-2 whitespace-nowrap text-outline">
+                {formatarData(passo.em)} · {formatarHora(passo.em)}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+function LinhaLead({ lead, podeEditar }: { lead: LeadDaCarteira; podeEditar: boolean }) {
   const whatsapp = linkWhatsapp(lead.telefone);
+  const parado = lead.diasSemMovimento >= 3 && lead.etapa !== "ganho" && lead.etapa !== "perdido";
+
   return (
     <li className="premium-interactive grid gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
       <div className="min-w-0">
@@ -258,6 +294,12 @@ function LinhaLead({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar: boole
           <span className="rounded-[var(--radius-tag)] border border-informativo-borda bg-informativo-fundo px-2 py-0.5 text-[0.68rem] font-semibold text-informativo-texto">
             {ROTULO_ETAPA[lead.etapa]}
           </span>
+          {parado ? (
+            <span className="inline-flex items-center gap-1 rounded-[var(--radius-tag)] border border-atencao-borda bg-atencao-fundo px-2 py-0.5 text-[0.68rem] font-semibold text-atencao">
+              <Clock3 aria-hidden="true" size={12} />
+              {lead.diasSemMovimento === 1 ? "1 dia sem movimento" : `${lead.diasSemMovimento} dias sem movimento`}
+            </span>
+          ) : null}
         </div>
         <p className="mt-1.5 text-xs leading-5 text-outline">
           {lead.origem}{lead.campanha ? ` · ${lead.campanha}` : ""}{lead.procedimento ? ` · ${lead.procedimento}` : ""} · {formatarData(lead.criadoEm)}
@@ -272,6 +314,14 @@ function LinhaLead({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar: boole
             </a>
           ) : null}
         </div>
+
+        {lead.motivoPerda ? (
+          <p className="mt-3 max-w-xl rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3 py-2 text-xs leading-5 text-negativo">
+            <strong>Motivo da perda:</strong> {lead.motivoPerda}
+          </p>
+        ) : null}
+
+        <HistoricoDoLead lead={lead} />
       </div>
 
       <div className="flex min-w-0 flex-col gap-3 border-t border-card-border pt-3 lg:border-t-0 lg:pt-0">
@@ -293,7 +343,7 @@ export function LeadsDoFunil({
   etapa,
   parametrosPaginacao,
 }: {
-  leads: LeadDoPainel[];
+  leads: LeadDaCarteira[];
   procedimentos: Procedimento[];
   podeEditar: boolean;
   total: number;
