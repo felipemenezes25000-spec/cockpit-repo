@@ -293,7 +293,10 @@ function HistoricoDoLead({ lead }: { lead: LeadDaCarteira }) {
       <ol className="mt-2 border-t border-card-border pt-2">
         {lead.historico.slice(0, 8).map((passo, indice) => (
           <li key={`${passo.em.toISOString()}-${indice}`} className="flex gap-2 border-b border-card-border py-2 text-xs last:border-0">
-            <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary-container" />
+            <span
+              aria-hidden="true"
+              className={`mt-1.5 size-1.5 shrink-0 rounded-full ${passo.para === "perdido" ? "bg-negativo" : "bg-primary-container"}`}
+            />
             <span className="min-w-0 flex-1 text-on-surface-variant">
               <span className="font-semibold text-on-surface">
                 {passo.de ? `${ROTULO_ETAPA[passo.de]} → ` : "Entrada → "}
@@ -302,6 +305,11 @@ function HistoricoDoLead({ lead }: { lead: LeadDaCarteira }) {
               <span className="ml-2 whitespace-nowrap text-outline">
                 {formatarData(passo.em)} · {formatarHora(passo.em)}
               </span>
+              {passo.para === "perdido" && passo.motivo ? (
+                <span className="mt-1.5 block rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-2.5 py-1.5 leading-5 text-negativo">
+                  <strong>Motivo registrado:</strong> {passo.motivo}
+                </span>
+              ) : null}
             </span>
           </li>
         ))}
