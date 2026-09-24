@@ -30,7 +30,7 @@ function Numero({
 export function RitmoDaMeta({ plano, ticketReal, ticketPlanejado }: { plano: PlanoDaMeta; ticketReal: number; ticketPlanejado: number }) {
   return (
     <Card>
-      <CardCorpo className="p-3 sm:p-4">
+      <CardCorpo>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
           <div className="shrink-0 px-2 py-2 xl:w-52">
             <p className="rotulo text-primary">Plano de ataque</p>
