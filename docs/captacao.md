@@ -47,7 +47,7 @@ A lista inferior não é limitada a um bloco fixo de leads recentes. Ela é uma 
 
 - busca por nome, telefone, e-mail, origem e campanha;
 - filtro por etapa;
-- paginação;
+- paginação, inclusive correção de URL fora do alcance para a última página válida;
 - WhatsApp direto quando existe telefone válido;
 - procedimento de interesse e campanha visíveis;
 - alerta a partir de 3 dias sem movimento para leads ainda abertos;
@@ -58,7 +58,14 @@ O histórico vem de `lead_etapas`; ele não é reconstruído a partir do estado 
 
 ## Lead → paciente → agenda → venda
 
-Lead e paciente continuam entidades diferentes, mas a carteira permite vinculá-los quando o contato realmente entra na operação clínica.
+Lead e paciente continuam entidades diferentes, mas a carteira fecha o ciclo sem exigir redigitação.
+
+Quando ainda não existe paciente vinculada, a recepção tem duas opções na própria linha:
+
+- **Criar paciente com dados do lead:** chama `lead_converter_em_paciente`, que numa única transação cria a paciente com nome, telefone, e-mail e origem, vincula `paciente_id` e promove `novo` para `qualificado`. A linha do lead é bloqueada durante a conversão para dois cliques simultâneos não criarem duas pacientes. Repetir a operação é idempotente.
+- **Vincular a uma paciente:** usa o seletor existente para ligar o lead a um cadastro que já existia, evitando duplicidade.
+
+Lead `perdido` precisa ser reaberto antes de criar uma paciente diretamente.
 
 Depois do vínculo:
 
@@ -67,15 +74,15 @@ Depois do vínculo:
 - ao nascer um atendimento para uma paciente vinculada, o lead aberto mais recente avança automaticamente para `agendamento`;
 - ao nascer uma venda para a mesma paciente, o lead aberto mais recente vai para `ganho` e grava `venda_id`.
 
-As duas automações ficam em gatilhos da migração `0029`, não na interface. Assim Agenda e Financeiro não precisam conhecer regras de tela da Captação e qualquer caminho válido de criação produz o mesmo resultado.
+A conversão e as duas automações ficam no banco, não espalhadas entre telas. Assim Captação, Agenda e Financeiro compartilham a mesma regra independentemente de qual fluxo criou o atendimento ou a venda.
 
 ## Perfis
 
-- **Administradora:** lê tudo, cadastra/move/vincula leads e altera meta.
-- **Recepção:** lê tudo, cadastra/move/vincula leads; não altera meta.
+- **Administradora:** lê tudo, cadastra/move/vincula/converte leads e altera meta.
+- **Recepção:** lê tudo, cadastra/move/vincula/converte leads; não altera meta.
 - **Financeiro:** lê tudo e altera meta; não altera carteira de leads.
 
-As mesmas regras existem na interface, nas server actions e nas políticas RLS. As permissões SQL são por coluna para não permitir pela API a fabricação de autoria, timestamps ou `venda_id`.
+As mesmas regras existem na interface, nas server actions e nas políticas RLS. As permissões SQL são por coluna para não permitir pela API a fabricação de autoria, timestamps ou `venda_id`. A função de conversão é `security definer`, portanto faz uma checagem explícita do papel antes de tocar qualquer linha e só é executável por `authenticated`.
 
 ## Histórico e auditoria
 
