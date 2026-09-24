@@ -1,10 +1,11 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { CommandPalette } from "./command-palette";
 import { MenuPerfil } from "./profile-menu";
+import { PreviewNotificacoes } from "./notifications-preview";
 import { capitalizar, formatarDataExtenso } from "@/lib/format";
 import { hoje } from "@/lib/dates";
 import { itemAtivo } from "@/lib/nav";
@@ -87,10 +88,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
           </form>
 
           <div className="flex items-center gap-1 sm:gap-3">
-            <button type="button" aria-disabled="true" title="A central de notificações chega em uma próxima etapa" aria-label={`Notificações — ${pendenciasAltas} ${pendenciasAltas === 1 ? "pendência" : "pendências"} de prioridade alta. A central de notificações chega em uma próxima etapa.`} className="relative flex size-10 cursor-not-allowed items-center justify-center rounded-[12px] text-on-surface-variant">
-              <Bell aria-hidden="true" size={21} strokeWidth={1.6} />
-              {pendenciasAltas > 0 ? <span aria-hidden="true" className="tabular absolute top-0.5 right-0.5 flex min-w-4.5 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[0.58rem] font-bold text-on-primary shadow-[0_2px_8px_rgba(187,0,0,0.2)]">{pendenciasAltas}</span> : null}
-            </button>
+            <PreviewNotificacoes pendenciasAltas={pendenciasAltas} />
             <div className="sm:border-l sm:border-card-border/80 sm:pl-3"><MenuPerfil usuario={usuario} /></div>
           </div>
         </div>
