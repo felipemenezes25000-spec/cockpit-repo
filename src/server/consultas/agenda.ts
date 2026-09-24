@@ -90,6 +90,8 @@ export type AtendimentoCompleto = {
   pacienteId: string;
   paciente: string;
   profissionalId: string;
+  /** Nome da profissional, para o cabeçalho da edição. */
+  profissional: string;
   procedimentoId: string;
   inicio: Date;
   duracaoMin: number;
@@ -114,6 +116,7 @@ export const atendimentoPorId = cache(
         `id, paciente_id, profissional_id, procedimento_id, inicio,
          duracao_min, situacao, valor, observacoes,
          pacientes ( nome, nome_social ),
+         profissionais ( nome ),
          atendimento_situacoes ( de, para, em, perfis ( nome ) )`,
       )
       .eq("id", id)
@@ -128,6 +131,7 @@ export const atendimentoPorId = cache(
       pacienteId: data.paciente_id,
       paciente: data.pacientes?.nome_social || data.pacientes?.nome || "Paciente",
       profissionalId: data.profissional_id,
+      profissional: data.profissionais?.nome ?? "",
       procedimentoId: data.procedimento_id,
       inicio: new Date(data.inicio),
       duracaoMin: data.duracao_min,

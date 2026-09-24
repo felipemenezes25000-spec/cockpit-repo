@@ -21,17 +21,21 @@ export function LuzDoCursor({
     const camada = ref.current;
     const pai = camada?.parentElement;
     if (!camada || !pai) return;
+    // Sem matchMedia (navegador antigo, jsdom dos testes), a luz fica parada.
+    if (typeof window.matchMedia !== "function") return;
 
     const ponteiroFino = window.matchMedia("(hover: hover) and (pointer: fine)");
     const movimentoReduzido = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (!ponteiroFino.matches || movimentoReduzido.matches) return;
 
-    function mover(evento: PointerEvent) {
+    // Arrow function, e não `function`: a declaração é içada e o TypeScript
+    // perde o estreitamento de `pai`/`camada` feito logo acima.
+    const mover = (evento: PointerEvent) => {
       if (evento.pointerType && evento.pointerType !== "mouse") return;
       const retangulo = pai.getBoundingClientRect();
       camada.style.setProperty("--cursor-x", `${evento.clientX - retangulo.left}px`);
       camada.style.setProperty("--cursor-y", `${evento.clientY - retangulo.top}px`);
-    }
+    };
 
     pai.addEventListener("pointermove", mover, { passive: true });
     return () => pai.removeEventListener("pointermove", mover);
