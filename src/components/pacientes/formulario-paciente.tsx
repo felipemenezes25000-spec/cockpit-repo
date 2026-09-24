@@ -1,10 +1,10 @@
 "use client";
 
-import { CircleAlert, LoaderCircle, Save } from "lucide-react";
+import { CircleAlert, Save } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO, GrupoDeCampos } from "@/components/ui/field";
+import { BotaoDeAcao } from "@/components/ui/formulario-acao";
 import { cn } from "@/lib/cn";
 import { apenasDigitos, ORIGENS, PACIENTE_EM_BRANCO, UFS, type ValoresPaciente } from "@/lib/paciente";
 import type { ErrosDoFormulario, EstadoPaciente } from "@/server/acoes/pacientes";
@@ -39,26 +39,15 @@ function mascararCep(valor: string): string {
 }
 
 function BotaoSalvar({ rotulo }: { rotulo: string }) {
-  const { pending } = useFormStatus();
-
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
+    <BotaoDeAcao
+      tom="primario"
+      tamanho="md"
+      icone={<Save size={18} strokeWidth={1.75} />}
+      rotuloPendente="Salvando…"
     >
-      {pending ? (
-        <>
-          <LoaderCircle aria-hidden="true" size={18} className="animate-spin" />
-          Salvando…
-        </>
-      ) : (
-        <>
-          <Save aria-hidden="true" size={18} strokeWidth={1.75} />
-          {rotulo}
-        </>
-      )}
-    </button>
+      {rotulo}
+    </BotaoDeAcao>
   );
 }
 
