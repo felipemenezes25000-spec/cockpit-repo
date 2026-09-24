@@ -181,10 +181,30 @@ create policy metas_comerciais_edicao on public.metas_comerciais
   for update to authenticated
   using (private.e_financeira()) with check (private.e_financeira());
 
+-- Privilégio por coluna: a aplicação não ganha porta para fabricar autoria,
+-- timestamps, `venda_id` ou reescrever a competência de uma meta pela API.
 grant usage on type public.etapa_lead to authenticated;
-grant select, insert, update on public.leads to authenticated;
+grant select on public.leads to authenticated;
+grant insert (
+  nome, telefone, email, origem, campanha, procedimento_interesse_id,
+  etapa, paciente_id, motivo_perda, observacoes
+) on public.leads to authenticated;
+grant update (
+  nome, telefone, email, origem, campanha, procedimento_interesse_id,
+  etapa, paciente_id, motivo_perda, observacoes
+) on public.leads to authenticated;
+
 grant select on public.lead_etapas to authenticated;
-grant select, insert, update on public.metas_comerciais to authenticated;
+
+grant select on public.metas_comerciais to authenticated;
+grant insert (
+  competencia, procedimento_id, meta_faturamento, ticket_medio_planejado,
+  taxa_lead_qualificado, taxa_qualificado_agendamento, taxa_agendamento_venda
+) on public.metas_comerciais to authenticated;
+grant update (
+  meta_faturamento, ticket_medio_planejado,
+  taxa_lead_qualificado, taxa_qualificado_agendamento, taxa_agendamento_venda
+) on public.metas_comerciais to authenticated;
 
 revoke all on public.leads, public.lead_etapas, public.metas_comerciais from anon, public;
 
