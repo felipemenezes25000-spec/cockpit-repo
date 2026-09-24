@@ -1,4 +1,4 @@
-import { DatabaseZap, Sparkles, Target } from "lucide-react";
+import { Database, Sparkles, Target } from "lucide-react";
 import type { Metadata } from "next";
 import { FunilVivo } from "@/components/captacao/funil-vivo";
 import { LeadsDoFunil } from "@/components/captacao/leads-do-funil";
@@ -62,7 +62,7 @@ export default async function PaginaCaptacao({
         <Card>
           <CardCorpo className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
             <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-[var(--radius-painel)] bg-atencao-fundo text-atencao">
-              <DatabaseZap size={26} strokeWidth={1.7} />
+              <Database size={26} strokeWidth={1.7} />
             </span>
             <h2 className="titulo-secao mt-5 text-on-surface">A estrutura de Captação ainda não foi aplicada ao banco</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
