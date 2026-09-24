@@ -75,7 +75,9 @@ export default async function PaginaAssinar({ params }: { params: Promise<{ toke
           </div>
         </section>
 
-        <AssinarPorLink token={limpo} tipo={tipo} situacaoInicial={situacao} />
+        <div className="[&_form]:relative [&_form]:overflow-hidden [&_form]:border-white/80 [&_form]:bg-white/82 [&_form]:shadow-[0_20px_54px_-30px_rgba(7,35,66,0.34),inset_0_1px_0_rgba(255,255,255,0.96)] [&_form]:backdrop-blur-sm [&_.folha]:shadow-[0_24px_70px_-38px_rgba(8,41,76,0.42),inset_0_1px_0_rgba(255,255,255,0.96)] [&_.folha-texto]:bg-white/78">
+          <AssinarPorLink token={limpo} tipo={tipo} situacaoInicial={situacao} />
+        </div>
 
         <footer className="sem-impressao glass-surface flex items-start gap-3 rounded-[20px] border border-white/80 px-4 py-4 text-xs leading-5 text-outline shadow-[var(--shadow-cartao)] sm:px-5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-positivo-borda/55 bg-positivo-fundo text-positivo shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
