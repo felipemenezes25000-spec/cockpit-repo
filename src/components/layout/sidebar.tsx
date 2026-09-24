@@ -58,14 +58,30 @@ export function BarraLateral({ recolhida, aoAlternarRecolhida, gavetaAberta, aoF
         ) : null}
       </div>
 
-      <div className="rolagem-discreta flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
+      <div className={cn("rolagem-discreta flex flex-1 flex-col gap-2 pr-1", recolhidaAqui ? "overflow-visible" : "overflow-y-auto")}>
         <MenuNavegacao recolhido={recolhidaAqui} aoNavegar={mostrarFechar ? aoFecharGaveta : undefined} />
       </div>
 
       {!mostrarFechar ? (
         <div className="mt-4 border-t border-card-border/75 pt-3">
-          <button type="button" onClick={aoAlternarRecolhida} aria-label={recolhidaAqui ? "Expandir menu" : "Recolher menu"} title={recolhidaAqui ? "Expandir menu" : "Recolher menu"} className={cn("flex min-h-11 w-full items-center rounded-[12px] text-sm text-on-surface-variant transition-[transform,background-color,color] duration-200 hover:bg-primary-fixed/40 hover:text-primary active:scale-[0.985]", recolhidaAqui ? "justify-center px-0" : "px-3")}>
-            {recolhidaAqui ? <PanelLeftOpen aria-hidden="true" size={21} strokeWidth={1.6} /> : <><PanelLeftClose aria-hidden="true" size={21} strokeWidth={1.6} className="mr-3" /><span>Recolher menu</span></>}
+          <button
+            type="button"
+            onClick={aoAlternarRecolhida}
+            aria-label={recolhidaAqui ? "Expandir menu" : "Recolher menu"}
+            title={recolhidaAqui ? "Expandir menu" : "Recolher menu"}
+            className={cn(
+              "group flex min-h-11 w-full items-center rounded-[12px] border border-transparent text-sm font-medium text-on-surface-variant transition-[transform,background-color,border-color,color,box-shadow] duration-200 hover:-translate-y-px hover:border-primary/10 hover:bg-primary-fixed/35 hover:text-primary hover:shadow-[var(--shadow-cartao)] active:translate-y-0 active:scale-[0.985]",
+              recolhidaAqui ? "justify-center px-0" : "px-3",
+            )}
+          >
+            {recolhidaAqui ? (
+              <PanelLeftOpen aria-hidden="true" size={21} strokeWidth={1.6} className="transition-transform duration-200 group-hover:scale-[1.04]" />
+            ) : (
+              <>
+                <PanelLeftClose aria-hidden="true" size={21} strokeWidth={1.6} className="mr-3 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                <span>Recolher menu</span>
+              </>
+            )}
           </button>
         </div>
       ) : null}
@@ -74,8 +90,8 @@ export function BarraLateral({ recolhida, aoAlternarRecolhida, gavetaAberta, aoF
 
   return (
     <>
-      <aside className={cn("glass-surface hidden shrink-0 border-r transition-[width] duration-300 ease-out lg:block", recolhida ? "w-[82px]" : "w-[272px]")}>
-        <div className="sticky top-0 h-screen">{conteudo(false, recolhida)}</div>
+      <aside className={cn("glass-surface hidden shrink-0 overflow-visible border-r transition-[width] duration-300 ease-out lg:block", recolhida ? "w-[82px]" : "w-[272px]")}>
+        <div className="sticky top-0 h-screen overflow-visible">{conteudo(false, recolhida)}</div>
       </aside>
 
       <div className={cn("fixed inset-0 z-40 lg:hidden", gavetaAberta ? "pointer-events-auto" : "pointer-events-none")} inert={!gavetaAberta}>
