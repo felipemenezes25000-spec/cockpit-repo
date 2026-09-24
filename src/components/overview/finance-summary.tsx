@@ -5,10 +5,7 @@ import { cn } from "@/lib/cn";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
 import { formatarMoeda } from "@/lib/format";
-import {
-  resumoFinanceiro,
-  serieMensalRecebimentos,
-} from "@/server/consultas/financeiro";
+import { resumoFinanceiro, serieMensalRecebimentos } from "@/server/consultas/financeiro";
 import { EvolucaoRecebimentos } from "./revenue-chart";
 
 type Linha = {
@@ -20,13 +17,12 @@ type Linha = {
   apoio: string;
   apoioEmAlerta?: boolean;
   superficie: string;
+  progresso?: number;
 };
 
 export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
-  const [resumo, serie] = await Promise.all([
-    resumoFinanceiro(),
-    serieMensalRecebimentos(),
-  ]);
+  const [resumo, serie] = await Promise.all([resumoFinanceiro(), serieMensalRecebimentos()]);
+  const proporcaoVencida = resumo.aReceber > 0 ? Math.max(0, Math.min(1, resumo.vencido / resumo.aReceber)) : 0;
 
   const linhas: Linha[] = [
     {
@@ -55,6 +51,7 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       apoio: resumo.vencido > 0 ? `${formatarMoeda(resumo.vencido)} já vencido` : "nenhum valor vencido",
       apoioEmAlerta: resumo.vencido > 0,
       superficie: "from-atencao-fundo/55 to-white/80",
+      progresso: proporcaoVencida,
     },
   ];
 
@@ -93,6 +90,26 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
                 >
                   {linha.valor === null ? "—" : <NumeroAnimado valor={linha.valor} tipo="moeda" duracao={680 + indice * 75} />}
                 </p>
+
+                {typeof linha.progresso === "number" ? (
+                  <div className="mt-3">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/72 shadow-[inset_0_1px_2px_rgba(15,35,58,0.06)]" role="img" aria-label={`${Math.round(linha.progresso * 100)}% dos valores pendentes já venceram`}>
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "block h-full rounded-full transition-[width] duration-500 ease-out",
+                          linha.progresso > 0 ? "bg-[linear-gradient(90deg,var(--color-atencao-acento),var(--color-negativo))] shadow-[0_0_10px_rgba(187,0,0,0.15)]" : "bg-positivo-borda",
+                        )}
+                        style={{ width: `${Math.round(linha.progresso * 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between gap-2 text-[0.64rem] font-medium text-outline">
+                      <span>parcela vencida</span>
+                      <span className={cn("tabular", linha.progresso > 0 ? "text-negativo" : "text-positivo")}>{Math.round(linha.progresso * 100)}%</span>
+                    </div>
+                  </div>
+                ) : null}
+
                 <p className={cn("mt-2 text-xs leading-5", linha.apoioEmAlerta ? "font-semibold text-negativo" : "text-outline")}>
                   {linha.apoio}
                 </p>
