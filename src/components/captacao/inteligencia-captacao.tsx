@@ -7,6 +7,7 @@ import {
   Route,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { Card, CardCorpo } from "@/components/ui/card";
 import { ROTULO_ETAPA } from "@/lib/captacao";
 import { formatarMoeda } from "@/lib/format";
@@ -27,7 +28,14 @@ function desvio(atual: number, planejada: number): string {
   return `${sinal}${valor.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`;
 }
 
-function Origens({ origens }: { origens: OrigemDoPainel[] }) {
+function hrefRecorte(mes: string | null, tipo: "origem" | "campanha", valor: string): string {
+  const query = new URLSearchParams();
+  if (mes) query.set("mes", mes);
+  query.set(tipo, valor);
+  return `/captacao?${query.toString()}`;
+}
+
+function Origens({ origens, mes }: { origens: OrigemDoPainel[]; mes: string | null }) {
   if (origens.length === 0) {
     return (
       <p className="mt-4 rounded-[var(--radius-cartao)] border border-dashed border-card-border px-4 py-5 text-xs leading-5 text-outline">
@@ -47,7 +55,13 @@ function Origens({ origens }: { origens: OrigemDoPainel[] }) {
           <li key={origem.origem} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3">
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-on-surface">{origem.origem}</p>
+                <Link
+                  href={hrefRecorte(mes, "origem", origem.origem)}
+                  className="group inline-flex max-w-full items-center gap-1.5 text-sm font-semibold text-on-surface hover:text-primary"
+                >
+                  <span className="truncate">{origem.origem}</span>
+                  <ArrowRight aria-hidden="true" size={13} className="shrink-0 text-outline transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                </Link>
                 <p className="mt-1 text-xs leading-5 text-outline">
                   {origem.quantidade} {origem.quantidade === 1 ? "lead" : "leads"} · {origem.ganhos} {origem.ganhos === 1 ? "venda" : "vendas"} · {taxa(origem.conversao)} conv.
                 </p>
@@ -67,7 +81,7 @@ function Origens({ origens }: { origens: OrigemDoPainel[] }) {
   );
 }
 
-function Campanhas({ campanhas }: { campanhas: CampanhaDoPainel[] }) {
+function Campanhas({ campanhas, mes }: { campanhas: CampanhaDoPainel[]; mes: string | null }) {
   if (campanhas.length === 0) {
     return (
       <div className="mt-4 rounded-[var(--radius-cartao)] border border-dashed border-card-border px-4 py-5">
@@ -94,7 +108,13 @@ function Campanhas({ campanhas }: { campanhas: CampanhaDoPainel[] }) {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                  <p className="min-w-0 truncate text-sm font-semibold text-on-surface">{campanha.campanha}</p>
+                  <Link
+                    href={hrefRecorte(mes, "campanha", campanha.campanha)}
+                    className="group inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold text-on-surface hover:text-primary"
+                  >
+                    <span className="truncate">{campanha.campanha}</span>
+                    <ArrowRight aria-hidden="true" size={13} className="shrink-0 text-outline transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </Link>
                   <strong className="shrink-0 text-sm tabular-nums text-primary">{formatarMoeda(campanha.receita)}</strong>
                 </div>
                 <p className="mt-1 text-xs leading-5 text-outline">
@@ -217,6 +237,7 @@ export function InteligenciaCaptacao({
   metaConfigurada,
   motivosPerda,
   totalPerdidos,
+  mes,
 }: {
   origens: OrigemDoPainel[];
   campanhas: CampanhaDoPainel[];
@@ -224,6 +245,7 @@ export function InteligenciaCaptacao({
   metaConfigurada: boolean;
   motivosPerda: MotivoPerdaDoPainel[];
   totalPerdidos: number;
+  mes: string | null;
 }) {
   return (
     <section aria-labelledby="titulo-inteligencia-captacao" className="grid min-w-0 gap-5 xl:grid-cols-12">
@@ -257,7 +279,7 @@ export function InteligenciaCaptacao({
             <CircleDollarSign aria-hidden="true" size={13} className="mt-0.5 shrink-0 text-primary" />
             Receita atribuída usa somente vendas reais ligadas aos leads desta coorte — não multiplica ticket médio.
           </p>
-          <Origens origens={origens} />
+          <Origens origens={origens} mes={mes} />
         </CardCorpo>
       </Card>
 
@@ -276,7 +298,7 @@ export function InteligenciaCaptacao({
             <Sparkles aria-hidden="true" size={13} className="mt-0.5 shrink-0 text-primary" />
             Ordenado pela receita efetivamente registrada no Financeiro para os leads identificados pela campanha.
           </p>
-          <Campanhas campanhas={campanhas} />
+          <Campanhas campanhas={campanhas} mes={mes} />
         </CardCorpo>
       </Card>
 
