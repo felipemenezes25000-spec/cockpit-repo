@@ -2,6 +2,7 @@ import { ArrowLeft, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { LuzDoCursor } from "@/components/ui/cursor-glow";
 
 type TomDoSelo = "neutro" | "informativo" | "positivo" | "atencao" | "negativo";
 
@@ -29,14 +30,16 @@ export function SeloHero({ children, tom = "neutro", className }: { children: Re
 /** Cabeçalho editorial e visual dos módulos principais. */
 export function CabecalhoDePagina({ icone: Icone, rotulo, titulo, descricao, acoes, meta, className }: { icone: LucideIcon; rotulo: string; titulo: string; descricao: ReactNode; acoes?: ReactNode; meta?: ReactNode; className?: string }) {
   return (
-    <section className={cn("premium-panel group relative isolate overflow-hidden rounded-[calc(var(--radius-painel)+4px)] border px-5 py-5 transition-[box-shadow,border-color] duration-300 hover:border-primary/14 hover:shadow-[var(--shadow-realce)] sm:px-7 sm:py-7", className)}>
+    <section className={cn("premium-panel group relative isolate overflow-hidden rounded-[calc(var(--radius-painel)+4px)] border px-5 py-5 transition-[box-shadow,border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/16 hover:shadow-[0_26px_70px_-38px_rgba(8,84,160,0.34),var(--shadow-realce)] sm:px-7 sm:py-7", className)}>
+      <LuzDoCursor tamanho={520} className="opacity-0 group-hover:opacity-100" />
+      <span aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 opacity-[0.16] [background-image:linear-gradient(rgba(10,110,209,0.10)_1px,transparent_1px),linear-gradient(90deg,rgba(10,110,209,0.10)_1px,transparent_1px)] [background-size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
       <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-12 -z-10 size-64 rounded-full bg-primary-fixed/55 blur-3xl transition-transform duration-700 ease-out motion-safe:animate-[pulse_8s_ease-in-out_infinite] group-hover:scale-110" />
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 left-1/4 -z-10 h-44 w-80 rounded-full bg-secondary-fixed/30 blur-3xl transition-transform duration-700 ease-out motion-safe:animate-[pulse_11s_ease-in-out_infinite] group-hover:translate-x-5" />
       <Icone aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-7 -bottom-10 -z-10 size-44 text-primary/[0.035] transition-[transform,opacity] duration-700 ease-out group-hover:-translate-x-2 group-hover:-translate-y-2 group-hover:scale-[1.04] group-hover:text-primary/[0.055] sm:size-52" />
       <span aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.98),transparent)]" />
       <span aria-hidden="true" className="pointer-events-none absolute top-0 left-[14%] h-px w-20 bg-primary-fixed-dim/65 shadow-[0_0_14px_rgba(10,110,209,0.18)]" />
 
-      <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-start gap-4 sm:gap-5">
           <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/60 bg-linear-to-br from-white to-primary-fixed/55 text-primary shadow-[var(--shadow-primary)] transition-[transform,box-shadow] duration-300 group-hover:-translate-y-0.5 group-hover:scale-[1.025] group-hover:shadow-[0_12px_28px_-12px_rgba(10,110,209,0.62)] sm:size-14">
             <span aria-hidden="true" className="absolute inset-1 rounded-[12px] border border-white/60" />
@@ -51,7 +54,7 @@ export function CabecalhoDePagina({ icone: Icone, rotulo, titulo, descricao, aco
         {acoes ? <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">{acoes}</div> : null}
       </div>
 
-      {meta ? <div className="relative mt-5 flex flex-wrap items-center gap-2 border-t border-card-border/65 pt-4">{meta}</div> : null}
+      {meta ? <div className="relative z-10 mt-5 flex flex-wrap items-center gap-2 border-t border-card-border/65 pt-4">{meta}</div> : null}
     </section>
   );
 }
