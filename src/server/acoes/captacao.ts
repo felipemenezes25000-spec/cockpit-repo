@@ -172,9 +172,47 @@ export async function salvarMetaComercial(
 }
 
 /**
+ * Cria o cadastro clínico a partir dos dados que o lead já tem e vincula os
+ * dois na mesma transação do banco. O RPC também torna `novo` em `qualificado`.
+ */
+export async function converterLeadEmPaciente(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
+  const barrado = await exigirOperadorDeLeads();
+  if (barrado) return falha(barrado);
+
+  const leadId = campoTexto(dados, "id", 36);
+  if (!uuidValido(leadId)) return falha("Lead não identificado.");
+
+  const base = await clienteServidor();
+  const supabase = comoClienteCaptacao(base);
+  const { data: pacienteId, error } = await supabase.rpc("lead_converter_em_paciente", {
+    p_lead_id: leadId,
+  });
+
+  if (error) {
+    registrarFalha("captação: converter lead em paciente", error);
+    return falha(
+      mensagemDoBanco(
+        error,
+        "Não foi possível criar a paciente a partir do lead. Tente de novo.",
+      ),
+    );
+  }
+  if (!pacienteId || !uuidValido(pacienteId)) {
+    return falha("O cadastro foi processado, mas a paciente não foi identificada.");
+  }
+
+  revalidarCaptacao();
+  revalidatePath("/pacientes");
+  revalidatePath(`/pacientes/${pacienteId}`);
+  return sucesso("Paciente criada e vinculada ao lead.");
+}
+
+/**
  * Liga a oportunidade comercial ao cadastro clínico existente. A partir daqui
- * a venda dessa paciente consegue fechar automaticamente o lead pelo gatilho
- * `venda_converte_lead`, sem o Financeiro ter de conhecer o funil.
+ * agenda e venda conseguem avançar o lead pelos gatilhos do banco.
  */
 export async function vincularPacienteLead(
   _anterior: ResultadoAcao,
