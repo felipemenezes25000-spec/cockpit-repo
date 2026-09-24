@@ -90,10 +90,22 @@ function NovoLead({ procedimentos }: { procedimentos: Procedimento[] }) {
   );
 }
 
+function BotaoMover({ desabilitado }: { desabilitado: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending || desabilitado}
+      className="h-9 rounded-[var(--radius-controle)] border border-borda-controle bg-surface px-3 text-xs font-semibold text-primary transition-colors hover:bg-selecao disabled:cursor-not-allowed disabled:border-card-border disabled:bg-surface-container-low disabled:text-outline"
+    >
+      {pending ? "Movendo…" : "Mover"}
+    </button>
+  );
+}
+
 function MoverLead({ lead }: { lead: LeadDoPainel }) {
   const [estado, executar] = useActionState(mudarEtapaLead, ACAO_INICIAL);
   const [para, setPara] = useState(lead.etapa);
-  const { pending } = useFormStatus();
 
   return (
     <form action={executar} className="flex min-w-[13rem] flex-col gap-2 sm:items-end">
@@ -108,13 +120,7 @@ function MoverLead({ lead }: { lead: LeadDoPainel }) {
         >
           {ETAPAS_FUNIL.map((etapa) => <option key={etapa} value={etapa}>{ROTULO_ETAPA[etapa]}</option>)}
         </select>
-        <button
-          type="submit"
-          disabled={pending || para === lead.etapa}
-          className="h-9 rounded-[var(--radius-controle)] border border-borda-controle bg-surface px-3 text-xs font-semibold text-primary transition-colors hover:bg-selecao disabled:cursor-not-allowed disabled:border-card-border disabled:text-outline"
-        >
-          {pending ? "Movendo…" : "Mover"}
-        </button>
+        <BotaoMover desabilitado={para === lead.etapa} />
       </div>
       {para === "perdido" ? (
         <input
