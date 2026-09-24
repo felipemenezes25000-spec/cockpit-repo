@@ -41,10 +41,38 @@ Os dados persistidos são apenas:
 
 O faturamento atual vem de `vendas.valor_final`. O módulo de Captação nunca mantém um total financeiro paralelo.
 
+## Carteira comercial
+
+A lista inferior não é limitada a um bloco fixo de leads recentes. Ela é uma carteira paginada do período, com:
+
+- busca por nome, telefone, e-mail, origem e campanha;
+- filtro por etapa;
+- paginação;
+- WhatsApp direto quando existe telefone válido;
+- procedimento de interesse e campanha visíveis;
+- alerta a partir de 3 dias sem movimento para leads ainda abertos;
+- motivo de perda visível quando o lead está encerrado como `perdido`;
+- histórico das mudanças de etapa, com data e hora.
+
+O histórico vem de `lead_etapas`; ele não é reconstruído a partir do estado atual.
+
+## Lead → paciente → agenda → venda
+
+Lead e paciente continuam entidades diferentes, mas a carteira permite vinculá-los quando o contato realmente entra na operação clínica.
+
+Depois do vínculo:
+
+- a própria linha do lead oferece acesso à ficha da paciente;
+- o botão **Agendar** abre `/agenda/novo` com a paciente já selecionada;
+- ao nascer um atendimento para uma paciente vinculada, o lead aberto mais recente avança automaticamente para `agendamento`;
+- ao nascer uma venda para a mesma paciente, o lead aberto mais recente vai para `ganho` e grava `venda_id`.
+
+As duas automações ficam em gatilhos da migração `0029`, não na interface. Assim Agenda e Financeiro não precisam conhecer regras de tela da Captação e qualquer caminho válido de criação produz o mesmo resultado.
+
 ## Perfis
 
-- **Administradora:** lê tudo, cadastra/move leads e altera meta.
-- **Recepção:** lê tudo, cadastra/move leads; não altera meta.
+- **Administradora:** lê tudo, cadastra/move/vincula leads e altera meta.
+- **Recepção:** lê tudo, cadastra/move/vincula leads; não altera meta.
 - **Financeiro:** lê tudo e altera meta; não altera carteira de leads.
 
 As mesmas regras existem na interface, nas server actions e nas políticas RLS. As permissões SQL são por coluna para não permitir pela API a fabricação de autoria, timestamps ou `venda_id`.
@@ -54,10 +82,6 @@ As mesmas regras existem na interface, nas server actions e nas políticas RLS. 
 Cada mudança de `leads.etapa` gera uma linha imutável em `lead_etapas` por gatilho. `leads` e `metas_comerciais` também entram na auditoria geral do sistema.
 
 Não existe DELETE no módulo. Um lead encerrado sem conversão vai para `perdido` com motivo obrigatório.
-
-## Integração com venda
-
-Se um lead estiver vinculado a `paciente_id`, a criação de uma venda para a mesma paciente move automaticamente o lead aberto mais recente para `ganho` e grava `venda_id`. O gatilho fica no banco para o resultado não depender de qual tela registrou a venda.
 
 ## Visual e movimento
 
@@ -71,5 +95,6 @@ As partículas do fluxo só aparecem quando existem leads no período; um funil 
 - `src/components/captacao/`
 - `src/lib/captacao.ts`
 - `src/server/consultas/captacao.ts`
+- `src/server/consultas/captacao-leads.ts`
 - `src/server/acoes/captacao.ts`
 - `supabase/migrations/0029_captacao_e_metas.sql`
