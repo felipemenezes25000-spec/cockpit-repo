@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   BadgeAlert,
+  CircleDollarSign,
   CircleX,
   Megaphone,
   Route,
@@ -8,6 +9,7 @@ import {
 } from "lucide-react";
 import { Card, CardCorpo } from "@/components/ui/card";
 import { ROTULO_ETAPA } from "@/lib/captacao";
+import { formatarMoeda } from "@/lib/format";
 import type {
   CampanhaDoPainel,
   GargaloDoPainel,
@@ -25,39 +27,43 @@ function desvio(atual: number, planejada: number): string {
   return `${sinal}${valor.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`;
 }
 
-const COLUNAS_ORIGEM = "grid-cols-[minmax(0,1fr)_3.25rem_4.8rem] sm:grid-cols-[minmax(0,1fr)_4rem_4rem_5rem]";
-
-function TabelaOrigens({ origens }: { origens: OrigemDoPainel[] }) {
+function Origens({ origens }: { origens: OrigemDoPainel[] }) {
   if (origens.length === 0) {
     return (
       <p className="mt-4 rounded-[var(--radius-cartao)] border border-dashed border-card-border px-4 py-5 text-xs leading-5 text-outline">
-        As origens ganham leitura de conversão assim que houver leads no período.
+        As origens ganham leitura de conversão e receita assim que houver leads no período.
       </p>
     );
   }
 
+  const maiorReceita = Math.max(...origens.map((item) => item.receita), 0);
+  const maiorVolume = Math.max(...origens.map((item) => item.quantidade), 1);
+
   return (
-    <div className="mt-4 overflow-hidden rounded-[var(--radius-cartao)] border border-card-border">
-      <div className={`grid ${COLUNAS_ORIGEM} gap-2 bg-surface-container-low px-3 py-2 text-[0.6rem] font-semibold tracking-[0.055em] text-outline uppercase`}>
-        <span>Origem</span>
-        <span className="text-right">Leads</span>
-        <span className="hidden text-right sm:block">Vendas</span>
-        <span className="text-right">Conv.</span>
-      </div>
-      <ul className="divide-y divide-card-border bg-surface">
-        {origens.slice(0, 6).map((origem) => (
-          <li
-            key={origem.origem}
-            className={`grid ${COLUNAS_ORIGEM} gap-2 px-3 py-2.5 text-xs`}
-          >
-            <span className="truncate font-medium text-on-surface">{origem.origem}</span>
-            <span className="text-right tabular-nums text-on-surface-variant">{origem.quantidade}</span>
-            <span className="hidden text-right tabular-nums text-on-surface-variant sm:block">{origem.ganhos}</span>
-            <strong className="text-right tabular-nums text-primary">{taxa(origem.conversao)}</strong>
+    <ul className="mt-4 flex flex-col gap-2.5">
+      {origens.slice(0, 6).map((origem) => {
+        const base = maiorReceita > 0 ? origem.receita / maiorReceita : origem.quantidade / maiorVolume;
+        return (
+          <li key={origem.origem} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-on-surface">{origem.origem}</p>
+                <p className="mt-1 text-xs leading-5 text-outline">
+                  {origem.quantidade} {origem.quantidade === 1 ? "lead" : "leads"} · {origem.ganhos} {origem.ganhos === 1 ? "venda" : "vendas"} · {taxa(origem.conversao)} conv.
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-[0.6rem] font-semibold tracking-[0.055em] text-outline uppercase">Receita</p>
+                <strong className="mt-0.5 block text-sm tabular-nums text-primary">{formatarMoeda(origem.receita)}</strong>
+              </div>
+            </div>
+            <span aria-hidden="true" className="barra barra-fina mt-2.5">
+              <span className="chart-grow" style={{ width: `${Math.max(3, base * 100)}%` }} />
+            </span>
           </li>
-        ))}
-      </ul>
-    </div>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -73,26 +79,35 @@ function Campanhas({ campanhas }: { campanhas: CampanhaDoPainel[] }) {
     );
   }
 
-  const maximo = Math.max(...campanhas.map((item) => item.quantidade), 1);
+  const maiorReceita = Math.max(...campanhas.map((item) => item.receita), 0);
+  const maiorVolume = Math.max(...campanhas.map((item) => item.quantidade), 1);
 
   return (
-    <ul className="mt-4 flex flex-col gap-3">
-      {campanhas.slice(0, 5).map((campanha) => (
-        <li key={campanha.campanha} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-on-surface">{campanha.campanha}</p>
-              <p className="mt-1 text-xs text-outline">
-                {campanha.quantidade} {campanha.quantidade === 1 ? "lead" : "leads"} · {campanha.ganhos} {campanha.ganhos === 1 ? "venda" : "vendas"}
-              </p>
+    <ul className="mt-4 flex flex-col gap-2.5">
+      {campanhas.slice(0, 5).map((campanha, indice) => {
+        const base = maiorReceita > 0 ? campanha.receita / maiorReceita : campanha.quantidade / maiorVolume;
+        return (
+          <li key={campanha.campanha} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3">
+            <div className="flex items-start gap-3">
+              <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-card-border bg-surface-container-low text-[0.68rem] font-semibold tabular-nums text-outline">
+                {indice + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                  <p className="min-w-0 truncate text-sm font-semibold text-on-surface">{campanha.campanha}</p>
+                  <strong className="shrink-0 text-sm tabular-nums text-primary">{formatarMoeda(campanha.receita)}</strong>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-outline">
+                  {campanha.quantidade} {campanha.quantidade === 1 ? "lead" : "leads"} · {campanha.ganhos} {campanha.ganhos === 1 ? "venda" : "vendas"} · {taxa(campanha.conversao)} conv.
+                </p>
+                <span aria-hidden="true" className="barra barra-fina mt-2.5">
+                  <span className="chart-grow" style={{ width: `${Math.max(3, base * 100)}%` }} />
+                </span>
+              </div>
             </div>
-            <strong className="shrink-0 text-sm tabular-nums text-primary">{taxa(campanha.conversao)}</strong>
-          </div>
-          <span aria-hidden="true" className="barra barra-fina mt-2.5">
-            <span className="chart-grow" style={{ width: `${(campanha.quantidade / maximo) * 100}%` }} />
-          </span>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -235,11 +250,14 @@ export function InteligenciaCaptacao({
             </span>
             <div className="min-w-0">
               <p className="rotulo text-primary">Origem</p>
-              <h2 className="titulo-secao mt-1">Volume também precisa converter</h2>
+              <h2 className="titulo-secao mt-1">De onde vem o dinheiro</h2>
             </div>
           </div>
-          <p className="mt-3 text-xs leading-5 text-outline">Conversão Lead → Venda dentro da mesma coorte mensal exibida no funil.</p>
-          <TabelaOrigens origens={origens} />
+          <p className="mt-3 flex items-start gap-1.5 text-xs leading-5 text-outline">
+            <CircleDollarSign aria-hidden="true" size={13} className="mt-0.5 shrink-0 text-primary" />
+            Receita atribuída usa somente vendas reais ligadas aos leads desta coorte — não multiplica ticket médio.
+          </p>
+          <Origens origens={origens} />
         </CardCorpo>
       </Card>
 
@@ -251,12 +269,12 @@ export function InteligenciaCaptacao({
             </span>
             <div className="min-w-0">
               <p className="rotulo text-primary">Campanhas</p>
-              <h2 className="titulo-secao mt-1">O que está trazendo resultado</h2>
+              <h2 className="titulo-secao mt-1">O que está trazendo receita</h2>
             </div>
           </div>
-          <p className="mt-3 flex items-center gap-1.5 text-xs leading-5 text-outline">
-            <Sparkles aria-hidden="true" size={13} className="shrink-0 text-primary" />
-            Agrupado pelo campo Campanha informado na entrada do lead.
+          <p className="mt-3 flex items-start gap-1.5 text-xs leading-5 text-outline">
+            <Sparkles aria-hidden="true" size={13} className="mt-0.5 shrink-0 text-primary" />
+            Ordenado pela receita efetivamente registrada no Financeiro para os leads identificados pela campanha.
           </p>
           <Campanhas campanhas={campanhas} />
         </CardCorpo>
