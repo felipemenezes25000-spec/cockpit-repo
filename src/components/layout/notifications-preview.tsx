@@ -2,32 +2,40 @@
 
 import { Bell, ChevronRight, CircleAlert, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
 export function PreviewNotificacoes({ pendenciasAltas }: { pendenciasAltas: number }) {
   const [aberto, setAberto] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const gatilho = useRef<HTMLButtonElement>(null);
+  const primeiroLink = useRef<HTMLAnchorElement>(null);
+
+  const fechar = useCallback((devolverFoco = true) => {
+    setAberto(false);
+    if (devolverFoco) window.requestAnimationFrame(() => gatilho.current?.focus());
+  }, []);
 
   useEffect(() => {
     if (!aberto) return;
+    const id = window.requestAnimationFrame(() => primeiroLink.current?.focus());
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key === "Escape") {
-        setAberto(false);
-        gatilho.current?.focus();
+        evento.preventDefault();
+        fechar();
       }
     }
     function aoClicarFora(evento: MouseEvent) {
-      if (!container.current?.contains(evento.target as Node)) setAberto(false);
+      if (!container.current?.contains(evento.target as Node)) fechar(false);
     }
     document.addEventListener("keydown", aoTeclar);
     document.addEventListener("mousedown", aoClicarFora);
     return () => {
+      window.cancelAnimationFrame(id);
       document.removeEventListener("keydown", aoTeclar);
       document.removeEventListener("mousedown", aoClicarFora);
     };
-  }, [aberto]);
+  }, [aberto, fechar]);
 
   return (
     <div ref={container} className="relative">
@@ -56,6 +64,8 @@ export function PreviewNotificacoes({ pendenciasAltas }: { pendenciasAltas: numb
       {aberto ? (
         <div
           id="preview-notificacoes"
+          role="dialog"
+          aria-label="Pendências prioritárias"
           className="glass-surface page-reveal absolute right-0 z-40 mt-3 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-[20px] border border-white/80 shadow-[0_28px_70px_-26px_rgba(7,35,66,0.45),var(--shadow-flutuante)]"
         >
           <div className="relative overflow-hidden border-b border-card-border/75 px-4 py-4">
@@ -82,9 +92,10 @@ export function PreviewNotificacoes({ pendenciasAltas }: { pendenciasAltas: numb
 
           <div className="p-2.5">
             <Link
+              ref={primeiroLink}
               href="/"
-              onClick={() => setAberto(false)}
-              className="group flex min-h-11 items-center gap-3 rounded-[13px] px-3 py-2.5 text-sm text-on-surface-variant transition-[transform,background-color,color] duration-150 hover:bg-white/65 hover:text-primary active:scale-[0.99]"
+              onClick={() => fechar(false)}
+              className="group flex min-h-11 items-center gap-3 rounded-[13px] px-3 py-2.5 text-sm text-on-surface-variant outline-none transition-[transform,background-color,color,box-shadow] duration-150 hover:bg-white/65 hover:text-primary focus-visible:bg-white/75 focus-visible:text-primary focus-visible:shadow-[0_0_0_3px_rgba(10,110,209,0.08)] active:scale-[0.99]"
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary-fixed/45 text-primary">
                 <Bell aria-hidden="true" size={16} strokeWidth={1.6} />
@@ -93,7 +104,7 @@ export function PreviewNotificacoes({ pendenciasAltas }: { pendenciasAltas: numb
                 <span className="block font-semibold">Abrir Visão Geral</span>
                 <span className="mt-0.5 block text-[0.67rem] text-outline">Veja a fila operacional e o que precisa de ação.</span>
               </span>
-              <ChevronRight aria-hidden="true" size={16} className="shrink-0 text-outline transition-transform duration-150 group-hover:translate-x-0.5" />
+              <ChevronRight aria-hidden="true" size={16} className="shrink-0 text-outline transition-transform duration-150 group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5" />
             </Link>
           </div>
 
