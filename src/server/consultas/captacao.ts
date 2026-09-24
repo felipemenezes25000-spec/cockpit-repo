@@ -97,6 +97,10 @@ function painelSemEstrutura(): PainelCaptacao {
  * - `leads` + `lead_etapas`: funil comercial;
  * - `metas_comerciais`: alvo e premissas;
  * - `vendas`: faturamento realizado, que continua pertencendo ao Financeiro.
+ *
+ * As taxas do funil usam a coorte de leads que entrou no próprio período. Um
+ * lead antigo que avançou hoje não entra no denominador do mês atual; sem esse
+ * recorte seria possível mostrar uma "conversão" acima de 100%.
  */
 export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCaptacao> => {
   const base = await clienteServidor();
@@ -195,12 +199,14 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     taxaAgendamentoVenda: meta.taxaAgendamentoVenda,
   });
 
+  const idsDaCoorte = new Set(leads.map((lead) => lead.id));
   const idsQualificados = new Set<string>();
   const idsAgendados = new Set<string>();
   const idsGanhos = new Set<string>();
   const idsPerdidos = new Set<string>();
 
   for (const passo of historico) {
+    if (!idsDaCoorte.has(passo.lead_id)) continue;
     if (["qualificado", "agendamento", "ganho"].includes(passo.para)) idsQualificados.add(passo.lead_id);
     if (["agendamento", "ganho"].includes(passo.para)) idsAgendados.add(passo.lead_id);
     if (passo.para === "ganho") idsGanhos.add(passo.lead_id);
