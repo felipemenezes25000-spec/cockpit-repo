@@ -16,7 +16,7 @@ export function MenuNavegacao({ recolhido, aoNavegar }: { recolhido: boolean; ao
   const ativo = itemAtivo(caminho ?? "/");
 
   return (
-    <nav aria-label="Módulos do sistema" className="px-1">
+    <nav aria-label="Módulos do sistema" className="overflow-visible px-1">
       <div className="flex flex-col gap-3">
         {SECOES.map((secao, indiceSecao) => (
           <section key={secao.rotulo} aria-label={secao.rotulo}>
@@ -34,12 +34,11 @@ export function MenuNavegacao({ recolhido, aoNavegar }: { recolhido: boolean; ao
                 const Icone = item.icone;
                 const estaAtivo = ativo?.href === item.href;
                 return (
-                  <li key={item.href}>
+                  <li key={item.href} className="group/item relative">
                     <Link
                       href={item.href}
                       onClick={aoNavegar}
                       aria-current={estaAtivo ? "page" : undefined}
-                      title={recolhido ? `${item.rotulo}${item.emConstrucao ? " (em breve)" : ""}` : undefined}
                       className={cn(
                         "group relative flex min-h-11 items-center overflow-hidden rounded-[13px] border border-transparent py-2.5 transition-[transform,background-color,border-color,box-shadow,color] duration-200 ease-out active:scale-[0.985]",
                         recolhido ? "justify-center px-0" : "px-3.5",
@@ -72,6 +71,16 @@ export function MenuNavegacao({ recolhido, aoNavegar }: { recolhido: boolean; ao
                         </span>
                       )}
                     </Link>
+
+                    {recolhido ? (
+                      <span
+                        role="tooltip"
+                        className="glass-surface pointer-events-none absolute top-1/2 left-full z-50 ml-3 -translate-y-1/2 translate-x-1 scale-[0.98] whitespace-nowrap rounded-[11px] border border-white/85 px-3 py-2 text-xs font-semibold text-on-surface opacity-0 shadow-[var(--shadow-flutuante)] transition-[opacity,transform] duration-150 group-hover/item:translate-x-0 group-hover/item:scale-100 group-hover/item:opacity-100 group-focus-within/item:translate-x-0 group-focus-within/item:scale-100 group-focus-within/item:opacity-100"
+                      >
+                        {item.rotulo}
+                        {item.emConstrucao ? <span className="ml-2 font-medium text-outline">em breve</span> : null}
+                      </span>
+                    ) : null}
                   </li>
                 );
               })}
