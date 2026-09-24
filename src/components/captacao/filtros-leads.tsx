@@ -1,17 +1,18 @@
 "use client";
 
-import { LoaderCircle, Search, SlidersHorizontal, UsersRound, X } from "lucide-react";
+import { LoaderCircle, Search, SlidersHorizontal, TriangleAlert, UsersRound, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { classeDeEntrada } from "@/components/ui/field";
 import { ETAPAS_FUNIL, ORIGENS_CAPTACAO, ROTULO_ETAPA } from "@/lib/captacao";
-import type { FiltroEtapaLead } from "@/server/consultas/captacao-leads";
+import type { FiltroAtencaoLead, FiltroEtapaLead } from "@/server/consultas/captacao-leads";
 
 type EstadoFiltros = {
   termo: string;
   etapa: FiltroEtapaLead;
   origem: string;
   campanha: string;
+  atencao: FiltroAtencaoLead;
 };
 
 export function FiltrosLeads({
@@ -27,6 +28,7 @@ export function FiltrosLeads({
   const parametros = useSearchParams();
   const origem = parametros?.get("origem")?.slice(0, 60) ?? "";
   const campanha = parametros?.get("campanha")?.slice(0, 120) ?? "";
+  const atencao: FiltroAtencaoLead = parametros?.get("atencao") === "parados" ? "parados" : "todos";
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
   const [enviado, setEnviado] = useState(busca);
@@ -70,6 +72,9 @@ export function FiltrosLeads({
     if (novos.campanha) query.set("campanha", novos.campanha);
     else query.delete("campanha");
 
+    if (novos.atencao !== "todos") query.set("atencao", novos.atencao);
+    else query.delete("atencao");
+
     query.delete("pagina");
     setEnviado(limpo);
     const texto = query.toString();
@@ -81,6 +86,7 @@ export function FiltrosLeads({
     etapa,
     origem,
     campanha,
+    atencao,
   });
 
   function digitar(valor: string) {
@@ -90,7 +96,7 @@ export function FiltrosLeads({
     relogio.current = setTimeout(() => navegar(atuais(valor)), 350);
   }
 
-  const temFiltroEstruturado = etapa !== "todos" || Boolean(origem) || Boolean(campanha);
+  const temFiltroEstruturado = etapa !== "todos" || Boolean(origem) || Boolean(campanha) || atencao !== "todos";
 
   return (
     <form
@@ -188,10 +194,22 @@ export function FiltrosLeads({
           </button>
         ) : null}
 
+        {atencao === "parados" ? (
+          <button
+            type="button"
+            onClick={() => navegar({ ...atuais(), atencao: "todos" })}
+            className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-atencao-borda bg-atencao-fundo px-3 text-xs font-semibold text-atencao transition-colors hover:bg-surface"
+          >
+            <TriangleAlert aria-hidden="true" size={13} />
+            Parados há 3+ dias
+            <X aria-hidden="true" size={13} className="shrink-0" />
+          </button>
+        ) : null}
+
         {temFiltroEstruturado ? (
           <button
             type="button"
-            onClick={() => navegar({ termo, etapa: "todos", origem: "", campanha: "" })}
+            onClick={() => navegar({ termo, etapa: "todos", origem: "", campanha: "", atencao: "todos" })}
             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-primary transition-colors hover:bg-selecao"
           >
             <X aria-hidden="true" size={14} />
