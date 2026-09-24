@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { termoDeBusca } from "@/lib/busca";
 import { comoClienteCaptacao, type EtapaLead } from "@/lib/captacao-banco";
+import { diferencaEmDias } from "@/lib/dates";
 import { falhaDeConsulta } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import type { Periodo } from "@/lib/periodo";
@@ -162,8 +163,6 @@ export const listarLeadsCaptacao = cache(
       historicoPorLead.set(passo.lead_id, atual);
     }
 
-    const agora = Date.now();
-
     return {
       itens: linhas.map((lead) => {
         const atualizadoEm = new Date(lead.atualizado_em);
@@ -181,10 +180,9 @@ export const listarLeadsCaptacao = cache(
           pacienteId: lead.paciente_id,
           criadoEm: new Date(lead.criado_em),
           atualizadoEm,
-          diasSemMovimento: Math.max(
-            0,
-            Math.floor((agora - atualizadoEm.getTime()) / 86_400_000),
-          ),
+          // A clínica trabalha em dias de calendário de São Paulo, não em
+          // blocos de 24 horas do servidor. A mesma regra é usada em prazos.
+          diasSemMovimento: Math.max(0, -diferencaEmDias(atualizadoEm)),
           motivoPerda: lead.motivo_perda,
           historico: historicoPorLead.get(lead.id) ?? [],
         };
