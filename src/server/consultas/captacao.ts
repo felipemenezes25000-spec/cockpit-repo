@@ -40,6 +40,7 @@ export type LeadDoPainel = {
   campanha: string | null;
   etapa: EtapaLead;
   procedimento: string | null;
+  pacienteId: string | null;
   criadoEm: Date;
 };
 
@@ -129,7 +130,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
       (inicio, fim) =>
         supabase
           .from("leads")
-          .select("id, nome, telefone, email, origem, campanha, procedimento_interesse_id, etapa, criado_em")
+          .select("id, nome, telefone, email, origem, campanha, procedimento_interesse_id, paciente_id, etapa, criado_em")
           .gte("criado_em", periodo.de.toISOString())
           .lt("criado_em", periodo.ate.toISOString())
           .order("criado_em", { ascending: false })
@@ -258,6 +259,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     procedimento: lead.procedimento_interesse_id
       ? nomesProcedimento.get(lead.procedimento_interesse_id) ?? null
       : null,
+    pacienteId: lead.paciente_id,
     criadoEm: new Date(lead.criado_em),
   }));
 
