@@ -54,6 +54,12 @@ export type GargaloDoPainel = {
   quantidadeNaoAvancou: number;
 };
 
+export type MotivoPerdaDoPainel = {
+  motivo: string;
+  quantidade: number;
+  percentual: number;
+};
+
 export type LeadDoPainel = {
   id: string;
   nome: string;
@@ -81,6 +87,7 @@ export type PainelCaptacao = {
   origens: OrigemDoPainel[];
   campanhas: CampanhaDoPainel[];
   gargalo: GargaloDoPainel | null;
+  motivosPerda: MotivoPerdaDoPainel[];
   perdidos: number;
 };
 
@@ -122,6 +129,7 @@ function painelSemEstrutura(periodo: Periodo): PainelCaptacao {
     origens: [],
     campanhas: [],
     gargalo: null,
+    motivosPerda: [],
     perdidos: 0,
   };
 }
@@ -141,8 +149,6 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
   const supabase = comoClienteCaptacao(base);
   const competencia = dataParaColuna(periodo.de);
 
-  // A primeira leitura também funciona como detector da migração 0029. Assim
-  // uma aplicação publicada antes do db:push mostra instrução, não uma 500.
   const metaResposta = await supabase
     .from("metas_comerciais")
     .select("id, meta_faturamento, ticket_medio_planejado, taxa_lead_qualificado, taxa_qualificado_agendamento, taxa_agendamento_venda")
@@ -176,7 +182,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
       (inicio, fim) =>
         supabase
           .from("lead_etapas")
-          .select("id, lead_id, para, em")
+          .select("id, lead_id, para, motivo, em")
           .gte("em", periodo.de.toISOString())
           .lt("em", periodo.ate.toISOString())
           .order("id")
@@ -236,13 +242,17 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
   const idsAgendados = new Set<string>();
   const idsGanhos = new Set<string>();
   const idsPerdidos = new Set<string>();
+  const ultimaPerdaPorLead = new Map<string, string>();
 
   for (const passo of historico) {
     if (!idsDaCoorte.has(passo.lead_id)) continue;
     if (["qualificado", "agendamento", "ganho"].includes(passo.para)) idsQualificados.add(passo.lead_id);
     if (["agendamento", "ganho"].includes(passo.para)) idsAgendados.add(passo.lead_id);
     if (passo.para === "ganho") idsGanhos.add(passo.lead_id);
-    if (passo.para === "perdido") idsPerdidos.add(passo.lead_id);
+    if (passo.para === "perdido") {
+      idsPerdidos.add(passo.lead_id);
+      ultimaPerdaPorLead.set(passo.lead_id, passo.motivo?.trim() || "Motivo não informado");
+    }
   }
 
   const entrada = leads.length;
@@ -313,6 +323,18 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     }))
     .sort((a, b) => b.quantidade - a.quantidade || b.conversao - a.conversao || a.campanha.localeCompare(b.campanha));
 
+  const motivos = new Map<string, number>();
+  for (const motivo of ultimaPerdaPorLead.values()) {
+    motivos.set(motivo, (motivos.get(motivo) ?? 0) + 1);
+  }
+  const motivosPerda = [...motivos.entries()]
+    .map(([motivo, quantidade]) => ({
+      motivo,
+      quantidade,
+      percentual: percentual(quantidade, idsPerdidos.size),
+    }))
+    .sort((a, b) => b.quantidade - a.quantidade || a.motivo.localeCompare(b.motivo));
+
   const candidatosGargalo: GargaloDoPainel[] = [];
   if (entrada > 0) {
     candidatosGargalo.push({
@@ -360,6 +382,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     origens,
     campanhas,
     gargalo,
+    motivosPerda,
     perdidos: idsPerdidos.size,
   };
 });
