@@ -12,14 +12,13 @@ import { EvolucaoRecebimentos } from "./revenue-chart";
 
 type Linha = {
   rotulo: string;
-  /** `null` = o perfil não enxerga este número. Nunca vira zero. */
   valor: number | null;
   icone: LucideIcon;
   cor: string;
-  /** Cor do número. Convenção contábil: entrada verde, saída vermelha. */
   corValor?: string;
   apoio: string;
   apoioEmAlerta?: boolean;
+  superficie: string;
 };
 
 export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
@@ -33,38 +32,28 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       rotulo: "Entradas do mês",
       valor: resumo.recebidoNoMes,
       icone: ArrowUpRight,
-      // Convenção contábil, a pedido da clínica: entrada verde, saída
-      // vermelha. É um segundo papel do vermelho — direção do dinheiro —
-      // separado do papel de estado (cancelado, vencido).
       cor: "text-positivo",
       corValor: "text-positivo",
       apoio: "recebimentos já quitados",
+      superficie: "from-positivo-fundo/70 to-white/80",
     },
     {
-      // A recepção não enxerga despesas (RLS). O número vira traço com a razão
-      // à vista: um zero aqui seria "não há despesa", que é falso.
       rotulo: "Despesas do mês",
       valor: resumo.despesasDoMes,
       icone: ArrowDownRight,
       cor: resumo.despesasDoMes === null ? "text-outline-variant" : "text-negativo",
-      corValor:
-        resumo.despesasDoMes === null ? "text-outline" : "text-negativo",
-      apoio:
-        resumo.despesasDoMes === null
-          ? "restrito ao financeiro"
-          : "lançamentos do período",
+      corValor: resumo.despesasDoMes === null ? "text-outline" : "text-negativo",
+      apoio: resumo.despesasDoMes === null ? "restrito ao financeiro" : "lançamentos do período",
+      superficie: resumo.despesasDoMes === null ? "from-surface-container-low/75 to-white/80" : "from-negativo-fundo/60 to-white/80",
     },
     {
       rotulo: "Valores pendentes",
       valor: resumo.aReceber,
       icone: CircleAlert,
-      // Em aberto é cobrança a fazer — atenção. Só o que venceu é negativo.
       cor: "text-atencao-acento",
-      apoio:
-        resumo.vencido > 0
-          ? `${formatarMoeda(resumo.vencido)} já vencido`
-          : "nenhum valor vencido",
+      apoio: resumo.vencido > 0 ? `${formatarMoeda(resumo.vencido)} já vencido` : "nenhum valor vencido",
       apoioEmAlerta: resumo.vencido > 0,
+      superficie: "from-atencao-fundo/55 to-white/80",
     },
   ];
 
@@ -72,51 +61,37 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
     <Card>
       <CardCabecalho
         titulo="Resumo financeiro"
-        descricao={
-          exemplo
-            ? "Movimento do mês corrente, com dados fictícios."
-            : "Movimento do mês corrente."
-        }
-        acao={
-          <BotaoLink href="/financeiro" tamanho="sm">
-            Abrir financeiro
-          </BotaoLink>
-        }
+        descricao={exemplo ? "Movimento do mês corrente, com dados fictícios." : "Movimento do mês corrente."}
+        acao={<BotaoLink href="/financeiro" tamanho="sm">Abrir financeiro</BotaoLink>}
       />
 
       <CardCorpo>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {linhas.map((linha) => {
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {linhas.map((linha, indice) => {
             const Icone = linha.icone;
             return (
               <div
                 key={linha.rotulo}
-                className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4"
+                style={{ animationDelay: `${indice * 70 + 80}ms` }}
+                className={cn(
+                  "dashboard-stagger premium-interactive group relative overflow-hidden rounded-[16px] border border-card-border/75 bg-gradient-to-br p-4 shadow-[var(--shadow-cartao)]",
+                  linha.superficie,
+                )}
               >
-                <span className="flex items-center gap-2">
-                  <Icone
-                    aria-hidden="true"
-                    size={16}
-                    strokeWidth={1.75}
-                    className={cn("shrink-0", linha.cor)}
-                  />
-                  <span className="rotulo">{linha.rotulo}</span>
-                </span>
+                <span aria-hidden="true" className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="rotulo pt-1">{linha.rotulo}</span>
+                  <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-[11px] border border-white/70 bg-white/72 shadow-[var(--shadow-cartao)] transition-transform duration-200 group-hover:scale-[1.04]", linha.cor)}>
+                    <Icone aria-hidden="true" size={17} strokeWidth={1.75} />
+                  </span>
+                </div>
                 <p
-                  className={cn(
-                    "tabular t-headline mt-3",
-                    linha.corValor ?? "text-on-surface",
-                  )}
+                  className={cn("tabular mt-5 text-[1.45rem] leading-none font-semibold tracking-[-0.035em]", linha.corValor ?? "text-on-surface")}
                   title={linha.valor === null ? "restrito ao financeiro" : undefined}
                 >
                   {linha.valor === null ? "—" : formatarMoeda(linha.valor)}
                 </p>
-                <p
-                  className={cn(
-                    "mt-1.5 text-xs",
-                    linha.apoioEmAlerta ? "font-medium text-negativo" : "text-outline",
-                  )}
-                >
+                <p className={cn("mt-2 text-xs leading-5", linha.apoioEmAlerta ? "font-semibold text-negativo" : "text-outline")}>
                   {linha.apoio}
                 </p>
               </div>
@@ -124,14 +99,13 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
           })}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-7">
           <EvolucaoRecebimentos serie={serie} exemplo={exemplo} />
         </div>
       </CardCorpo>
 
       <CardRodape className="text-outline">
-        {exemplo ? "Todos os números são demonstrativos. " : ""}A regra de lucro ainda
-        não foi definida e por isso não aparece nesta tela.
+        {exemplo ? "Todos os números são demonstrativos. " : ""}A regra de lucro ainda não foi definida e por isso não aparece nesta tela.
       </CardRodape>
     </Card>
   );
