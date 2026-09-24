@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarPlus2, CircleDollarSign, Crosshair, UsersRound } from "lucide-react";
+import { ArrowRight, CalendarPlus2, CircleDollarSign, Crosshair, UsersRound, type LucideIcon } from "lucide-react";
 import { Card, CardCorpo } from "@/components/ui/card";
 import { formatarMoeda } from "@/lib/format";
 import type { PlanoDaMeta } from "@/lib/captacao";
@@ -11,7 +11,7 @@ function Numero({
 }: {
   rotulo: string;
   valor: string;
-  icone: typeof Crosshair;
+  icone: LucideIcon;
   destaque?: boolean;
 }) {
   return (
