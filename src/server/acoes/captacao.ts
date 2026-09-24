@@ -171,6 +171,63 @@ export async function salvarMetaComercial(
   return { erros: {}, sucesso: "Meta e premissas atualizadas." };
 }
 
+/**
+ * Liga a oportunidade comercial ao cadastro clínico existente. A partir daqui
+ * a venda dessa paciente consegue fechar automaticamente o lead pelo gatilho
+ * `venda_converte_lead`, sem o Financeiro ter de conhecer o funil.
+ */
+export async function vincularPacienteLead(
+  _anterior: ResultadoAcao,
+  dados: FormData,
+): Promise<ResultadoAcao> {
+  const barrado = await exigirOperadorDeLeads();
+  if (barrado) return falha(barrado);
+
+  const leadId = campoTexto(dados, "id", 36);
+  const pacienteId = campoTexto(dados, "paciente_id", 36);
+  if (!uuidValido(leadId)) return falha("Lead não identificado.");
+  if (!uuidValido(pacienteId)) return falha("Escolha uma paciente para vincular.");
+
+  const base = await clienteServidor();
+  const paciente = await base
+    .from("pacientes")
+    .select("id")
+    .eq("id", pacienteId)
+    .maybeSingle();
+
+  if (paciente.error) {
+    registrarFalha("captação: localizar paciente do lead", paciente.error);
+    return falha(
+      mensagemDoBanco(paciente.error, "Não foi possível localizar a paciente. Tente de novo."),
+    );
+  }
+  if (!paciente.data) return falha("Paciente não encontrada.");
+
+  const supabase = comoClienteCaptacao(base);
+  const { data, error } = await supabase
+    .from("leads")
+    .update({ paciente_id: pacienteId })
+    .eq("id", leadId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    registrarFalha("captação: vincular paciente", error);
+    return falha(
+      mensagemDoBanco(
+        error,
+        "Não foi possível vincular a paciente ao lead. Tente de novo.",
+        { "23503": "A paciente selecionada não existe mais." },
+      ),
+    );
+  }
+  if (!data) return falha("Lead não encontrado ou sem permissão para alteração.");
+
+  revalidarCaptacao();
+  revalidatePath(`/pacientes/${pacienteId}`);
+  return sucesso("Paciente vinculada ao lead.");
+}
+
 export async function mudarEtapaLead(
   _anterior: ResultadoAcao,
   dados: FormData,
