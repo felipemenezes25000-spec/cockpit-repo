@@ -79,7 +79,10 @@ export function EstruturaApp({
         </main>
       </div>
 
-      <NavegacaoInferiorMobile aoAbrirMenu={() => setGavetaAberta(true)} />
+      <NavegacaoInferiorMobile
+        aoAbrirMenu={() => setGavetaAberta(true)}
+        pendenciasAltas={pendenciasAltas}
+      />
     </div>
   );
 }
