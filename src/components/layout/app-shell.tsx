@@ -7,6 +7,8 @@ import { BarraSuperior } from "./topbar";
 import { NavegacaoInferiorMobile } from "./mobile-bottom-nav";
 import type { UsuarioAtual } from "@/lib/perfil";
 
+const CHAVE_SIDEBAR = "cockpit-sidebar-recolhida";
+
 export function EstruturaApp({
   children,
   usuario,
@@ -26,6 +28,26 @@ export function EstruturaApp({
   const fecharGaveta = useCallback(() => {
     setGavetaAberta(false);
     gatilhoGaveta.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    try {
+      setRecolhida(window.localStorage.getItem(CHAVE_SIDEBAR) === "sim");
+    } catch {
+      // Preferência visual não pode impedir o uso do Cockpit.
+    }
+  }, []);
+
+  const alternarSidebar = useCallback(() => {
+    setRecolhida((atual) => {
+      const proxima = !atual;
+      try {
+        window.localStorage.setItem(CHAVE_SIDEBAR, proxima ? "sim" : "nao");
+      } catch {
+        // Navegação continua funcionando mesmo sem armazenamento local.
+      }
+      return proxima;
+    });
   }, []);
 
   useEffect(() => {
@@ -59,7 +81,7 @@ export function EstruturaApp({
 
       <BarraLateral
         recolhida={recolhida}
-        aoAlternarRecolhida={() => setRecolhida((v) => !v)}
+        aoAlternarRecolhida={alternarSidebar}
         gavetaAberta={gavetaAberta}
         aoFecharGaveta={fecharGaveta}
       />
