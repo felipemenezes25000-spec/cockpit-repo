@@ -1,7 +1,13 @@
 import "server-only";
 
 import { cache } from "react";
-import { calcularPlanoDaMeta, percentual, type PlanoDaMeta } from "@/lib/captacao";
+import {
+  calcularPlanoDaMeta,
+  calcularRitmoMensal,
+  percentual,
+  type PlanoDaMeta,
+  type RitmoMensal,
+} from "@/lib/captacao";
 import { comoClienteCaptacao, type EtapaLead } from "@/lib/captacao-banco";
 import { estruturaAusente } from "@/lib/erros-banco";
 import { falhaDeConsulta } from "@/lib/registro";
@@ -29,6 +35,23 @@ export type OrigemDoPainel = {
   origem: string;
   quantidade: number;
   percentual: number;
+  ganhos: number;
+  conversao: number;
+};
+
+export type CampanhaDoPainel = {
+  campanha: string;
+  quantidade: number;
+  ganhos: number;
+  conversao: number;
+};
+
+export type GargaloDoPainel = {
+  de: "novo" | "qualificado" | "agendamento";
+  para: "qualificado" | "agendamento" | "ganho";
+  taxaAtual: number;
+  taxaPlanejada: number;
+  quantidadeNaoAvancou: number;
 };
 
 export type LeadDoPainel = {
@@ -51,11 +74,13 @@ export type PainelCaptacao = {
   vendasNoMes: number;
   ticketMedioReal: number;
   plano: PlanoDaMeta;
+  ritmo: RitmoMensal;
   etapas: EtapaDoPainel[];
   taxaConversaoGeral: number;
   taxaAgendamentoVendaAtual: number;
   origens: OrigemDoPainel[];
-  leadsRecentes: LeadDoPainel[];
+  campanhas: CampanhaDoPainel[];
+  gargalo: GargaloDoPainel | null;
   perdidos: number;
 };
 
@@ -68,7 +93,7 @@ const META_VAZIA: MetaComercial = {
   taxaAgendamentoVenda: 50,
 };
 
-function painelSemEstrutura(): PainelCaptacao {
+function painelSemEstrutura(periodo: Periodo): PainelCaptacao {
   const plano = calcularPlanoDaMeta({
     metaFaturamento: 0,
     faturamentoAtual: 0,
@@ -84,11 +109,19 @@ function painelSemEstrutura(): PainelCaptacao {
     vendasNoMes: 0,
     ticketMedioReal: 0,
     plano,
+    ritmo: calcularRitmoMensal({
+      inicio: periodo.de,
+      fim: periodo.ate,
+      faturamentoAtual: 0,
+      metaFaturamento: 0,
+      plano,
+    }),
     etapas: [],
     taxaConversaoGeral: 0,
     taxaAgendamentoVendaAtual: 0,
     origens: [],
-    leadsRecentes: [],
+    campanhas: [],
+    gargalo: null,
     perdidos: 0,
   };
 }
@@ -118,19 +151,19 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     .maybeSingle();
 
   if (metaResposta.error) {
-    if (estruturaAusente(metaResposta.error)) return painelSemEstrutura();
+    if (estruturaAusente(metaResposta.error)) return painelSemEstrutura(periodo);
     falhaDeConsulta("consulta captação: meta", metaResposta.error, "Não foi possível carregar a meta comercial.");
   }
 
   const contexto = "consulta captação";
   const frase = "Não foi possível carregar o funil de captação.";
 
-  const [leads, historico, vendas, procedimentos] = await Promise.all([
+  const [leads, historico, vendas] = await Promise.all([
     todasAsLinhas(
       (inicio, fim) =>
         supabase
           .from("leads")
-          .select("id, nome, telefone, email, origem, campanha, procedimento_interesse_id, paciente_id, etapa, criado_em")
+          .select("id, origem, campanha, etapa, criado_em")
           .gte("criado_em", periodo.de.toISOString())
           .lt("criado_em", periodo.ate.toISOString())
           .order("criado_em", { ascending: false })
@@ -163,16 +196,6 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
       "consulta captação: vendas",
       "Não foi possível calcular o faturamento da meta.",
     ),
-    todasAsLinhas(
-      (inicio, fim) =>
-        base
-          .from("procedimentos")
-          .select("id, nome")
-          .order("id")
-          .range(inicio, fim),
-      "consulta captação: procedimentos",
-      "Não foi possível carregar os procedimentos.",
-    ),
   ]);
 
   const metaLinha = metaResposta.data;
@@ -200,6 +223,14 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     taxaAgendamentoVenda: meta.taxaAgendamentoVenda,
   });
 
+  const ritmo = calcularRitmoMensal({
+    inicio: periodo.de,
+    fim: periodo.ate,
+    faturamentoAtual,
+    metaFaturamento: meta.metaFaturamento,
+    plano,
+  });
+
   const idsDaCoorte = new Set(leads.map((lead) => lead.id));
   const idsQualificados = new Set<string>();
   const idsAgendados = new Set<string>();
@@ -219,49 +250,101 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
   const agendados = idsAgendados.size;
   const ganhos = idsGanhos.size;
 
+  const taxaLeadQualificadoAtual = entrada > 0 ? percentual(qualificados, entrada) : 0;
+  const taxaQualificadoAgendamentoAtual = qualificados > 0 ? percentual(agendados, qualificados) : 0;
+  const taxaAgendamentoVendaAtual = agendados > 0 ? percentual(ganhos, agendados) : 0;
+
   const etapas: EtapaDoPainel[] = [
     { etapa: "novo", volume: entrada, conversao: null, necessarioAgora: plano.leadsNecessarios },
     {
       etapa: "qualificado",
       volume: qualificados,
-      conversao: entrada > 0 ? percentual(qualificados, entrada) : 0,
+      conversao: taxaLeadQualificadoAtual,
       necessarioAgora: plano.qualificadosNecessarios,
     },
     {
       etapa: "agendamento",
       volume: agendados,
-      conversao: qualificados > 0 ? percentual(agendados, qualificados) : 0,
+      conversao: taxaQualificadoAgendamentoAtual,
       necessarioAgora: plano.agendamentosNecessarios,
     },
     {
       etapa: "ganho",
       volume: ganhos,
-      conversao: agendados > 0 ? percentual(ganhos, agendados) : 0,
+      conversao: taxaAgendamentoVendaAtual,
       necessarioAgora: plano.vendasNecessarias,
     },
   ];
 
-  const porOrigem = new Map<string, number>();
-  for (const lead of leads) porOrigem.set(lead.origem, (porOrigem.get(lead.origem) ?? 0) + 1);
-  const origens = [...porOrigem.entries()]
-    .map(([origem, quantidade]) => ({ origem, quantidade, percentual: percentual(quantidade, entrada) }))
-    .sort((a, b) => b.quantidade - a.quantidade || a.origem.localeCompare(b.origem));
+  const porOrigem = new Map<string, { quantidade: number; ganhos: number }>();
+  const porCampanha = new Map<string, { quantidade: number; ganhos: number }>();
 
-  const nomesProcedimento = new Map(procedimentos.map((p) => [p.id, p.nome]));
-  const leadsRecentes = leads.slice(0, 12).map((lead) => ({
-    id: lead.id,
-    nome: lead.nome,
-    telefone: lead.telefone,
-    email: lead.email,
-    origem: lead.origem,
-    campanha: lead.campanha,
-    etapa: lead.etapa,
-    procedimento: lead.procedimento_interesse_id
-      ? nomesProcedimento.get(lead.procedimento_interesse_id) ?? null
-      : null,
-    pacienteId: lead.paciente_id,
-    criadoEm: new Date(lead.criado_em),
-  }));
+  for (const lead of leads) {
+    const origem = porOrigem.get(lead.origem) ?? { quantidade: 0, ganhos: 0 };
+    origem.quantidade += 1;
+    if (idsGanhos.has(lead.id)) origem.ganhos += 1;
+    porOrigem.set(lead.origem, origem);
+
+    const campanha = lead.campanha?.trim();
+    if (campanha) {
+      const atual = porCampanha.get(campanha) ?? { quantidade: 0, ganhos: 0 };
+      atual.quantidade += 1;
+      if (idsGanhos.has(lead.id)) atual.ganhos += 1;
+      porCampanha.set(campanha, atual);
+    }
+  }
+
+  const origens = [...porOrigem.entries()]
+    .map(([origem, dados]) => ({
+      origem,
+      quantidade: dados.quantidade,
+      percentual: percentual(dados.quantidade, entrada),
+      ganhos: dados.ganhos,
+      conversao: percentual(dados.ganhos, dados.quantidade),
+    }))
+    .sort((a, b) => b.quantidade - a.quantidade || b.conversao - a.conversao || a.origem.localeCompare(b.origem));
+
+  const campanhas = [...porCampanha.entries()]
+    .map(([campanha, dados]) => ({
+      campanha,
+      quantidade: dados.quantidade,
+      ganhos: dados.ganhos,
+      conversao: percentual(dados.ganhos, dados.quantidade),
+    }))
+    .sort((a, b) => b.quantidade - a.quantidade || b.conversao - a.conversao || a.campanha.localeCompare(b.campanha));
+
+  const candidatosGargalo: GargaloDoPainel[] = [];
+  if (entrada > 0) {
+    candidatosGargalo.push({
+      de: "novo",
+      para: "qualificado",
+      taxaAtual: taxaLeadQualificadoAtual,
+      taxaPlanejada: meta.taxaLeadQualificado,
+      quantidadeNaoAvancou: Math.max(0, entrada - qualificados),
+    });
+  }
+  if (qualificados > 0) {
+    candidatosGargalo.push({
+      de: "qualificado",
+      para: "agendamento",
+      taxaAtual: taxaQualificadoAgendamentoAtual,
+      taxaPlanejada: meta.taxaQualificadoAgendamento,
+      quantidadeNaoAvancou: Math.max(0, qualificados - agendados),
+    });
+  }
+  if (agendados > 0) {
+    candidatosGargalo.push({
+      de: "agendamento",
+      para: "ganho",
+      taxaAtual: taxaAgendamentoVendaAtual,
+      taxaPlanejada: meta.taxaAgendamentoVenda,
+      quantidadeNaoAvancou: Math.max(0, agendados - ganhos),
+    });
+  }
+
+  const gargalo = candidatosGargalo.sort(
+    (a, b) => a.taxaAtual - b.taxaAtual || b.quantidadeNaoAvancou - a.quantidadeNaoAvancou,
+  )[0] ?? null;
 
   return {
     estruturaDisponivel: true,
@@ -270,11 +353,13 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     vendasNoMes,
     ticketMedioReal,
     plano,
+    ritmo,
     etapas,
     taxaConversaoGeral: entrada > 0 ? percentual(ganhos, entrada) : 0,
-    taxaAgendamentoVendaAtual: agendados > 0 ? percentual(ganhos, agendados) : 0,
+    taxaAgendamentoVendaAtual,
     origens,
-    leadsRecentes,
+    campanhas,
+    gargalo,
     perdidos: idsPerdidos.size,
   };
 });
