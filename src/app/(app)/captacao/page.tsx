@@ -103,9 +103,13 @@ export default async function PaginaCaptacao({
       <div className="premium-panel flex flex-col gap-3 rounded-[var(--radius-painel)] border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
           <p className="rotulo text-primary">Período comercial</p>
-          <p className="mt-1 text-xs text-outline">O mês fica na URL para comparar, recarregar e compartilhar a mesma leitura.</p>
+          <p className="mt-1 text-xs text-outline">Ao trocar o mês, os recortes da carteira são limpos porque origem, campanha e paginação pertencem ao período selecionado.</p>
         </div>
-        <NavegacaoMes periodo={periodo} rotulo="Período comercial" />
+        <NavegacaoMes
+          periodo={periodo}
+          rotulo="Período comercial"
+          limparAoTrocar={["pagina", "busca", "etapa", "origem", "campanha"]}
+        />
       </div>
 
       {!painel.estruturaDisponivel ? (
