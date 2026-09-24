@@ -278,6 +278,9 @@ export async function mudarEtapaLead(
   const motivo = campoTexto(dados, "motivo", 300);
   if (!uuidValido(id)) return falha("Lead não identificado.");
   if (!(ETAPAS_FUNIL as readonly string[]).includes(para)) return falha("Etapa inválida.");
+  if (para === "ganho") {
+    return falha("Venda concluída só é registrada quando existe uma venda no Financeiro.");
+  }
   if (para === "perdido" && motivo.length < 3) return falha("Informe o motivo da perda.");
 
   const base = await clienteServidor();
