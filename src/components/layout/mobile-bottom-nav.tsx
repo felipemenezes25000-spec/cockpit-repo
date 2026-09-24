@@ -30,7 +30,13 @@ function estaAtivo(caminho: string, href: string): boolean {
   return caminho === href || caminho.startsWith(`${href}/`);
 }
 
-export function NavegacaoInferiorMobile({ aoAbrirMenu }: { aoAbrirMenu: () => void }) {
+export function NavegacaoInferiorMobile({
+  aoAbrirMenu,
+  pendenciasAltas = 0,
+}: {
+  aoAbrirMenu: () => void;
+  pendenciasAltas?: number;
+}) {
   const caminho = usePathname() ?? "/";
   const maisAtivo = !ITENS.some((item) => estaAtivo(caminho, item.href));
 
@@ -43,11 +49,13 @@ export function NavegacaoInferiorMobile({ aoAbrirMenu }: { aoAbrirMenu: () => vo
         {ITENS.map((item) => {
           const Icone = item.icone;
           const ativo = estaAtivo(caminho, item.href);
+          const mostrarPendencias = item.href === "/" && pendenciasAltas > 0;
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={ativo ? "page" : undefined}
+              aria-label={mostrarPendencias ? `${item.rotulo} — ${pendenciasAltas} ${pendenciasAltas === 1 ? "pendência prioritária" : "pendências prioritárias"}` : undefined}
               className={cn(
                 "group relative flex min-h-14 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[15px] px-1 text-[0.61rem] font-semibold transition-[transform,background-color,color] duration-180 active:scale-[0.965]",
                 ativo ? "text-primary" : "text-outline hover:bg-white/50 hover:text-primary",
@@ -64,6 +72,11 @@ export function NavegacaoInferiorMobile({ aoAbrirMenu }: { aoAbrirMenu: () => vo
                 ativo ? "bg-white/78 shadow-[var(--shadow-cartao)]" : "bg-transparent",
               )}>
                 <Icone aria-hidden="true" size={19} strokeWidth={ativo ? 1.9 : 1.55} />
+                {mostrarPendencias ? (
+                  <span aria-hidden="true" className="tabular absolute -top-1.5 -right-2 flex min-w-4.5 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[0.54rem] font-bold leading-3.5 text-on-primary shadow-[0_2px_8px_rgba(187,0,0,0.22)]">
+                    {pendenciasAltas > 9 ? "9+" : pendenciasAltas}
+                  </span>
+                ) : null}
               </span>
               <span className="relative max-w-full truncate leading-tight">{item.rotulo}</span>
             </Link>
