@@ -10,24 +10,14 @@ import { dataValida } from "@/lib/dates";
 import { cn } from "@/lib/cn";
 import type { OpcaoProfissional } from "@/server/consultas/agenda";
 
-/** Espera entre a última tecla no campo de data e a navegação. */
 export const ESPERA_NAVEGACAO_MS = 500;
 
 const semAssinatura = () => () => {};
 
-/**
- * Verdadeiro depois da hidratação, falso no HTML do servidor — sem efeito e
- * sem estado, então não há renderização dupla nem aviso de divergência.
- */
 function useComJavaScript(): boolean {
-  return useSyncExternalStore(
-    semAssinatura,
-    () => true,
-    () => false,
-  );
+  return useSyncExternalStore(semAssinatura, () => true, () => false);
 }
 
-/** Seta que troca o ícone pelo indicador enquanto o dia vizinho carrega. */
 function IconeDaSeta({ direcao }: { direcao: "anterior" | "proximo" }) {
   const { pending } = useLinkStatus();
   if (pending) return <LoaderCircle aria-hidden="true" size={18} className="animate-spin" />;
@@ -35,19 +25,6 @@ function IconeDaSeta({ direcao }: { direcao: "anterior" | "proximo" }) {
   return <Icone aria-hidden="true" size={18} strokeWidth={1.75} />;
 }
 
-/**
- * Navegação entre dias e filtro de profissional, tudo na URL:
- * `?dia=AAAA-MM-DD&profissional=<id>`.
- *
- * Recarregar, voltar pelo navegador e mandar o link de um dia específico
- * funcionam — mesmo raciocínio da busca de pacientes. É um `form method="get"`
- * de verdade: sem JavaScript, o botão "Ver" (que só aparece nesse caso) envia.
- *
- * O campo de data NÃO navega a cada tecla. Digitando "2026" no ano, o
- * navegador passa por "0002", "0020" e "0202" — cada um viraria uma ida ao
- * servidor e uma entrada no histórico. A navegação espera a pessoa parar e só
- * acontece com uma data que existe; Enter e sair do campo navegam na hora.
- */
 export function NavegacaoDia({
   dia,
   anterior,
@@ -56,29 +33,18 @@ export function NavegacaoDia({
   profissional = null,
   profissionais = [],
 }: {
-  /** "AAAA-MM-DD" do dia exibido e dos vizinhos, calculados no servidor. */
   dia: string;
   anterior: string;
   proximo: string;
   ehHoje: boolean;
-  /** Profissional filtrada, ou `null` para a agenda de todas. */
   profissional?: string | null;
-  /** Com uma só, o filtro não aparece — não haveria o que escolher. */
   profissionais?: OpcaoProfissional[];
 }) {
   const router = useRouter();
   const comJavaScript = useComJavaScript();
   const [pendente, iniciar] = useTransition();
   const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Clique numa seta com uma data digitada: o blur do campo (que navega para
-  // a data digitada) e o clique (que vai ao vizinho do dia antigo) disparavam
-  // duas navegações concorrentes. O `pointerdown` da seta vem antes do blur
-  // em todo navegador — inclusive no Safari, onde o link clicado não recebe
-  // foco e o `relatedTarget` do blur chega nulo —, e marca que a seta manda.
   const setaAcionada = useRef(false);
-
-  // O campo segue a URL: voltar pelo navegador ou clicar numa seta troca o
-  // `dia` vindo do servidor, e o que estava digitado dá lugar a ele.
   const [valor, setValor] = useState(dia);
   const [filtro, setFiltro] = useState(profissional);
   const [daUrl, setDaUrl] = useState({ dia, profissional });
@@ -88,12 +54,9 @@ export function NavegacaoDia({
     setFiltro(profissional);
   }
 
-  useEffect(
-    () => () => {
-      if (relogio.current) clearTimeout(relogio.current);
-    },
-    [],
-  );
+  useEffect(() => () => {
+    if (relogio.current) clearTimeout(relogio.current);
+  }, []);
 
   function navegar(novoDia: string, novoProfissional: string | null) {
     if (relogio.current) clearTimeout(relogio.current);
@@ -109,7 +72,7 @@ export function NavegacaoDia({
   }
 
   const seta =
-    "flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-cartao)] border border-card-border bg-surface text-on-surface-variant transition-colors hover:border-primary hover:text-primary";
+    "group flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-card-border/80 bg-white/72 text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.92),var(--shadow-cartao)] transition-[transform,background-color,border-color,box-shadow,color] duration-150 hover:-translate-y-px hover:border-primary/20 hover:bg-white hover:text-primary hover:shadow-[var(--shadow-realce)] active:translate-y-px active:scale-[0.97]";
 
   const temFiltro = profissionais.length > 1;
 
@@ -123,7 +86,7 @@ export function NavegacaoDia({
         evento.preventDefault();
         navegar(valor, filtro);
       }}
-      className="flex flex-wrap items-center gap-2"
+      className="premium-panel flex flex-wrap items-center gap-2 rounded-[16px] border p-2.5 shadow-[var(--shadow-cartao)]"
     >
       <div className="flex items-center gap-2">
         <Link
@@ -134,35 +97,35 @@ export function NavegacaoDia({
           }}
           className={seta}
         >
-          <IconeDaSeta direcao="anterior" />
+          <span className="transition-transform duration-150 group-hover:-translate-x-0.5"><IconeDaSeta direcao="anterior" /></span>
         </Link>
 
-        <input
-          type="date"
-          name="dia"
-          value={valor}
-          onChange={(evento) => {
-            setValor(evento.target.value);
-            agendarNavegacao(evento.target.value);
-          }}
-          // Marca de um clique antigo na seta (sem o campo em foco) não vale
-          // para esta edição.
-          onFocus={() => {
-            setaAcionada.current = false;
-          }}
-          onBlur={() => {
-            if (setaAcionada.current) {
-              // A seta navega; a data digitada (e a espera dela) fica para trás.
+        <div className="relative">
+          {ehHoje ? <span aria-hidden="true" className="absolute -top-1 -right-1 z-10 size-2.5 rounded-full border-2 border-white bg-primary-container shadow-[0_0_8px_rgba(10,110,209,0.3)]" /> : null}
+          <input
+            type="date"
+            name="dia"
+            value={valor}
+            onChange={(evento) => {
+              setValor(evento.target.value);
+              agendarNavegacao(evento.target.value);
+            }}
+            onFocus={() => {
               setaAcionada.current = false;
-              if (relogio.current) clearTimeout(relogio.current);
-              relogio.current = null;
-              return;
-            }
-            navegar(valor, filtro);
-          }}
-          aria-label="Escolher o dia"
-          className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "tabular")}
-        />
+            }}
+            onBlur={() => {
+              if (setaAcionada.current) {
+                setaAcionada.current = false;
+                if (relogio.current) clearTimeout(relogio.current);
+                relogio.current = null;
+                return;
+              }
+              navegar(valor, filtro);
+            }}
+            aria-label="Escolher o dia"
+            className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "tabular bg-white/78 font-medium shadow-[var(--shadow-cartao)]")}
+          />
+        </div>
 
         <Link
           href={enderecoDaAgenda(proximo, profissional)}
@@ -172,7 +135,7 @@ export function NavegacaoDia({
           }}
           className={seta}
         >
-          <IconeDaSeta direcao="proximo" />
+          <span className="transition-transform duration-150 group-hover:translate-x-0.5"><IconeDaSeta direcao="proximo" /></span>
         </Link>
       </div>
 
@@ -186,38 +149,33 @@ export function NavegacaoDia({
             navegar(valor, escolhido);
           }}
           aria-label="Filtrar por quem atende"
-          // Nome comprido não empurra a tela para o lado em 360 px.
-          className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "max-w-full")}
+          className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "max-w-full bg-white/78 font-medium shadow-[var(--shadow-cartao)]")}
         >
           <option value="">Todas as profissionais</option>
           {profissionais.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nome}
-            </option>
+            <option key={p.id} value={p.id}>{p.nome}</option>
           ))}
         </select>
       ) : profissional ? (
-        // Filtro que veio no link, sem seletor na tela: continua valendo.
         <input type="hidden" name="profissional" value={profissional} />
       ) : null}
 
       {comJavaScript ? null : (
-        <button
-          type="submit"
-          className="inline-flex h-9 items-center rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3 text-sm font-medium text-primary transition-colors hover:bg-surface-container-low"
-        >
+        <button type="submit" className="inline-flex h-10 items-center rounded-[12px] border border-card-border bg-white/75 px-3 text-sm font-semibold text-primary shadow-[var(--shadow-cartao)] transition-[transform,background-color] hover:-translate-y-px hover:bg-white active:translate-y-px">
           Ver
         </button>
       )}
 
       {!ehHoje ? (
-        <Link
-          href={enderecoDaAgenda(null, profissional)}
-          className="inline-flex h-9 items-center rounded-[var(--radius-cartao)] px-3 text-sm font-medium text-primary transition-colors hover:bg-surface-container-low"
-        >
+        <Link href={enderecoDaAgenda(null, profissional)} className="inline-flex h-10 items-center rounded-[12px] border border-primary/10 bg-primary-fixed/38 px-3 text-sm font-semibold text-primary transition-[transform,background-color] hover:-translate-y-px hover:bg-primary-fixed/60 active:translate-y-px">
           Voltar para hoje
         </Link>
-      ) : null}
+      ) : (
+        <span className="hidden items-center gap-1.5 rounded-[10px] border border-positivo-borda/55 bg-positivo-fundo/55 px-2.5 py-1.5 text-xs font-semibold text-positivo sm:inline-flex">
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-positivo" />
+          Hoje
+        </span>
+      )}
 
       <p role="status" className="inline-flex items-center gap-1.5 text-xs text-outline">
         {pendente ? (
