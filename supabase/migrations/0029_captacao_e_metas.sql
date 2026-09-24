@@ -108,6 +108,77 @@ create trigger lead_etapa_historico
   after insert or update of etapa on public.leads
   for each row execute function private.lead_registrar_etapa();
 
+-- Converte a oportunidade em cadastro clínico em UMA transação. O lock evita
+-- duas pessoas clicarem juntas e criarem duas pacientes para o mesmo lead.
+-- É security definer porque escreve em duas entidades, então a permissão é
+-- conferida explicitamente antes de qualquer leitura/escrita.
+create or replace function public.lead_converter_em_paciente(p_lead_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_lead public.leads%rowtype;
+  v_paciente_id uuid;
+begin
+  if not coalesce(private.papel_atual() in ('administradora', 'recepcao'), false) then
+    raise exception using
+      errcode = '42501',
+      message = 'Seu perfil não pode converter leads em pacientes.';
+  end if;
+
+  select * into v_lead
+    from public.leads
+   where id = p_lead_id
+   for update;
+
+  if not found then
+    raise exception using errcode = 'P0001', message = 'Lead não encontrado.';
+  end if;
+
+  -- Idempotência: repetir o clique nunca duplica cadastro.
+  if v_lead.paciente_id is not null then
+    return v_lead.paciente_id;
+  end if;
+
+  if v_lead.etapa = 'perdido' then
+    raise exception using
+      errcode = 'P0001',
+      message = 'Reabra o lead antes de criar a paciente.';
+  end if;
+
+  insert into public.pacientes (
+    nome,
+    telefone,
+    email,
+    origem,
+    criado_por
+  ) values (
+    v_lead.nome,
+    v_lead.telefone,
+    v_lead.email,
+    v_lead.origem,
+    auth.uid()
+  )
+  returning id into v_paciente_id;
+
+  update public.leads
+     set paciente_id = v_paciente_id,
+         etapa = case
+           when etapa = 'novo' then 'qualificado'::public.etapa_lead
+           else etapa
+         end,
+         motivo_perda = null
+   where id = p_lead_id;
+
+  return v_paciente_id;
+end;
+$$;
+
+revoke all on function public.lead_converter_em_paciente(uuid) from public, anon, authenticated;
+grant execute on function public.lead_converter_em_paciente(uuid) to authenticated;
+
 -- Um horário novo é evidência de avanço comercial. Só mexe em lead aberto e
 -- vinculado à paciente; não reabre perdido nem retrocede quem já virou venda.
 create or replace function private.atendimento_avanca_lead()
