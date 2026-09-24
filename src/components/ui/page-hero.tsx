@@ -50,7 +50,7 @@ export function SeloHero({
   return (
     <span
       className={cn(
-        "inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-sm",
+        "inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-sm transition-[transform,box-shadow] duration-150 hover:-translate-y-px hover:shadow-[var(--shadow-cartao)]",
         TOM_DO_SELO[tom],
         className,
       )}
@@ -60,10 +60,7 @@ export function SeloHero({
   );
 }
 
-/**
- * Cabeçalho editorial dos módulos principais. Ele cria identidade e hierarquia
- * sem competir com a barra superior, que continua sendo o h1 da rota.
- */
+/** Cabeçalho editorial e visual dos módulos principais. */
 export function CabecalhoDePagina({
   icone: Icone,
   rotulo,
@@ -84,32 +81,26 @@ export function CabecalhoDePagina({
   return (
     <section
       className={cn(
-        "premium-panel relative isolate overflow-hidden rounded-[calc(var(--radius-painel)+4px)] border px-5 py-5 sm:px-7 sm:py-7",
+        "premium-panel group relative isolate overflow-hidden rounded-[calc(var(--radius-painel)+4px)] border px-5 py-5 transition-[box-shadow,border-color] duration-300 hover:border-primary/14 hover:shadow-[var(--shadow-realce)] sm:px-7 sm:py-7",
         className,
       )}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-20 -right-12 -z-10 size-64 rounded-full bg-primary-fixed/55 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-28 left-1/4 -z-10 h-44 w-80 rounded-full bg-secondary-fixed/30 blur-3xl"
-      />
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-white/95"
-      />
+      <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-12 -z-10 size-64 rounded-full bg-primary-fixed/55 blur-3xl transition-transform duration-700 ease-out group-hover:scale-110" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 left-1/4 -z-10 h-44 w-80 rounded-full bg-secondary-fixed/30 blur-3xl transition-transform duration-700 ease-out group-hover:translate-x-5" />
+      <Icone aria-hidden="true" strokeWidth={0.65} className="pointer-events-none absolute -right-7 -bottom-10 -z-10 size-44 text-primary/[0.035] transition-[transform,opacity] duration-700 ease-out group-hover:-translate-x-2 group-hover:-translate-y-2 group-hover:scale-[1.04] group-hover:text-primary/[0.055] sm:size-52" />
+      <span aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.98),transparent)]" />
+      <span aria-hidden="true" className="pointer-events-none absolute top-0 left-[14%] h-px w-20 bg-primary-fixed-dim/65 shadow-[0_0_14px_rgba(10,110,209,0.18)]" />
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/60 bg-linear-to-br from-white to-primary-fixed/55 text-primary shadow-[var(--shadow-primary)] sm:size-14">
-            <Icone aria-hidden="true" size={24} strokeWidth={1.65} />
+          <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary-fixed-dim/60 bg-linear-to-br from-white to-primary-fixed/55 text-primary shadow-[var(--shadow-primary)] transition-[transform,box-shadow] duration-300 group-hover:-translate-y-0.5 group-hover:scale-[1.025] group-hover:shadow-[0_12px_28px_-12px_rgba(10,110,209,0.62)] sm:size-14">
+            <span aria-hidden="true" className="absolute inset-1 rounded-[12px] border border-white/60" />
+            <Icone aria-hidden="true" size={24} strokeWidth={1.65} className="relative" />
           </span>
 
           <div className="min-w-0">
             <p className="rotulo text-primary/80">{rotulo}</p>
-            <h2 className="mt-2 text-[clamp(1.65rem,3vw,2.35rem)] leading-[1.08] font-semibold tracking-[-0.035em] text-on-surface">
+            <h2 className="mt-2 text-[clamp(1.65rem,3vw,2.35rem)] leading-[1.08] font-semibold tracking-[-0.04em] text-on-surface">
               {titulo}
             </h2>
             <div className="mt-2 max-w-3xl text-sm leading-6 text-on-surface-variant sm:text-[0.95rem]">
@@ -122,7 +113,7 @@ export function CabecalhoDePagina({
       </div>
 
       {meta ? (
-        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-card-border/65 pt-4">
+        <div className="relative mt-5 flex flex-wrap items-center gap-2 border-t border-card-border/65 pt-4">
           {meta}
         </div>
       ) : null}
