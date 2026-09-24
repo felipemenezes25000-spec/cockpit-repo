@@ -14,7 +14,7 @@ export function hrefDoMes(caminho: string, busca: string, chave: string | null):
   return texto ? `${caminho}?${texto}` : caminho;
 }
 
-export function NavegacaoMes({ periodo }: { periodo: Periodo }) {
+export function NavegacaoMes({ periodo, rotulo = "Período financeiro" }: { periodo: Periodo; rotulo?: string }) {
   const caminho = usePathname() ?? "/financeiro";
   const busca = useSearchParams()?.toString() ?? "";
 
@@ -29,7 +29,7 @@ export function NavegacaoMes({ periodo }: { periodo: Periodo }) {
         </Link>
 
         <span className="relative min-w-0 flex-1 px-2 text-center sm:min-w-44 sm:flex-none">
-          <span className="rotulo block text-[0.62rem] text-outline">Período financeiro</span>
+          <span className="rotulo block text-[0.62rem] text-outline">{rotulo}</span>
           <span className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold tracking-[-0.015em] text-on-surface">
             {periodo.ehMesAtual ? <span aria-hidden="true" className="size-1.5 rounded-full bg-positivo" /> : null}
             {capitalizar(formatarMesAno(periodo.de))}
