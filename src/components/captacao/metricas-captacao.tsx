@@ -51,7 +51,7 @@ export function MetricasCaptacao({
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="rotulo text-primary">Origem dos leads</p>
-              <p className="mt-1 text-xs text-outline">Distribuição das entradas no período.</p>
+              <p className="mt-1 text-xs text-outline">Volume e conversão Lead → Venda.</p>
             </div>
             <Route aria-hidden="true" size={18} className="text-outline" />
           </div>
@@ -62,7 +62,9 @@ export function MetricasCaptacao({
                 <li key={origem.origem}>
                   <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
                     <span className="truncate font-medium text-on-surface-variant">{origem.origem}</span>
-                    <span className="shrink-0 tabular-nums text-outline">{origem.quantidade} · {origem.percentual.toLocaleString("pt-BR")}%</span>
+                    <span className="shrink-0 text-right tabular-nums text-outline">
+                      {origem.quantidade} · <strong className="font-semibold text-primary">{origem.conversao.toLocaleString("pt-BR")}% conv.</strong>
+                    </span>
                   </div>
                   <span className="barra barra-fina">
                     <span className="chart-grow" style={{ width: `${(origem.quantidade / maximo) * 100}%` }} />
