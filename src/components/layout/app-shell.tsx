@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { BarraLateral } from "./sidebar";
 import { BarraSuperior } from "./topbar";
+import { NavegacaoInferiorMobile } from "./mobile-bottom-nav";
 import type { UsuarioAtual } from "@/lib/perfil";
 
 export function EstruturaApp({
@@ -51,16 +52,8 @@ export function EstruturaApp({
 
   return (
     <div className="relative flex min-h-screen bg-transparent">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_42%_0%,rgba(10,110,209,0.065),transparent_52%)]"
-      />
-      <a
-        href="#conteudo"
-        className="sr-only rounded-[var(--radius-cartao)] bg-primary px-4 py-2 text-on-primary shadow-[var(--shadow-flutuante)] focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
-      >
-        Ir para o conteúdo
-      </a>
+      <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_42%_0%,rgba(10,110,209,0.065),transparent_52%)]" />
+      <a href="#conteudo" className="sr-only rounded-[var(--radius-cartao)] bg-primary px-4 py-2 text-on-primary shadow-[var(--shadow-flutuante)] focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">Ir para o conteúdo</a>
 
       <BarraLateral
         recolhida={recolhida}
@@ -78,7 +71,7 @@ export function EstruturaApp({
         />
         <main
           id="conteudo"
-          className="relative flex-1 px-3 py-5 sm:px-6 sm:py-7 xl:px-10 2xl:px-14"
+          className="relative flex-1 px-3 pt-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-7 lg:pb-7 xl:px-10 2xl:px-14"
         >
           <div className="page-reveal mx-auto w-full max-w-[1600px]">
             {aviso}
@@ -86,6 +79,8 @@ export function EstruturaApp({
           </div>
         </main>
       </div>
+
+      <NavegacaoInferiorMobile aoAbrirMenu={() => setGavetaAberta(true)} />
     </div>
   );
 }
