@@ -2,30 +2,6 @@
   isolation: isolate;
 }
 
-.luz {
-  position: absolute;
-  border-radius: 999px;
-  pointer-events: none;
-  opacity: 0.16;
-  background: #ffffff;
-  filter: blur(44px);
-}
-
-.luzA {
-  width: 18rem;
-  height: 18rem;
-  top: -8rem;
-  left: 18%;
-}
-
-.luzB {
-  width: 14rem;
-  height: 14rem;
-  right: -5rem;
-  bottom: -5rem;
-  opacity: 0.1;
-}
-
 .eixo {
   position: absolute;
   top: 2rem;
@@ -33,7 +9,7 @@
   left: 50%;
   width: 1px;
   transform: translateX(-50%);
-  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.42), transparent);
+  background: rgba(255, 255, 255, 0.32);
 }
 
 .segmento {
@@ -51,34 +27,6 @@
   transform: scale(1.018);
   background: rgba(255, 255, 255, 0.17);
   border-color: rgba(255, 255, 255, 0.62);
-}
-
-.segmento:nth-of-type(2) {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.segmento:nth-of-type(3) {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.segmento:nth-of-type(4) {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.brilho {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.2) 50%, transparent 80%);
-  transform: translateX(-70%);
-  transition: opacity 180ms var(--ease-standard);
-}
-
-.segmento:hover .brilho,
-.segmento[aria-pressed="true"] .brilho {
-  opacity: 1;
-  animation: varrer 900ms var(--ease-enter) both;
 }
 
 .particula {
@@ -114,14 +62,14 @@
     transform: translateY(0) scale(0.65);
   }
   12% {
-    opacity: 0.75;
+    opacity: 0.72;
   }
   55% {
     opacity: 0.9;
     transform: translateY(15rem) scale(1);
   }
   92% {
-    opacity: 0.35;
+    opacity: 0.32;
   }
   100% {
     opacity: 0;
@@ -129,14 +77,8 @@
   }
 }
 
-@keyframes varrer {
-  from { transform: translateX(-70%); }
-  to { transform: translateX(70%); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .segmento,
-  .brilho,
   .particula {
     animation: none !important;
     transition: none !important;
