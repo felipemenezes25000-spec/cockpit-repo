@@ -14,24 +14,26 @@ export type EtapaLead = "novo" | "qualificado" | "agendamento" | "ganho" | "perd
 
 type PublicoBase = Database["public"];
 
+type LeadRow = {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  email: string | null;
+  origem: string;
+  campanha: string | null;
+  procedimento_interesse_id: string | null;
+  etapa: EtapaLead;
+  paciente_id: string | null;
+  venda_id: string | null;
+  motivo_perda: string | null;
+  observacoes: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
 type TabelaLead = {
-  Row: {
-    id: string;
-    nome: string;
-    telefone: string | null;
-    email: string | null;
-    origem: string;
-    campanha: string | null;
-    procedimento_interesse_id: string | null;
-    etapa: EtapaLead;
-    paciente_id: string | null;
-    venda_id: string | null;
-    motivo_perda: string | null;
-    observacoes: string | null;
-    criado_por: string | null;
-    criado_em: string;
-    atualizado_em: string;
-  };
+  Row: LeadRow;
   Insert: {
     id?: string;
     nome: string;
@@ -49,19 +51,21 @@ type TabelaLead = {
     criado_em?: string;
     atualizado_em?: string;
   };
-  Update: Partial<TabelaLead["Row"]>;
+  Update: Partial<LeadRow>;
   Relationships: [];
 };
 
+type LeadEtapaRow = {
+  id: number;
+  lead_id: string;
+  de: EtapaLead | null;
+  para: EtapaLead;
+  por: string | null;
+  em: string;
+};
+
 type TabelaLeadEtapas = {
-  Row: {
-    id: number;
-    lead_id: string;
-    de: EtapaLead | null;
-    para: EtapaLead;
-    por: string | null;
-    em: string;
-  };
+  Row: LeadEtapaRow;
   Insert: {
     id?: never;
     lead_id: string;
@@ -70,24 +74,26 @@ type TabelaLeadEtapas = {
     por?: string | null;
     em?: string;
   };
-  Update: Partial<TabelaLeadEtapas["Row"]>;
+  Update: Partial<LeadEtapaRow>;
   Relationships: [];
 };
 
+type MetaComercialRow = {
+  id: string;
+  competencia: string;
+  procedimento_id: string | null;
+  meta_faturamento: number;
+  ticket_medio_planejado: number;
+  taxa_lead_qualificado: number;
+  taxa_qualificado_agendamento: number;
+  taxa_agendamento_venda: number;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
 type TabelaMetaComercial = {
-  Row: {
-    id: string;
-    competencia: string;
-    procedimento_id: string | null;
-    meta_faturamento: number;
-    ticket_medio_planejado: number;
-    taxa_lead_qualificado: number;
-    taxa_qualificado_agendamento: number;
-    taxa_agendamento_venda: number;
-    criado_por: string | null;
-    criado_em: string;
-    atualizado_em: string;
-  };
+  Row: MetaComercialRow;
   Insert: {
     id?: string;
     competencia: string;
@@ -101,7 +107,7 @@ type TabelaMetaComercial = {
     criado_em?: string;
     atualizado_em?: string;
   };
-  Update: Partial<TabelaMetaComercial["Row"]>;
+  Update: Partial<MetaComercialRow>;
   Relationships: [];
 };
 
