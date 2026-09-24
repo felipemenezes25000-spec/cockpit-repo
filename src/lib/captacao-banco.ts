@@ -60,6 +60,7 @@ type LeadEtapaRow = {
   lead_id: string;
   de: EtapaLead | null;
   para: EtapaLead;
+  motivo: string | null;
   por: string | null;
   em: string;
 };
@@ -71,6 +72,7 @@ type TabelaLeadEtapas = {
     lead_id: string;
     de?: EtapaLead | null;
     para: EtapaLead;
+    motivo?: string | null;
     por?: string | null;
     em?: string;
   };
