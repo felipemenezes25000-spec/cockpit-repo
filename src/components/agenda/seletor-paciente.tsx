@@ -81,16 +81,18 @@ export function SeletorPaciente({
     const formulario = oculto.current?.form;
     if (!formulario) return;
     function aoResetar() {
-      setEscolhida(null);
+      // Formulários como Agenda podem nascer com uma paciente já escolhida.
+      // Reset devolve ao estado inicial daquele formulário, não a "nenhuma".
+      setEscolhida(inicial);
       setTermo("");
       setOpcoes([]);
       setDestacada(-1);
       setListaFechada(false);
-      aoEscolher?.(null);
+      aoEscolher?.(inicial);
     }
     formulario.addEventListener("reset", aoResetar);
     return () => formulario.removeEventListener("reset", aoResetar);
-  }, [aoEscolher]);
+  }, [aoEscolher, inicial]);
 
   useEffect(() => {
     if (escolhida || termo.trim().length < 2) {
