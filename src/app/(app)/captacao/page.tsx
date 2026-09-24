@@ -1,6 +1,7 @@
 import { Database, Sparkles, Target } from "lucide-react";
 import type { Metadata } from "next";
 import { FunilVivo } from "@/components/captacao/funil-vivo";
+import { InteligenciaCaptacao } from "@/components/captacao/inteligencia-captacao";
 import { LeadsDoFunil } from "@/components/captacao/leads-do-funil";
 import { MetaFinanceira } from "@/components/captacao/meta-financeira";
 import { MetricasCaptacao } from "@/components/captacao/metricas-captacao";
@@ -137,8 +138,16 @@ export default async function PaginaCaptacao({
 
           <RitmoDaMeta
             plano={painel.plano}
+            ritmo={painel.ritmo}
             ticketReal={painel.ticketMedioReal}
             ticketPlanejado={painel.meta.ticketMedioPlanejado}
+            metaFaturamento={painel.meta.metaFaturamento}
+          />
+
+          <InteligenciaCaptacao
+            origens={painel.origens}
+            campanhas={painel.campanhas}
+            gargalo={painel.gargalo}
           />
 
           <LeadsDoFunil
