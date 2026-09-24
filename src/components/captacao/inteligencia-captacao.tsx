@@ -23,6 +23,8 @@ function desvio(atual: number, planejada: number): string {
   return `${sinal}${valor.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`;
 }
 
+const COLUNAS_ORIGEM = "grid-cols-[minmax(0,1fr)_3.25rem_4.8rem] sm:grid-cols-[minmax(0,1fr)_4rem_4rem_5rem]";
+
 function TabelaOrigens({ origens }: { origens: OrigemDoPainel[] }) {
   if (origens.length === 0) {
     return (
@@ -34,21 +36,21 @@ function TabelaOrigens({ origens }: { origens: OrigemDoPainel[] }) {
 
   return (
     <div className="mt-4 overflow-hidden rounded-[var(--radius-cartao)] border border-card-border">
-      <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem_5.5rem] gap-2 bg-surface-container-low px-3 py-2 text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase">
+      <div className={`grid ${COLUNAS_ORIGEM} gap-2 bg-surface-container-low px-3 py-2 text-[0.6rem] font-semibold tracking-[0.055em] text-outline uppercase`}>
         <span>Origem</span>
         <span className="text-right">Leads</span>
-        <span className="text-right">Vendas</span>
-        <span className="text-right">Conversão</span>
+        <span className="hidden text-right sm:block">Vendas</span>
+        <span className="text-right">Conv.</span>
       </div>
       <ul className="divide-y divide-card-border bg-surface">
         {origens.slice(0, 6).map((origem) => (
           <li
             key={origem.origem}
-            className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem_5.5rem] gap-2 px-3 py-2.5 text-xs"
+            className={`grid ${COLUNAS_ORIGEM} gap-2 px-3 py-2.5 text-xs`}
           >
             <span className="truncate font-medium text-on-surface">{origem.origem}</span>
             <span className="text-right tabular-nums text-on-surface-variant">{origem.quantidade}</span>
-            <span className="text-right tabular-nums text-on-surface-variant">{origem.ganhos}</span>
+            <span className="hidden text-right tabular-nums text-on-surface-variant sm:block">{origem.ganhos}</span>
             <strong className="text-right tabular-nums text-primary">{taxa(origem.conversao)}</strong>
           </li>
         ))}
@@ -113,8 +115,8 @@ function Gargalo({
 
   return (
     <div className="mt-4 rounded-[var(--radius-painel)] border border-card-border bg-surface-container-low p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-xs font-semibold text-outline">Menor conversão entre etapas com volume</p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-on-surface">
             <span>{ROTULO_ETAPA[gargalo.de]}</span>
@@ -139,7 +141,7 @@ function Gargalo({
         )}
       </div>
 
-      <div className={`mt-5 grid gap-2 ${metaConfigurada ? "grid-cols-3" : "grid-cols-2"}`}>
+      <div className={`mt-5 grid gap-2 ${metaConfigurada ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
         <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3">
           <p className="text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">Atual</p>
           <p className="mt-1 text-xl font-semibold tabular-nums text-on-surface">{taxa(gargalo.taxaAtual)}</p>
@@ -150,7 +152,7 @@ function Gargalo({
             <p className="mt-1 text-xl font-semibold tabular-nums text-on-surface">{taxa(gargalo.taxaPlanejada)}</p>
           </div>
         ) : null}
-        <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3">
+        <div className={`rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3 ${metaConfigurada ? "col-span-2 sm:col-span-1" : ""}`}>
           <p className="text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">Não avançaram</p>
           <p className="mt-1 text-xl font-semibold tabular-nums text-on-surface">{gargalo.quantidadeNaoAvancou}</p>
         </div>
@@ -171,14 +173,14 @@ export function InteligenciaCaptacao({
   metaConfigurada: boolean;
 }) {
   return (
-    <section aria-labelledby="titulo-inteligencia-captacao" className="grid gap-5 xl:grid-cols-12">
-      <Card className="xl:col-span-4">
+    <section aria-labelledby="titulo-inteligencia-captacao" className="grid min-w-0 gap-5 xl:grid-cols-12">
+      <Card className="min-w-0 xl:col-span-4">
         <CardCorpo>
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-atencao-fundo text-atencao">
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-atencao-fundo text-atencao">
               <BadgeAlert size={19} strokeWidth={1.8} />
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="rotulo text-primary">Gargalo</p>
               <h2 id="titulo-inteligencia-captacao" className="titulo-secao mt-1">Onde o funil perde força</h2>
             </div>
@@ -187,13 +189,13 @@ export function InteligenciaCaptacao({
         </CardCorpo>
       </Card>
 
-      <Card className="xl:col-span-4">
+      <Card className="min-w-0 xl:col-span-4">
         <CardCorpo>
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary">
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary">
               <Route size={19} strokeWidth={1.8} />
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="rotulo text-primary">Origem</p>
               <h2 className="titulo-secao mt-1">Volume também precisa converter</h2>
             </div>
@@ -203,13 +205,13 @@ export function InteligenciaCaptacao({
         </CardCorpo>
       </Card>
 
-      <Card className="xl:col-span-4">
+      <Card className="min-w-0 xl:col-span-4">
         <CardCorpo>
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary">
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary">
               <Megaphone size={19} strokeWidth={1.8} />
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="rotulo text-primary">Campanhas</p>
               <h2 className="titulo-secao mt-1">O que está trazendo resultado</h2>
             </div>
