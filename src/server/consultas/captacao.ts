@@ -37,6 +37,7 @@ export type OrigemDoPainel = {
   percentual: number;
   ganhos: number;
   conversao: number;
+  receita: number;
 };
 
 export type CampanhaDoPainel = {
@@ -44,6 +45,7 @@ export type CampanhaDoPainel = {
   quantidade: number;
   ganhos: number;
   conversao: number;
+  receita: number;
 };
 
 export type GargaloDoPainel = {
@@ -169,7 +171,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
       (inicio, fim) =>
         supabase
           .from("leads")
-          .select("id, origem, campanha, etapa, criado_em")
+          .select("id, origem, campanha, etapa, venda_id, criado_em")
           .gte("criado_em", periodo.de.toISOString())
           .lt("criado_em", periodo.ate.toISOString())
           .order("criado_em", { ascending: false })
@@ -219,6 +221,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
   const faturamentoAtual = vendas.reduce((soma, venda) => soma + Number(venda.valor_final), 0);
   const vendasNoMes = vendas.length;
   const ticketMedioReal = vendasNoMes > 0 ? faturamentoAtual / vendasNoMes : 0;
+  const valorVendaPorId = new Map(vendas.map((venda) => [venda.id, Number(venda.valor_final)]));
 
   const plano = calcularPlanoDaMeta({
     metaFaturamento: meta.metaFaturamento,
@@ -286,19 +289,22 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     },
   ];
 
-  const porOrigem = new Map<string, { quantidade: number; ganhos: number }>();
-  const porCampanha = new Map<string, { quantidade: number; ganhos: number }>();
+  const porOrigem = new Map<string, { quantidade: number; ganhos: number; receita: number }>();
+  const porCampanha = new Map<string, { quantidade: number; ganhos: number; receita: number }>();
 
   for (const lead of leads) {
-    const origem = porOrigem.get(lead.origem) ?? { quantidade: 0, ganhos: 0 };
+    const receita = lead.venda_id ? valorVendaPorId.get(lead.venda_id) ?? 0 : 0;
+    const origem = porOrigem.get(lead.origem) ?? { quantidade: 0, ganhos: 0, receita: 0 };
     origem.quantidade += 1;
+    origem.receita += receita;
     if (idsGanhos.has(lead.id)) origem.ganhos += 1;
     porOrigem.set(lead.origem, origem);
 
     const campanha = lead.campanha?.trim();
     if (campanha) {
-      const atual = porCampanha.get(campanha) ?? { quantidade: 0, ganhos: 0 };
+      const atual = porCampanha.get(campanha) ?? { quantidade: 0, ganhos: 0, receita: 0 };
       atual.quantidade += 1;
+      atual.receita += receita;
       if (idsGanhos.has(lead.id)) atual.ganhos += 1;
       porCampanha.set(campanha, atual);
     }
@@ -311,8 +317,9 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
       percentual: percentual(dados.quantidade, entrada),
       ganhos: dados.ganhos,
       conversao: percentual(dados.ganhos, dados.quantidade),
+      receita: dados.receita,
     }))
-    .sort((a, b) => b.quantidade - a.quantidade || b.conversao - a.conversao || a.origem.localeCompare(b.origem));
+    .sort((a, b) => b.receita - a.receita || b.quantidade - a.quantidade || b.conversao - a.conversao || a.origem.localeCompare(b.origem));
 
   const campanhas = [...porCampanha.entries()]
     .map(([campanha, dados]) => ({
@@ -320,8 +327,9 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
       quantidade: dados.quantidade,
       ganhos: dados.ganhos,
       conversao: percentual(dados.ganhos, dados.quantidade),
+      receita: dados.receita,
     }))
-    .sort((a, b) => b.quantidade - a.quantidade || b.conversao - a.conversao || a.campanha.localeCompare(b.campanha));
+    .sort((a, b) => b.receita - a.receita || b.quantidade - a.quantidade || b.conversao - a.conversao || a.campanha.localeCompare(b.campanha));
 
   const motivos = new Map<string, number>();
   for (const motivo of ultimaPerdaPorLead.values()) {
