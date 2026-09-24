@@ -22,25 +22,25 @@ const FASE = {
     rotulo: "Ainda cedo",
     barra: "bg-outline-variant",
     texto: "text-outline",
+    fundo: "bg-white/58",
+    borda: "border-card-border/75",
   },
   no_periodo: {
     rotulo: "No período",
     barra: "bg-informativo",
     texto: "text-informativo-texto",
+    fundo: "bg-informativo-fundo/28",
+    borda: "border-informativo-borda/45",
   },
   passou: {
     rotulo: "Passou do período",
     barra: "bg-atencao-acento",
     texto: "text-atencao",
+    fundo: "bg-atencao-fundo/32",
+    borda: "border-atencao-borda/45",
   },
 } as const;
 
-/**
- * O texto ao lado da fase. Dentro do período com a data sugerida já passada,
- * é "sugerido há N dias": "N dias além do sugerido" ao lado de "No período"
- * dizia duas coisas opostas. "Além do sugerido" fica só para quem passou do
- * período.
- */
 export function descreverSugerido(fase: JanelaContato["fase"], diasAteSugerido: number): string {
   const dias = (n: number) => (n === 1 ? "1 dia" : `${n} dias`);
   if (diasAteSugerido >= 0) return `sugerido em ${dias(diasAteSugerido)}`;
@@ -48,36 +48,30 @@ export function descreverSugerido(fase: JanelaContato["fase"], diasAteSugerido: 
   return fase === "passou" ? `${dias(passados)} além do sugerido` : `sugerido há ${dias(passados)}`;
 }
 
-/**
- * Barra da janela de contato: mostra onde a paciente está dentro do intervalo
- * sugerido para o retorno. Os prazos são demonstrativos e ainda precisam ser
- * definidos pela equipe — não são recomendação clínica.
- */
 function BarraJanela({ janela }: { janela: JanelaContato }) {
   const fase = FASE[janela.fase];
   const largura = Math.round(janela.progresso * 100);
 
   return (
-    <div className="mt-3">
+    <div className="mt-4">
       <div
-        className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-container"
+        className="relative h-2 w-full overflow-hidden rounded-full border border-card-border/55 bg-white/58 shadow-[inset_0_1px_2px_rgba(15,35,58,0.05)]"
         role="img"
         aria-label={`${fase.rotulo}, dentro de um intervalo sugerido de ${janela.intervaloSugerido} dias`}
       >
-        {/* Faixa sugerida de contato, a partir de 85% do intervalo */}
+        <span aria-hidden="true" className="absolute inset-y-0 right-0 left-[85%] bg-secondary-fixed/75" />
         <span
           aria-hidden="true"
-          className="absolute inset-y-0 right-0 left-[85%] bg-secondary-fixed"
-        />
-        <span
-          aria-hidden="true"
-          className={cn("absolute inset-y-0 left-0 rounded-full", fase.barra)}
+          className={cn("absolute inset-y-0 left-0 rounded-full shadow-[0_0_14px_currentColor] transition-[width] duration-500 ease-out", fase.barra)}
           style={{ width: `${largura}%` }}
         />
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
-        <span className={cn("text-xs font-medium", fase.texto)}>{fase.rotulo}</span>
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className={cn("inline-flex items-center gap-1.5 text-xs font-semibold", fase.texto)}>
+          <span aria-hidden="true" className={cn("size-1.5 rounded-full", fase.barra)} />
+          {fase.rotulo}
+        </span>
         <span className="tabular text-xs text-outline">
           {descreverSugerido(janela.fase, janela.diasAteSugerido)}
         </span>
@@ -104,37 +98,49 @@ export async function ProximosRetornos() {
   }
 
   return (
-    <Card>
+    <Card className="relative overflow-hidden">
+      <span aria-hidden="true" className="pointer-events-none absolute -top-24 -right-16 size-52 rounded-full bg-secondary-fixed/38 blur-3xl" />
       <CardCabecalho
         titulo="Próximos retornos"
         descricao="Oportunidades de acompanhamento, das mais antigas para as mais recentes."
       />
 
-      <CardCorpo>
+      <CardCorpo className="relative">
         <Lista rotulo="Pacientes para retorno">
-          {visiveis.map((retorno) => (
-            <ItemLista key={retorno.id}>
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                <span className="truncate text-sm font-medium text-on-surface">
-                  {retorno.paciente}
-                </span>
-                <span className="rounded-[var(--radius-tag)] bg-surface-container-low px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase">
-                  {ROTULO_ACOMPANHAMENTO[retorno.situacao]}
-                </span>
-              </div>
+          {visiveis.map((retorno) => {
+            const fase = FASE[retorno.janela.fase];
+            return (
+              <ItemLista
+                key={retorno.id}
+                className={cn(
+                  "premium-interactive relative overflow-hidden border shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  fase.fundo,
+                  fase.borda,
+                )}
+              >
+                <span aria-hidden="true" className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", fase.barra)} />
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pl-1">
+                  <span className="truncate text-sm font-semibold text-on-surface">
+                    {retorno.paciente}
+                  </span>
+                  <span className="rounded-[var(--radius-tag)] border border-card-border/70 bg-white/65 px-2 py-1 text-[0.625rem] font-bold tracking-wider text-outline uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                    {ROTULO_ACOMPANHAMENTO[retorno.situacao]}
+                  </span>
+                </div>
 
-              <p className="mt-1 text-sm text-outline">
-                {retorno.procedimento} · último atendimento em{" "}
-                {formatarData(retorno.ultimoAtendimento)}
-              </p>
+                <p className="mt-1.5 pl-1 text-sm leading-5 text-outline">
+                  {retorno.procedimento} · último atendimento em{" "}
+                  {formatarData(retorno.ultimoAtendimento)}
+                </p>
 
-              <BarraJanela janela={retorno.janela} />
-            </ItemLista>
-          ))}
+                <div className="pl-1"><BarraJanela janela={retorno.janela} /></div>
+              </ItemLista>
+            );
+          })}
         </Lista>
       </CardCorpo>
 
-      <CardRodape className="flex flex-wrap items-center justify-between gap-3">
+      <CardRodape className="relative flex flex-wrap items-center justify-between gap-3">
         <span className="text-outline">
           Períodos sugeridos são demonstrativos e ainda serão definidos pela equipe.
         </span>
