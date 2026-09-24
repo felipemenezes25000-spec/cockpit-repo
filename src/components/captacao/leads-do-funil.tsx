@@ -1,17 +1,34 @@
 "use client";
 
-import { CircleAlert, LoaderCircle, MessageCircle, Plus, Route, UserRoundPlus } from "lucide-react";
+import {
+  CalendarPlus2,
+  CircleAlert,
+  Link2,
+  LoaderCircle,
+  MessageCircle,
+  Plus,
+  Route,
+  UserCheck,
+  UserRoundPlus,
+} from "lucide-react";
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
+import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { Campo, classeDeAreaDeTexto, classeDeEntrada } from "@/components/ui/field";
 import { ACAO_INICIAL } from "@/lib/acao";
 import { ETAPAS_FUNIL, ORIGENS_CAPTACAO, ROTULO_ETAPA } from "@/lib/captacao";
 import { formatarData } from "@/lib/format";
 import { formatarTelefone, linkWhatsapp } from "@/lib/paciente";
-import { criarLead, mudarEtapaLead, type EstadoLead } from "@/server/acoes/captacao";
+import {
+  criarLead,
+  mudarEtapaLead,
+  vincularPacienteLead,
+  type EstadoLead,
+} from "@/server/acoes/captacao";
 import type { LeadDoPainel } from "@/server/consultas/captacao";
 import type { Procedimento } from "@/server/consultas/procedimentos";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
-import { Campo, classeDeAreaDeTexto, classeDeEntrada } from "@/components/ui/field";
 
 const INICIAL: EstadoLead = { erros: {} };
 
@@ -112,9 +129,9 @@ function MoverLead({ lead }: { lead: LeadDoPainel }) {
   }, [lead.etapa]);
 
   return (
-    <form action={executar} className="flex min-w-[13rem] flex-col gap-2 sm:items-end">
+    <form action={executar} className="flex min-w-0 flex-col gap-2 lg:items-end">
       <input type="hidden" name="id" value={lead.id} />
-      <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+      <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
         <select
           name="para"
           aria-label={`Mover ${lead.nome} para outra etapa`}
@@ -140,11 +157,99 @@ function MoverLead({ lead }: { lead: LeadDoPainel }) {
   );
 }
 
+function BotaoVincular({ desabilitado }: { desabilitado: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending || desabilitado}
+      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[var(--radius-controle)] bg-primary-container px-3 text-xs font-semibold text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
+    >
+      {pending ? <LoaderCircle aria-hidden="true" size={14} className="animate-spin" /> : <Link2 aria-hidden="true" size={14} />}
+      {pending ? "Vinculando…" : "Confirmar vínculo"}
+    </button>
+  );
+}
+
+function VincularPaciente({ lead }: { lead: LeadDoPainel }) {
+  const [estado, executar] = useActionState(vincularPacienteLead, ACAO_INICIAL);
+  const [selecionada, setSelecionada] = useState(false);
+
+  return (
+    <details className="group w-full rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low px-3 py-2.5 lg:max-w-[22rem]">
+      <summary className="flex min-h-7 cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold text-primary">
+        <span className="inline-flex items-center gap-1.5">
+          <Link2 aria-hidden="true" size={14} />
+          {lead.pacienteId ? "Trocar paciente vinculada" : "Vincular a uma paciente"}
+        </span>
+        <span aria-hidden="true" className="text-outline transition-transform group-open:rotate-45">+</span>
+      </summary>
+
+      <form action={executar} className="mt-3 flex flex-col gap-3 border-t border-card-border pt-3">
+        <input type="hidden" name="id" value={lead.id} />
+        <SeletorPaciente
+          inicial={null}
+          idPrefix={`paciente-lead-${lead.id}`}
+          aoEscolher={(paciente) => setSelecionada(Boolean(paciente))}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <BotaoVincular desabilitado={!selecionada} />
+          {!estado.ok && estado.mensagem ? (
+            <p role="alert" className="text-xs leading-5 text-negativo">{estado.mensagem}</p>
+          ) : null}
+          {estado.ok && estado.mensagem ? (
+            <p role="status" className="text-xs leading-5 text-positivo">{estado.mensagem}</p>
+          ) : null}
+        </div>
+        <p className="text-[0.68rem] leading-5 text-outline">
+          Depois do vínculo, uma venda registrada para esta paciente pode concluir o lead automaticamente.
+        </p>
+      </form>
+    </details>
+  );
+}
+
+function AcoesDaPaciente({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar: boolean }) {
+  return (
+    <div className="flex w-full flex-col gap-2 lg:items-end">
+      {lead.pacienteId ? (
+        <div className="flex w-full flex-wrap items-center gap-2 lg:justify-end">
+          <span className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-tag)] border border-positivo-borda bg-positivo-fundo px-2.5 text-xs font-semibold text-positivo">
+            <UserCheck aria-hidden="true" size={14} />
+            Paciente vinculada
+          </span>
+          <Link
+            href={`/pacientes/${lead.pacienteId}`}
+            className="inline-flex h-8 items-center rounded-[var(--radius-controle)] border border-card-border bg-surface px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-selecao"
+          >
+            Abrir ficha
+          </Link>
+          <Link
+            href={`/agenda/novo?paciente=${lead.pacienteId}`}
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-fixed"
+          >
+            <CalendarPlus2 aria-hidden="true" size={14} />
+            Agendar
+          </Link>
+        </div>
+      ) : podeEditar ? (
+        <div className="w-full lg:max-w-[22rem]">
+          <p className="mb-2 text-[0.68rem] leading-5 text-outline">
+            Ainda não existe cadastro clínico ligado a esta oportunidade.
+          </p>
+        </div>
+      ) : null}
+
+      {podeEditar ? <VincularPaciente lead={lead} /> : null}
+    </div>
+  );
+}
+
 function LinhaLead({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar: boolean }) {
   const whatsapp = linkWhatsapp(lead.telefone);
   return (
-    <li className="premium-interactive flex flex-col gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 flex-1">
+    <li className="premium-interactive grid gap-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
+      <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <strong className="truncate text-sm text-on-surface">{lead.nome}</strong>
           <span className="rounded-[var(--radius-tag)] border border-informativo-borda bg-informativo-fundo px-2 py-0.5 text-[0.68rem] font-semibold text-informativo-texto">
@@ -165,7 +270,11 @@ function LinhaLead({ lead, podeEditar }: { lead: LeadDoPainel; podeEditar: boole
           ) : null}
         </div>
       </div>
-      {podeEditar ? <MoverLead lead={lead} /> : null}
+
+      <div className="flex min-w-0 flex-col gap-3 border-t border-card-border pt-3 lg:border-t-0 lg:pt-0">
+        <AcoesDaPaciente lead={lead} podeEditar={podeEditar} />
+        {podeEditar ? <MoverLead lead={lead} /> : null}
+      </div>
     </li>
   );
 }
@@ -186,7 +295,7 @@ export function LeadsDoFunil({
       <Card>
         <CardCabecalho
           titulo="Leads recentes"
-          descricao="A carteira comercial fica separada de Pacientes até a conversão. Mover uma etapa grava histórico no banco."
+          descricao="A carteira comercial continua separada de Pacientes, mas agora o vínculo fecha o ciclo: ficha, agenda e venda passam a conversar com o mesmo lead."
           acao={<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary"><Route aria-hidden="true" size={15} /> {leads.length} exibidos</span>}
         />
         <CardCorpo>
