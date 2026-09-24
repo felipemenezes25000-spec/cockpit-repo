@@ -84,9 +84,10 @@ function GrupoDaPergunta({
       aria-labelledby={idRotulo}
       aria-describedby={descricao}
       disabled={somenteLeitura}
-      className="flex min-w-0 flex-col gap-1.5"
+      className="group/pergunta relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-[16px] border border-card-border/75 bg-white/58 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-primary/18 focus-within:bg-white/78 focus-within:shadow-[var(--shadow-cartao)] sm:p-5"
     >
-      <legend id={idRotulo} className="rotulo mb-1.5">
+      <span aria-hidden="true" className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+      <legend id={idRotulo} className="relative rotulo mb-1.5">
         {rotulo}
         {obrigatorio ? (
           <>
@@ -102,10 +103,10 @@ function GrupoDaPergunta({
         )}
       </legend>
 
-      {children}
+      <div className="relative">{children}</div>
 
       {dica ? (
-        <p id={idDica} className="text-xs text-outline">
+        <p id={idDica} className="relative text-xs leading-5 text-outline transition-colors group-focus-within/pergunta:text-on-surface-variant">
           {dica}
         </p>
       ) : null}
@@ -120,11 +121,11 @@ function GrupoDaPergunta({
  */
 function classeDaOpcao(marcada: boolean, somenteLeitura: boolean): string {
   return cn(
-    "rounded-[var(--radius-cartao)] border text-sm text-on-surface transition-colors",
-    somenteLeitura ? "cursor-not-allowed" : "cursor-pointer",
+    "rounded-[var(--radius-cartao)] border text-sm text-on-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.78)] transition-[transform,background-color,border-color,box-shadow] duration-180",
+    somenteLeitura ? "cursor-not-allowed" : "cursor-pointer active:scale-[0.99]",
     marcada
-      ? "border-primary bg-secondary-fixed"
-      : cn("border-outline-variant bg-surface", !somenteLeitura && "hover:border-primary"),
+      ? "border-primary/25 bg-primary-fixed/58 shadow-[var(--shadow-cartao)]"
+      : cn("border-card-border/85 bg-white/66", !somenteLeitura && "hover:-translate-y-px hover:border-primary/18 hover:bg-white hover:shadow-[var(--shadow-cartao)]"),
   );
 }
 
@@ -160,18 +161,12 @@ function PerguntaSimNao({
               classeDaOpcao(marcada, somenteLeitura),
             )}
           >
-            {/* Rádio nativo, e não botão: o estado "marcado" e a navegação por
-                setas vêm do navegador, sem ARIA para manter à mão. */}
             <input
               type="radio"
               name={nome}
               value={opcao.valor}
               checked={marcada}
               onChange={() => aoMudar(opcao.valor)}
-              // Clicar de novo no que já está marcado limpa a resposta: sem
-              // isso, uma pergunta não obrigatória marcada por engano ficaria
-              // marcada para sempre. O rádio já marcado não dispara `change`,
-              // por isso o clique.
               onClick={() => {
                 if (marcada) aoMudar("");
               }}
@@ -243,7 +238,6 @@ function PerguntaEscolha({
                 value={opcao}
                 checked={marcada}
                 onChange={() => aoMudar(opcao)}
-                // Mesmo gesto do sim/não: clicar na marcada limpa a resposta.
                 onClick={() => {
                   if (marcada) aoMudar("");
                 }}
@@ -274,7 +268,6 @@ export function FormularioAnamnese({
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
 
-  // Instantâneo do que está na tela, para contar pendências enquanto digita.
   const naTela: CampoRespondido[] = campos.map((campo) => {
     const valor = valores[campo.chave];
     return campo.tipo === "escolha_multipla"
@@ -284,6 +277,7 @@ export function FormularioAnamnese({
 
   const pendentes = obrigatoriasPendentes(naTela);
   const feitas = respondidas(naTela);
+  const progresso = campos.length > 0 ? Math.round((feitas / campos.length) * 100) : 0;
 
   function mudar(chave: string, valor: Valor) {
     setValores((atuais) => ({ ...atuais, [chave]: valor }));
@@ -295,8 +289,6 @@ export function FormularioAnamnese({
     evento.preventDefault();
     if (salvando) return;
 
-    // O banco recusaria de qualquer jeito; aqui a recusa chega antes, junto
-    // do campo, e em português.
     for (const campo of campos) {
       const valor = valores[campo.chave];
       if (typeof valor === "string") {
@@ -366,8 +358,30 @@ export function FormularioAnamnese({
   }
 
   return (
-    <form onSubmit={salvar} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-6">
+    <form onSubmit={salvar} className="flex flex-col gap-5">
+      <section className="relative overflow-hidden rounded-[18px] border border-card-border/75 bg-[linear-gradient(135deg,rgba(209,232,255,0.26),rgba(255,255,255,0.72))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),var(--shadow-cartao)] sm:p-5" aria-label="Progresso da anamnese">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-10 size-36 rounded-full bg-primary-fixed/42 blur-3xl" />
+        <div className="relative flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-on-surface">Preenchimento da anamnese</p>
+            <p className="mt-1 text-xs leading-5 text-outline">
+              {somenteLeitura
+                ? `${feitas} de ${campos.length} perguntas respondidas.`
+                : "Você pode salvar parcialmente e voltar depois enquanto o formulário estiver disponível."}
+            </p>
+          </div>
+          <span className="tabular rounded-full border border-primary/10 bg-white/75 px-2.5 py-1 text-xs font-bold text-primary shadow-[var(--shadow-cartao)]">{progresso}%</span>
+        </div>
+        <div className="relative mt-4 h-2 overflow-hidden rounded-full border border-primary/8 bg-white/64 shadow-[inset_0_1px_2px_rgba(15,35,58,0.04)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso} aria-label={`${feitas} de ${campos.length} perguntas respondidas`}>
+          <span className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,var(--color-primary-container),var(--color-primary))] transition-[width] duration-300 ease-out" style={{ width: `${progresso}%` }} />
+        </div>
+        <div className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <span className="tabular font-medium text-on-surface-variant">{feitas} respondidas</span>
+          {pendentes > 0 ? <span className="font-medium text-atencao">{pendentes} obrigatória{pendentes > 1 ? "s" : ""} em falta</span> : <span className="font-medium text-positivo">Obrigatórias completas</span>}
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-3">
         {campos.map((campo, indice) => {
           const valor = valores[campo.chave];
           const idCampo = `campo-${campo.chave}`;
@@ -420,36 +434,40 @@ export function FormularioAnamnese({
           }
 
           return (
-            <Campo
-              key={campo.chave}
-              id={idCampo}
-              rotulo={rotulo}
-              obrigatorio={campo.obrigatorio}
-              dica={dica}
-            >
-              {campo.tipo === "texto_longo" ? (
-                <textarea
+            <div key={campo.chave} className="relative overflow-hidden rounded-[16px] border border-card-border/75 bg-white/58 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-primary/18 focus-within:bg-white/78 focus-within:shadow-[var(--shadow-cartao)] sm:p-5">
+              <span aria-hidden="true" className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+              <div className="relative">
+                <Campo
                   id={idCampo}
-                  value={typeof valor === "string" ? valor : ""}
-                  maxLength={4000}
-                  rows={4}
-                  disabled={somenteLeitura}
-                  onChange={(evento) => mudar(campo.chave, evento.target.value)}
-                  className={AREA_TEXTO}
-                />
-              ) : (
-                <input
-                  id={idCampo}
-                  type={campo.tipo === "data" ? "date" : "text"}
-                  inputMode={campo.tipo === "numero" ? "decimal" : undefined}
-                  value={typeof valor === "string" ? valor : ""}
-                  maxLength={campo.tipo === "numero" ? 20 : 4000}
-                  disabled={somenteLeitura}
-                  onChange={(evento) => mudar(campo.chave, evento.target.value)}
-                  className={cn(ENTRADA, campo.tipo === "numero" && "tabular")}
-                />
-              )}
-            </Campo>
+                  rotulo={rotulo}
+                  obrigatorio={campo.obrigatorio}
+                  dica={dica}
+                >
+                  {campo.tipo === "texto_longo" ? (
+                    <textarea
+                      id={idCampo}
+                      value={typeof valor === "string" ? valor : ""}
+                      maxLength={4000}
+                      rows={4}
+                      disabled={somenteLeitura}
+                      onChange={(evento) => mudar(campo.chave, evento.target.value)}
+                      className={AREA_TEXTO}
+                    />
+                  ) : (
+                    <input
+                      id={idCampo}
+                      type={campo.tipo === "data" ? "date" : "text"}
+                      inputMode={campo.tipo === "numero" ? "decimal" : undefined}
+                      value={typeof valor === "string" ? valor : ""}
+                      maxLength={campo.tipo === "numero" ? 20 : 4000}
+                      disabled={somenteLeitura}
+                      onChange={(evento) => mudar(campo.chave, evento.target.value)}
+                      className={cn(ENTRADA, campo.tipo === "numero" && "tabular")}
+                    />
+                  )}
+                </Campo>
+              </div>
+            </div>
           );
         })}
       </div>
@@ -465,11 +483,18 @@ export function FormularioAnamnese({
       ) : null}
 
       {somenteLeitura ? null : (
-        <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-5">
+        <div className={cn(
+          "sticky z-20 flex flex-wrap items-center gap-3 overflow-hidden rounded-[16px] border border-card-border/85 bg-white/90 px-3 py-3 shadow-[0_16px_42px_-24px_rgba(8,41,76,0.42),inset_0_1px_0_rgba(255,255,255,0.96)] backdrop-blur-xl sm:px-4",
+          destino.tipo === "link" ? "bottom-3" : "bottom-[calc(5.15rem+env(safe-area-inset-bottom))] lg:bottom-3",
+        )}>
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
           <button
             type="submit"
             disabled={salvando}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-55"
+            className={cn(
+              "relative inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55",
+              salvo ? "border border-positivo-borda bg-positivo-fundo text-positivo shadow-[var(--shadow-cartao)]" : "bg-primary-container text-on-primary hover:bg-primary",
+            )}
           >
             {salvando ? (
               <>
@@ -479,7 +504,7 @@ export function FormularioAnamnese({
             ) : salvo ? (
               <>
                 <Check aria-hidden="true" size={18} strokeWidth={1.75} />
-                Salvo
+                Respostas salvas
               </>
             ) : (
               <>
@@ -498,8 +523,6 @@ export function FormularioAnamnese({
         </div>
       )}
 
-      {/* Pendência não trava o salvamento: anamnese se preenche aos poucos, e
-          guardar metade é melhor do que perder tudo porque falta uma. */}
       {pendentes > 0 && !somenteLeitura ? (
         <p className="text-xs text-atencao">
           Dá para salvar assim mesmo e completar depois.
