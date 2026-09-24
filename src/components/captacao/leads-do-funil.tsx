@@ -40,6 +40,7 @@ import type {
 import type { Procedimento } from "@/server/consultas/procedimentos";
 
 const INICIAL: EstadoLead = { erros: {} };
+const ETAPAS_MANUAIS = ETAPAS_FUNIL.filter((etapa) => etapa !== "ganho");
 
 function BotaoAdicionar() {
   const { pending } = useFormStatus();
@@ -131,11 +132,19 @@ function BotaoMover({ desabilitado }: { desabilitado: boolean }) {
 
 function MoverLead({ lead }: { lead: LeadDaCarteira }) {
   const [estado, executar] = useActionState(mudarEtapaLead, ACAO_INICIAL);
-  const [para, setPara] = useState(lead.etapa);
+  const [para, setPara] = useState(lead.etapa === "ganho" ? "novo" : lead.etapa);
 
   useEffect(() => {
-    setPara(lead.etapa);
+    if (lead.etapa !== "ganho") setPara(lead.etapa);
   }, [lead.etapa]);
+
+  if (lead.etapa === "ganho") {
+    return (
+      <div className="rounded-[var(--radius-cartao)] border border-positivo-borda bg-positivo-fundo px-3 py-2.5 text-xs leading-5 text-positivo lg:max-w-[22rem] lg:text-right">
+        <strong>Venda comprovada pelo Financeiro.</strong> Esta etapa não é alterada manualmente pela Captação.
+      </div>
+    );
+  }
 
   return (
     <form action={executar} className="flex min-w-0 flex-col gap-2 lg:items-end">
@@ -148,7 +157,7 @@ function MoverLead({ lead }: { lead: LeadDaCarteira }) {
           onChange={(evento) => setPara(evento.target.value as typeof para)}
           className={classeDeEntrada({ altura: "compacta", largura: "auto", texto: "xs" })}
         >
-          {ETAPAS_FUNIL.map((etapa) => <option key={etapa} value={etapa}>{ROTULO_ETAPA[etapa]}</option>)}
+          {ETAPAS_MANUAIS.map((etapa) => <option key={etapa} value={etapa}>{ROTULO_ETAPA[etapa]}</option>)}
         </select>
         <BotaoMover desabilitado={para === lead.etapa} />
       </div>
@@ -275,7 +284,7 @@ function AcoesDaPaciente({ lead, podeEditar }: { lead: LeadDaCarteira; podeEdita
         </div>
       ) : null}
 
-      {podeEditar ? <VincularPaciente lead={lead} /> : null}
+      {podeEditar && lead.etapa !== "ganho" ? <VincularPaciente lead={lead} /> : null}
     </div>
   );
 }
