@@ -6,8 +6,8 @@ export default function CarregandoCaptacao() {
         <span className="esqueleto h-8 w-full max-w-md" />
         <span className="esqueleto h-4 w-full max-w-2xl" />
         <div className="mt-2 flex gap-2">
-          <span className="esqueleto h-7 w-24 rounded-full" />
-          <span className="esqueleto h-7 w-32 rounded-full" />
+          <span className="esqueleto h-7 w-24" />
+          <span className="esqueleto h-7 w-32" />
         </div>
       </header>
 
