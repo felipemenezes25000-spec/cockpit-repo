@@ -1,4 +1,4 @@
-import { DatabaseZap, Funnel, Sparkles } from "lucide-react";
+import { DatabaseZap, Sparkles, Target } from "lucide-react";
 import type { Metadata } from "next";
 import { FunilVivo } from "@/components/captacao/funil-vivo";
 import { LeadsDoFunil } from "@/components/captacao/leads-do-funil";
@@ -37,7 +37,7 @@ export default async function PaginaCaptacao({
   return (
     <div className="flex flex-col gap-5 pb-8 sm:gap-6">
       <CabecalhoDePagina
-        icone={Funnel}
+        icone={Target}
         rotulo="Captação"
         titulo="Meta financeira e funil comercial"
         descricao="Transforme a meta do mês em um plano comercial visível: quantos contatos entram, quantos avançam e quanto ainda falta para fechar."
