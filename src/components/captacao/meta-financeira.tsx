@@ -45,6 +45,8 @@ export function MetaFinanceira({
 }) {
   const [estado, acao] = useActionState(salvarMetaComercial, INICIAL);
   const chave = `${meta.id ?? "nova"}-${meta.metaFaturamento}-${meta.ticketMedioPlanejado}`;
+  const configurada = meta.id !== null;
+  const percentualMeta = configurada ? Math.round(plano.percentualMeta) : 0;
 
   return (
     <Card className="h-full">
@@ -59,9 +61,18 @@ export function MetaFinanceira({
           </div>
         </div>
 
+        {!configurada ? (
+          <div className="mt-5 rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-3">
+            <p className="text-xs font-semibold text-atencao">Meta ainda não definida</p>
+            <p className="mt-1 text-xs leading-5 text-on-surface-variant">
+              Defina faturamento, ticket e conversões para ativar o cálculo do funil inverso e da cadência mensal.
+            </p>
+          </div>
+        ) : null}
+
         <div className="mt-5">
-          <p className="text-xs font-medium text-outline">Meta definida</p>
-          <p className="numero mt-1 text-on-surface">{formatarMoeda(meta.metaFaturamento)}</p>
+          <p className="text-xs font-medium text-outline">{configurada ? "Meta definida" : "Meta do mês"}</p>
+          <p className="numero mt-1 text-on-surface">{configurada ? formatarMoeda(meta.metaFaturamento) : "—"}</p>
         </div>
 
         <div className="mt-4">
@@ -70,32 +81,37 @@ export function MetaFinanceira({
               <p className="text-xs text-outline">Faturamento atual</p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-on-surface">{formatarMoeda(faturamentoAtual)}</p>
             </div>
-            <strong className="text-lg font-semibold tabular-nums text-primary">{Math.round(plano.percentualMeta)}%</strong>
+            <strong className="text-lg font-semibold tabular-nums text-primary">{configurada ? `${percentualMeta}%` : "—"}</strong>
           </div>
-          <span className="barra mt-3" aria-label={`${Math.round(plano.percentualMeta)}% da meta atingida`}>
-            <span style={{ width: `${Math.min(100, plano.percentualMeta)}%` }} />
+          <span
+            className="barra mt-3"
+            aria-label={configurada ? `${percentualMeta}% da meta atingida` : "Meta ainda não definida"}
+          >
+            <span style={{ width: configurada ? `${Math.min(100, plano.percentualMeta)}%` : "0%" }} />
           </span>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 border-y border-card-border py-4">
           <div>
             <p className="text-xs text-outline">Falta faturar</p>
-            <p className="mt-1 text-base font-semibold tabular-nums text-on-surface">{formatarMoeda(plano.gapFinanceiro)}</p>
+            <p className="mt-1 text-base font-semibold tabular-nums text-on-surface">{configurada ? formatarMoeda(plano.gapFinanceiro) : "—"}</p>
           </div>
           <div>
             <p className="text-xs text-outline">Leads necessários</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">+{plano.leadsNecessarios.toLocaleString("pt-BR")}</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">{configurada ? `+${plano.leadsNecessarios.toLocaleString("pt-BR")}` : "—"}</p>
           </div>
         </div>
 
         <p className="mt-4 text-xs leading-5 text-outline">
-          O número de leads é recalculado do fundo para o topo usando ticket e conversões planejadas. Nada desse resultado é salvo manualmente.
+          {configurada
+            ? "O número de leads é recalculado do fundo para o topo usando ticket e conversões planejadas. Nada desse resultado é salvo manualmente."
+            : "O faturamento realizado continua vindo do Financeiro; configurar a meta não cria nenhum total paralelo."}
         </p>
 
         {podeEditar ? (
-          <details className="group mt-5 border-t border-card-border pt-4" open={meta.id === null}>
+          <details className="group mt-5 border-t border-card-border pt-4" open={!configurada}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-[var(--radius-controle)] py-2 text-sm font-semibold text-primary focus-visible:outline-2">
-              Ajustar meta e premissas
+              {configurada ? "Ajustar meta e premissas" : "Definir meta e premissas"}
               <PencilLine aria-hidden="true" size={16} className="transition-transform group-open:rotate-[-8deg]" />
             </summary>
 
@@ -162,7 +178,11 @@ export function MetaFinanceira({
             </form>
           </details>
         ) : (
-          <p className="mt-auto pt-5 text-xs leading-5 text-outline">A meta pode ser alterada pela administradora ou pelo perfil financeiro.</p>
+          <p className="mt-auto pt-5 text-xs leading-5 text-outline">
+            {configurada
+              ? "A meta pode ser alterada pela administradora ou pelo perfil financeiro."
+              : "A administradora ou o perfil financeiro precisa definir a meta para ativar o planejamento do funil."}
+          </p>
         )}
       </CardCorpo>
     </Card>
