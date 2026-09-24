@@ -48,7 +48,7 @@ export function MetaFinanceira({
 
   return (
     <Card className="h-full">
-      <CardCorpo className="flex h-full flex-col p-4 sm:p-5">
+      <CardCorpo className="flex h-full flex-col">
         <div className="flex items-center gap-3">
           <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary">
             <Target size={20} strokeWidth={1.9} />
