@@ -1,0 +1,667 @@
+1
+00:00:01,367 --> 00:00:03,872
+Uma clínica de estética vive de detalhes.
+
+2
+00:00:04,146 --> 00:00:07,684
+E, até hoje, esses detalhes viviam espalhados.
+
+3
+00:00:08,539 --> 00:00:10,111
+A agenda, no papel.
+
+4
+00:00:10,746 --> 00:00:12,391
+A ficha, no caderno.
+
+5
+00:00:13,028 --> 00:00:15,291
+A confirmação, no WhatsApp.
+
+6
+00:00:15,929 --> 00:00:17,718
+O caixa, numa planilha.
+
+7
+00:00:17,988 --> 00:00:20,736
+Cada informação num lugar, e nenhum lugar com a
+
+8
+00:00:20,548 --> 00:00:21,804
+informação inteira.
+
+9
+00:00:22,084 --> 00:00:24,639
+O Cockpit junta tudo isso em uma tela só.
+
+10
+00:00:25,564 --> 00:00:28,135
+Este é o Cockpit, o sistema de gestão do
+
+11
+00:00:27,935 --> 00:00:29,261
+consultório da Dra.
+
+12
+00:00:29,061 --> 00:00:30,031
+Érika Passos.
+
+13
+00:00:30,216 --> 00:00:33,851
+Agenda, pacientes, prontuários, financeiro,
+
+14
+00:00:33,966 --> 00:00:37,224
+documentos e relacionamento, conversando entre si.
+
+15
+00:00:37,480 --> 00:00:40,714
+Neste vídeo, você vê, tela a tela, como ele
+
+16
+00:00:40,527 --> 00:00:43,858
+funciona, como usar cada parte, e o que a clínica
+
+17
+00:00:43,670 --> 00:00:44,659
+ganha com isso.
+
+18
+00:00:45,493 --> 00:00:49,055
+Tudo começa no login, com o e-mail de cada pessoa da equipe.
+
+19
+00:00:49,313 --> 00:00:53,322
+São três perfis. A administradora vê e decide
+
+20
+00:00:53,134 --> 00:00:56,186
+tudo. O financeiro cuida do caixa.
+
+21
+00:00:56,823 --> 00:01:00,324
+E a recepção cuida de pacientes, agenda e vendas.
+
+22
+00:01:00,577 --> 00:01:02,585
+Cada um enxerga só o que precisa.
+
+23
+00:01:03,221 --> 00:01:05,205
+E isso não é só esconder um botão:
+
+24
+00:01:05,284 --> 00:01:07,984
+a regra vale também dentro do banco de dados.
+
+25
+00:01:08,834 --> 00:01:12,092
+A primeira tela é a Visão Geral, o painel do dia.
+
+26
+00:01:12,375 --> 00:01:15,767
+No alto, os números que importam para hoje e para o mês.
+
+27
+00:01:16,036 --> 00:01:18,651
+A linha do dia mostra cada atendimento em ordem,
+
+28
+00:01:18,803 --> 00:01:22,098
+com um marcador de agora, para ninguém se perder no horário.
+
+29
+00:01:22,395 --> 00:01:25,787
+Ao lado, as pendências, os próximos retornos e as
+
+30
+00:01:25,599 --> 00:01:29,305
+aniversariantes. Em um olhar, você sabe o que
+
+31
+00:01:29,117 --> 00:01:30,433
+precisa de atenção.
+
+32
+00:01:30,702 --> 00:01:32,625
+E cada perfil vê o seu painel:
+
+33
+00:01:32,777 --> 00:01:35,671
+os números de despesa e de resultado só aparecem
+
+34
+00:01:35,484 --> 00:01:36,934
+para quem cuida do caixa.
+
+35
+00:01:37,782 --> 00:01:41,441
+Na Agenda, você navega pelos dias e filtra por profissional.
+
+36
+00:01:41,708 --> 00:01:44,311
+Cada atendimento tem uma situação clara, de
+
+37
+00:01:44,123 --> 00:01:47,636
+agendado a concluído, sempre com cor, ícone e texto.
+
+38
+00:01:47,910 --> 00:01:50,937
+Aguardando confirmação aparece em laranja, porque
+
+39
+00:01:50,749 --> 00:01:52,709
+é algo a fazer, não um erro.
+
+40
+00:01:53,345 --> 00:01:55,899
+Vermelho fica reservado para o que deu errado,
+
+41
+00:01:56,015 --> 00:01:57,586
+como um não comparecimento.
+
+42
+00:01:57,844 --> 00:02:00,751
+Para marcar, é só escolher a paciente, o
+
+43
+00:02:00,563 --> 00:02:03,069
+procedimento, a profissional e o horário.
+
+44
+00:02:03,346 --> 00:02:06,410
+Se o horário já estiver ocupado, o sistema avisa
+
+45
+00:02:06,222 --> 00:02:09,491
+na hora. E o próprio banco de dados recusa:
+
+46
+00:02:09,485 --> 00:02:12,744
+dois atendimentos no mesmo horário simplesmente não entram.
+
+47
+00:02:13,018 --> 00:02:16,350
+No dia, a recepção confirma, inicia e conclui com
+
+48
+00:02:16,162 --> 00:02:18,922
+um clique, e cada mudança fica registrada.
+
+49
+00:02:19,216 --> 00:02:22,825
+Cancelou? O horário volta a ficar livre, e o
+
+50
+00:02:22,637 --> 00:02:25,519
+histórico do atendimento guarda quem mudou e quando.
+
+51
+00:02:26,385 --> 00:02:29,473
+Em Pacientes, a busca encontra qualquer pessoa
+
+52
+00:02:29,286 --> 00:02:33,005
+pelo nome, com ou sem acento, pelo e-mail ou pelo telefone.
+
+53
+00:02:33,265 --> 00:02:36,924
+O cadastro valida CPF, telefone e CEP no servidor,
+
+54
+00:02:37,100 --> 00:02:39,096
+e mostra o erro no próprio campo.
+
+55
+00:02:39,362 --> 00:02:40,678
+A ficha reúne tudo:
+
+56
+00:02:40,685 --> 00:02:43,955
+dados, histórico de atendimentos, retornos e o que
+
+57
+00:02:43,767 --> 00:02:45,060
+ainda falta fazer.
+
+58
+00:02:45,404 --> 00:02:48,213
+Arquivar uma paciente não apaga a história dela:
+
+59
+00:02:48,292 --> 00:02:51,162
+ela sai das listas do dia a dia, e pode ser
+
+60
+00:02:50,974 --> 00:02:52,752
+reativada a qualquer momento.
+
+61
+00:02:53,021 --> 00:02:56,195
+E, para quem já tem uma planilha, a importação lê
+
+62
+00:02:56,007 --> 00:02:59,059
+o arquivo, mostra uma prévia linha a linha, e só
+
+63
+00:02:58,871 --> 00:03:00,357
+grava o que você confirmar.
+
+64
+00:03:01,285 --> 00:03:03,876
+O prontuário é exclusivo da administradora.
+
+65
+00:03:04,174 --> 00:03:06,376
+Cada registro clínico é versionado.
+
+66
+00:03:07,012 --> 00:03:08,596
+Editar não apaga nada:
+
+67
+00:03:08,614 --> 00:03:11,314
+cria uma nova versão, com o motivo, e as
+
+68
+00:03:11,126 --> 00:03:12,783
+anteriores continuam lá.
+
+69
+00:03:13,042 --> 00:03:15,778
+Cada versão mostra quem escreveu e quando, e a
+
+70
+00:03:15,590 --> 00:03:18,084
+leitura começa sempre pela mais recente.
+
+71
+00:03:18,356 --> 00:03:20,850
+As fotos de evolução ficam num armazenamento
+
+72
+00:03:20,662 --> 00:03:24,006
+privado, abrem só por link temporário, e só são
+
+73
+00:03:23,818 --> 00:03:27,246
+eliminadas a pedido da paciente, com o motivo registrado.
+
+74
+00:03:28,129 --> 00:03:30,490
+No Financeiro, tudo nasce da venda.
+
+75
+00:03:30,771 --> 00:03:33,847
+A recepção registra o procedimento, o valor e a
+
+76
+00:03:33,659 --> 00:03:34,951
+forma de pagamento.
+
+77
+00:03:35,587 --> 00:03:39,040
+No cartão, a taxa da operadora entra sozinha, e a
+
+78
+00:03:38,852 --> 00:03:41,782
+prévia já mostra quanto a clínica realmente recebe.
+
+79
+00:03:42,038 --> 00:03:43,403
+Parcelou no crédito?
+
+80
+00:03:44,039 --> 00:03:47,273
+A operadora antecipa, e a clínica recebe uma vez
+
+81
+00:03:47,085 --> 00:03:49,276
+só, com a taxa já descontada.
+
+82
+00:03:49,564 --> 00:03:51,694
+Taxa diferente da tabela só entra com
+
+83
+00:03:51,506 --> 00:03:54,376
+justificativa, e só o financeiro pode mudar a
+
+84
+00:03:54,188 --> 00:03:57,058
+forma de pagamento de uma venda depois de registrada.
+
+85
+00:03:57,350 --> 00:04:00,450
+E um clique duplo no botão não gera venda duplicada.
+
+86
+00:04:01,330 --> 00:04:04,612
+O financeiro confere cada recebimento quando o dinheiro cai.
+
+87
+00:04:04,871 --> 00:04:07,802
+Se o valor chegou diferente, a divergência fica
+
+88
+00:04:07,614 --> 00:04:11,368
+marcada. E um recebimento confirmado não se altera
+
+89
+00:04:11,180 --> 00:04:14,220
+mais: correção vira ajuste, com histórico.
+
+90
+00:04:14,503 --> 00:04:17,082
+Toda a conta é feita em centavos inteiros.
+
+91
+00:04:17,718 --> 00:04:20,539
+Não existe diferença de arredondamento escondida.
+
+92
+00:04:20,822 --> 00:04:23,413
+E as movimentações mostram tudo o que entrou e
+
+93
+00:04:23,225 --> 00:04:26,654
+saiu, com filtros por mês e por tipo, guardados no
+
+94
+00:04:26,466 --> 00:04:28,158
+próprio endereço da página.
+
+95
+00:04:29,014 --> 00:04:32,139
+As despesas entram com vencimento e categoria, e a
+
+96
+00:04:31,951 --> 00:04:34,068
+lista mostra na hora o que já venceu.
+
+97
+00:04:34,324 --> 00:04:36,308
+Pagar pede a data do pagamento.
+
+98
+00:04:36,944 --> 00:04:40,773
+E uma despesa paga pode ser reaberta, sempre com confirmação.
+
+99
+00:04:41,053 --> 00:04:43,753
+A tabela de taxas de cartão fica guardada por
+
+100
+00:04:43,565 --> 00:04:46,690
+operadora e parcelas, e cada venda leva uma cópia
+
+101
+00:04:46,502 --> 00:04:47,843
+da taxa daquele dia.
+
+102
+00:04:48,131 --> 00:04:51,158
+E o fluxo mensal mostra entradas, saídas e o
+
+103
+00:04:50,970 --> 00:04:53,209
+resultado de caixa, mês a mês.
+
+104
+00:04:54,043 --> 00:04:56,585
+Em Documentos e Contratos, a clínica mantém
+
+105
+00:04:56,397 --> 00:04:57,762
+modelos versionados:
+
+106
+00:04:57,841 --> 00:05:02,192
+contratos, termos de consentimento, orientações e a anamnese.
+
+107
+00:05:02,447 --> 00:05:05,111
+Ao emitir, o texto é congelado e ganha uma
+
+108
+00:05:04,923 --> 00:05:06,859
+impressão digital criptográfica.
+
+109
+00:05:07,494 --> 00:05:10,413
+Se alguém mudar uma vírgula depois, dá para provar.
+
+110
+00:05:10,763 --> 00:05:13,329
+A anamnese segue a mesma regra do prontuário:
+
+111
+00:05:13,505 --> 00:05:15,125
+só a administradora vê.
+
+112
+00:05:15,415 --> 00:05:18,261
+A paciente pode assinar ali mesmo, no balcão.
+
+113
+00:05:19,121 --> 00:05:22,888
+Ou à distância. A clínica gera um link seguro e
+
+114
+00:05:22,700 --> 00:05:24,198
+envia pelo WhatsApp.
+
+115
+00:05:24,459 --> 00:05:27,207
+No celular, a paciente confirma a data de
+
+116
+00:05:27,019 --> 00:05:29,804
+nascimento, lê o documento, e assina.
+
+117
+00:05:30,080 --> 00:05:32,914
+O link expira, se bloqueia depois de tentativas
+
+118
+00:05:32,726 --> 00:05:36,312
+erradas, e a paciente fica com a via dela para guardar.
+
+119
+00:05:36,664 --> 00:05:39,485
+E a clínica acompanha o estado de cada link dentro
+
+120
+00:05:39,297 --> 00:05:40,504
+do próprio documento.
+
+121
+00:05:41,356 --> 00:05:44,056
+Relacionamento é onde a clínica cuida de quem já
+
+122
+00:05:43,868 --> 00:05:44,918
+passou por ela.
+
+123
+00:05:45,254 --> 00:05:48,105
+As confirmações mostram os atendimentos dos
+
+124
+00:05:47,905 --> 00:05:51,619
+próximos 15 dias, com o WhatsApp da paciente a um clique.
+
+125
+00:05:51,797 --> 00:05:54,473
+Os retornos avisam quem está no período de voltar,
+
+126
+00:05:54,576 --> 00:05:57,397
+e as tarefas organizam o que a equipe precisa fazer.
+
+127
+00:05:57,736 --> 00:06:00,509
+E, no aniversário, ou depois de um bom
+
+128
+00:06:00,321 --> 00:06:03,313
+atendimento, o convite para avaliar a clínica no
+
+129
+00:06:03,125 --> 00:06:04,599
+Google sai com um toque.
+
+130
+00:06:05,454 --> 00:06:08,761
+A busca global encontra pacientes, atendimentos e
+
+131
+00:06:08,573 --> 00:06:10,569
+documentos, de qualquer tela.
+
+132
+00:06:10,852 --> 00:06:14,171
+E, em Configurações, a administradora mantém a
+
+133
+00:06:13,983 --> 00:06:17,363
+tabela de procedimentos, com duração e valor, e
+
+134
+00:06:17,175 --> 00:06:19,123
+confere as fotos do prontuário.
+
+135
+00:06:19,392 --> 00:06:22,274
+Relatórios, equipe e horários de funcionamento
+
+136
+00:06:22,086 --> 00:06:25,126
+chegam nas próximas versões, e a tela já avisa o
+
+137
+00:06:24,938 --> 00:06:25,987
+que está a caminho.
+
+138
+00:06:26,846 --> 00:06:28,867
+Veja como fica um dia na clínica.
+
+139
+00:06:29,204 --> 00:06:32,534
+Às 8h, a recepção abre a Visão Geral e vê quem vem
+
+140
+00:06:32,334 --> 00:06:35,914
+hoje, quem ainda não confirmou e quem faz aniversário.
+
+141
+00:06:36,099 --> 00:06:39,090
+Durante o dia, cada atendimento avança na agenda,
+
+142
+00:06:39,109 --> 00:06:41,772
+cada venda gera o seu recebimento, e cada
+
+143
+00:06:41,585 --> 00:06:43,544
+documento é assinado com prova.
+
+144
+00:06:43,859 --> 00:06:46,886
+No fim do dia, o financeiro confere o que entrou,
+
+145
+00:06:46,686 --> 00:06:49,310
+e a Dra. Érika registra a evolução de cada
+
+146
+00:06:49,110 --> 00:06:50,637
+paciente no prontuário.
+
+147
+00:06:50,819 --> 00:06:53,750
+Nada fica no papel, e nada fica esquecido.
+
+148
+00:06:54,580 --> 00:06:57,559
+Por trás de cada tela, o Cockpit foi construído
+
+149
+00:06:57,371 --> 00:06:58,760
+para um dado sensível:
+
+150
+00:06:58,815 --> 00:06:59,962
+dado de saúde.
+
+151
+00:07:00,229 --> 00:07:02,953
+Cada tabela do banco tem regra de acesso por
+
+152
+00:07:02,765 --> 00:07:06,180
+perfil. E nada se apaga pela interface:
+
+153
+00:07:06,307 --> 00:07:10,087
+corrigir é cancelar, ajustar, ou criar uma nova versão.
+
+154
+00:07:10,356 --> 00:07:12,619
+Cada mudança importante fica na trilha de
+
+155
+00:07:12,431 --> 00:07:15,736
+auditoria. E o dia é sempre o de São Paulo,
+
+156
+00:07:15,791 --> 00:07:17,399
+qualquer que seja o servidor.
+
+157
+00:07:17,722 --> 00:07:20,180
+Quem sai da equipe perde o acesso na hora:
+
+158
+00:07:20,186 --> 00:07:22,485
+a conta inativa é barrada em cada tela.
+
+159
+00:07:22,771 --> 00:07:26,017
+Mais de mil testes automáticos conferem essas regras.
+
+160
+00:07:26,860 --> 00:07:29,111
+E o que a clínica ganha com tudo isso?
+
+161
+00:07:29,426 --> 00:07:32,684
+Menos faltas, porque as confirmações não se perdem.
+
+162
+00:07:32,964 --> 00:07:36,902
+Um caixa que fecha, porque cada real tem origem, taxa e data.
+
+163
+00:07:37,205 --> 00:07:40,633
+Mais pacientes voltando, porque ninguém é esquecido.
+
+164
+00:07:40,931 --> 00:07:44,068
+E tranquilidade: documentos assinados com prova,
+
+165
+00:07:44,111 --> 00:07:46,920
+prontuário protegido, e a equipe inteira olhando
+
+166
+00:07:46,732 --> 00:07:48,170
+para a mesma informação.
+
+167
+00:07:49,004 --> 00:07:52,782
+Cockpit. O consultório inteiro, em uma tela.

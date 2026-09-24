@@ -6,4 +6,5 @@
 *.jpg binary
 *.webp binary
 *.ico binary
+*.mp4 binary
 package-lock.json linguist-generated=true
