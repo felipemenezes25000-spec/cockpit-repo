@@ -19,18 +19,18 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
   }, [atual]);
 
   return (
-    <nav aria-label={rotulo} className={cn("relative border-b border-card-border", className)}>
+    <nav aria-label={rotulo} className={cn("relative rounded-[var(--radius-painel)] border border-card-border bg-surface p-1.5 shadow-[0_12px_28px_-26px_rgba(8,41,76,.38)]", className)}>
       <div ref={faixa} className="sem-barra-de-rolagem rolagem-esmaecida-x relative snap-x snap-mandatory scroll-px-1 overflow-x-auto">
-        <ul className="flex min-w-max gap-1 px-1">
+        <ul className="flex min-w-max gap-1">
           {abas.map((aba) => (
             <li key={aba.href} className="snap-start">
               <Link
                 href={aba.href}
                 aria-current={aba.ativa ? "page" : undefined}
                 className={cn(
-                  "relative inline-flex min-h-11 items-center gap-2 rounded-t-[var(--radius-controle)] px-3.5 text-sm transition-colors duration-150",
+                  "relative inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-controle)] px-3.5 text-sm transition-[background-color,color,box-shadow,transform] duration-150",
                   aba.ativa
-                    ? "font-semibold text-primary"
+                    ? "bg-selecao font-semibold text-primary shadow-[inset_0_0_0_1px_var(--color-primary-fixed-dim)]"
                     : "font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
                 )}
               >
@@ -43,7 +43,6 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
                     {aba.contagem}
                   </span>
                 ) : null}
-                {aba.ativa ? <span aria-hidden="true" className="traco-ativo absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-primary-container" /> : null}
               </Link>
             </li>
           ))}
