@@ -11,7 +11,7 @@ export function RodapeAcoesFormulario({
   return (
     <div
       className={cn(
-        "sticky bottom-[calc(5.15rem+env(safe-area-inset-bottom))] z-20 -mx-1 mt-1 flex flex-wrap items-center gap-3 rounded-[var(--radius-painel)] border border-card-border bg-surface px-3 py-3 shadow-flutuante sm:px-4 lg:bottom-3",
+        "sticky bottom-[calc(5.15rem+env(safe-area-inset-bottom))] z-20 -mx-1 mt-2 flex flex-wrap items-center gap-3 rounded-[var(--radius-painel)] border border-card-border bg-surface/95 px-3 py-3 shadow-[0_24px_54px_-30px_rgba(8,41,76,.45)] backdrop-blur-md sm:px-4 lg:bottom-3",
         className,
       )}
     >
