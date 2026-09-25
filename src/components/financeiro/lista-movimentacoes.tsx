@@ -1,6 +1,7 @@
 import {
   ArrowDownRight,
   ArrowUpRight,
+  ChevronRight,
   History,
   Receipt,
   Scale,
@@ -36,7 +37,7 @@ export function ListaMovimentacoes({
   }
 
   return (
-    <ol aria-label="Movimentações" className="relative flex flex-col gap-2.5 before:absolute before:top-5 before:bottom-5 before:left-[1.18rem] before:w-px before:bg-card-border">
+    <ol aria-label="Movimentações" className="relative flex flex-col gap-3 before:absolute before:top-5 before:bottom-5 before:left-[1.32rem] before:w-px before:bg-gradient-to-b before:from-primary-fixed-dim before:via-card-border before:to-transparent">
       {itens.map((item, i) => {
         const estilo = ESTILO[item.tipo];
         const Icone = estilo.icone;
@@ -44,17 +45,17 @@ export function ListaMovimentacoes({
 
         const conteudo = (
           <>
-            <span className={cn("relative z-[1] flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border", estilo.classes)}>
-              <Icone aria-hidden="true" size={16} strokeWidth={1.75} />
+            <span className={cn("relative z-[1] flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border shadow-[0_8px_18px_-15px_rgba(7,57,112,.55)]", estilo.classes)}>
+              <Icone aria-hidden="true" size={17} strokeWidth={1.8} />
             </span>
 
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] text-on-surface sm:truncate">{item.titulo}</span>
+                <span className="min-w-0 text-sm font-bold tracking-[-0.01em] [overflow-wrap:anywhere] text-on-surface sm:truncate">{item.titulo}</span>
                 <span className={cn("size-1.5 shrink-0 rounded-full", estilo.trilha)} aria-hidden="true" />
                 <span className="text-[0.68rem] font-semibold tracking-wide text-outline uppercase">{estilo.rotulo}</span>
               </span>
-              <span className="mt-1 block text-xs leading-5 [overflow-wrap:anywhere] text-outline sm:truncate">
+              <span className="mt-1.5 block text-xs leading-5 [overflow-wrap:anywhere] text-outline sm:truncate">
                 {formatarData(item.data)}
                 {item.detalhe ? ` · ${item.detalhe}` : ""}
                 {item.forma ? ` · ${ROTULO_FORMA[item.forma]}` : ""}
@@ -63,20 +64,26 @@ export function ListaMovimentacoes({
 
             <span
               className={cn(
-                "tabular shrink-0 self-center rounded-[var(--radius-controle)] px-2.5 py-1.5 text-sm font-semibold",
-                !ehCaixa && "bg-surface-container-low text-outline",
-                ehCaixa && item.valor >= 0 && "bg-positivo-fundo text-positivo",
-                ehCaixa && item.valor < 0 && "bg-negativo-fundo text-negativo",
+                "tabular shrink-0 self-center rounded-[var(--radius-controle)] border px-3 py-1.5 text-sm font-bold tracking-[-0.015em]",
+                !ehCaixa && "border-card-border bg-surface-container-low text-outline",
+                ehCaixa && item.valor >= 0 && "border-positivo-borda bg-positivo-fundo text-positivo",
+                ehCaixa && item.valor < 0 && "border-negativo-borda bg-negativo-fundo text-negativo",
               )}
             >
               {ehCaixa && item.valor > 0 ? "+ " : ""}
               {item.valor < 0 ? "− " : ""}
               {formatarMoeda(Math.abs(item.valor))}
             </span>
+
+            {item.href ? (
+              <span aria-hidden="true" className="hidden size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline transition-[transform,border-color,background-color,color] group-hover:translate-x-0.5 group-hover:border-primary-fixed-dim group-hover:bg-selecao group-hover:text-primary sm:flex">
+                <ChevronRight size={14} />
+              </span>
+            ) : null}
           </>
         );
 
-        const classes = "premium-interactive relative flex items-center gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3";
+        const classes = "premium-interactive group relative flex items-center gap-3 rounded-[calc(var(--radius-cartao)+2px)] border border-card-border bg-surface px-3.5 py-3.5 sm:px-4";
 
         return (
           <li key={`${item.tipo}-${item.data.getTime()}-${i}`}>
