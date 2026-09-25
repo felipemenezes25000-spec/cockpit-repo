@@ -19,6 +19,7 @@ import {
   type TipoDocumento,
 } from "@/lib/documento";
 import { FormularioAnamnese } from "./formulario-anamnese";
+import { MarcaDaClinica } from "@/components/ui/marca-da-clinica";
 import { CLINICA } from "@/lib/nav";
 import {
   abrirDocumentoParaAssinatura,
@@ -233,8 +234,16 @@ function ViaAssinada({
 
       <div className="folha rounded-[var(--radius-painel)] border border-card-border bg-card">
         <div className="border-b border-card-border px-6 pt-6 pb-4 sm:px-8">
-          <p className="text-xs text-outline">{CLINICA.nome}</p>
-          <h1 className="t-headline mt-1 text-primary">{documento.titulo}</h1>
+          {/* O timbre da via: a logo sem o quadro azul, porque fundo não sai
+              no papel por padrão e a logo branca sumiria. */}
+          <div className="flex items-center gap-3 border-b border-card-border pb-4">
+            <MarcaDaClinica className="size-11 shrink-0 text-primary" />
+            <div className="min-w-0 leading-tight">
+              <p className="font-bold tracking-[-0.01em] text-primary">{CLINICA.nome}</p>
+              <p className="mt-0.5 text-xs text-outline">{CLINICA.descricao}</p>
+            </div>
+          </div>
+          <h1 className="t-headline mt-4 text-primary">{documento.titulo}</h1>
           <p className="mt-1 text-sm text-outline">{documento.paciente}</p>
         </div>
 

@@ -133,6 +133,16 @@ describe("middleware — o que fica de fora", () => {
     expect(passaPeloMiddleware("/favicon.ico")).toBe(false);
   });
 
+  it("as imagens da marca não passam: quem as busca não tem sessão e levaria um 307", () => {
+    expect(passaPeloMiddleware("/apple-icon.png")).toBe(false);
+    expect(passaPeloMiddleware("/opengraph-image.png")).toBe(false);
+    // Só no caminho exato da raiz — o resto continua com sessão e CSP.
+    expect(passaPeloMiddleware("/assinar/apple-icon.png")).toBe(true);
+    expect(passaPeloMiddleware("/assinar/opengraph-image.png")).toBe(true);
+    expect(passaPeloMiddleware("/apple-icon.pngx")).toBe(true);
+    expect(passaPeloMiddleware("/opengraph-imageXpng")).toBe(true);
+  });
+
   it("as páginas continuam passando", () => {
     expect(passaPeloMiddleware("/")).toBe(true);
     expect(passaPeloMiddleware("/agenda")).toBe(true);

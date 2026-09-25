@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LockKeyhole, ShieldOff } from "lucide-react";
 import { redirect } from "next/navigation";
 import { BotaoSair } from "@/components/layout/botao-sair";
+import { MarcaComNome } from "@/components/ui/marca-da-clinica";
 import { SeloHero } from "@/components/ui/page-hero";
 import { usuarioAtual } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
@@ -17,7 +18,8 @@ export default async function PaginaSemAcesso() {
   if (await usuarioAtual()) redirect("/");
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-10">
+    <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden px-5 py-10">
+      <MarcaComNome tamanho="medio" />
       <section className="premium-panel relative isolate w-full max-w-xl overflow-hidden rounded-[var(--radius-painel)] border px-6 py-10 text-center sm:px-10 sm:py-12">
 
         <span className="mx-auto flex size-14 items-center justify-center rounded-[var(--radius-painel)] border border-card-border bg-surface-container-low text-outline">

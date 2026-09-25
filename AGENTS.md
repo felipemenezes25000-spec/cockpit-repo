@@ -75,6 +75,7 @@ npm run typecheck  # TypeScript (tsc --noEmit)
 npm test           # testes de unidade e de componente (Vitest)
 npm run test:banco # permissões e regras do banco, no Supabase LOCAL
 npm run test:e2e   # ponta a ponta (Playwright), no Supabase LOCAL
+npm run marca:gerar  # favicon, ícone do iPhone e prévia de link a partir da logo (§7.3)
 ```
 
 Scripts que falam com o **projeto de produção** (exigem `npx supabase login` +
@@ -984,6 +985,7 @@ src/
     sem-acesso/           conta existe mas não foi liberada
     assinar/[token]/      assinatura e anamnese por link — a única rota pública com conteúdo de paciente
     error.tsx  global-error.tsx  not-found.tsx   telas de erro e de rota inexistente
+    favicon.ico  apple-icon.png  opengraph-image.png   imagens da marca (npm run marca:gerar, §7.3)
     (app)/                tudo que exige sessão válida
       layout.tsx          estrutura principal + faixa de demonstração; force-dynamic
       error.tsx           erro dentro do sistema: menu de pé, aviso na área de conteúdo
@@ -1031,7 +1033,7 @@ supabase/
   dados-exemplo*.sql      semeadura e limpeza da demonstração
 testes/                   preparação do Vitest e o Supabase falso das ações
 e2e/                      Playwright: fluxos e telas, contra o Supabase local
-scripts/                  contas locais, testes do banco, geração segura de tipos
+scripts/                  contas locais, testes do banco, geração segura de tipos, imagens da marca
 docs/
   overview-sistema.md     documento de produto
   prompt-onboarding-codex.md   primeira mensagem para um agente de IA novo
@@ -1275,12 +1277,33 @@ variável de CSS. Nada de `bg-[#ABC123]` em componente.
 
 **A logo da clínica não tem cor própria.** `MarcaDaClinica`
 (`components/ui/marca-da-clinica.tsx`) é um SVG de um contorno só, pintado com
-`currentColor`: branca no quadrado azul do topo, da gaveta e da assinatura,
-azul no quadrado claro da cabine do login. O `src/app/favicon.ico` é imagem —
-o quadro `primary-container` com a logo branca, gerado a partir do mesmo
-contorno —; mudou a cor da marca ou a logo, gere-o de novo. Ele fica em
-`/favicon.ico` porque é o único ícone que o `matcher` do middleware deixa
-passar sem sessão (caminho exato).
+`currentColor`: branca no quadrado azul, azul no quadrado claro da cabine do
+login e na via impressa. O traço ganha um contorno da própria cor (`peso`):
+no desenho original o círculo tem 3,6% da largura e sumia a 24 px.
+
+**A marca aparece sempre do mesmo jeito, pelas formas do mesmo arquivo — não
+monte outra com Tailwind solto.** `SeloDaMarca` é a logo no quadrado da marca,
+ocupando 80% dele, em três tamanhos (`pequeno` 40 px: topo e gaveta; `medio`
+48 px: login no celular, assinatura, 404 e telas fora do sistema; `grande`
+64 px: cabine do login) e dois tons (`marca`, `cabine`). `MarcaComNome` é o
+selo com o nome da clínica (`CLINICA`, `lib/nav.ts`) e uma linha de apoio. A
+404, `/sem-acesso` e a tela de erro fora do sistema (`TelaDeErro` com
+`dentroDoSistema={false}`) levam a marca acima do painel, porque ali não há o
+topo. **O selo não vai para a impressão:** fundo não sai no papel por padrão,
+e a logo branca sumiria no branco — o timbre da via (`assinar-por-link.tsx`)
+usa `MarcaDaClinica` direto, na cor da marca.
+
+**As imagens da marca são geradas, não desenhadas à mão:**
+`npm run marca:gerar` (`scripts/gerar-marca.mjs`) lê o contorno, as cores do
+`globals.css` e o nome da clínica e escreve em `src/app` o `favicon.ico` (16 a
+256 px, cada tamanho no próprio tamanho, com traço mais grosso quanto menor), o
+`apple-icon.png` (180 px, opaco: ícone da tela de início do iPhone) e o
+`opengraph-image.png` + `.alt.txt` (1200 × 630: a prévia do link no WhatsApp,
+com a base do endereço tirada de `ORIGEM_PUBLICA` no layout raiz). Mudou a
+logo, a cor da marca ou o nome: gere de novo e comite as imagens
+(`testes/marca.test.ts` confere tamanhos e formato). Os três ficam fora do
+`matcher` do middleware por caminho exato — quem os busca não tem sessão, e o
+307 para `/entrar` trocaria a imagem pela página de login.
 
 **Marca (azul)** — navegação, ações principais, links, títulos, foco. Não
 comunica estado nenhum: é a cor de "o sistema", não de "a situação".

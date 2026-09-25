@@ -4,6 +4,7 @@ import { ArrowLeft, Copy, RotateCcw, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
+import { MarcaComNome } from "@/components/ui/marca-da-clinica";
 
 export function TelaDeErro({
   erro,
@@ -43,8 +44,15 @@ export function TelaDeErro({
   }
 
   return (
-    <div role="alert" className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-16">
-      <section className="premium-panel rounded-[var(--radius-painel)] border px-6 py-8 text-center sm:px-10 sm:py-10">
+    <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-16">
+      {/* Fora do sistema não há o topo: a marca diz de quem é a página. Fica
+          fora do alerta, para o leitor de tela não anunciá-la junto. */}
+      {dentroDoSistema ? null : (
+        <div className="mb-8 flex justify-center">
+          <MarcaComNome tamanho="medio" />
+        </div>
+      )}
+      <section role="alert" className="premium-panel rounded-[var(--radius-painel)] border px-6 py-8 text-center sm:px-10 sm:py-10">
         <span className="mx-auto flex size-14 items-center justify-center rounded-[var(--radius-painel)] bg-negativo-fundo text-negativo">
           <TriangleAlert aria-hidden="true" size={24} strokeWidth={1.75} />
         </span>

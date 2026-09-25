@@ -3,8 +3,7 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
-import { MarcaDaClinica } from "@/components/ui/marca-da-clinica";
-import { CLINICA } from "@/lib/nav";
+import { MarcaComNome } from "@/components/ui/marca-da-clinica";
 import { MenuNavegacao } from "./sidebar-nav";
 
 /**
@@ -56,15 +55,7 @@ export function GavetaDeModulos({ aberta, aoFechar }: { aberta: boolean; aoFecha
         )}
       >
         <div className="flex min-h-[var(--altura-barra)] items-center justify-between gap-3 border-b border-card-border px-4">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-primary-container text-on-primary">
-              <MarcaDaClinica className="size-6" />
-            </span>
-            <span className="min-w-0 leading-tight">
-              <span className="block truncate text-sm font-bold text-primary">{CLINICA.nome}</span>
-              <span className="block truncate text-[0.6875rem] font-medium text-outline">{CLINICA.descricao}</span>
-            </span>
-          </div>
+          <MarcaComNome />
           <button
             ref={botaoFechar}
             type="button"
