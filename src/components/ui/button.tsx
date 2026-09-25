@@ -6,19 +6,19 @@ type Variante = "primaria" | "secundaria" | "contorno" | "silenciosa";
 type Tamanho = "md" | "sm";
 
 const BASE =
-  "group relative inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-150 ease-out active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 disabled:active:transform-none";
+  "group relative inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,box-shadow] duration-180 ease-out active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 disabled:active:transform-none";
 
 /**
- * primaria: o azul de ação chapado, um por tela. secundaria e contorno: fundo
- * branco com contorno de controle (3:1). silenciosa: só texto.
+ * primaria: o azul de ação chapado. secundaria e contorno: fundo branco com
+ * contorno. silenciosa: só texto, para ações de apoio.
  */
 const VARIANTES: Record<Variante, string> = {
   primaria:
-    "border border-primary-container bg-primary-container text-on-primary hover:border-primary-hover hover:bg-primary-hover",
+    "border border-primary-container bg-primary-container text-on-primary shadow-[0_12px_26px_-18px_rgba(10,110,209,.82)] hover:-translate-y-0.5 hover:border-primary-hover hover:bg-primary-hover hover:shadow-[0_16px_30px_-18px_rgba(8,60,115,.72)]",
   secundaria:
-    "border border-primary-container bg-surface text-primary hover:bg-selecao",
+    "border border-primary-fixed-dim bg-surface text-primary shadow-[0_8px_20px_-18px_rgba(8,84,160,.4)] hover:-translate-y-0.5 hover:border-primary-container hover:bg-selecao",
   contorno:
-    "border border-borda-controle bg-surface text-primary hover:border-primary-container hover:bg-selecao",
+    "border border-borda-controle bg-surface text-primary shadow-[0_7px_18px_-18px_rgba(8,41,76,.35)] hover:-translate-y-0.5 hover:border-primary-container hover:bg-selecao",
   silenciosa:
     "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
 };
