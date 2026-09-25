@@ -83,70 +83,83 @@ export function BuscaPacientes({
         evento.preventDefault();
         navegar(termo, situacao);
       }}
-      className="premium-panel relative flex flex-col gap-4 overflow-hidden rounded-[var(--radius-painel)] border p-3.5 lg:flex-row lg:items-center lg:justify-between"
+      className="relative overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface-container-low p-4 sm:p-5"
     >
-
-      <div className="relative w-full lg:max-w-md">
-        <Search aria-hidden="true" size={18} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
-        <input
-          type="search"
-          name="busca"
-          value={termo}
-          onChange={(evento) => digitar(evento.target.value)}
-          maxLength={80}
-          aria-label="Buscar paciente por nome, telefone, e-mail ou CPF"
-          placeholder="Buscar por nome, telefone, e-mail ou CPF"
-          className={`${classeDeEntrada({ recuo: "busca" })} bg-surface`}
-        />
-
-        {pendente ? (
-          <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[var(--radius-controle)] bg-surface px-2 py-1 text-[0.65rem] font-medium text-outline">
-            <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
-            buscando
-          </span>
-        ) : termo ? (
-          <button
-            type="button"
-            onClick={() => {
-              setTermo("");
-              navegar("", situacao);
-            }}
-            aria-label="Limpar busca"
-            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
-          >
-            <X aria-hidden="true" size={16} strokeWidth={1.75} />
-          </button>
-        ) : null}
-      </div>
-
-      <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span aria-live="polite" className="inline-flex items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1.5 text-xs whitespace-nowrap text-outline tabular">
-          <Users aria-hidden="true" size={13} strokeWidth={1.65} className="text-primary" />
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="rotulo text-primary">Localizar paciente</p>
+          <p className="mt-1 text-xs leading-5 text-outline">Pesquise por identificação ou contato e refine pela situação do cadastro.</p>
+        </div>
+        <span aria-live="polite" className="inline-flex items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-on-surface-variant tabular shadow-[0_6px_14px_-12px_rgba(7,57,112,.45)]">
+          <Users aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
           {total === 1 ? "1 paciente" : `${total} pacientes`}
         </span>
+      </div>
 
-        <div className="inline-flex items-center gap-1.5 text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">
-          <SlidersHorizontal aria-hidden="true" size={13} />
-          Situação
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="w-full lg:max-w-xl">
+          <label htmlFor="busca-paciente" className="mb-1.5 block text-[0.72rem] font-semibold text-on-surface-variant">Nome, telefone, e-mail ou CPF</label>
+          <div className="relative">
+            <Search aria-hidden="true" size={18} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-primary" />
+            <input
+              id="busca-paciente"
+              type="search"
+              name="busca"
+              value={termo}
+              onChange={(evento) => digitar(evento.target.value)}
+              maxLength={80}
+              aria-label="Buscar paciente por nome, telefone, e-mail ou CPF"
+              placeholder="Digite para localizar uma paciente"
+              className={`${classeDeEntrada({ recuo: "busca" })} bg-surface shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)]`}
+            />
+
+            {pendente ? (
+              <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[var(--radius-controle)] bg-surface px-2 py-1 text-[0.65rem] font-medium text-outline">
+                <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
+                buscando
+              </span>
+            ) : termo ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setTermo("");
+                  navegar("", situacao);
+                }}
+                aria-label="Limpar busca"
+                className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
+              >
+                <X aria-hidden="true" size={16} strokeWidth={1.75} />
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        <div role="group" aria-label="Filtrar por situação" className={`${SEGMENTO_GRUPO} bg-surface`}>
-          {FILTROS.map((filtro) => {
-            const ativo = filtro.valor === situacao;
-            return (
-              <label key={filtro.valor} className={classeDaOpcao(ativo)}>
-                <input
-                  type="radio"
-                  name="situacao"
-                  value={filtro.valor}
-                  checked={ativo}
-                  onChange={() => navegar(termo, filtro.valor)}
-                  className="sr-only"
-                />
-                {filtro.rotulo}
-              </label>
-            );
-          })}
+        <div className="flex flex-wrap items-end gap-2.5">
+          <div>
+            <div className="mb-1.5 inline-flex items-center gap-1.5 text-[0.68rem] font-semibold tracking-[0.06em] text-outline uppercase">
+              <SlidersHorizontal aria-hidden="true" size={13} className="text-primary" />
+              Situação
+            </div>
+
+            <div role="group" aria-label="Filtrar por situação" className={`${SEGMENTO_GRUPO} bg-surface shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)]`}>
+              {FILTROS.map((filtro) => {
+                const ativo = filtro.valor === situacao;
+                return (
+                  <label key={filtro.valor} className={classeDaOpcao(ativo)}>
+                    <input
+                      type="radio"
+                      name="situacao"
+                      value={filtro.valor}
+                      checked={ativo}
+                      onChange={() => navegar(termo, filtro.valor)}
+                      className="sr-only"
+                    />
+                    {filtro.rotulo}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </form>
