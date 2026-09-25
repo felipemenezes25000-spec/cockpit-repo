@@ -36,14 +36,14 @@ export function CardCabecalho({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 border-b border-card-border px-4 py-4 sm:px-6",
+        "flex flex-wrap items-center justify-between gap-4 border-b border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] px-4 py-4.5 sm:px-6",
         className,
       )}
     >
       <div className="min-w-0">
         <h2 className="titulo-secao text-on-surface">{titulo}</h2>
         {descricao ? (
-          <p className="mt-0.5 max-w-3xl text-sm leading-6 text-on-surface-variant">
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-on-surface-variant">
             {descricao}
           </p>
         ) : null}
@@ -60,7 +60,7 @@ export function CardCorpo({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={cn("px-4 py-5 sm:px-6", className)}>{children}</div>;
+  return <div className={cn("px-4 py-5 sm:px-6 sm:py-6", className)}>{children}</div>;
 }
 
 export function CardRodape({
@@ -73,7 +73,7 @@ export function CardRodape({
   return (
     <div
       className={cn(
-        "border-t border-card-border bg-surface-container-low px-4 py-3.5 text-xs sm:px-6",
+        "border-t border-card-border bg-[linear-gradient(180deg,#fafcff_0%,#f5f8fb_100%)] px-4 py-3.5 text-xs sm:px-6",
         className,
       )}
     >
