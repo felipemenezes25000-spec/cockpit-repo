@@ -41,7 +41,6 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
         return;
       }
 
-      // Atalhos de uma tecla: só com a página em foco e se não foram desligados.
       if (!atalhosLigados || comandosAbertos || evento.repeat) return;
       const destino = ATALHOS.find((a) => a.tecla === evento.key.toLowerCase() && (!a.so || a.so.includes(usuario.papel)));
       if (destino) {
@@ -58,7 +57,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
   return (
     <>
       <header className="topo-vivo sticky top-0 z-30 border-b border-card-border bg-surface">
-        <div className="mx-auto flex h-[var(--altura-barra)] w-full max-w-[1600px] items-center gap-2 px-3 sm:gap-3 sm:px-6 xl:px-10 2xl:px-14">
+        <div className="mx-auto flex h-[var(--altura-barra)] w-full max-w-[1680px] items-center gap-2 px-3 sm:gap-3 sm:px-6 xl:px-10 2xl:px-14">
           <button
             ref={ref}
             type="button"
@@ -70,9 +69,9 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
           </button>
 
           <Link href="/" className="group flex shrink-0 items-center gap-2.5 rounded-[var(--radius-controle)] pr-1" aria-label={`${CLINICA.nome} — Visão Geral`}>
-            <SeloDaMarca className="transition-colors group-hover:bg-primary-hover" />
-            <span aria-hidden="true" className="hidden min-w-0 flex-col leading-tight sm:flex lg:hidden">
-              <span className="text-sm font-bold tracking-[-0.01em] text-primary">{CLINICA.nome}</span>
+            <SeloDaMarca className="transition-[transform,background-color] group-hover:-translate-y-0.5 group-hover:bg-primary-hover" />
+            <span aria-hidden="true" className="hidden min-w-0 flex-col leading-tight sm:flex lg:hidden 2xl:flex">
+              <span className="max-w-36 truncate text-sm font-bold tracking-[-0.01em] text-primary">{CLINICA.nome}</span>
               <span className="text-[0.6875rem] font-medium text-outline">Cockpit do consultório</span>
             </span>
           </Link>
@@ -87,10 +86,10 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
               onClick={() => setComandosAbertos(true)}
               aria-label="Buscar e abrir comandos"
               aria-keyshortcuts="Control+K"
-              className="group flex h-10 items-center gap-2 rounded-[var(--radius-controle)] px-2.5 text-sm text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary sm:border sm:border-borda-controle sm:bg-surface sm:pr-2 sm:hover:border-primary-container sm:hover:bg-surface"
+              className="group flex h-10 items-center gap-2 rounded-[var(--radius-controle)] px-2.5 text-sm text-on-surface-variant transition-[transform,background-color,border-color,color,box-shadow] hover:bg-surface-container-low hover:text-primary sm:border sm:border-card-border sm:bg-surface sm:pr-2 sm:shadow-[0_8px_20px_-18px_rgba(8,41,76,.4)] sm:hover:border-primary-fixed-dim sm:hover:bg-surface xl:min-w-[13rem] xl:justify-start"
             >
               <Search aria-hidden="true" size={18} strokeWidth={1.8} />
-              <span aria-hidden="true" className="hidden text-outline sm:inline">Buscar</span>
+              <span aria-hidden="true" className="hidden truncate text-outline sm:inline xl:flex-1 xl:text-left">Buscar</span>
               <span aria-hidden="true" className="ml-1 hidden items-center gap-1 md:flex">
                 <kbd className="tecla">Ctrl</kbd>
                 <kbd className="tecla">K</kbd>
