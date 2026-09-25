@@ -153,13 +153,14 @@ não é o zelo extra que parece.
 > preparação, uma conta de teste que não existe — para tudo antes da tabela, e
 > aparece só a mensagem do `psql`.
 >
-> **Números (conferidos em 23/09/2026, não copie sem recontar).** Vitest: **800
-> testes em 76 arquivos**, todos verdes — 13 em `src/lib/`, 11 de ações em
-> `src/server/acoes/`, 9 de consultas em `src/server/consultas/`, 5 em
-> `src/app/` (login, destino do login, recuperação de senha, sem acesso e a
-> página do documento), 32 de componente (`src/components/`), 2 do middleware
-> (`src/middleware.test.ts` e `src/lib/supabase/`) e 4 em `testes/`
-> (`cabecalhos-seguranca`, `desempenho`, `react-ping` e `versao-postgrest`).
+> **Números (conferidos em 23/09/2026; o Vitest, recontado em 25/09/2026 — não
+> copie sem recontar).** Vitest: **825 testes em 79 arquivos**, todos verdes —
+> 14 em `src/lib/`, 11 de ações em `src/server/acoes/`, 9 de consultas em
+> `src/server/consultas/`, 5 em `src/app/` (login, destino do login,
+> recuperação de senha, sem acesso e a página do documento), 33 de componente
+> (`src/components/`), 2 do middleware (`src/middleware.test.ts` e
+> `src/lib/supabase/`) e 5 em `testes/` (`cabecalhos-seguranca`,
+> `desempenho`, `marca`, `react-ping` e `versao-postgrest`).
 > `test:banco`: **194 asserções**, todas verdes numa execução completa a partir
 > de `db reset` (migrações 0001–0028 + seed) em 23/09/2026. E2E: **298 testes em 8 arquivos**
 > (contados com `--list` em 23/09/2026) — `chromium` 251 (43 de fluxo + 126 de
