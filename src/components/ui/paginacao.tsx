@@ -29,7 +29,6 @@ export function Paginacao({
   const forma =
     "group inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-[var(--radius-controle)] border px-2.5 text-sm font-semibold sm:px-3.5";
   const classe = cn(forma, "premium-interactive border-borda-controle bg-surface text-primary hover:border-primary-container hover:bg-selecao");
-  // Indisponível sem opacidade no texto (AGENTS.md §7.4): tracejado, fundo baixo e texto terciário.
   const indisponivel = cn(forma, "pointer-events-none border-dashed border-outline-variant bg-surface-container-low text-outline");
   const palavra = "sr-only sm:not-sr-only";
 
@@ -47,11 +46,8 @@ export function Paginacao({
         </span>
       )}
 
-      {/* A pílula mostra "12 de 15"; o leitor de tela ouve "Página 12 de 15" —
-          sem a palavra, "12 de 15" não diz do que é a contagem. Não quebra
-          linha: a 320 px sobram 254 px para os três itens. */}
-      <span className="min-w-[7.25rem] text-center">
-        <span aria-current="page" className="tabular inline-flex rounded-full border border-card-border bg-surface-container-low px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-on-surface-variant">
+      <span className="min-w-[7.5rem] rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-2 text-center shadow-[0_8px_20px_-18px_rgba(8,41,76,.4)]">
+        <span aria-current="page" className="tabular inline-flex text-xs font-semibold whitespace-nowrap text-on-surface-variant">
           <span className="sr-only">Página </span>
           {pagina} <span className="ml-1 font-normal text-outline">de {paginas}</span>
         </span>
