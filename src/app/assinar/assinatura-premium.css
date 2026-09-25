@@ -1,0 +1,102 @@
+.assinatura-publica-premium {
+  --assinatura-sombra: 0 26px 68px -50px rgba(7, 57, 112, .58);
+}
+
+.assinatura-publica-premium > div,
+.assinatura-publica-premium > form {
+  border-radius: calc(var(--radius-painel) + 3px);
+}
+
+.assinatura-publica-premium form {
+  border: 1px solid var(--color-card-border);
+  background:
+    radial-gradient(460px 180px at 100% 0%, rgba(224, 240, 255, .58), transparent 72%),
+    linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+  box-shadow: var(--assinatura-sombra);
+}
+
+.assinatura-publica-premium .folha {
+  overflow: hidden;
+  border-color: #d5e2ef;
+  background: #fff;
+  box-shadow: 0 30px 76px -56px rgba(7,57,112,.56);
+}
+
+.assinatura-publica-premium .folha-texto {
+  border-color: #dce7f1;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.99), rgba(252,253,255,.99)),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(18,91,160,.025) 31px 32px);
+}
+
+.assinatura-publica-premium .folha-evidencias {
+  background: linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%);
+}
+
+.assinatura-publica-premium button[type="submit"],
+.assinatura-publica-premium button[class*="bg-primary-container"] {
+  box-shadow: 0 14px 30px -22px rgba(10,110,209,.75);
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+@media (hover: hover) {
+  .assinatura-publica-premium button[type="submit"]:not(:disabled):hover,
+  .assinatura-publica-premium button[class*="bg-primary-container"]:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 36px -23px rgba(8,60,115,.72);
+  }
+}
+
+.assinatura-publica-premium input {
+  min-height: 2.8rem;
+}
+
+.assinatura-publica-premium input:focus-visible {
+  box-shadow: 0 0 0 3px rgba(10,110,209,.11);
+}
+
+.assinatura-publica-premium [role="alert"],
+.assinatura-publica-premium [role="status"] {
+  box-shadow: 0 16px 38px -32px rgba(8,41,76,.38);
+}
+
+@media (max-width: 639px) {
+  .assinatura-publica-premium {
+    margin-inline: -.1rem;
+  }
+
+  .assinatura-publica-premium form {
+    border-radius: var(--radius-painel);
+  }
+
+  .assinatura-publica-premium input {
+    min-height: 2.9rem;
+    font-size: 16px;
+  }
+
+  .assinatura-publica-premium button[type="submit"],
+  .assinatura-publica-premium button[class*="bg-primary-container"] {
+    min-height: 2.9rem;
+    width: 100%;
+  }
+
+  .assinatura-publica-premium .folha {
+    border-radius: var(--radius-cartao);
+    box-shadow: 0 20px 48px -40px rgba(7,57,112,.5);
+  }
+
+  .assinatura-publica-premium .folha > div,
+  .assinatura-publica-premium .folha-evidencias {
+    padding-inline: 1rem;
+  }
+
+  .assinatura-publica-premium .folha-texto {
+    padding: 1rem;
+  }
+}
+
+@media print {
+  .assinatura-publica-premium .folha {
+    box-shadow: none !important;
+  }
+}
