@@ -1,4 +1,4 @@
-import { CalendarPlus } from "lucide-react";
+import { CalendarClock, CalendarPlus, Sparkles, UserRoundCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { FormularioAtendimento } from "@/components/agenda/formulario-atendimento";
 import {
@@ -21,6 +21,18 @@ export const metadata: Metadata = {
 
 function lerTexto(valor: string | string[] | undefined): string {
   return (Array.isArray(valor) ? valor[0] : valor) ?? "";
+}
+
+function Nota({ icone: Icone, titulo, texto }: { icone: typeof CalendarClock; titulo: string; texto: string }) {
+  return (
+    <div className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3">
+      <div className="flex items-center gap-2 text-primary">
+        <Icone aria-hidden="true" size={14} strokeWidth={1.75} />
+        <p className="text-xs font-semibold">{titulo}</p>
+      </div>
+      <p className="mt-1.5 text-xs leading-5 text-outline">{texto}</p>
+    </div>
+  );
 }
 
 export default async function PaginaNovoAtendimento({
@@ -58,7 +70,7 @@ export default async function PaginaNovoAtendimento({
   const voltarPara = enderecoDaAgenda(diaSugerido, profissionalInicial || null);
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-5">
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
       <LinkDeVoltar href={voltarPara}>Voltar para a agenda</LinkDeVoltar>
 
       <CabecalhoDePagina
@@ -80,23 +92,45 @@ export default async function PaginaNovoAtendimento({
           descricao="Escolher o procedimento preenche a duração e o valor da tabela; revise antes de salvar."
         />
         <CardCorpo className="py-7 sm:py-8">
-          <FormularioAtendimento
-            acao={marcarAtendimento}
-            catalogo={catalogo}
-            pacienteInicial={pacienteInicial}
-            inicial={{
-              data: diaSugerido ?? chaveDoDia(hoje()),
-              hora: "",
-              profissional_id: profissionalInicial,
-              procedimento_id: "",
-              duracao_min: "60",
-              valor: "",
-              observacoes: "",
-            }}
-            rotuloSalvar="Marcar atendimento"
-            cancelarPara={voltarPara}
-            filtroProfissional={profissionalInicial || null}
-          />
+          <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="min-w-0">
+              <FormularioAtendimento
+                acao={marcarAtendimento}
+                catalogo={catalogo}
+                pacienteInicial={pacienteInicial}
+                inicial={{
+                  data: diaSugerido ?? chaveDoDia(hoje()),
+                  hora: "",
+                  profissional_id: profissionalInicial,
+                  procedimento_id: "",
+                  duracao_min: "60",
+                  valor: "",
+                  observacoes: "",
+                }}
+                rotuloSalvar="Marcar atendimento"
+                cancelarPara={voltarPara}
+                filtroProfissional={profissionalInicial || null}
+              />
+            </div>
+
+            <aside className="integridade-cabine p-4 sm:p-5 xl:sticky xl:top-28">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
+                  <Sparkles aria-hidden="true" size={17} strokeWidth={1.75} />
+                </span>
+                <div>
+                  <p className="rotulo text-primary">Agendamento assistido</p>
+                  <h2 className="mt-1 text-base font-semibold text-on-surface">Menos digitação, mais conferência</h2>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-3">
+                <Nota icone={UserRoundCheck} titulo="Paciente vinculada" texto="O horário nasce ligado à ficha certa e fica disponível no histórico da paciente." />
+                <Nota icone={CalendarClock} titulo="Duração pela tabela" texto="O procedimento sugere duração e valor; ajuste somente quando este caso realmente pedir." />
+                <Nota icone={Sparkles} titulo="Conflitos protegidos" texto="A validação do servidor impede sobreposição inválida e devolve o formulário sem apagar o que foi preenchido." />
+              </div>
+            </aside>
+          </div>
         </CardCorpo>
       </Card>
     </div>
