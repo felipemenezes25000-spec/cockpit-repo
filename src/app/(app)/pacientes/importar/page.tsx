@@ -8,6 +8,7 @@ import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-
 import { gerarCsv } from "@/lib/csv";
 import { COLUNAS_DO_MODELO } from "@/lib/importacao";
 import { ehAdministradora } from "@/lib/auth";
+import "./importacao-premium.css";
 
 export const metadata: Metadata = {
   title: "Importar pacientes",
@@ -66,11 +67,12 @@ export default async function PaginaImportarPacientes() {
       />
 
       <section aria-label="Etapas da importação" className="premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-3 sm:p-4">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-24 -right-16 size-64 rounded-full bg-primary-fixed/35 blur-3xl" />
         <ol className="relative grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {ETAPAS.map((etapa, indice) => {
             const Icone = etapa.icone;
             return (
-              <li key={etapa.numero} className="group relative overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3.5 transition-[transform,border-color,background-color] duration-200 hover:border-primary-fixed hover:bg-surface-container-low">
+              <li key={etapa.numero} className="group relative overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3.5 transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary-fixed hover:bg-surface-container-low hover:shadow-[0_14px_30px_-26px_rgba(8,84,160,.45)]">
                 <div className="flex items-start gap-3">
                   <span className="relative flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary">
                     <Icone aria-hidden="true" size={17} strokeWidth={1.65} />
@@ -90,7 +92,9 @@ export default async function PaginaImportarPacientes() {
         </ol>
       </section>
 
-      <Importador modeloCsv={modeloEmDataUri()} />
+      <div className="importacao-pacientes-premium">
+        <Importador modeloCsv={modeloEmDataUri()} />
+      </div>
     </div>
   );
 }
