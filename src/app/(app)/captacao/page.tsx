@@ -1,5 +1,6 @@
-import { Database, Sparkles, Target } from "lucide-react";
+import { Sparkles, Target } from "lucide-react";
 import type { Metadata } from "next";
+import { EstruturaPendenteCaptacao } from "@/components/captacao/estrutura-pendente";
 import { FunilVivo } from "@/components/captacao/funil-vivo";
 import { InteligenciaCaptacao } from "@/components/captacao/inteligencia-captacao";
 import { LeadsDoFunil } from "@/components/captacao/leads-do-funil";
@@ -8,7 +9,6 @@ import { MetricasCaptacao } from "@/components/captacao/metricas-captacao";
 import { PulsoComercial } from "@/components/captacao/pulso-comercial";
 import { RitmoDaMeta } from "@/components/captacao/ritmo-da-meta";
 import { NavegacaoMes } from "@/components/financeiro/navegacao-mes";
-import { Card, CardCorpo } from "@/components/ui/card";
 import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { usuarioAtual } from "@/lib/auth";
 import { ETAPAS_FUNIL, lerFiltroAtencao } from "@/lib/captacao";
@@ -125,18 +125,7 @@ export default async function PaginaCaptacao({
       </div>
 
       {!painel.estruturaDisponivel ? (
-        <Card>
-          <CardCorpo className="flex min-h-72 flex-col items-center justify-center text-center">
-            <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-[var(--radius-painel)] bg-atencao-fundo text-atencao">
-              <Database size={26} strokeWidth={1.7} />
-            </span>
-            <h2 className="titulo-secao mt-5 text-on-surface">A estrutura de Captação ainda não foi aplicada ao banco</h2>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
-              O frontend já está pronto, mas as tabelas de leads, histórico de etapas, metas e contatos comerciais nascem nas migrações 0029 a 0031. Aplique as migrações pendentes antes de usar este módulo.
-            </p>
-            <code className="mt-4 rounded-[var(--radius-controle)] border border-card-border bg-surface-container-low px-3 py-2 text-xs text-primary">npm run db:push</code>
-          </CardCorpo>
-        </Card>
+        <EstruturaPendenteCaptacao />
       ) : (
         <>
           <div className="grid items-stretch gap-5 xl:grid-cols-12">
