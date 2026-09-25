@@ -34,28 +34,31 @@ export function ListaProcedimentos({
   }
 
   return (
-    <ul aria-label="Procedimentos" className="grid gap-3 md:grid-cols-2">
-      {procedimentos.map((p) => (
+    <ul aria-label="Procedimentos" className="grid gap-4 md:grid-cols-2">
+      {procedimentos.map((p, indice) => (
         <li
           key={p.id}
+          style={{ animationDelay: `${Math.min(indice * 45, 220)}ms` }}
           className={cn(
-            "relative isolate flex min-h-44 flex-col overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5",
+            "dashboard-stagger group relative isolate flex min-h-48 flex-col overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border p-4 sm:p-5",
             p.ativo
               ? "premium-interactive border-card-border bg-surface"
               : "border-dashed border-outline-variant bg-surface-container-low",
           )}
         >
+          <span aria-hidden="true" className={cn("absolute inset-y-4 left-0 w-1 rounded-r-full transition-colors duration-200", p.ativo ? "bg-primary-fixed-dim group-hover:bg-primary-container" : "bg-outline-variant")} />
+          <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-12 size-36 rounded-full bg-primary-fixed/45 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-          <div className="flex items-start justify-between gap-4">
+          <div className="relative flex items-start justify-between gap-4 pl-1">
             <span
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border",
+                "flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border shadow-[0_14px_28px_-22px_rgba(8,84,160,.6)] transition-transform duration-200 group-hover:-translate-y-0.5",
                 p.ativo
-                  ? "border-primary-fixed-dim bg-selecao text-primary"
+                  ? "border-primary-fixed-dim bg-gradient-to-br from-surface to-selecao text-primary"
                   : "border-card-border bg-surface-container text-outline",
               )}
             >
-              <Stethoscope aria-hidden="true" size={18} strokeWidth={1.65} />
+              <Stethoscope aria-hidden="true" size={20} strokeWidth={1.7} />
             </span>
 
             <div className="flex flex-wrap justify-end gap-1.5">
@@ -71,16 +74,17 @@ export function ListaProcedimentos({
             </div>
           </div>
 
-          <div className="mt-4 min-w-0 flex-1">
-            <h3 className="text-base font-semibold tracking-[-0.015em] text-on-surface">{p.nome}</h3>
-            <p className="tabular mt-2 text-xs leading-5 text-outline">{resumoDoProcedimento(p)}</p>
+          <div className="relative mt-5 min-w-0 flex-1 pl-1">
+            <p className="rotulo text-primary">Procedimento</p>
+            <h3 className="mt-1 text-[1.02rem] font-bold tracking-[-0.018em] text-on-surface transition-colors group-hover:text-primary">{p.nome}</h3>
+            <p className="tabular mt-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low px-3 py-2.5 text-xs leading-5 text-outline">{resumoDoProcedimento(p)}</p>
           </div>
 
           {podeEditar ? (
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-card-border pt-3">
+            <div className="relative mt-4 flex flex-wrap items-center gap-2 border-t border-card-border pt-3.5 pl-1">
               <Link
                 href={`/configuracoes/procedimentos/${p.id}/editar`}
-                className="premium-interactive inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-on-surface-variant hover:border-primary-fixed-dim hover:text-primary"
+                className="premium-interactive inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-on-surface-variant hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary"
               >
                 <Pencil aria-hidden="true" size={13} strokeWidth={1.75} />
                 Editar
