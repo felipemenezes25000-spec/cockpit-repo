@@ -11,6 +11,7 @@ import { COOKIE_RECOLHIDOS, lerRecolhidos } from "@/lib/recolhidos";
 import { atendimentosDeHoje } from "@/server/consultas/agenda";
 import { temDadosDeExemplo } from "@/server/consultas/exemplo";
 import { ROTULO_PENDENCIA, pendenciasAbertas } from "@/server/consultas/pendencias";
+import "./app-premium.css";
 
 /** Quantas pendências passam no letreiro do topo (as mais urgentes primeiro). */
 const NO_LETREIRO = 12;
