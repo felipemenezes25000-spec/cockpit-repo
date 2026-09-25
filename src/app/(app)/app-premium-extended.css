@@ -1,0 +1,108 @@
+/* Acabamentos específicos da segunda/terceira passada visual do app autenticado. */
+
+.app-premium .financeiro-cabine {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-premium .financeiro-cabine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(520px 220px at 15% 0%, rgba(255,255,255,.14), transparent 72%),
+    linear-gradient(90deg, transparent, rgba(255,255,255,.035), transparent);
+}
+
+.app-premium .financeiro-metrica-cabine {
+  position: relative;
+  min-width: 0;
+  border-radius: var(--radius-painel);
+  padding: 1rem;
+  background: rgba(2, 35, 76, 0.16);
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+@media (hover: hover) {
+  .app-premium .financeiro-metrica-cabine:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.app-premium .documento-folha {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(252,253,255,.98)),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(18,91,160,.025) 31px 32px);
+  box-shadow: 0 26px 70px -48px rgba(8, 52, 99, .55);
+}
+
+.app-premium .documento-evidencia {
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+@media (hover: hover) {
+  .app-premium .documento-evidencia:hover {
+    transform: translateY(-1px);
+    border-color: #c4d8ec;
+    background: #f9fcff;
+  }
+}
+
+.app-premium .integridade-cabine {
+  border: 1px solid #d8e5f2;
+  border-radius: var(--radius-painel);
+  background:
+    radial-gradient(480px 180px at 0% 0%, rgba(216, 237, 255, .82), transparent 72%),
+    linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  box-shadow: var(--premium-sombra);
+}
+
+.app-premium .integridade-item {
+  transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+}
+
+@media (hover: hover) {
+  .app-premium .integridade-item:hover {
+    transform: translateY(-1px);
+    border-color: #bfd3e7;
+    box-shadow: 0 14px 32px -26px rgba(8, 62, 118, .5);
+  }
+}
+
+.app-premium .formulario-destaque {
+  border: 1px solid #dbe6f1;
+  border-radius: var(--radius-painel);
+  padding: clamp(1rem, 2vw, 1.4rem);
+  background:
+    radial-gradient(420px 160px at 100% 0%, rgba(230, 243, 255, .7), transparent 70%),
+    #fff;
+  box-shadow: 0 20px 48px -40px rgba(7, 57, 112, .42);
+}
+
+.app-premium .loading-premium {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-premium .loading-premium::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateX(-100%);
+  background: linear-gradient(100deg, transparent 28%, rgba(255,255,255,.65) 50%, transparent 72%);
+  animation: premium-sheen 1.8s ease-in-out infinite;
+}
+
+@keyframes premium-sheen {
+  0% { transform: translateX(-100%); }
+  65%, 100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-premium .loading-premium::after {
+    display: none;
+  }
+}
