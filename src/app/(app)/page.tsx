@@ -1,3 +1,4 @@
+import { CalendarDays } from "lucide-react";
 import type { Metadata } from "next";
 import { Aniversariantes } from "@/components/overview/birthdays-panel";
 import { AtalhosDoDia } from "@/components/overview/atalhos-do-dia";
@@ -34,29 +35,39 @@ function saudacao(): string {
 export default async function PaginaVisaoGeral() {
   const [exemplo, usuario] = await Promise.all([temDadosDeExemplo(), usuarioAtual()]);
   const primeiroNome = usuario?.nome.trim().split(/\s+/)[0] ?? "equipe";
+  const dataExtenso = capitalizar(formatarDataExtenso(hoje()));
 
   return (
-    <div className="flex flex-col gap-5 pb-8">
-      <header>
-        <h1 className="titulo-tela">Visão Geral</h1>
-        <p className="mt-1 text-sm text-on-surface-variant">
-          {saudacao()}, {primeiroNome}. {capitalizar(formatarDataExtenso(hoje()))}.
-        </p>
+    <div className="flex flex-col gap-5 pb-10 sm:gap-6">
+      <header className="visao-geral-cabecalho">
+        <div className="min-w-0">
+          <p className="rotulo text-primary">Visão Geral</p>
+          <h1 className="visao-geral-saudacao mt-2">
+            {saudacao()}, {primeiroNome}!
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-on-surface-variant sm:text-[0.95rem]">
+            Aqui está o panorama da clínica para você começar pelas prioridades certas.
+          </p>
+        </div>
+
+        <div className="visao-geral-data" aria-label={`Data de hoje: ${dataExtenso}`}>
+          <CalendarDays aria-hidden="true" size={15} strokeWidth={1.9} className="text-primary" />
+          <span>{dataExtenso}</span>
+        </div>
       </header>
 
       <CabineDoDia exemplo={exemplo} />
 
       <AtalhosDoDia papel={usuario?.papel ?? "recepcao"} />
 
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
-        <div className="flex min-w-0 flex-col gap-5 xl:col-span-8">
-          <PendenciasDaClinica />
-          <ResumoFinanceiro exemplo={exemplo} />
-          <Aniversariantes />
-        </div>
-        <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
-          <ProximosRetornos />
-        </div>
+      <div className="visao-geral-grade-dupla grid grid-cols-1 gap-5">
+        <PendenciasDaClinica />
+        <ProximosRetornos />
+      </div>
+
+      <div className="visao-geral-grade-baixa grid grid-cols-1 gap-5">
+        <ResumoFinanceiro exemplo={exemplo} />
+        <Aniversariantes />
       </div>
     </div>
   );
