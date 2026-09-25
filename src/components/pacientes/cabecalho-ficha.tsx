@@ -1,4 +1,4 @@
-import { Archive, Cake, ClipboardPlus, Pencil } from "lucide-react";
+import { Archive, Cake, ClipboardPlus, Pencil, Sparkles } from "lucide-react";
 import { BotaoArquivar } from "./botao-arquivar";
 import { Avatar } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -19,21 +19,30 @@ export function CabecalhoFicha({
     : null;
 
   return (
-    <div className="mb-8 flex flex-col gap-5">
+    <div className="mb-6 flex flex-col gap-4 sm:mb-7">
       <LinkDeVoltar href="/pacientes">Voltar para pacientes</LinkDeVoltar>
 
-      <section aria-labelledby="nome-da-paciente" className="cabine px-5 py-6 sm:px-7 sm:py-7">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+      <section aria-labelledby="nome-da-paciente" className="cabine relative overflow-hidden px-5 py-6 sm:px-7 sm:py-7">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full border border-white/10" />
+        <span aria-hidden="true" className="pointer-events-none absolute -top-10 right-24 size-40 rounded-full border border-white/8" />
+
+        <div className="relative z-[1] flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex min-w-0 items-start gap-4 sm:gap-5">
             <Avatar
               nome={paciente.exibicao}
               tom="cabine"
               tamanho="lg"
+              className="ring-4 ring-white/12 ring-offset-2 ring-offset-transparent shadow-[0_20px_42px_-28px_rgba(0,24,55,.85)]"
             />
 
             <div className="min-w-0 pt-0.5">
-              <p className="rotulo">Ficha da paciente</p>
-              <h1 id="nome-da-paciente" className="mt-2 text-[clamp(1.75rem,1.3rem+1.6vw,2.5rem)] leading-tight font-semibold tracking-[-0.03em] break-words text-cabine-texto">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="rotulo">Ficha da paciente</p>
+                <span className="inline-flex items-center gap-1 rounded-full border border-cabine-linha bg-white/8 px-2 py-0.5 text-[0.63rem] font-semibold tracking-wide text-cabine-texto-secundario uppercase">
+                  <Sparkles aria-hidden="true" size={10} /> visão 360°
+                </span>
+              </div>
+              <h1 id="nome-da-paciente" className="mt-2 text-[clamp(1.85rem,1.35rem+1.75vw,2.65rem)] leading-[1.04] font-bold tracking-[-0.045em] break-words text-cabine-texto">
                 {paciente.exibicao}
               </h1>
 
@@ -76,7 +85,7 @@ export function CabecalhoFicha({
             {podeProntuario ? (
               <Link
                 href={`/prontuarios/novo?paciente=${paciente.id}`}
-                className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-controle)] border border-cabine-texto bg-cabine-texto px-3.5 text-sm font-semibold text-cabine-profunda transition-colors hover:border-selecao hover:bg-selecao"
+                className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-controle)] border border-cabine-texto bg-cabine-texto px-3.5 text-sm font-semibold text-cabine-profunda shadow-[0_14px_28px_-20px_rgba(0,28,63,.55)] transition-[transform,background-color,border-color] hover:-translate-y-px hover:border-selecao hover:bg-selecao"
               >
                 <ClipboardPlus aria-hidden="true" size={16} strokeWidth={1.9} />
                 Novo prontuário
@@ -85,7 +94,7 @@ export function CabecalhoFicha({
 
             <Link
               href={`/pacientes/${paciente.id}/editar`}
-              className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-controle)] border border-cabine-texto px-3.5 text-sm font-semibold text-cabine-texto transition-colors hover:bg-cabine-profunda"
+              className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-controle)] border border-cabine-linha bg-white/8 px-3.5 text-sm font-semibold text-cabine-texto transition-[transform,background-color,border-color] hover:-translate-y-px hover:border-cabine-texto hover:bg-white/12"
             >
               <Pencil aria-hidden="true" size={16} strokeWidth={1.9} />
               Editar cadastro
