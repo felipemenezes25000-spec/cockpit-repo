@@ -25,8 +25,8 @@ export function MenuNavegacao({ aoNavegar }: { aoNavegar?: () => void }) {
       <div className="flex flex-col gap-5">
         {SECOES.map((secao) => (
           <section key={secao.rotulo} aria-label={secao.rotulo}>
-            <p className="rotulo mb-2 px-3">{secao.rotulo}</p>
-            <ul className="flex flex-col gap-0.5">
+            <p className="rotulo mb-2 px-3 text-outline">{secao.rotulo}</p>
+            <ul className="flex flex-col gap-1">
               {secao.itens.map((item, indice) => {
                 const Icone = item.icone;
                 const estaAtivo = ativo?.href === item.href;
@@ -37,17 +37,19 @@ export function MenuNavegacao({ aoNavegar }: { aoNavegar?: () => void }) {
                       onClick={aoNavegar}
                       aria-current={estaAtivo ? "page" : undefined}
                       className={cn(
-                        "relative flex min-h-11 items-center gap-3 rounded-[var(--radius-controle)] px-3 py-2 text-sm transition-colors duration-150",
+                        "relative flex min-h-12 items-center gap-3 rounded-[var(--radius-cartao)] border px-3 py-2 text-sm transition-[transform,background-color,border-color,color,box-shadow] duration-150",
                         estaAtivo
-                          ? "bg-primary-fixed font-semibold text-primary"
-                          : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
+                          ? "border-primary-fixed-dim bg-selecao font-semibold text-primary shadow-[0_10px_22px_-18px_rgba(8,84,160,.45)]"
+                          : "border-transparent text-on-surface-variant hover:-translate-y-0.5 hover:border-card-border hover:bg-surface hover:text-primary hover:shadow-[0_10px_22px_-20px_rgba(8,41,76,.36)]",
                       )}
                     >
                       {estaAtivo ? <span aria-hidden="true" className="traco-ativo absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-primary-container" /> : null}
-                      <Icone aria-hidden="true" size={19} strokeWidth={estaAtivo ? 2 : 1.7} className="shrink-0" />
+                      <span aria-hidden="true" className={cn("flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)]", estaAtivo ? "bg-primary-fixed text-primary" : "bg-surface-container-low text-on-surface-variant")}>
+                        <Icone size={18} strokeWidth={estaAtivo ? 2 : 1.7} />
+                      </span>
                       <span className="min-w-0 flex-1 truncate">{item.rotulo}</span>
                       {item.emConstrucao ? (
-                        <span className="shrink-0 rounded-[var(--radius-tag)] border border-card-border px-1.5 py-px text-[0.66rem] font-medium text-outline">em breve</span>
+                        <span className="shrink-0 rounded-[var(--radius-tag)] border border-card-border bg-surface px-1.5 py-px text-[0.66rem] font-medium text-outline">em breve</span>
                       ) : null}
                     </Link>
                   </li>
