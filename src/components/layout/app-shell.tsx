@@ -70,7 +70,7 @@ export function EstruturaApp({
   }, [gavetaAberta]);
 
   return (
-    <div className="fundo-vivo flex min-h-screen flex-col">
+    <div className="app-premium fundo-vivo flex min-h-screen flex-col">
       {/* Os dois leem o endereço (useSearchParams): cada um no seu Suspense. */}
       <Suspense fallback={null}>
         <ProgressoDeNavegacao />
@@ -91,7 +91,7 @@ export function EstruturaApp({
 
       <main id="conteudo" className="relative flex-1 px-3 pt-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-7 lg:pb-10 xl:px-10 2xl:px-14">
         <ProvedorDePaineis inicial={recolhidos}>
-          <div key={caminho} className="palco mx-auto w-full max-w-[1600px]">
+          <div key={caminho} className="palco mx-auto w-full max-w-[1680px]">
             {aviso}
             {children}
           </div>
