@@ -1,9 +1,9 @@
 import { ArrowDownRight, ArrowUpRight, CircleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/cn";
 import { BotaoLink } from "@/components/ui/button";
 import { CardCorpo, CardRodape } from "@/components/ui/card";
 import { CardRecolhivel } from "@/components/ui/card-recolhivel";
+import { cn } from "@/lib/cn";
 import { formatarMesAno, formatarMoeda } from "@/lib/format";
 import { resumoFinanceiro, serieMensalRecebimentos } from "@/server/consultas/financeiro";
 import { EvolucaoRecebimentos } from "./revenue-chart";
@@ -13,6 +13,8 @@ type Linha = {
   valor: number | null;
   icone: LucideIcon;
   cor: string;
+  fundoIcone: string;
+  bordaIcone: string;
   corValor?: string;
   apoio: string;
   apoioEmAlerta?: boolean;
@@ -34,6 +36,8 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       valor: resumo.recebidoNoMes,
       icone: ArrowUpRight,
       cor: "text-positivo",
+      fundoIcone: "bg-positivo-fundo",
+      bordaIcone: "border-positivo-borda",
       corValor: "text-positivo",
       apoio: "recebimentos já quitados",
     },
@@ -42,6 +46,8 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       valor: resumo.despesasDoMes,
       icone: ArrowDownRight,
       cor: resumo.despesasDoMes === null ? "text-outline" : "text-negativo",
+      fundoIcone: resumo.despesasDoMes === null ? "bg-surface-container-low" : "bg-negativo-fundo",
+      bordaIcone: resumo.despesasDoMes === null ? "border-card-border" : "border-negativo-borda",
       corValor: resumo.despesasDoMes === null ? "text-outline" : "text-negativo",
       apoio: resumo.despesasDoMes === null ? "restrito ao financeiro" : "lançamentos do período",
     },
@@ -50,6 +56,8 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       valor: resumo.aReceber,
       icone: CircleAlert,
       cor: "text-atencao",
+      fundoIcone: "bg-atencao-fundo",
+      bordaIcone: "border-atencao-borda",
       apoio: resumo.vencido > 0 ? `${formatarMoeda(resumo.vencido)} já vencido` : "nenhum valor vencido",
       apoioEmAlerta: resumo.vencido > 0,
       progresso: proporcaoVencida,
@@ -63,7 +71,6 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       descricao={exemplo ? "Movimento do mês corrente, com dados fictícios." : "Movimento do mês corrente."}
       acao={<BotaoLink href="/financeiro" tamanho="sm">Abrir financeiro</BotaoLink>}
     >
-
       <CardCorpo>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {linhas.map((linha, indice) => {
@@ -73,11 +80,13 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
               <div
                 key={linha.rotulo}
                 style={{ animationDelay: `${indice * 70 + 80}ms` }}
-                className="dashboard-stagger min-w-0 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4"
+                className="dashboard-stagger premium-interactive min-w-0 rounded-[var(--radius-cartao)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-4"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rotulo">{linha.rotulo}</span>
-                  <Icone aria-hidden="true" size={17} strokeWidth={2} className={cn("shrink-0", linha.cor)} />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="rotulo pt-1">{linha.rotulo}</span>
+                  <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border", linha.fundoIcone, linha.bordaIcone, linha.cor)}>
+                    <Icone aria-hidden="true" size={16} strokeWidth={2} />
+                  </span>
                 </div>
                 <p
                   className={cn("numero-sm mt-3 break-words", linha.corValor ?? "text-on-surface")}
@@ -106,7 +115,7 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
           })}
         </div>
 
-        <div className="mt-7">
+        <div className="mt-7 rounded-[var(--radius-cartao)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-3 sm:p-4">
           <EvolucaoRecebimentos serie={serie} exemplo={exemplo} />
         </div>
       </CardCorpo>
