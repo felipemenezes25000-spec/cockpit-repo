@@ -4,7 +4,7 @@ import { CalendarCheck, CircleAlert, Info } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { SeletorPaciente } from "./seletor-paciente";
-import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
+import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO, GrupoDeCampos } from "@/components/ui/field";
 import { BotaoDeAcao } from "@/components/ui/formulario-acao";
 import { RodapeAcoesFormulario } from "@/components/ui/form-actions";
 import { cn } from "@/lib/cn";
@@ -85,68 +85,75 @@ export function FormularioAtendimento({
   const semProcedimento = catalogo.procedimentos.length === 0;
 
   return (
-    <form ref={formulario} action={enviar} className="flex flex-col gap-6" noValidate>
+    <form ref={formulario} action={enviar} className="flex flex-col gap-6 sm:gap-7" noValidate>
       {atendimentoId ? <input type="hidden" name="id" value={atendimentoId} /> : null}
       {filtroProfissional ? <input type="hidden" name="filtro_profissional" value={filtroProfissional} /> : null}
 
       {semProfissional || semProcedimento ? (
-        <div className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-2.5 text-sm text-atencao">
-          <Info aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
+        <div className="flex items-start gap-3 rounded-[var(--radius-painel)] border border-atencao-borda bg-atencao-fundo px-4 py-3.5 text-sm text-atencao shadow-[0_12px_30px_-26px_rgba(156,99,0,.35)]">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-atencao-borda bg-surface/70"><Info aria-hidden="true" size={16} /></span>
           <div className="flex flex-col gap-1">
-            <p className="font-medium">Ainda não dá para marcar atendimento.</p>
-            {semProcedimento ? <p>Nenhum procedimento ativo. <Link href="/configuracoes/procedimentos" className="underline">Cadastre em Configurações → Procedimentos</Link>.</p> : null}
+            <p className="font-semibold">Ainda não dá para marcar atendimento.</p>
+            {semProcedimento ? <p>Nenhum procedimento ativo. <Link href="/configuracoes/procedimentos" className="font-semibold underline underline-offset-2">Cadastre em Configurações → Procedimentos</Link>.</p> : null}
             {semProfissional ? <p>Nenhuma profissional ativa em “Quem atende”. A equipe ainda não tem tela própria: peça à administração do sistema para cadastrá-la.</p> : null}
           </div>
         </div>
       ) : null}
 
       {erros.geral ? (
-        <p role="alert" tabIndex={-1} data-erro-geral className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
+        <p role="alert" tabIndex={-1} data-erro-geral className="flex items-start gap-2 rounded-[var(--radius-painel)] border border-error bg-error-container px-4 py-3 text-sm text-on-error-container shadow-[0_12px_30px_-26px_rgba(153,27,27,.35)]">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erros.geral}
         </p>
       ) : null}
 
-      <SeletorPaciente inicial={pacienteInicial} erro={erros.paciente_id} />
+      <GrupoDeCampos titulo="Paciente" descricao="Escolha a pessoa certa antes de definir o horário e o procedimento.">
+        <SeletorPaciente inicial={pacienteInicial} erro={erros.paciente_id} />
+      </GrupoDeCampos>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Campo id="procedimento_id" rotulo="Procedimento" obrigatorio erro={erros.procedimento_id}>
-          {/* `key`: o React 19 reinicia o formulário depois da ação, e o <select> só lê o
-             defaultValue ao montar. Sem remontar com o valor devolvido pela ação, a
-             escolha voltaria a "Escolher…" depois de um erro (ex.: choque de horário). */}
-          <select key={`procedimento-${de("procedimento_id")}`} id="procedimento_id" name="procedimento_id" required defaultValue={de("procedimento_id")} onChange={(e) => aoTrocarProcedimento(e.target.value)} className={cn(ENTRADA, erros.procedimento_id && ENTRADA_ERRO)} {...marcar("procedimento_id")}>
-            <option value="">Escolher…</option>
-            {catalogo.procedimentos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          </select>
+      <GrupoDeCampos titulo="Atendimento" descricao="Procedimento, profissional, data e horário formam o núcleo operacional do agendamento.">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Campo id="procedimento_id" rotulo="Procedimento" obrigatorio erro={erros.procedimento_id}>
+            <select key={`procedimento-${de("procedimento_id")}`} id="procedimento_id" name="procedimento_id" required defaultValue={de("procedimento_id")} onChange={(e) => aoTrocarProcedimento(e.target.value)} className={cn(ENTRADA, erros.procedimento_id && ENTRADA_ERRO)} {...marcar("procedimento_id")}>
+              <option value="">Escolher…</option>
+              {catalogo.procedimentos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+          </Campo>
+
+          <Campo id="profissional_id" rotulo="Quem atende" obrigatorio erro={erros.profissional_id}>
+            <select key={`profissional-${de("profissional_id")}`} id="profissional_id" name="profissional_id" required defaultValue={de("profissional_id") || (catalogo.profissionais.length === 1 ? catalogo.profissionais[0].id : "")} className={cn(ENTRADA, erros.profissional_id && ENTRADA_ERRO)} {...marcar("profissional_id")}>
+              <option value="">Escolher…</option>
+              {catalogo.profissionais.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+          </Campo>
+
+          <Campo id="data" rotulo="Data" obrigatorio erro={erros.data}>
+            <input id="data" name="data" type="date" required defaultValue={de("data")} className={cn(ENTRADA, erros.data && ENTRADA_ERRO)} {...marcar("data")} />
+          </Campo>
+
+          <Campo id="hora" rotulo="Hora" obrigatorio erro={erros.hora}>
+            <input id="hora" name="hora" type="time" required step={300} defaultValue={de("hora")} className={cn(ENTRADA, "tabular", erros.hora && ENTRADA_ERRO)} {...marcar("hora")} />
+          </Campo>
+        </div>
+      </GrupoDeCampos>
+
+      <GrupoDeCampos titulo="Duração e valor" descricao="Os padrões vêm do procedimento, mas podem ser ajustados para o caso específico.">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Campo id="duracao_min" rotulo="Duração (minutos)" obrigatorio erro={erros.duracao_min} dica="Preenchida pela tabela do procedimento; ajuste se o caso pedir.">
+            <input id="duracao_min" name="duracao_min" type="number" inputMode="numeric" min={5} max={480} step={5} required value={duracao} onChange={(e) => setDuracao(e.target.value)} className={cn(ENTRADA, "tabular", erros.duracao_min && ENTRADA_ERRO)} {...marcar("duracao_min")} />
+          </Campo>
+
+          <Campo id="valor" rotulo="Valor (R$)" erro={erros.valor} dica="O combinado deste atendimento. Pode diferir da tabela.">
+            <input id="valor" name="valor" type="text" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" className={cn(ENTRADA, "tabular", erros.valor && ENTRADA_ERRO)} {...marcar("valor")} />
+          </Campo>
+        </div>
+      </GrupoDeCampos>
+
+      <GrupoDeCampos titulo="Observações" descricao="Informações práticas para a equipe se preparar antes do atendimento.">
+        <Campo id="observacoes" rotulo="Observações" dica="Preparo, restrição de horário, o que a recepção precisa lembrar.">
+          <textarea id="observacoes" name="observacoes" maxLength={2000} defaultValue={de("observacoes")} className={AREA_TEXTO} />
         </Campo>
-
-        <Campo id="profissional_id" rotulo="Quem atende" obrigatorio erro={erros.profissional_id}>
-          <select key={`profissional-${de("profissional_id")}`} id="profissional_id" name="profissional_id" required defaultValue={de("profissional_id") || (catalogo.profissionais.length === 1 ? catalogo.profissionais[0].id : "")} className={cn(ENTRADA, erros.profissional_id && ENTRADA_ERRO)} {...marcar("profissional_id")}>
-            <option value="">Escolher…</option>
-            {catalogo.profissionais.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          </select>
-        </Campo>
-
-        <Campo id="data" rotulo="Data" obrigatorio erro={erros.data}>
-          <input id="data" name="data" type="date" required defaultValue={de("data")} className={cn(ENTRADA, erros.data && ENTRADA_ERRO)} {...marcar("data")} />
-        </Campo>
-
-        <Campo id="hora" rotulo="Hora" obrigatorio erro={erros.hora}>
-          <input id="hora" name="hora" type="time" required step={300} defaultValue={de("hora")} className={cn(ENTRADA, "tabular", erros.hora && ENTRADA_ERRO)} {...marcar("hora")} />
-        </Campo>
-
-        <Campo id="duracao_min" rotulo="Duração (minutos)" obrigatorio erro={erros.duracao_min} dica="Preenchida pela tabela do procedimento; ajuste se o caso pedir.">
-          <input id="duracao_min" name="duracao_min" type="number" inputMode="numeric" min={5} max={480} step={5} required value={duracao} onChange={(e) => setDuracao(e.target.value)} className={cn(ENTRADA, "tabular", erros.duracao_min && ENTRADA_ERRO)} {...marcar("duracao_min")} />
-        </Campo>
-
-        <Campo id="valor" rotulo="Valor (R$)" erro={erros.valor} dica="O combinado deste atendimento. Pode diferir da tabela.">
-          <input id="valor" name="valor" type="text" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" className={cn(ENTRADA, "tabular", erros.valor && ENTRADA_ERRO)} {...marcar("valor")} />
-        </Campo>
-      </div>
-
-      <Campo id="observacoes" rotulo="Observações" dica="Preparo, restrição de horário, o que a recepção precisa lembrar.">
-        <textarea id="observacoes" name="observacoes" maxLength={2000} defaultValue={de("observacoes")} className={AREA_TEXTO} />
-      </Campo>
+      </GrupoDeCampos>
 
       <RodapeAcoesFormulario>
         <BotaoSalvar rotulo={rotuloSalvar} indisponivel={semProfissional || semProcedimento} />
