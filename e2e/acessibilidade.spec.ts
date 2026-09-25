@@ -42,6 +42,10 @@ async function auditar(pagina: Page, rota: string, largura: string) {
   await pagina.goto(rota);
   await pagina.waitForLoadState("networkidle");
   await expect(pagina.locator("h1").first()).toBeVisible();
+  // O ponteiro no canto de cima, onde ele começa na CI (Linux): em cima do
+  // letreiro de pendências. Sem isto o Windows auditava a tela sem hover e a
+  // CI com hover, e um alvo de toque coberto só aparecia lá.
+  await pagina.mouse.move(2, 2);
 
   const resultado = await new AxeBuilder({ page: pagina }).withTags(REGRAS_WCAG).analyze();
 
