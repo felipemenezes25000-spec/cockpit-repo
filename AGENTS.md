@@ -1273,6 +1273,15 @@ com uma exceção comentada no código: o `themeColor` da `viewport` em
 `src/app/layout.tsx` (`#ffffff`, o `--color-surface`), porque a meta tag não lê
 variável de CSS. Nada de `bg-[#ABC123]` em componente.
 
+**A logo da clínica não tem cor própria.** `MarcaDaClinica`
+(`components/ui/marca-da-clinica.tsx`) é um SVG de um contorno só, pintado com
+`currentColor`: branca no quadrado azul do topo, da gaveta e da assinatura,
+azul no quadrado claro da cabine do login. O `src/app/favicon.ico` é imagem —
+o quadro `primary-container` com a logo branca, gerado a partir do mesmo
+contorno —; mudou a cor da marca ou a logo, gere-o de novo. Ele fica em
+`/favicon.ico` porque é o único ícone que o `matcher` do middleware deixa
+passar sem sessão (caminho exato).
+
 **Marca (azul)** — navegação, ações principais, links, títulos, foco. Não
 comunica estado nenhum: é a cor de "o sistema", não de "a situação".
 

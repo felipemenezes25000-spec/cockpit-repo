@@ -1,6 +1,7 @@
 import { CalendarDays, FileText, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { LinkDeVoltar } from "@/components/ui/page-hero";
+import { MarcaDaClinica } from "@/components/ui/marca-da-clinica";
 import { CLINICA } from "@/lib/nav";
 
 /**
@@ -35,8 +36,8 @@ export function AuthShell({
         <section aria-label={`${CLINICA.nome} — Cockpit do consultório`} className="cabine hidden flex-col justify-between rounded-none p-10 lg:flex xl:p-12">
           <div>
             <div className="flex items-center gap-3">
-              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[var(--radius-controle)] bg-cabine-texto text-sm font-bold text-cabine-profunda">
-                {CLINICA.monograma}
+              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[var(--radius-controle)] bg-cabine-texto text-cabine-profunda">
+                <MarcaDaClinica className="size-7" />
               </span>
               <div className="leading-tight">
                 <p className="font-bold">{CLINICA.nome}</p>
@@ -77,8 +78,8 @@ export function AuthShell({
             ) : null}
 
             <div className="mb-8 flex items-center gap-3 lg:hidden">
-              <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-primary-container text-sm font-bold text-on-primary">
-                {CLINICA.monograma}
+              <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-primary-container text-on-primary">
+                <MarcaDaClinica className="size-6" />
               </span>
               <div className="leading-tight">
                 <p className="text-sm font-bold text-primary">{CLINICA.nome}</p>

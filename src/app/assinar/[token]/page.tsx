@@ -2,6 +2,7 @@ import { BadgeCheck, LockKeyhole, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { AssinarPorLink } from "@/components/documentos/assinar-por-link";
 import { tokenPlausivel, type TipoDocumento } from "@/lib/documento";
+import { MarcaDaClinica } from "@/components/ui/marca-da-clinica";
 import { CLINICA } from "@/lib/nav";
 import { estadoDoLinkPublico } from "@/server/consultas/documentos";
 
@@ -28,9 +29,9 @@ export default async function PaginaAssinar({ params }: { params: Promise<{ toke
       <div className="relative mx-auto flex w-full max-w-3xl flex-col gap-5 sm:gap-6">
         <header className="sem-impressao glass-surface flex items-center justify-between gap-4 rounded-[var(--radius-painel)] border border-card-border px-4 py-3.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3.5">
-            <span className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-painel)] border border-primary-container bg-primary-container text-sm font-bold text-on-primary">
-              <span aria-hidden="true" className="absolute inset-x-2 top-0 h-px bg-surface" />
-              {CLINICA.monograma}
+            <span aria-hidden="true" className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-painel)] border border-primary-container bg-primary-container text-on-primary">
+              <span className="absolute inset-x-2 top-0 h-px bg-surface" />
+              <MarcaDaClinica className="size-7" />
             </span>
             <div className="min-w-0">
               <p className="font-semibold tracking-[-0.015em] text-on-surface">{CLINICA.nome}</p>
