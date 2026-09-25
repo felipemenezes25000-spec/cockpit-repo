@@ -6,6 +6,7 @@ import {
   ReceiptText,
   Scale,
   ShoppingBag,
+  Sparkles,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -81,7 +82,6 @@ export function IndicadoresPeriodo({
     },
   ];
 
-  // A cabine leva o que se lê de relance; a grade, o detalhe.
   const naCabine = new Set(["Líquido recebido", "Resultado de caixa", "A receber"]);
   const naGrade = cartoes.filter((cartao) => !naCabine.has(cartao.rotulo));
   const proporcaoVencida = n.aReceber > 0 ? n.aReceberVencido / n.aReceber : 0;
@@ -90,11 +90,23 @@ export function IndicadoresPeriodo({
 
   return (
     <section aria-labelledby="indicadores-titulo" className="flex flex-col gap-4">
-      <h2 id="indicadores-titulo" className="sr-only">Indicadores do período</h2>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="rotulo text-primary">Leitura financeira</p>
+          <h2 id="indicadores-titulo" className="titulo-secao mt-1 text-on-surface">O que entrou, o que saiu e o que ainda está em aberto</h2>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1 text-xs font-medium text-outline">
+          <Sparkles aria-hidden="true" size={12} className="text-primary" />
+          Atualizado pelo período selecionado
+        </span>
+      </div>
 
-      <div className="cabine grid gap-6 p-5 sm:p-6 md:grid-cols-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)] lg:gap-0">
+      <div className="cabine relative grid gap-6 overflow-hidden p-5 sm:p-6 md:grid-cols-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)] lg:gap-0">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-24 -right-20 size-64 rounded-full border border-white/10" />
+        <span aria-hidden="true" className="pointer-events-none absolute -top-8 -right-2 size-36 rounded-full border border-white/8" />
+
         <Indicador
-          className="md:col-span-2 lg:col-span-1 lg:pr-6"
+          className="relative md:col-span-2 lg:col-span-1 lg:pr-6"
           rotulo={exemplo ? "Líquido recebido · demonstrativo" : "Líquido recebido"}
           tamanho="numero"
           valor={<NumeroVivo valor={n.liquidoRecebido} formato="moeda" />}
@@ -106,7 +118,7 @@ export function IndicadoresPeriodo({
           }
         />
         <Indicador
-          className="lg:border-l lg:border-cabine-linha lg:px-6"
+          className="relative lg:border-l lg:border-cabine-linha lg:px-6"
           rotulo="Resultado de caixa"
           tamanho="numero-sm"
           valor={n.resultadoDeCaixa === null ? "—" : <NumeroVivo valor={n.resultadoDeCaixa} formato="moeda" />}
@@ -125,7 +137,7 @@ export function IndicadoresPeriodo({
           }
         />
         <Indicador
-          className="lg:border-l lg:border-cabine-linha lg:pl-6"
+          className="relative lg:border-l lg:border-cabine-linha lg:pl-6"
           rotulo="A receber"
           tamanho="numero-sm"
           valor={<NumeroVivo valor={n.aReceber} formato="moeda" />}
@@ -141,31 +153,32 @@ export function IndicadoresPeriodo({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
-        {naGrade.map((cartao) => {
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
+        {naGrade.map((cartao, indice) => {
           const Icone = cartao.icone;
           return (
             <article
               key={cartao.rotulo}
-              className="premium-panel flex min-w-0 flex-col rounded-[var(--radius-painel)] border p-4 sm:p-5"
+              style={{ animationDelay: `${Math.min(indice * 55, 220)}ms` }}
+              className="dashboard-stagger premium-panel premium-interactive group flex min-w-0 flex-col rounded-[calc(var(--radius-painel)+1px)] border p-4 sm:p-5"
             >
               <div className="mb-5 flex items-start justify-between gap-3">
-                <h3 className="rotulo leading-4">{cartao.rotulo}</h3>
+                <h3 className="rotulo leading-4 text-on-surface-variant">{cartao.rotulo}</h3>
                 <span
                   className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border",
+                    "flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border shadow-[0_10px_22px_-18px_rgba(7,57,112,.6)] transition-transform duration-200 group-hover:-translate-y-0.5",
                     cartao.tom === "positivo" && "border-positivo-borda bg-positivo-fundo text-positivo",
                     cartao.tom === "negativo" && "border-negativo-borda bg-negativo-fundo text-negativo",
-                    !cartao.tom && "border-card-border bg-surface text-primary",
+                    !cartao.tom && "border-primary-fixed bg-selecao text-primary",
                   )}
                 >
-                  <Icone aria-hidden="true" size={17} strokeWidth={1.65} />
+                  <Icone aria-hidden="true" size={18} strokeWidth={1.7} />
                 </span>
               </div>
 
               <span
                 className={cn(
-                  "numero-sm mt-auto break-words",
+                  "numero-sm mt-auto break-words tracking-[-0.035em]",
                   cartao.valor === null && "text-outline",
                   cartao.tom === "positivo" && "text-positivo",
                   cartao.tom === "negativo" && "text-negativo",
@@ -186,7 +199,7 @@ export function IndicadoresPeriodo({
               </span>
 
               {exemplo && cartao.valor !== null ? (
-                <span className="mt-2 text-[0.625rem] font-medium tracking-[0.08em] text-outline uppercase">
+                <span className="mt-3 w-fit rounded-full border border-dashed border-outline-variant px-2 py-0.5 text-[0.625rem] font-medium tracking-[0.08em] text-outline uppercase">
                   Demonstrativo
                 </span>
               ) : null}
