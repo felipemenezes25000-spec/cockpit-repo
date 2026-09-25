@@ -1,22 +1,33 @@
 /** Esqueleto premium das telas autenticadas enquanto o servidor monta a próxima rota. */
 export default function Carregando() {
   return (
-    <div aria-busy="true" aria-live="polite" className="flex flex-col gap-6">
+    <div aria-busy="true" aria-live="polite" className="page-reveal flex flex-col gap-6">
       <p className="sr-only">Carregando…</p>
 
-      <div className="premium-panel page-reveal relative overflow-hidden rounded-[var(--radius-painel)] border px-5 py-6 sm:px-7 sm:py-7">
+      <div className="loading-premium premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border px-5 py-6 sm:px-7 sm:py-7">
         <div className="relative flex items-start gap-4 sm:gap-5">
           <div className="esqueleto size-12 shrink-0 rounded-[var(--radius-painel)] sm:size-14" />
           <div className="min-w-0 flex-1 pt-1">
             <div className="esqueleto h-2.5 w-24" />
-            <div className="esqueleto mt-3 h-8 w-80 max-w-[85%] rounded-[var(--radius-controle)]" />
+            <div className="esqueleto mt-3 h-9 w-80 max-w-[85%] rounded-[var(--radius-controle)]" />
             <div className="esqueleto mt-3 h-3.5 w-[34rem] max-w-full" />
             <div className="mt-5 flex flex-wrap gap-2">
               <div className="esqueleto h-8 w-28 rounded-full" />
               <div className="esqueleto h-8 w-36 rounded-full" />
+              <div className="esqueleto h-8 w-24 rounded-full" />
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="loading-premium cabine grid min-h-40 gap-1 p-3 sm:grid-cols-3 sm:p-4">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="relative rounded-[var(--radius-painel)] bg-white/8 p-4">
+            <div className="esqueleto h-2.5 w-20 bg-white/25" />
+            <div className="esqueleto mt-5 h-8 w-28 max-w-full bg-white/25" />
+            <div className="esqueleto mt-3 h-3 w-36 max-w-full bg-white/20" />
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -24,7 +35,7 @@ export default function Carregando() {
           <div
             key={i}
             style={{ animationDelay: `${80 + i * 60}ms` }}
-            className="dashboard-stagger premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5"
+            className="loading-premium dashboard-stagger premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5"
           >
             <div className="relative esqueleto size-9 rounded-[var(--radius-controle)]" />
             <div className="relative esqueleto mt-5 h-7 w-20 rounded-[var(--radius-controle)]" />
@@ -33,7 +44,7 @@ export default function Carregando() {
         ))}
       </div>
 
-      <div style={{ animationDelay: "180ms" }} className="dashboard-stagger premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-6">
+      <div style={{ animationDelay: "180ms" }} className="loading-premium dashboard-stagger premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-6">
         <div className="relative flex items-center justify-between gap-4 border-b border-card-border pb-4">
           <div className="min-w-0 flex-1">
             <div className="esqueleto h-5 w-40" />
