@@ -87,7 +87,7 @@ export function TickerDePendencias({ pendencias, total, altas }: { pendencias: P
 
   return (
     <section aria-label="Pendências em aberto" className="ticker sem-impressao">
-      <div className="mx-auto flex h-10 w-full max-w-[1600px] items-center gap-2 px-3 sm:gap-3 sm:px-6 xl:px-10 2xl:px-14">
+      <div className="mx-auto flex h-10 w-full max-w-[1680px] items-center gap-2 px-3 sm:gap-3 sm:px-6 xl:px-10 2xl:px-14">
         <Link href="/relacionamento" className="ticker-rotulo" aria-label={`${rotuloTotal}. Abrir o Relacionamento`}>
           <ListTodo aria-hidden="true" size={15} strokeWidth={2.1} />
           <span aria-hidden="true" className="hidden sm:inline">Pendências</span>
@@ -127,7 +127,7 @@ export function TickerDePendencias({ pendencias, total, altas }: { pendencias: P
               aria-pressed={pausado}
               aria-label={pausado ? "Voltar a passar as pendências" : "Parar de passar as pendências"}
               title={pausado ? "Voltar a passar" : "Parar"}
-              className="ticker-pausa"
+              className={cn("ticker-pausa", pausado && "ring-1 ring-inset ring-cabine-texto/20 bg-white/10 text-cabine-texto")}
             >
               {pausado ? <Play aria-hidden="true" size={14} strokeWidth={2.2} /> : <Pause aria-hidden="true" size={14} strokeWidth={2.2} />}
             </button>
