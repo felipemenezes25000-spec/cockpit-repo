@@ -1,4 +1,4 @@
-import { Plus, ReceiptText } from "lucide-react";
+import { AlertTriangle, Banknote, Plus, ReceiptText } from "lucide-react";
 import type { Metadata } from "next";
 import { AbasFinanceiro } from "@/components/financeiro/abas";
 import { FiltrosFinanceiro, type GrupoDeFiltro } from "@/components/financeiro/filtros";
@@ -37,6 +37,21 @@ function filtrar(despesas: Despesa[], situacao: FiltroSituacao, categoria: strin
   });
 }
 
+function MetricaDespesa({ rotulo, valor, apoio, icone: Icone, alerta = false }: { rotulo: string; valor: string; apoio: string; icone: typeof ReceiptText; alerta?: boolean }) {
+  return (
+    <div className="financeiro-metrica-cabine">
+      <div className="flex items-center justify-between gap-3">
+        <span className="rotulo text-cabine-texto-secundario">{rotulo}</span>
+        <span className="flex size-9 items-center justify-center rounded-[var(--radius-controle)] border border-cabine-linha bg-white/10 text-cabine-texto">
+          <Icone aria-hidden="true" size={17} strokeWidth={1.75} />
+        </span>
+      </div>
+      <p className="numero mt-4 text-cabine-texto">{valor}</p>
+      <p className={alerta ? "mt-1 text-xs font-semibold leading-5 text-white" : "mt-1 text-xs leading-5 text-cabine-texto-secundario"}>{apoio}</p>
+    </div>
+  );
+}
+
 export default async function PaginaDespesas({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   if (!(await ehFinanceira())) return <SomenteFinanceiro voltarPara="/financeiro" />;
 
@@ -52,7 +67,10 @@ export default async function PaginaDespesas({ searchParams }: { searchParams: P
   const filtrada = despesas.length !== todas.length;
   const pendentes = despesas.filter((d) => d.situacao === "pendente");
   const vencidas = despesas.filter((d) => despesaVencida(d.situacao, d.venceEmDias));
+  const pagas = despesas.filter((d) => d.situacao === "paga");
   const totalPendente = centavosParaReais(somaEmCentavos(pendentes.map((d) => d.valor)));
+  const totalPago = centavosParaReais(somaEmCentavos(pagas.map((d) => d.valor)));
+  const totalVencido = centavosParaReais(somaEmCentavos(vencidas.map((d) => d.valor)));
 
   const grupos: GrupoDeFiltro[] = [
     {
@@ -74,9 +92,7 @@ export default async function PaginaDespesas({ searchParams }: { searchParams: P
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <AbasFinanceiro podeFinanceiro />
-
+    <div className="page-reveal flex flex-col gap-6">
       <CabecalhoDePagina
         icone={ReceiptText}
         rotulo="Financeiro"
@@ -98,10 +114,25 @@ export default async function PaginaDespesas({ searchParams }: { searchParams: P
         }
       />
 
+      <AbasFinanceiro podeFinanceiro />
+
+      <section aria-label="Resumo das despesas" className="cabine financeiro-cabine grid gap-1 p-3 sm:grid-cols-3 sm:p-4">
+        <MetricaDespesa icone={Banknote} rotulo="Pago no recorte" valor={formatarMoeda(totalPago)} apoio={`${pagas.length} ${pagas.length === 1 ? "conta liquidada" : "contas liquidadas"}`} />
+        <MetricaDespesa icone={ReceiptText} rotulo="Ainda a pagar" valor={formatarMoeda(totalPendente)} apoio={`${pendentes.length} ${pendentes.length === 1 ? "despesa pendente" : "despesas pendentes"}`} />
+        <MetricaDespesa icone={AlertTriangle} rotulo="Vencido" valor={formatarMoeda(totalVencido)} apoio={vencidas.length > 0 ? `${vencidas.length} ${vencidas.length === 1 ? "item exige" : "itens exigem"} atenção` : "nenhuma despesa vencida no recorte"} alerta={vencidas.length > 0} />
+      </section>
+
+      <div className="premium-panel flex flex-col gap-3 rounded-[var(--radius-painel)] border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div>
+          <p className="rotulo text-primary">Período das despesas</p>
+          <p className="mt-1 text-xs text-outline">A leitura abaixo acompanha o mês selecionado e os filtros da operação.</p>
+        </div>
+        <NavegacaoMes periodo={periodo} />
+      </div>
+
       <Card>
         <CardCabecalho titulo="Contas do período" descricao={despesas.length === 0 ? (filtrada ? "Nada com estes filtros." : "Nada neste mês.") : "Use situação e categoria para organizar o que exige atenção agora."} />
         <CardCorpo className="flex flex-col gap-5">
-          <NavegacaoMes periodo={periodo} />
           <FiltrosFinanceiro grupos={grupos} />
           <ListaDespesas despesas={despesas} dataPadrao={chaveDoDia(hoje())} filtrada={filtrada} />
         </CardCorpo>
