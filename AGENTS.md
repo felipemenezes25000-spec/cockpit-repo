@@ -275,8 +275,11 @@ não é o zelo extra que parece.
 > com mensagem clara se ela venceu de vez.
 >
 > **Orçamento (reprova acima):** First Load JS compartilhado 110 kB; rota
-> 130 kB, com duas exceções — `/prontuarios/[id]` 195 kB e `/redefinir-senha`
-> 190 kB (cliente do Supabase no navegador); TTFB p95 150 ms nas telas
+> 130 kB, com duas exceções — `/redefinir-senha` 190 kB (cliente do Supabase
+> no navegador) e `/captacao` 135 kB (a camada de botões do funil 3D, que vem
+> do servidor; o desenho vem à parte por `next/dynamic` — mediu 131 kB em
+> 25/09/2026). `/prontuarios/[id]` já voltou ao teto comum (envio de foto com
+> import dinâmico). TTFB p95 150 ms nas telas
 > públicas e 1.500 ms nas internas, com 200 requisições e 10 simultâneas.
 >
 > **Medido em 23/09/2026** (Next 15.5.26, cópia com o estado em andamento,

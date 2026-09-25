@@ -6,6 +6,13 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("mes=2026-09&pagina=3"),
 }));
 
+// Em produção o desenho vem num pedaço à parte (next/dynamic, fora do JS de
+// abertura). Aqui ele chega na hora: o que se testa é o desenho, não o carregamento.
+vi.mock("next/dynamic", async () => {
+  const { CenaFunil3d } = await import("./funil-3d-cena");
+  return { default: () => CenaFunil3d };
+});
+
 const { FunilVivo } = await import("./funil-vivo");
 
 const ETAPAS: EtapaDoPainel[] = [

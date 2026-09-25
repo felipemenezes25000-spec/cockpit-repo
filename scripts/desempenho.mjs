@@ -56,9 +56,16 @@ export const ORCAMENTO = {
   compartilhadoKb: 110,
   /** Teto para qualquer rota fora das exceções. */
   rotaKb: 130,
-  /** Rotas que carregam o cliente do Supabase na abertura (ver acima). */
+  /**
+   * Rotas acima do teto comum, cada uma com o motivo: /redefinir-senha
+   * carrega o cliente do Supabase na abertura (ver acima); /captacao leva a
+   * camada de botões do funil 3D (exceção visual do dono, AGENTS §7.3), que
+   * precisa vir renderizada do servidor — o desenho em si já vem num pedaço
+   * à parte (next/dynamic). Mediu 131 kB em 25/09/2026.
+   */
   excecoesKb: {
     "/redefinir-senha": 190,
+    "/captacao": 135,
   },
   /** Teto de TTFB p95 para as telas públicas (sem sessão), em ms. */
   ttfbPublicaP95Ms: 150,

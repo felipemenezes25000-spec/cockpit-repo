@@ -1,13 +1,17 @@
 "use client";
 
 import { ArrowRight, CalendarCheck, CheckCircle2, Sparkles, UsersRound } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { ROTULO_ETAPA, type EtapaLead } from "@/lib/captacao";
 import { FAIXAS, QUALIDADES, pctY, proximaQualidade, type QualidadeDoFunil } from "@/lib/funil-3d";
 import type { EtapaDoPainel } from "@/server/consultas/captacao";
-import { CenaFunil3d } from "./funil-3d-cena";
+// O desenho (~27 kB de fonte) só existe no navegador e só depois de montar:
+// vai num pedaço à parte, fora do JS de abertura da rota (teto de 130 kB,
+// scripts/desempenho.mjs). Com ele junto, a /captacao abria com 134 kB.
+const CenaFunil3d = dynamic(() => import("./funil-3d-cena").then((modulo) => modulo.CenaFunil3d), { ssr: false });
 import estilos from "./funil-vivo.module.css";
 
 const ICONE = {
@@ -91,7 +95,9 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
   const [qualidade, setQualidade] = useState<QualidadeDoFunil>(qualidadeGuardada);
   const medicoes = useRef(0);
   const animar = querAnimar && qualidade !== "parada";
-  const svgRef = useRef<SVGSVGElement>(null);
+  // O <svg> chega depois (pedaço à parte): guardado em estado, o efeito de
+  // pausa e de medição roda quando ele de fato aparece, não antes.
+  const [svg, setSvg] = useState<SVGSVGElement | null>(null);
   const selecionada = useMemo(
     () => etapas.find((etapa) => etapa.etapa === ativa) ?? etapas[0],
     [ativa, etapas],
@@ -104,7 +110,6 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
   // a qualidade — e guarda a decisão para as próximas páginas. A captura do
   // vídeo congela quadros com `data-congelado="sim"` e não é medida.
   useEffect(() => {
-    const svg = svgRef.current;
     if (!svg || !animar || !montado || typeof IntersectionObserver === "undefined") return;
     let quadro = 0;
     let medindo = false;
@@ -144,7 +149,7 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
       observador.disconnect();
       cancelAnimationFrame(quadro);
     };
-  }, [animar, montado, qualidade]);
+  }, [svg, animar, montado, qualidade]);
 
   if (etapas.length === 0) return null;
 
@@ -179,7 +184,7 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
           <div className={estilos.desenho}>
             {montado ? (
               <CenaFunil3d
-                svgRef={svgRef}
+                svgRef={setSvg}
                 selecionada={indiceSelecionado}
                 destaque={sobre}
                 animar={animar}
