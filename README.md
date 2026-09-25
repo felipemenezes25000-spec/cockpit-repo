@@ -12,7 +12,7 @@
 [![PostgreSQL com RLS](https://img.shields.io/badge/PostgreSQL-RLS_em_toda_tabela-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](supabase/migrations)
 [![Vercel gru1](https://img.shields.io/badge/Vercel-gru1_S%C3%A3o_Paulo-000000?style=for-the-badge&logo=vercel&logoColor=white)](vercel.json)
 
-[![Vitest](https://img.shields.io/badge/Vitest-855_testes-6E9F18?style=flat-square&logo=vitest&logoColor=white)](#testes)
+[![Vitest](https://img.shields.io/badge/Vitest-856_testes-6E9F18?style=flat-square&logo=vitest&logoColor=white)](#testes)
 [![Banco](https://img.shields.io/badge/banco-194_asser%C3%A7%C3%B5es_por_perfil-0854A0?style=flat-square&logo=postgresql&logoColor=white)](supabase/testes/permissoes.sql)
 [![Playwright](https://img.shields.io/badge/Playwright-Chromium_%2B_WebKit_%C2%B7_298_testes-2EAD33?style=flat-square)](e2e)
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
@@ -39,7 +39,7 @@ do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como �
 
 <br>
 
-<img src="docs/assets/numeros.svg" width="100%" alt="28 migrações SQL versionadas · 41 rotas testadas em 3 larguras · 855 testes de unidade e componente · 194 asserções de permissão no banco · 43 testes de fluxo E2E · 3 perfis com RLS em toda tabela">
+<img src="docs/assets/numeros.svg" width="100%" alt="28 migrações SQL versionadas · 41 rotas testadas em 3 larguras · 856 testes de unidade e componente · 194 asserções de permissão no banco · 43 testes de fluxo E2E · 3 perfis com RLS em toda tabela">
 
 <details>
 <summary><b>Todos os números</b> — contados no código em 23/09/2026</summary>
@@ -54,7 +54,7 @@ do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como �
 | Políticas de RLS | **63** (60 em `public` + 3 no Storage) — menos que antes porque a 0023 tirou as de escrita direta em venda, histórico e ajuste |
 | Gatilhos | **67**, dos quais **20** de auditoria |
 | Funções no banco | **50** — 23 em `public`, 27 em `private`; 17 chamadas pela aplicação, **4** alcançáveis por `anon` |
-| Verificações automatizadas | **1347** — 855 Vitest · 194 SQL por perfil · 298 Playwright (251 Chromium, 43 WebKit, 4 iPhone 13) |
+| Verificações automatizadas | **1348** — 856 Vitest · 194 SQL por perfil · 298 Playwright (251 Chromium, 43 WebKit, 4 iPhone 13) |
 | Dependências | **7** de execução, 18 de desenvolvimento |
 | Histórico | **40 commits**, de 01/08/2026 a 23/09/2026, num único branch (`jamal-do-mal`) |
 
@@ -459,7 +459,7 @@ Três camadas, **1292 verificações automatizadas** — e nenhuma toca produç�
 
 | Camada | Comando | Quanto | O que confere |
 |---|---|---|---|
-| Unidade e componente | `npm test` | **855 testes** em 87 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, login e redirecionamento, middleware, cabeçalhos de segurança, **44 das 47 ações de servidor** com um Supabase falso e componentes (jsdom + Testing Library) |
+| Unidade e componente | `npm test` | **856 testes** em 87 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, login e redirecionamento, middleware, cabeçalhos de segurança, **44 das 47 ações de servidor** com um Supabase falso e componentes (jsdom + Testing Library) |
 | Banco | `npm run test:banco` | **194 asserções**, todas verdes do zero (`db reset` + seed, 23/09/2026) | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim |
 | Navegador | `npm run test:e2e` | **298 testes**: Chromium 251 (43 de fluxo + 126 de telas: 41 endereços × 3 larguras + 3 + 82 de acessibilidade com axe: 41 endereços × 2 larguras), WebKit 43, iPhone 13 4 | Login e redirecionamento seguro, permissões por perfil pela URL, paciente, agenda, venda, despesa, prontuário, fotos, importação, Relacionamento, procedimentos, busca, 404, CSP, documento e assinatura por link (também no WebKit e no celular); 41 endereços em 320, 768 e 1440 px, sem rolagem horizontal nem erro de console, e sem violação WCAG 2.2 A/AA (axe) em 360 e 1440 px |
 

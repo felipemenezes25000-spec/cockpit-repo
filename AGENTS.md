@@ -154,7 +154,7 @@ não é o zelo extra que parece.
 > aparece só a mensagem do `psql`.
 >
 > **Números (conferidos em 23/09/2026; o Vitest, recontado em 25/09/2026 — não
-> copie sem recontar).** Vitest: **855 testes em 87 arquivos**, todos verdes —
+> copie sem recontar).** Vitest: **856 testes em 87 arquivos**, todos verdes —
 > 16 em `src/lib/`, 11 de ações em `src/server/acoes/`, 9 de consultas em
 > `src/server/consultas/`, 1 em `src/server/` (o aviso depois de salvar), 5 em
 > `src/app/` (login, destino do login, recuperação de senha, sem acesso e a
@@ -2887,6 +2887,14 @@ Levantado por auditoria do código contra este documento em **28/08/2026** e
 refeito, contra o schema efetivo e o código, em **22/09/2026** e
 **23/09/2026**. O que foi corrigido fica registrado abaixo para ninguém tomar o
 comportamento antigo por padrão.
+
+### Resolvidos em 25/09/2026
+
+| Era | Como ficou |
+|---|---|
+| Escolher a paciente no seletor levava o foco ao "Trocar" no quadro seguinte (`requestAnimationFrame`), mesmo que a pessoa já tivesse ido ao próximo campo — o texto digitado nesse intervalo sumia (a E2E do prontuário perdia o título ou a queixa, 2 em 14 no WebKit) | `focarDepois` em `agenda/seletor-paciente.tsx`: só leva o foco se ele estiver solto ou ainda no seletor (teste em `seletor-paciente.test.tsx`) |
+| Faixa do agora cortava as frases a 1440 px; selo da próxima aparecia em qualquer largura (`hidden` contra o `inline-flex` do chip) | A faixa se mede e tira o que importa menos até caber (§7.3.1); o selo vai num invólucro |
+| Resumo da ficha cortava valor em reais ("R$ 1…") e o título longo das Movimentações passava sob o valor a 320 px | Resumo em linhas rótulo → valor; título com `overflow-wrap: anywhere` |
 
 ### Resolvidos em 23/09/2026
 

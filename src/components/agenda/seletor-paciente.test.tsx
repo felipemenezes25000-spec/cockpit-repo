@@ -94,6 +94,8 @@ describe("SeletorPaciente — teclado e leitor de tela", () => {
     render(
       <form>
         <SeletorPaciente inicial={null} />
+        <label htmlFor="titulo-seguinte">Título</label>
+        <input id="titulo-seguinte" />
       </form>,
     );
     const campo = screen.getByRole("combobox", { name: /Paciente/ });
@@ -122,6 +124,24 @@ describe("SeletorPaciente — teclado e leitor de tela", () => {
 
     const trocar = screen.getByRole("button", { name: "Trocar a paciente (Achada Carol)" });
     expect(document.activeElement).toBe(trocar);
+    expect(screen.getByDisplayValue("p1")).toHaveAttribute("name", "paciente_id");
+  });
+
+  it("quem já foi para o campo seguinte antes do quadro não perde o foco (nem o que digita)", async () => {
+    const { campo } = await digitar("Carol");
+    campo.focus();
+    await act(async () => {
+      fireEvent.keyDown(campo, { key: "ArrowDown" });
+    });
+    const titulo = screen.getByLabelText("Título");
+    await act(async () => {
+      fireEvent.keyDown(campo, { key: "Enter" });
+      // Antes do próximo quadro, a pessoa já clicou no Título.
+      titulo.focus();
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    expect(document.activeElement).toBe(titulo);
     expect(screen.getByDisplayValue("p1")).toHaveAttribute("name", "paciente_id");
   });
 
