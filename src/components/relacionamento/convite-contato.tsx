@@ -11,6 +11,7 @@ import {
   mensagemAvaliacao,
 } from "@/lib/relacionamento";
 import { registrarContato } from "@/server/acoes/relacionamento";
+import { BotaoWhatsApp } from "@/components/ui/botao-whatsapp";
 import { cn } from "@/lib/cn";
 
 /**
@@ -50,11 +51,17 @@ function Registrar({ preparado, registrado, dica }: { preparado: boolean; regist
   );
 }
 
-export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
+export function ConviteContato({ pacienteId, nome, telefone, tipo, compacto = false }: {
   pacienteId: string;
   nome: string;
   telefone: string | null;
   tipo: "avaliacao" | "aniversario";
+  /**
+   * Numa lista curta (Visão Geral): o WhatsApp à frente, copiar só com o
+   * ícone, e o "Marcar como enviada" só aparece depois que a mensagem foi
+   * aberta ou copiada — em vez de um botão apagado com a dica embaixo.
+   */
+  compacto?: boolean;
 }) {
   const [estado, enviar] = useActionState(registrarContato, ACAO_INICIAL);
   const [preparado, setPreparado] = useState(false);
@@ -63,6 +70,58 @@ export function ConviteContato({ pacienteId, nome, telefone, tipo }: {
   const mensagem = tipo === "avaliacao" ? mensagemAvaliacao(nome, LINK_AVALIACAO_GOOGLE) : mensagemAniversario(nome);
   const whatsapp = linkWhatsApp(telefone, mensagem);
   const registrado = estado.ok && estado.mensagem !== null;
+
+  if (compacto) {
+    return (
+      <div className="flex flex-col items-start gap-2 sm:items-end">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {registrado ? (
+            <span role="status" className="surge inline-flex min-h-9 items-center gap-1.5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-3 text-xs font-semibold text-positivo">
+              <CheckCircle2 aria-hidden="true" size={15} strokeWidth={1.8} />
+              Contato registrado
+            </span>
+          ) : (
+            <>
+              {whatsapp ? (
+                <BotaoWhatsApp href={whatsapp} paraQuem={nome} onClick={() => setPreparado(true)}>
+                  {tipo === "aniversario" ? "Dar parabéns" : "WhatsApp"}
+                </BotaoWhatsApp>
+              ) : (
+                <span className="inline-flex min-h-9 items-center rounded-[var(--radius-controle)] border border-dashed border-outline-variant bg-surface-container-low px-3 text-xs font-medium text-outline">Sem telefone válido</span>
+              )}
+              <button
+                type="button"
+                onClick={copiar}
+                aria-label={copia === "copiada" ? "Mensagem copiada" : `Copiar a mensagem para ${nome}`}
+                title={copia === "copiada" ? "Copiada" : "Copiar mensagem"}
+                className={cn(
+                  "inline-flex size-9 items-center justify-center rounded-[var(--radius-controle)] border transition-[transform,background-color,border-color,color] duration-150 active:scale-95",
+                  copia === "copiada"
+                    ? "border-positivo-borda bg-positivo-fundo text-positivo"
+                    : "border-borda-controle bg-surface text-primary hover:border-primary-container hover:bg-selecao",
+                )}
+              >
+                {copia === "copiada" ? <Check aria-hidden="true" size={15} strokeWidth={2} /> : <Copy aria-hidden="true" size={14} strokeWidth={1.8} />}
+              </button>
+              {preparado ? (
+                <form action={enviar} className="surge surge-esquerda inline-flex">
+                  <input type="hidden" name="paciente_id" value={pacienteId} />
+                  <input type="hidden" name="tipo" value={tipo} />
+                  <Registrar preparado={preparado} registrado={registrado} dica={dica} />
+                </form>
+              ) : null}
+            </>
+          )}
+        </div>
+        {copia === "falhou" ? (
+          <span role="alert" className="inline-flex w-fit rounded-[var(--radius-controle)] bg-negativo-fundo px-2.5 py-1.5 text-xs text-negativo">Não foi possível copiar. Use o WhatsApp.</span>
+        ) : null}
+        {!estado.ok && estado.mensagem ? (
+          <span role="alert" className="inline-flex w-fit rounded-[var(--radius-controle)] bg-negativo-fundo px-2.5 py-1.5 text-xs text-negativo">{estado.mensagem}</span>
+        ) : null}
+      </div>
+    );
+  }
 
   async function copiar() {
     try {

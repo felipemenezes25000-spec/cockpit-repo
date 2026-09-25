@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
 import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
@@ -141,6 +142,7 @@ export async function criarModelo(
 
   revalidatePath("/formularios/modelos");
   revalidatePath("/formularios");
+  await avisarNaProximaTela("modelo-criado");
   redirect(`/formularios/modelos/${data}/editar`);
 }
 
@@ -189,6 +191,7 @@ export async function salvarNovaVersaoModelo(
 
   revalidatePath("/formularios/modelos");
   revalidatePath(`/formularios/modelos/${modeloId}/editar`);
+  await avisarNaProximaTela("modelo-nova-versao");
   redirect(`/formularios/modelos/${modeloId}/editar`);
 }
 
@@ -302,6 +305,7 @@ export async function emitirDocumento(
   // A correção muda o anterior para `substituido` na mesma transação.
   if (anteriorId) revalidatePath(`/formularios/${anteriorId}`);
   revalidatePath("/");
+  await avisarNaProximaTela("documento-emitido");
   redirect(`/formularios/${data}`);
 }
 

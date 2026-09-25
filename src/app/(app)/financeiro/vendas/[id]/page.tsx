@@ -13,7 +13,8 @@ import { notFound } from "next/navigation";
 import { ChipRecebimento, MarcaTaxaManual } from "@/components/financeiro/chips";
 import { ConfirmarRecebimento } from "@/components/financeiro/confirmar-recebimento";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CardCorpo } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { ehFinanceira } from "@/lib/auth";
@@ -166,8 +167,8 @@ export default async function PaginaVenda({ params }: Props) {
       </section>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-        <Card>
-          <CardCabecalho titulo="Composição da venda" descricao="Do valor original ao líquido efetivo da clínica." />
+        <CardRecolhivel id="venda-composicao-da-venda" titulo="Composição da venda" descricao="Do valor original ao líquido efetivo da clínica."
+        >
           <CardCorpo className="flex flex-col gap-2.5">
             <Linha rotulo="Valor original">{formatarMoeda(venda.valorOriginal)}</Linha>
             {venda.desconto > 0 ? <Linha rotulo="Desconto">− {formatarMoeda(venda.desconto)}</Linha> : null}
@@ -212,10 +213,10 @@ export default async function PaginaVenda({ params }: Props) {
               </div>
             ) : null}
           </CardCorpo>
-        </Card>
+        </CardRecolhivel>
 
-        <Card>
-          <CardCabecalho titulo="Recebimento" descricao="Um registro pelo valor líquido; cartão parcelado continua sendo um repasse para a clínica." />
+        <CardRecolhivel id="venda-recebimento" titulo="Recebimento" descricao="Um registro pelo valor líquido; cartão parcelado continua sendo um repasse para a clínica."
+        >
           <CardCorpo className="flex flex-col gap-4">
             {recebimento ? (
               <>
@@ -302,12 +303,12 @@ export default async function PaginaVenda({ params }: Props) {
               </div>
             ) : null}
           </CardCorpo>
-        </Card>
+        </CardRecolhivel>
       </div>
 
       {venda.alteracoes.length > 0 ? (
-        <Card>
-          <CardCabecalho titulo="Histórico de alterações" descricao="Trilha imutável de mudanças financeiras registradas no banco." />
+        <CardRecolhivel id="venda-historico-de-alteracoes" titulo="Histórico de alterações" descricao="Trilha imutável de mudanças financeiras registradas no banco."
+        >
           <CardCorpo>
             <ol className="relative flex flex-col gap-3 before:absolute before:top-4 before:bottom-4 before:left-[1.05rem] before:w-px before:bg-card-border">
               {venda.alteracoes.map((alteracao, i) => (
@@ -330,7 +331,7 @@ export default async function PaginaVenda({ params }: Props) {
               ))}
             </ol>
           </CardCorpo>
-        </Card>
+        </CardRecolhivel>
       ) : null}
     </div>
   );

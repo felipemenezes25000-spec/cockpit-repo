@@ -4,10 +4,12 @@ import { BotoesSituacao } from "./botoes-situacao";
 import { FocoAposAcao } from "./foco-apos-acao";
 import { Avatar } from "@/components/ui/avatar";
 import { BotaoLink } from "@/components/ui/button";
+import { BotaoWhatsApp } from "@/components/ui/botao-whatsapp";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { SituacaoChip } from "@/components/ui/status-chip";
 import { cn } from "@/lib/cn";
-import { formatarHora, formatarMoeda } from "@/lib/format";
+import { formatarData, formatarHora, formatarMoeda } from "@/lib/format";
+import { linkWhatsApp, mensagemConfirmacao } from "@/lib/relacionamento";
 import type { AtendimentoDoDia } from "@/server/consultas/agenda";
 
 export function ListaDoDia({
@@ -52,6 +54,11 @@ export function ListaDoDia({
         const emCurso = atendimento.situacao === "em_atendimento";
         const concluido = atendimento.situacao === "concluido";
         const encerrado = atendimento.situacao === "cancelado" || atendimento.situacao === "ausente";
+        // Falta a paciente confirmar: o pedido vai pelo WhatsApp, do próprio cartão.
+        const pedeConfirmacao = atendimento.situacao === "agendado" || atendimento.situacao === "aguardando_confirmacao";
+        const whatsapp = pedeConfirmacao
+          ? linkWhatsApp(atendimento.telefone, mensagemConfirmacao(atendimento.paciente, formatarData(atendimento.inicio), formatarHora(atendimento.inicio)))
+          : null;
 
         return (
           <li
@@ -129,6 +136,11 @@ export function ListaDoDia({
                   <Pencil aria-hidden="true" size={13} strokeWidth={1.75} className="transition-transform duration-150 group-hover/edit:rotate-[-4deg]" />
                   Remarcar ou editar
                 </Link>
+                {whatsapp ? (
+                  <BotaoWhatsApp href={whatsapp} paraQuem={atendimento.paciente} tamanho="xs">
+                    Pedir confirmação
+                  </BotaoWhatsApp>
+                ) : null}
               </FocoAposAcao>
             </div>
           </li>

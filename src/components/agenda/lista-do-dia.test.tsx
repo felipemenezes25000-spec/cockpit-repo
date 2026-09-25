@@ -13,6 +13,7 @@ const ATENDIMENTO: AtendimentoDoDia = {
   situacao: "agendado",
   paciente: "Aline Bastos",
   pacienteId: "c0000000-0000-4000-8000-000000000003",
+  telefone: "(11) 98765-4321",
   profissional: "Dra. Marina",
   procedimento: "Toxina",
   valor: 900,
@@ -76,5 +77,32 @@ describe("ListaDoDia", () => {
       "href",
       "/agenda?dia=2026-09-23",
     );
+  });
+
+  it("pede a confirmação pelo WhatsApp do próprio cartão, sem o procedimento na mensagem", () => {
+    render(<ListaDoDia atendimentos={[ATENDIMENTO]} dia="2026-09-23" />);
+
+    const whatsapp = screen.getByRole("link", { name: /Pedir confirmação para Aline Bastos/ });
+    const destino = new URL(whatsapp.getAttribute("href")!);
+    expect(destino.origin + destino.pathname).toBe("https://wa.me/5511987654321");
+    const mensagem = destino.searchParams.get("text")!;
+    expect(mensagem).toContain("Olá, Aline!");
+    expect(mensagem).toContain("23/09/2026 às 10:00");
+    // Procedimento é dado de saúde: não vai na URL nem para o telefone.
+    expect(mensagem).not.toContain("Toxina");
+    expect(whatsapp).toHaveAttribute("target", "_blank");
+  });
+
+  it("não oferece o WhatsApp para quem já confirmou ou sem telefone válido", () => {
+    render(
+      <ListaDoDia
+        atendimentos={[
+          { ...ATENDIMENTO, situacao: "confirmado" },
+          { ...ATENDIMENTO, id: "a0000000-0000-4000-8000-000000000002", telefone: "123" },
+        ]}
+        dia="2026-09-23"
+      />,
+    );
+    expect(screen.queryByRole("link", { name: /Pedir confirmação/ })).toBeNull();
   });
 });

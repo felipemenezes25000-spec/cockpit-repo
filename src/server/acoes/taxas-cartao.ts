@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehAdministradora, usuarioAtual } from "@/lib/auth";
 import { mensagemDoBanco } from "@/lib/erros-banco";
@@ -104,6 +105,7 @@ export async function criarTaxa(
   }
 
   revalidar();
+  await avisarNaProximaTela("taxa-criada");
   redirect("/financeiro/taxas");
 }
 
@@ -142,6 +144,7 @@ export async function atualizarTaxa(
   if (!data) return { erros: { geral: "Taxa não encontrada." }, valores: valoresDigitados(dados) };
 
   revalidar();
+  await avisarNaProximaTela("taxa-alterada");
   redirect("/financeiro/taxas");
 }
 

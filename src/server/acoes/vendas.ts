@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehFinanceira, usuarioAtual } from "@/lib/auth";
 import { chaveDoDia, dataValida } from "@/lib/dates";
@@ -300,6 +301,7 @@ export async function registrarVenda(
   }
 
   revalidarVenda(vendaId);
+  await avisarNaProximaTela("venda-registrada");
   redirect(`/financeiro/vendas/${vendaId}`);
 }
 
@@ -424,6 +426,7 @@ async function executarAlteracao(
   }
 
   revalidarVenda(vendaId);
+  await avisarNaProximaTela("venda-alterada");
   redirect(`/financeiro/vendas/${vendaId}`);
 }
 
@@ -536,6 +539,7 @@ export async function confirmarRecebimento(
   }
 
   revalidarVenda(vendaId);
+  await avisarNaProximaTela("recebimento-confirmado");
   redirect(`/financeiro/vendas/${vendaId}`);
 }
 

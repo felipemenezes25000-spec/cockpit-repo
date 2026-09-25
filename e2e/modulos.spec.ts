@@ -123,7 +123,8 @@ test.describe("relacionamento", () => {
     await pagina.getByRole("button", { name: "Criar tarefa" }).click();
     await expect(pagina).toHaveURL(/\/relacionamento\?aba=tarefas$/);
 
-    const linha = pagina.getByRole("listitem").filter({ hasText: descricao });
+    // No conteúdo: a tarefa nova também passa no letreiro de pendências do topo.
+    const linha = pagina.locator("#conteudo").getByRole("listitem").filter({ hasText: descricao });
     await expect(linha).toBeVisible();
     await linha.getByRole("button", { name: "Concluir" }).click();
     await expect(linha.getByRole("button", { name: "Reabrir" })).toBeVisible();
@@ -186,7 +187,9 @@ test.describe("busca", () => {
     await campo.press("Enter");
     await expect(pagina).toHaveURL(/\/busca\?q=Beatriz/);
 
-    await pagina.getByRole("link", { name: /Beatriz Nogueira/ }).first().click();
+    // No conteúdo: o letreiro do topo também tem links com o nome da paciente,
+    // e eles andam — o clique esperaria o link parar.
+    await pagina.locator("#conteudo").getByRole("link", { name: /Beatriz Nogueira/ }).first().click();
     await expect(pagina).toHaveURL(/\/pacientes\/c0000000-0000-4000-8000-000000000002$/);
     await fechar(pagina);
   });

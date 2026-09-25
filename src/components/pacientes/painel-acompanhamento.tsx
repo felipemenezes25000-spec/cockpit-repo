@@ -1,5 +1,6 @@
 import { CalendarCheck2, CircleCheck, Repeat2, Wallet } from "lucide-react";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CardCorpo } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { ItemLista, Lista } from "@/components/ui/data-list";
 import { PrioridadeTag } from "@/components/ui/priority-tag";
 import { cn } from "@/lib/cn";
@@ -28,39 +29,46 @@ export function ResumoDaPaciente({
   ];
 
   return (
-    <Card>
-      <CardCabecalho titulo="Resumo" descricao="Relação operacional da paciente com a clínica." />
-      <CardCorpo className="grid grid-cols-3 gap-2.5">
-        {linhas.map(({ rotulo, valor, icone: Icone, tom }) => (
-          <div key={rotulo} className="min-w-0 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
-            <span className="flex size-7 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
-              <Icone aria-hidden="true" size={14} strokeWidth={1.75} />
-            </span>
-            <p className={cn(
-              "tabular mt-3 truncate text-base font-semibold tracking-[-0.02em]",
-              tom === "positivo" && "text-positivo",
-              tom === "atencao" && "text-atencao",
-              tom === "neutro" && "text-on-surface",
-            )} title={valor}>
-              {valor}
-            </p>
-            <p className="mt-1 truncate text-[0.66rem] font-medium text-outline">{rotulo}</p>
-          </div>
-        ))}
+    <CardRecolhivel id="pac-resumo" titulo="Resumo" descricao="Relação operacional da paciente com a clínica."
+    >
+      {/* Linhas rótulo → valor, e não três colunas: a coluna da ficha é
+          estreita, e em colunas o valor em reais virava "R$ 1…". Dinheiro
+          nunca é cortado. */}
+      <CardCorpo className="py-3">
+        <dl className="flex flex-col divide-y divide-card-border">
+          {linhas.map(({ rotulo, valor, icone: Icone, tom }) => (
+            <div key={rotulo} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
+              <dt className="flex min-w-0 flex-1 items-center gap-2.5 text-sm text-on-surface-variant">
+                <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
+                  <Icone size={14} strokeWidth={1.75} />
+                </span>
+                {rotulo}
+              </dt>
+              <dd className={cn(
+                "tabular text-base font-semibold whitespace-nowrap tracking-[-0.02em]",
+                tom === "positivo" && "text-positivo",
+                tom === "atencao" && "text-atencao",
+                tom === "neutro" && "text-on-surface",
+              )}>
+                {valor}
+              </dd>
+            </div>
+          ))}
+        </dl>
 
         {exemplo ? (
-          <p className="col-span-3 border-t border-card-border pt-3 text-[0.625rem] text-outline uppercase">Valores demonstrativos</p>
+          <p className="border-t border-card-border pt-3 text-[0.625rem] text-outline uppercase">Valores demonstrativos</p>
         ) : null}
       </CardCorpo>
-    </Card>
+    </CardRecolhivel>
   );
 }
 
 export function PendenciasDaPaciente({ pendencias }: { pendencias: PendenciaDaFicha[] }) {
   if (pendencias.length === 0) {
     return (
-      <Card>
-        <CardCabecalho titulo="Pendências" />
+      <CardRecolhivel id="pac-pendencias" titulo="Pendências"
+      >
         <CardCorpo className="flex items-center gap-3 rounded-b-[var(--radius-painel)] text-sm text-on-surface-variant">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-positivo-fundo text-positivo">
             <CircleCheck aria-hidden="true" size={18} strokeWidth={1.6} />
@@ -70,13 +78,13 @@ export function PendenciasDaPaciente({ pendencias }: { pendencias: PendenciaDaFi
             <p className="mt-0.5 text-xs text-outline">Nada em aberto para esta paciente.</p>
           </div>
         </CardCorpo>
-      </Card>
+      </CardRecolhivel>
     );
   }
 
   return (
-    <Card>
-      <CardCabecalho titulo="Pendências" descricao={pendencias.length === 1 ? "1 em aberto" : `${pendencias.length} em aberto`} />
+    <CardRecolhivel id="pac-pendencias-2" titulo="Pendências" descricao={pendencias.length === 1 ? "1 em aberto" : `${pendencias.length} em aberto`}
+    >
       <CardCorpo>
         <Lista rotulo="Pendências da paciente">
           {pendencias.map((pendencia) => (
@@ -95,7 +103,7 @@ export function PendenciasDaPaciente({ pendencias }: { pendencias: PendenciaDaFi
           ))}
         </Lista>
       </CardCorpo>
-    </Card>
+    </CardRecolhivel>
   );
 }
 
@@ -103,8 +111,8 @@ export function RetornosDaPaciente({ retornos }: { retornos: RetornoDaFicha[] })
   if (retornos.length === 0) return null;
 
   return (
-    <Card>
-      <CardCabecalho titulo="Retornos" descricao="Períodos sugeridos, ainda em definição pela equipe clínica." />
+    <CardRecolhivel id="pac-retornos" titulo="Retornos" descricao="Períodos sugeridos, ainda em definição pela equipe clínica."
+    >
       <CardCorpo>
         <Lista rotulo="Retornos previstos">
           {retornos.map((retorno) => (
@@ -125,6 +133,6 @@ export function RetornosDaPaciente({ retornos }: { retornos: RetornoDaFicha[] })
           ))}
         </Lista>
       </CardCorpo>
-    </Card>
+    </CardRecolhivel>
   );
 }

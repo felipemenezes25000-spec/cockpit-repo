@@ -50,7 +50,7 @@ export function FluxoMensal({ meses }: { meses: MesDoFluxo[] }) {
       </ul>
 
       <div
-        className="rolagem-discreta hidden overflow-x-auto rounded-[var(--radius-painel)] border border-card-border bg-surface sm:block"
+        className="rolagem-discreta rolagem-esmaecida-x hidden overflow-x-auto rounded-[var(--radius-painel)] border border-card-border bg-surface sm:block"
         role="region"
         aria-label="Fluxo mensal, tabela"
         tabIndex={0}

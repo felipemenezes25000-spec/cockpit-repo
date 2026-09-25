@@ -36,3 +36,28 @@ describe("ConviteContato — Marcar como enviada", () => {
     expect(botao).not.toHaveAttribute("aria-describedby");
   });
 });
+
+describe("ConviteContato — compacto (Visão Geral)", () => {
+  it("o WhatsApp vem à frente e o registro só aparece depois de abrir a mensagem", () => {
+    render(<ConviteContato pacienteId={PACIENTE} nome="Beatriz Nogueira" telefone="11987654321" tipo="aniversario" compacto />);
+
+    // Sem botão apagado nem dica: o registro nem existe ainda.
+    expect(screen.queryByRole("button", { name: "Marcar como enviada" })).toBeNull();
+    expect(screen.queryByText(/antes de registrar/)).toBeNull();
+
+    const link = screen.getByRole("link", { name: /Dar parabéns para Beatriz Nogueira/ });
+    expect(link.getAttribute("href")).toContain("wa.me/5511987654321");
+    expect(decodeURIComponent(link.getAttribute("href")!)).toContain("Olá, Beatriz!");
+    link.addEventListener("click", (evento) => evento.preventDefault());
+    fireEvent.click(link);
+
+    expect(screen.getByRole("button", { name: "Marcar como enviada" })).toBeEnabled();
+  });
+
+  it("copiar também libera o registro, e o botão diz de quem é a mensagem", () => {
+    render(<ConviteContato pacienteId={PACIENTE} nome="Beatriz Nogueira" telefone={null} tipo="aniversario" compacto />);
+    expect(screen.getByText("Sem telefone válido")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copiar a mensagem para Beatriz Nogueira" })).toBeInTheDocument();
+  });
+});
+

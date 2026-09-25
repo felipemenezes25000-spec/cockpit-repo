@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { formatarData, formatarHora } from "@/lib/format";
 import { formatarCpf } from "@/lib/paciente";
@@ -105,11 +106,10 @@ export function DetalheDocumento({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardCabecalho
+          <CardRecolhivel id="doc-conteudo"
               titulo={anamnese ? "Conteúdo congelado" : "Texto assinado ou a assinar"}
               descricao="Esta é a cópia preservada do conteúdo emitido. Alterações posteriores no modelo não reescrevem este registro."
-            />
+          >
             <CardCorpo>
               {documento.situacao === "cancelado" ? (
                 <p className="mb-5 rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo">
@@ -132,11 +132,10 @@ export function DetalheDocumento({
                 <code className="tabular break-all text-on-surface-variant">{documento.hash}</code>
               </span>
             </CardRodape>
-          </Card>
+          </CardRecolhivel>
 
           {anamnese ? (
-            <Card>
-              <CardCabecalho
+            <CardRecolhivel id="doc-respostas"
                 titulo={aceitaResposta ? "Preencher na consulta" : "Respostas registradas"}
                 descricao={`${ROTULO_ANAMNESE[preenchimento]} · ${
                   aceitaResposta
@@ -145,7 +144,7 @@ export function DetalheDocumento({
                       ? "substituída por uma correção, não aceita mais respostas."
                       : "cancelada, não aceita mais respostas."
                 }`}
-              />
+            >
               <CardCorpo>
                 <FormularioAnamnese
                   campos={documento.campos}
@@ -153,15 +152,14 @@ export function DetalheDocumento({
                   somenteLeitura={!aceitaResposta}
                 />
               </CardCorpo>
-            </Card>
+            </CardRecolhivel>
           ) : null}
 
           {documento.situacao === "emitido" ? (
-            <Card>
-              <CardCabecalho
+            <CardRecolhivel id="doc-envio"
                 titulo={anamnese ? "Enviar para a paciente preencher" : "Enviar para a paciente assinar"}
                 descricao="Link com validade e proteção pela data de nascimento da paciente."
-              />
+            >
               <PainelLink
                 documentoId={documento.id}
                 links={links}
@@ -169,7 +167,7 @@ export function DetalheDocumento({
                 pacienteNome={documento.paciente}
                 pacienteTelefone={documento.pacienteTelefone}
               />
-            </Card>
+            </CardRecolhivel>
           ) : null}
 
           {documento.situacao === "assinado" ? (
@@ -177,21 +175,19 @@ export function DetalheDocumento({
           ) : null}
 
           {documento.situacao === "emitido" && !anamnese ? (
-            <Card>
-              <CardCabecalho
+            <CardRecolhivel id="doc-assinar-presencialmente"
                 titulo="Assinar presencialmente"
                 descricao="Alternativa para quando a paciente está no balcão e alguém confere o documento com foto."
-              />
+            >
               <PainelAssinatura documentoId={documento.id} />
-            </Card>
+            </CardRecolhivel>
           ) : null}
 
           {assinatura ? (
-            <Card>
-              <CardCabecalho
+            <CardRecolhivel id="doc-evidencias-da-assinatura"
                 titulo="Evidências da assinatura"
                 descricao="A força da assinatura simples vem do conjunto de circunstâncias registradas."
-              />
+            >
               <CardCorpo>
                 <div className="grid gap-2.5">
                   <Evidencia rotulo="Assinado por" valor={assinatura.nome} />
@@ -237,13 +233,13 @@ export function DetalheDocumento({
                   </p>
                 ) : null}
               </CardCorpo>
-            </Card>
+            </CardRecolhivel>
           ) : null}
         </div>
 
         <aside className="flex flex-col gap-6 xl:sticky xl:top-28 xl:self-start">
-          <Card as="div">
-            <CardCabecalho titulo="Resumo" />
+          <CardRecolhivel id="doc-resumo" as="div" titulo="Resumo"
+          >
             <CardCorpo>
               <dl className="grid gap-3">
                 <Metadado icone={UserRound} rotulo="Paciente">{documento.paciente}</Metadado>
@@ -275,10 +271,10 @@ export function DetalheDocumento({
                 </Link>
               ) : null}
             </CardCorpo>
-          </Card>
+          </CardRecolhivel>
 
-          <Card as="div">
-            <CardCabecalho titulo="Integridade do registro" />
+          <CardRecolhivel id="doc-integridade-do-registro" as="div" titulo="Integridade do registro"
+          >
             <CardCorpo className="flex flex-col gap-3">
               <p className="flex items-start gap-2 rounded-[var(--radius-controle)] bg-selecao px-3 py-3 text-sm leading-6 text-on-surface-variant">
                 <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.75} className="mt-0.5 shrink-0 text-primary" />
@@ -293,7 +289,7 @@ export function DetalheDocumento({
                 </div>
               ) : null}
             </CardCorpo>
-          </Card>
+          </CardRecolhivel>
         </aside>
       </div>
     </div>

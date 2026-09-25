@@ -101,10 +101,45 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* Chega, passa um pouco e volta: para o que "salta" (ícone ativo, selo). */
+  --ease-mola: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Desacelera longo: entrada de bloco, reflexo, número que conta. */
+  --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Alturas da estrutura: barra de módulos e faixa do agora. */
   --altura-barra: 64px;
   --altura-faixa: 52px;
+
+  /* ---------- Efeitos (sistema "Cockpit vivo", setembro de 2026) ----------
+     Ficam no :root, fora do @theme: são usados só por este arquivo, e o
+     Tailwind 4 só emite variável de tema que alguma classe usa.
+
+     Na cabine, todo efeito é MAIS ESCURO que o azul de ação: o texto branco
+     tem 5,04:1 no ponto mais claro do degradê, e nada pode clarear esse fundo
+     por baixo de texto. A exceção é o reflexo de entrada, que passa uma vez,
+     em menos de um segundo. */
+  --cabine-noite: #063f7c;
+  --cabine-sombra: rgba(2, 28, 66, 0.42);
+  --cabine-veio: rgba(2, 30, 70, 0.24);
+  --cabine-reflexo: rgba(255, 255, 255, 0.16);
+
+  /* Fundo da página: um brilho azul muito leve no alto e a grade de pontos. */
+  --fundo-brilho: #e6f0fb;
+  --fundo-ponto: rgba(8, 84, 160, 0.11);
+
+  /* Elevação do que responde ao ponteiro e do topo quando a página rola. */
+  --sombra-hover: 0 1px 2px rgba(8, 41, 76, 0.05), 0 14px 30px -16px rgba(8, 54, 110, 0.3);
+  --sombra-topo: 0 12px 28px -20px rgba(8, 41, 76, 0.42);
+  --anel-foco: rgba(10, 110, 209, 0.18);
+  --veu: rgba(12, 22, 38, 0.42);
+
+  /* O letreiro de pendências: fundo azul profundo (branco a 7,6:1 ou mais),
+     então os tons de estado são os CLAROS — ponto e prazo leem no escuro. */
+  --ticker-alta: #ff9e9e;
+  --ticker-media: #ffc670;
+  --ticker-baixa: #a7cdf2;
+  --ticker-atrasado: #ffcaca;
+  --ticker-varredura: rgba(79, 151, 224, 0.36);
 }
 
 @layer base {
@@ -137,7 +172,9 @@
     outline: 2px solid var(--color-primary-container);
     outline-offset: 2px;
     border-radius: 4px;
-    box-shadow: 0 0 0 5px rgba(10, 110, 209, 0.18);
+    box-shadow: 0 0 0 5px var(--anel-foco);
+    /* O anel "fecha" sobre o controle: o olho acha o foco pelo movimento. */
+    animation: anel-foco 280ms var(--ease-suave);
   }
 
   input,
@@ -172,7 +209,39 @@
 
   button[class*="bg-primary-container"]:active:not(:disabled),
   a[class*="bg-primary-container"]:active {
-    transform: translateY(1px);
+    transform: translateY(1px) scale(0.985);
+  }
+
+  /* O reflexo do botão principal: uma faixa de luz atravessa no hover. Mora
+     atrás do texto (z-index -1 num botão isolado), então a letra não perde
+     nitidez; o fundo clareia só enquanto a faixa passa. */
+  :where(button, a)[class*="bg-primary-container"],
+  .botao-whatsapp {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  :where(button, a)[class*="bg-primary-container"]::after,
+  .botao-whatsapp::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.26) 50%, transparent 68%);
+    translate: -130% 0;
+    transition: translate 0s;
+  }
+
+  /* Micro-movimento dos ícones (lucide põe a classe do ícone no <svg>): cada
+     um mexe do jeito que diz o que faz. Com `translate`/`rotate`/`scale`
+     avulsos, uma utilitária do Tailwind no mesmo ícone continua valendo. */
+  .lucide {
+    transition:
+      translate 220ms var(--ease-mola),
+      rotate 260ms var(--ease-mola),
+      scale 220ms var(--ease-mola);
   }
 
   input:-webkit-autofill,
@@ -194,14 +263,30 @@
 @layer components {
   /* ---------- Tipografia ---------- */
 
-  /* O <h1> de cada tela, no azul de texto. */
+  /* O <h1> de cada tela, no azul de texto — um degradê só entre azuis de texto
+     (7,6:1 a 5,06:1 no branco), então toda letra passa no AA. Uma cor de texto
+     na própria tela (`text-on-surface`, nas telas de acesso e de aviso) pinta
+     por cima e o título fica chapado. */
   .titulo-tela {
     font-size: clamp(1.45rem, 1.1rem + 1.1vw, 1.75rem);
     line-height: 1.2;
     font-weight: 650;
     letter-spacing: -0.025em;
-    color: var(--color-primary);
+    color: transparent;
+    background: linear-gradient(100deg, var(--color-primary-hover) 0%, var(--color-primary) 42%, var(--color-primary-container) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
     text-wrap: balance;
+  }
+
+  @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+    .titulo-tela {
+      color: var(--color-primary);
+    }
+
+    .cabine-titulo {
+      color: var(--color-cabine-texto) !important;
+    }
   }
 
   .titulo-secao {
@@ -284,11 +369,82 @@
       color var(--motion-fast) var(--ease-standard);
   }
 
-  /* A cabine: um bloco por tela, no azul de ação, com o que se lê de relance. */
+  /* A cabine: um bloco por tela, no azul de ação, com o que se lê de relance.
+     Ela é viva: o degradê respira devagar, um mostrador de instrumento gira no
+     canto (o "cockpit" do nome) e um reflexo atravessa uma vez ao entrar.
+     Tudo por pseudo-elemento atrás do conteúdo, sem uma linha de JavaScript. */
   .cabine {
-    background: linear-gradient(150deg, var(--color-cabine), var(--color-cabine-profunda));
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: var(--color-cabine-profunda);
+    background-image: linear-gradient(135deg, var(--color-cabine) 0%, var(--color-cabine) 18%, var(--color-cabine-profunda) 58%, var(--cabine-noite) 100%);
+    background-size: 170% 170%;
+    background-position: 0% 0%;
     color: var(--color-cabine-texto);
     border-radius: var(--radius-painel);
+    animation: cabine-respira 18s ease-in-out infinite alternate;
+  }
+
+  /* O mostrador: marcas de instrumento num anel e dois anéis finos, girando. */
+  .cabine::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -210px;
+    right: -170px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    pointer-events: none;
+    /* Marcas finas a cada 6°, grossas a cada 30°; a máscara recorta três
+       faixas: as marcas de fora e dois anéis pontilhados por dentro. */
+    background:
+      repeating-conic-gradient(from 0deg, var(--cabine-veio) 0deg 1.3deg, transparent 1.3deg 30deg),
+      repeating-conic-gradient(from 0deg, var(--cabine-veio) 0deg 0.8deg, transparent 0.8deg 6deg);
+    /* Em porcentagem do raio: o mostrador encolhe inteiro no celular. */
+    -webkit-mask-image: radial-gradient(circle closest-side, transparent 0 44.6%, #000 45% 46.2%, transparent 46.6% 67.7%, #000 68.1% 69.6%, transparent 70% 78.5%, #000 78.9% 92.3%, transparent 92.7%);
+    mask-image: radial-gradient(circle closest-side, transparent 0 44.6%, #000 45% 46.2%, transparent 46.6% 67.7%, #000 68.1% 69.6%, transparent 70% 78.5%, #000 78.9% 92.3%, transparent 92.7%);
+    animation: cabine-gira 140s linear infinite;
+  }
+
+  /* Em tela estreita a cabine é alta e fina: o mostrador encolhe e se afasta
+     para o canto, para não ficar atrás de todo o texto. */
+  @media (max-width: 1023px) {
+    .cabine::before {
+      top: -170px;
+      right: -190px;
+      width: 400px;
+      height: 400px;
+      opacity: 0.75;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .cabine::before {
+      top: -150px;
+      right: -170px;
+      width: 330px;
+      height: 330px;
+      opacity: 0.6;
+    }
+  }
+
+  /* A sombra que passeia embaixo e o reflexo de entrada (a faixa clara passa
+     uma vez e sai de cena: `backwards`, sem ficar parada sobre o texto). */
+  .cabine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(105deg, transparent 38%, var(--cabine-reflexo) 50%, transparent 62%),
+      radial-gradient(70% 90% at 0% 100%, var(--cabine-sombra), transparent 70%);
+    background-size: 260% 100%, 100% 100%;
+    background-repeat: no-repeat;
+    background-position: 130% 0, 0 0;
+    animation: cabine-reflexo 1.5s var(--ease-suave) 0.3s backwards;
   }
 
   .cabine :focus-visible {
@@ -357,22 +513,654 @@
     color: var(--color-cabine-texto);
   }
 
+  /* ---------- Fundo da página ---------- */
+
+  /* Atrás dos painéis: um brilho azul leve no alto e uma grade de pontos que
+     some para baixo. Fica num pseudo-elemento com z-index -1 dentro de um
+     contexto isolado, então nada da estrutura (topo fixo, gaveta, barra
+     inferior) muda de posição nem de camada. */
+  .fundo-vivo {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--color-fundo);
+  }
+
+  .fundo-vivo::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: min(760px, 100%);
+    pointer-events: none;
+    background-image:
+      radial-gradient(1100px 420px at 50% 0, var(--fundo-brilho), transparent 72%),
+      radial-gradient(circle at 1px 1px, var(--fundo-ponto) 1px, transparent 1.4px);
+    background-size: 100% 100%, 22px 22px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 30%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 30%, transparent 100%);
+  }
+
+  /* ---------- Entrada de cada tela ---------- */
+
+  /* O palco é o bloco do conteúdo, recriado a cada troca de endereço. Os
+     blocos da tela (o cabeçalho, as abas, a cabine, cada painel) entram em
+     cascata, de cima para baixo. `backwards`: terminada a entrada, o bloco
+     não guarda transform nenhum — um filho `fixed` continua preso à tela, e
+     não ao bloco. Filtro, paginação e aba não trocam o endereço: não animam. */
+  .palco > * > * {
+    animation: bloco-entra 480ms var(--ease-suave) backwards;
+    animation-delay: calc(var(--ordem, 0) * 50ms + 30ms);
+  }
+
+  .palco > * > :nth-child(2) { --ordem: 1; }
+  .palco > * > :nth-child(3) { --ordem: 2; }
+  .palco > * > :nth-child(4) { --ordem: 3; }
+  .palco > * > :nth-child(5) { --ordem: 4; }
+  .palco > * > :nth-child(6) { --ordem: 5; }
+  .palco > * > :nth-child(n + 7) { --ordem: 6; }
+
+  /* A cabine também tem movimento próprio (respira): dentro do palco ou de
+     uma cascata, as duas animações andam juntas, cada uma com seu atraso. */
+  .palco > * > .cabine,
+  .cascata > .cabine {
+    animation:
+      bloco-entra 480ms var(--ease-suave) backwards,
+      cabine-respira 18s ease-in-out infinite alternate;
+    animation-delay: calc(var(--ordem, 0) * 50ms + 30ms), 0s;
+  }
+
+  /* A mesma cascata, para os filhos diretos (formulário das telas de acesso). */
+  .cascata > * {
+    animation: bloco-entra 520ms var(--ease-suave) backwards;
+    animation-delay: calc(var(--ordem, 0) * 55ms + 120ms);
+  }
+
+  .cascata > :nth-child(2) { --ordem: 1; }
+  .cascata > :nth-child(3) { --ordem: 2; }
+  .cascata > :nth-child(4) { --ordem: 3; }
+  .cascata > :nth-child(5) { --ordem: 4; }
+  .cascata > :nth-child(6) { --ordem: 5; }
+  .cascata > :nth-child(n + 7) { --ordem: 6; }
+
+  /* ---------- A cabine das telas de acesso ---------- */
+
+  /* O instrumento: a logo no centro e três órbitas com um ponto de luz cada.
+     Anéis e logo em tom mais escuro que o azul; só os pontos são claros. */
+  .orbitas {
+    position: absolute;
+    z-index: -1;
+    right: -150px;
+    bottom: 130px;
+    width: 580px;
+    height: 580px;
+    pointer-events: none;
+  }
+
+  .cabine:has(> .orbitas)::before {
+    display: none;
+  }
+
+  .orbita {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    border: 1.5px dashed var(--cabine-veio);
+    translate: -50% -50%;
+    animation: cabine-gira 34s linear infinite;
+  }
+
+  .orbita::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    margin-left: -3.5px;
+    border-radius: 50%;
+    background: var(--color-cabine-texto);
+    box-shadow: 0 0 14px 3px rgba(255, 255, 255, 0.5);
+  }
+
+  .orbita-1 {
+    width: 46%;
+    height: 46%;
+    border-style: solid;
+  }
+
+  .orbita-2 {
+    width: 72%;
+    height: 72%;
+    animation-duration: 52s;
+    animation-direction: reverse;
+  }
+
+  .orbita-2::after {
+    top: auto;
+    bottom: -4px;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+  }
+
+  .orbita-3 {
+    width: 100%;
+    height: 100%;
+    border-style: dotted;
+    border-width: 2px;
+    animation-duration: 80s;
+  }
+
+  .orbita-3::after {
+    top: 50%;
+    left: -4px;
+    margin: -3px 0 0;
+    width: 6px;
+    height: 6px;
+  }
+
+  .orbitas-marca {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 27%;
+    height: 27%;
+    translate: -50% -50%;
+    color: var(--cabine-veio);
+    animation: cabine-gira 90s linear infinite reverse;
+  }
+
+  /* A frase grande da cabine de acesso: um brilho passa pelas letras uma vez.
+     Texto grande (44 px): o tom mais claro do brilho ainda passa de 3:1. */
+  .cabine-titulo {
+    background: linear-gradient(100deg, var(--color-cabine-texto) 0 38%, #cfe4fa 50%, var(--color-cabine-texto) 62% 100%);
+    background-size: 260% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: titulo-brilha 2.4s var(--ease-suave) 0.6s backwards;
+  }
+
+  /* ---------- Erro que aparece ---------- */
+
+  /* Mensagem de erro entra com um tremor curto: "não deu", sem gritar. */
+  :is(p, div)[role="alert"] {
+    animation: alerta-entra 420ms var(--ease-standard);
+  }
+
+  /* ---------- Cabeçalho de tela ---------- */
+
+  /* O quadrado do ícone de cada tela: azul claro com a luz de cima. */
+  .selo-tela {
+    background-image: linear-gradient(160deg, var(--color-surface) -30%, var(--color-primary-fixed) 70%);
+    box-shadow: inset 0 0 0 1px var(--color-primary-fixed-dim);
+  }
+
+  /* Quem salta é o ícone, sem mexer na opacidade: a captura de página
+     inteira do Chromium (usada em e2e/telas.spec.ts) perdia o quadrado todo
+     quando ele entrava do transparente. */
+  .selo-tela > svg {
+    animation: selo-salta 700ms var(--ease-mola) 160ms backwards;
+  }
+
+  /* ---------- Estado vazio ---------- */
+
+  /* O ícone flutua e duas ondas saem dele, devagar: a tela está pronta, só
+     não tem nada ainda. */
+  .vazio-icone {
+    position: relative;
+    animation: flutua 4.2s ease-in-out infinite;
+  }
+
+  .vazio-icone::before,
+  .vazio-icone::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid var(--color-primary-fixed-dim);
+    pointer-events: none;
+    animation: onda 3.2s var(--ease-suave) infinite;
+  }
+
+  .vazio-icone::after {
+    animation-delay: 1.6s;
+  }
+
+  /* ---------- O que abre por cima ---------- */
+
+  /* Menus e listas suspensas: surgem do botão que os abriu. */
+  .surge {
+    transform-origin: top right;
+    animation: surge 200ms var(--ease-suave) backwards;
+  }
+
+  .surge-esquerda {
+    transform-origin: top left;
+  }
+
+  /* Diálogo no centro (paleta de comandos). */
+  .surge-centro {
+    transform-origin: top center;
+    animation: surge-centro 240ms var(--ease-suave) backwards;
+  }
+
+  /* O véu atrás de diálogo e gaveta: escurece e desfoca de leve o fundo. */
+  .veu {
+    background-color: var(--veu);
+    -webkit-backdrop-filter: blur(3px) saturate(115%);
+    backdrop-filter: blur(3px) saturate(115%);
+  }
+
+  .veu-entra {
+    animation: aparece 200ms var(--ease-standard) backwards;
+  }
+
+  /* ---------- Navegação ---------- */
+
+  /* O traço do módulo ou da aba atual: nasce do centro quando muda. */
+  .traco-ativo {
+    transform-origin: center;
+    animation: traco-nasce 420ms var(--ease-mola) backwards;
+  }
+
+  /* A gaveta do celular: ao abrir, os módulos entram um atrás do outro. */
+  .gaveta[data-aberta="true"] .item-gaveta {
+    animation: item-gaveta 420ms var(--ease-suave) backwards;
+    animation-delay: calc(var(--i, 0) * 28ms + 90ms);
+  }
+
+  /* O ícone do módulo que acabou de ficar ativo dá um pulinho. */
+  [aria-current="page"] > .lucide,
+  [aria-current="page"] > span > .lucide {
+    animation: icone-salta 520ms var(--ease-mola);
+  }
+
+  /* A barra fina do topo enquanto a próxima tela carrega. */
+  .progresso-navegacao {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 90;
+    height: 3px;
+    pointer-events: none;
+    transform-origin: left;
+    background: linear-gradient(90deg, var(--color-primary-container), var(--color-primary) 70%, var(--color-primary-container));
+    box-shadow: 0 0 10px rgba(10, 110, 209, 0.55);
+    transition: opacity 260ms var(--ease-standard) 120ms;
+  }
+
+  .progresso-navegacao[data-estado="andando"] {
+    animation: progresso-anda 9s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+  }
+
+  .progresso-navegacao[data-estado="fim"] {
+    opacity: 0;
+    animation: progresso-fecha 280ms var(--ease-suave) forwards;
+  }
+
+  /* O topo ganha uma sombra quando o conteúdo passa por baixo dele. */
+  @supports (animation-timeline: scroll()) {
+    .topo-vivo {
+      animation: topo-flutua linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 120px;
+    }
+  }
+
+  /* ---------- Painel que recolhe (CardRecolhivel) ---------- */
+
+  /* A linha sob o cabeçalho só existe com o painel aberto. */
+  .recolhivel-topo {
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--motion-normal) var(--ease-standard);
+  }
+
+  .recolhivel-topo-aberto {
+    border-bottom-color: var(--color-card-border);
+  }
+
+  /* A altura anima por grid (0fr ↔ 1fr): sem medir nada em JavaScript. */
+  .recolhivel-corpo {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 420ms var(--ease-suave);
+  }
+
+  .recolhivel-corpo[data-aberto="false"] {
+    grid-template-rows: 0fr;
+  }
+
+  .recolhivel-miolo {
+    min-height: 0;
+    overflow: hidden;
+    transition:
+      opacity 320ms var(--ease-standard) 60ms,
+      transform 420ms var(--ease-suave),
+      visibility 0s;
+  }
+
+  /* Recolhido: some e sai do Tab e do leitor de tela quando a animação acaba. */
+  .recolhivel-corpo[data-aberto="false"] > .recolhivel-miolo {
+    opacity: 0;
+    transform: translateY(-6px);
+    visibility: hidden;
+    transition:
+      opacity 180ms var(--ease-standard),
+      transform 420ms var(--ease-suave),
+      visibility 0s 420ms;
+  }
+
+  .recolhivel-seta {
+    transition: rotate 320ms var(--ease-mola);
+  }
+
+  .recolhivel-gatilho[aria-expanded="false"] .recolhivel-seta {
+    rotate: -90deg;
+  }
+
+  /* ---------- Letreiro de pendências (topo de toda tela logada) ---------- */
+
+  .ticker {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: linear-gradient(90deg, var(--cabine-noite), var(--color-cabine-profunda) 48%, var(--cabine-noite));
+    color: var(--color-cabine-texto);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+    animation: ticker-desce 560ms var(--ease-suave) backwards;
+  }
+
+  /* Uma faixa de luz varre o letreiro de tempos em tempos. Nunca passa do
+     azul de ação: o branco por cima fica acima de 5:1 no pior instante. */
+  .ticker::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: -1;
+    width: 32%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--ticker-varredura), transparent);
+    translate: -100% 0;
+    animation: ticker-varre 8s var(--ease-standard) 1.4s infinite;
+  }
+
+  .ticker-rotulo {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 1.75rem;
+    padding: 0 0.35rem 0 0.6rem;
+    border-radius: 999px;
+    background: var(--color-cabine-texto);
+    color: var(--color-cabine-profunda);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: transform var(--motion-fast) var(--ease-mola);
+  }
+
+  .ticker-rotulo:active {
+    transform: scale(0.97);
+  }
+
+  .ticker-contagem {
+    position: relative;
+    display: inline-flex;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: var(--color-cabine-profunda);
+    color: var(--color-cabine-texto);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  /* Com prioridade alta, o número fica vermelho e pulsa. */
+  .ticker-contagem-alta {
+    background: var(--color-negativo);
+    animation: ticker-pulsa 2s ease-out infinite;
+  }
+
+  /* A janela por onde o letreiro passa: some nas duas pontas. */
+  .ticker-janela {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  }
+
+  .ticker-trilho {
+    display: flex;
+    width: max-content;
+    animation: ticker-corre var(--ticker-duracao, 60s) linear infinite;
+  }
+
+  /* Para com o ponteiro em cima e com o botão; com o foco dentro, volta ao
+     começo e fica parado, para o Tab levar a janela até o link. */
+  .ticker:hover .ticker-trilho,
+  .ticker-trilho[data-pausado] {
+    animation-play-state: paused;
+  }
+
+  .ticker-janela:focus-within .ticker-trilho {
+    animation: none;
+  }
+
+  /* Cada item termina num losango: a emenda entre as duas cópias some. */
+  .ticker-li::after {
+    content: "";
+    flex-shrink: 0;
+    width: 5px;
+    height: 5px;
+    margin: 0 1.1rem;
+    rotate: 45deg;
+    background: var(--color-cabine-linha);
+  }
+
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 1.85rem;
+    padding: 0 0.5rem;
+    border-radius: var(--radius-controle);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    transition: background-color var(--motion-fast) var(--ease-standard);
+  }
+
+  .ticker-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Correndo, o letreiro não recebe clique: o ponteiro sobre ele (ou o
+     primeiro toque, no celular) para o letreiro e aí o item vira clicável —
+     tocar num texto em movimento abria outra pendência. De quebra, o item
+     comprido recortado pela janela deixa de "cobrir" o rótulo e a pausa na
+     conta de alvo de toque do axe, que mede a caixa sem o recorte. O teclado
+     não muda: o foco para o letreiro e o Enter abre. */
+  .ticker-item {
+    pointer-events: none;
+  }
+
+  .ticker:hover .ticker-item,
+  .ticker-trilho[data-pausado] .ticker-item {
+    pointer-events: auto;
+  }
+
+  .ticker-item:focus-visible {
+    outline-color: var(--color-cabine-texto);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
+  }
+
+  .ticker-ponto {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .ticker-ponto-alta {
+    background: var(--ticker-alta);
+    box-shadow: 0 0 0 0 var(--ticker-alta);
+    animation: ticker-ponto 1.8s ease-out infinite;
+  }
+
+  .ticker-ponto-media {
+    background: var(--ticker-media);
+  }
+
+  .ticker-ponto-baixa {
+    background: var(--ticker-baixa);
+  }
+
+  .ticker-tipo {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-cabine-texto-secundario);
+  }
+
+  .ticker-prazo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.3rem;
+    padding: 0 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-cabine-texto-secundario);
+  }
+
+  .ticker-prazo-atrasado {
+    border-color: var(--ticker-alta);
+    color: var(--ticker-atrasado);
+  }
+
+  .ticker-seta {
+    flex-shrink: 0;
+    opacity: 0;
+    translate: -4px 0;
+    transition:
+      opacity var(--motion-fast) var(--ease-standard),
+      translate var(--motion-fast) var(--ease-mola);
+  }
+
+  .ticker-item:hover .ticker-seta,
+  .ticker-item:focus-visible .ticker-seta {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  .ticker-pausa {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    color: var(--color-cabine-texto);
+    transition:
+      background-color var(--motion-fast) var(--ease-standard),
+      transform var(--motion-fast) var(--ease-mola);
+  }
+
+  .ticker-pausa:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .ticker-pausa:active {
+    transform: scale(0.92);
+  }
+
+  .ticker :focus-visible {
+    outline-color: var(--color-cabine-texto);
+  }
+
+  /* ---------- Aviso depois de salvar ---------- */
+
+  .aviso-entra {
+    animation: aviso-entra 420ms var(--ease-mola) backwards;
+  }
+
+  .aviso-sai {
+    animation: aviso-sai 220ms var(--ease-exit) forwards;
+  }
+
+  /* A linha que encolhe até o aviso sumir; pára junto com o aviso. */
+  .aviso-tempo {
+    transform-origin: left;
+    animation: aviso-tempo var(--aviso-duracao, 6s) linear forwards;
+  }
+
+  .aviso-pausado .aviso-tempo {
+    animation-play-state: paused;
+  }
+
+  /* A barra do gráfico de recebidos: do azul de texto embaixo ao de ação em
+     cima, e acende sob o ponteiro. */
+  .barra-grafico {
+    background-image: linear-gradient(to top, var(--color-primary), var(--color-primary-container));
+    transition: filter var(--motion-fast) var(--ease-standard);
+  }
+
+  .group:hover .barra-grafico {
+    filter: brightness(1.12) saturate(1.1);
+  }
+
+  /* Barra de progresso "viva" (atendimento em curso): um brilho corre nela. */
+  .barra-viva > span {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .barra-viva > span::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    translate: -100% 0;
+    animation: barra-brilho 2.4s var(--ease-standard) 0.8s infinite;
+  }
+
+  .cabine .barra-viva > span::after {
+    background: linear-gradient(90deg, transparent, rgba(10, 110, 209, 0.35), transparent);
+  }
 }
 
 @layer utilities {
   /* ---------- Movimento ---------- */
 
+  /* `backwards`, não `both`: terminada a entrada, nada de transform guardado
+     no elemento (um transform parado prende os filhos `fixed` ao bloco). */
   .page-reveal {
-    animation: page-reveal var(--motion-emphasis) var(--ease-enter) both;
+    animation: page-reveal var(--motion-emphasis) var(--ease-enter) backwards;
+  }
+
+  /* Dentro do palco quem entra são os blocos da tela, em cascata; a raiz da
+     página entrando junto só somaria as duas opacidades. */
+  .palco > .page-reveal {
+    animation: none;
   }
 
   .dashboard-stagger {
-    animation: dashboard-rise 460ms var(--ease-enter) both;
+    animation: dashboard-rise 460ms var(--ease-enter) backwards;
   }
 
   .chart-grow {
     transform-origin: bottom;
-    animation: chart-grow 680ms var(--ease-enter) both;
+    animation: chart-grow 760ms var(--ease-mola) backwards;
   }
 
   .now-pulse {
@@ -414,6 +1202,32 @@
     background: transparent;
   }
 
+  /* Área que rola: as bordas esmaecem SÓ do lado em que ainda há conteúdo.
+     Quem liga cada borda é a própria rolagem (scroll-driven animation): no
+     começo, só o fim esmaece; no meio, os dois; no fim, só o começo. Sem
+     suporte, ou quando tudo cabe (linha do tempo inativa), nada esmaece. */
+  .rolagem-esmaecida,
+  .rolagem-esmaecida-x {
+    --borda-inicio: 0px;
+    --borda-fim: 0px;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .rolagem-esmaecida {
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--borda-inicio), #000 calc(100% - var(--borda-fim)), transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0, #000 var(--borda-inicio), #000 calc(100% - var(--borda-fim)), transparent 100%);
+      animation: esmaece-bordas linear both;
+      animation-timeline: scroll(self block);
+    }
+
+    .rolagem-esmaecida-x {
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--borda-inicio), #000 calc(100% - var(--borda-fim)), transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 var(--borda-inicio), #000 calc(100% - var(--borda-fim)), transparent 100%);
+      animation: esmaece-bordas linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+
   .sem-barra-de-rolagem {
     scrollbar-width: none;
   }
@@ -428,9 +1242,85 @@
     border-color: var(--color-primary-fixed-dim);
   }
 
+  /* Bloco que se clica (linha de lista, cartão): sobe 2 px e ganha sombra
+     curta. Botão (inline-flex) não sobe — só troca a cor. */
+  .premium-interactive:not(.inline-flex) {
+    transition:
+      transform 220ms var(--ease-suave),
+      box-shadow 220ms var(--ease-suave),
+      border-color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard);
+  }
+
+  .premium-interactive:not(.inline-flex):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-hover);
+  }
+
   :where(button, a)[class*="bg-primary-container"]:not(:disabled):hover {
     background-color: var(--color-primary-hover);
     border-color: var(--color-primary-hover);
+  }
+
+  :where(button, a)[class*="bg-primary-container"]:not(:disabled):hover::after,
+  .botao-whatsapp:hover::after {
+    translate: 130% 0;
+    transition: translate 760ms var(--ease-suave);
+  }
+
+  /* Cada ícone mexe do jeito que diz o que faz. */
+  :where(a, button, .group):hover > .lucide-arrow-right,
+  :where(a, button, .group):hover > span > .lucide-arrow-right,
+  :where(a, button, .group):hover .lucide-chevron-right {
+    translate: 3px 0;
+  }
+
+  :where(a, button, .group):hover .lucide-arrow-left,
+  :where(a, button, .group):hover .lucide-chevron-left {
+    translate: -3px 0;
+  }
+
+  :where(a, button):hover .lucide-plus {
+    rotate: 90deg;
+  }
+
+  :where(a, button):hover :is(.lucide-upload, .lucide-arrow-up-right) {
+    translate: 0 -2px;
+  }
+
+  :where(a, button):hover :is(.lucide-download, .lucide-arrow-down-right) {
+    translate: 0 2px;
+  }
+
+  :where(a, button):hover :is(.lucide-send, .lucide-message-circle, .lucide-external-link) {
+    translate: 2px -2px;
+  }
+
+  :where(a, button):hover :is(.lucide-pencil, .lucide-pen-line, .lucide-square-pen) {
+    rotate: -14deg;
+  }
+
+  :where(a, button):hover :is(.lucide-search, .lucide-user-round-plus, .lucide-user-plus, .lucide-calendar-plus, .lucide-clipboard-plus, .lucide-list-todo, .lucide-wallet, .lucide-receipt-text, .lucide-printer, .lucide-bell, .lucide-sparkles) {
+    scale: 1.12;
+  }
+
+  :where(a, button):hover :is(.lucide-refresh-cw, .lucide-rotate-ccw, .lucide-settings) {
+    rotate: 90deg;
+  }
+
+  :where(a, button):hover .lucide-log-out {
+    translate: 3px 0;
+  }
+
+  :where(a, button):hover .lucide-bell {
+    animation: sino 620ms var(--ease-standard);
+  }
+
+  /* A marca gira uma volta no hover: a logo é um ciclo. */
+  a:hover .selo-da-marca > svg {
+    rotate: 360deg;
+    transition: rotate 900ms var(--ease-suave);
   }
 }
 
@@ -477,12 +1367,211 @@
 }
 
 @keyframes pulso-agora {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(10, 110, 209, 0.28);
+  0% {
+    box-shadow: 0 0 0 0 rgba(10, 110, 209, 0.45);
   }
-  50% {
-    box-shadow: 0 0 0 6px rgba(10, 110, 209, 0);
+  70%, 100% {
+    box-shadow: 0 0 0 8px rgba(10, 110, 209, 0);
   }
+}
+
+@keyframes anel-foco {
+  from {
+    outline-offset: 6px;
+    box-shadow: 0 0 0 12px rgba(10, 110, 209, 0);
+  }
+}
+
+@keyframes bloco-entra {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+  }
+}
+
+@keyframes cabine-respira {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
+}
+
+@keyframes cabine-gira {
+  to { rotate: 360deg; }
+}
+
+@keyframes cabine-reflexo {
+  from { background-position: 130% 0, 0 0; }
+  to { background-position: -30% 0, 0 0; }
+}
+
+@keyframes selo-salta {
+  from {
+    scale: 0.4;
+    rotate: -24deg;
+  }
+}
+
+@keyframes flutua {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -5px; }
+}
+
+@keyframes onda {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes surge {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
+@keyframes surge-centro {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+}
+
+@keyframes aparece {
+  from { opacity: 0; }
+}
+
+@keyframes traco-nasce {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+}
+
+@property --borda-inicio {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --borda-fim {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes esmaece-bordas {
+  0% { --borda-inicio: 0px; --borda-fim: 44px; }
+  8% { --borda-inicio: 44px; --borda-fim: 44px; }
+  92% { --borda-inicio: 44px; --borda-fim: 44px; }
+  100% { --borda-inicio: 44px; --borda-fim: 0px; }
+}
+
+@keyframes ticker-corre {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes ticker-desce {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes ticker-varre {
+  from { translate: -100% 0; }
+  55%, to { translate: 320% 0; }
+}
+
+@keyframes ticker-pulsa {
+  0% { box-shadow: 0 0 0 0 rgba(255, 158, 158, 0.7); }
+  70%, 100% { box-shadow: 0 0 0 7px rgba(255, 158, 158, 0); }
+}
+
+@keyframes ticker-ponto {
+  0% { box-shadow: 0 0 0 0 rgba(255, 158, 158, 0.75); }
+  70%, 100% { box-shadow: 0 0 0 6px rgba(255, 158, 158, 0); }
+}
+
+@keyframes titulo-brilha {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}
+
+@keyframes alerta-entra {
+  0% { opacity: 0; transform: translateX(0); }
+  20% { opacity: 1; transform: translateX(-4px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(1px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes item-gaveta {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+
+@keyframes icone-salta {
+  0% { translate: 0 0; }
+  35% { translate: 0 -4px; }
+  70% { translate: 0 1px; }
+  100% { translate: 0 0; }
+}
+
+@keyframes sino {
+  0%, 100% { rotate: 0deg; }
+  20% { rotate: 14deg; }
+  40% { rotate: -11deg; }
+  60% { rotate: 7deg; }
+  80% { rotate: -4deg; }
+}
+
+@keyframes progresso-anda {
+  from { transform: scaleX(0); }
+  12% { transform: scaleX(0.32); }
+  40% { transform: scaleX(0.62); }
+  to { transform: scaleX(0.92); }
+}
+
+@keyframes progresso-fecha {
+  from { transform: scaleX(0.92); opacity: 1; }
+  60% { transform: scaleX(1); opacity: 1; }
+  to { transform: scaleX(1); opacity: 0; }
+}
+
+@keyframes topo-flutua {
+  from { box-shadow: 0 0 0 transparent; }
+  to { box-shadow: var(--sombra-topo); }
+}
+
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+}
+
+@keyframes aviso-sai {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+@keyframes aviso-tempo {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@keyframes barra-brilho {
+  from { translate: -100% 0; }
+  60%, to { translate: 100% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -495,18 +1584,91 @@
     scroll-behavior: auto !important;
   }
 
+  /* Sem movimento, a tela aparece pronta: nada espera o atraso da cascata
+     para surgir de uma vez, nada gira nem flutua. */
   .page-reveal,
   .dashboard-stagger,
   .chart-grow,
   .now-pulse,
-  .barra > span {
+  .barra > span,
+  .palco > * > *,
+  .cascata > *,
+  .palco > * > .cabine,
+  .cascata > .cabine,
+  .orbita,
+  .orbitas-marca,
+  .cabine-titulo,
+  :is(p, div)[role="alert"],
+  .selo-tela > svg,
+  .vazio-icone,
+  .surge,
+  .surge-centro,
+  .veu-entra,
+  .traco-ativo,
+  .gaveta[data-aberta="true"] .item-gaveta,
+  .aviso-entra,
+  .cabine,
+  .cabine::before,
+  .cabine::after,
+  .barra-viva > span::after,
+  [aria-current="page"] > .lucide,
+  [aria-current="page"] > span > .lucide,
+  :focus-visible {
     animation: none !important;
+  }
+
+  .vazio-icone::before,
+  .vazio-icone::after {
+    display: none;
+  }
+
+  /* O letreiro não corre: vira uma faixa que rola de lado, com uma cópia só
+     e sem o botão de pausa (não há o que pausar). */
+  .ticker,
+  .ticker::before,
+  .ticker-trilho,
+  .ticker-contagem-alta,
+  .ticker-ponto-alta {
+    animation: none !important;
+  }
+
+  .ticker::before,
+  .ticker-copia,
+  .ticker-pausa {
+    display: none !important;
+  }
+
+  .ticker-janela {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ticker-item {
+    pointer-events: auto;
   }
 }
 
 @media print {
   .sem-impressao {
     display: none !important;
+  }
+
+  /* Fundo não sai no papel: o título em degradê viraria letra transparente. */
+  .titulo-tela {
+    color: var(--color-primary) !important;
+    background: none !important;
+  }
+
+  .fundo-vivo::before,
+  .cabine::before,
+  .cabine::after {
+    display: none !important;
+  }
+
+  .rolagem-esmaecida,
+  .rolagem-esmaecida-x {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
   }
 
   .folha,

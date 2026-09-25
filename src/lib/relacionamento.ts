@@ -64,6 +64,15 @@ export function mensagemConfirmacao(nome: string, dia: string, hora: string): st
   return `Olá, ${primeiroNome}! Aqui é da clínica da Dra. Érika Passos. Podemos confirmar o seu atendimento em ${dia} às ${hora}?`;
 }
 
+/**
+ * Chamada para o retorno. Também sem o procedimento (a mesma razão da
+ * confirmação): quem abre a conversa só precisa saber que é hora de voltar.
+ */
+export function mensagemRetorno(nome: string): string {
+  const primeiroNome = nome.trim().split(/\s+/)[0] || "Olá";
+  return `Olá, ${primeiroNome}! Aqui é da clínica da Dra. Érika Passos. Já está chegando a hora do seu retorno. Qual o melhor dia e horário para você?`;
+}
+
 export function mensagemAniversario(nome: string): string {
   const primeiroNome = nome.trim().split(/\s+/)[0] || "Olá";
   return `Olá, ${primeiroNome}! A equipe da Dra. Érika Passos deseja a você um feliz aniversário!`;

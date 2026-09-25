@@ -12,6 +12,7 @@ import { BarraDeModulos } from "./barra-de-modulos";
 import { CommandPalette } from "./command-palette";
 import { MenuPerfil } from "./profile-menu";
 import { PreviewNotificacoes } from "./notifications-preview";
+import { avisarQueVaiNavegar } from "./progresso-de-navegacao";
 
 /**
  * A barra do topo: marca, os módulos, a busca (Ctrl K), as pendências e a
@@ -45,6 +46,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
       const destino = ATALHOS.find((a) => a.tecla === evento.key.toLowerCase() && (!a.so || a.so.includes(usuario.papel)));
       if (destino) {
         evento.preventDefault();
+        avisarQueVaiNavegar();
         router.push(destino.href);
       }
     }
@@ -55,7 +57,7 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-card-border bg-surface">
+      <header className="topo-vivo sticky top-0 z-30 border-b border-card-border bg-surface">
         <div className="mx-auto flex h-[var(--altura-barra)] w-full max-w-[1600px] items-center gap-2 px-3 sm:gap-3 sm:px-6 xl:px-10 2xl:px-14">
           <button
             ref={ref}

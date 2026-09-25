@@ -46,7 +46,7 @@ export function CabecalhoDePagina({ icone: Icone, rotulo, titulo, descricao, aco
     <header className={cn("mb-6", className)}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex min-w-0 items-start gap-3.5">
-          <span aria-hidden="true" className="mt-1 hidden size-11 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary sm:flex">
+          <span aria-hidden="true" className="selo-tela mt-1 hidden size-11 shrink-0 items-center justify-center rounded-[var(--radius-controle)] text-primary sm:flex">
             <Icone size={22} strokeWidth={1.8} />
           </span>
           <div className="min-w-0">

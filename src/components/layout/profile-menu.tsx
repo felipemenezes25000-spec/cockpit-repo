@@ -89,7 +89,7 @@ export function MenuPerfil({ usuario }: { usuario: UsuarioAtual }) {
           role="dialog"
           aria-label="Conta e perfil"
           tabIndex={-1}
-          className="glass-surface page-reveal absolute right-0 z-40 mt-3 w-[19rem] overflow-hidden rounded-[var(--radius-painel)] border border-card-border outline-none shadow-flutuante"
+          className="glass-surface surge absolute right-0 z-40 mt-3 w-[19rem] overflow-hidden rounded-[var(--radius-painel)] border border-card-border outline-none shadow-flutuante"
         >
           <div className="relative overflow-hidden border-b border-card-border px-4 py-4">
             <div className="relative flex items-center gap-3.5">

@@ -17,7 +17,7 @@ export function EstadoVazio({
 }) {
   return (
     <div className={cn("flex flex-col items-center justify-center px-6 py-12 text-center sm:py-14", className)}>
-      <span aria-hidden="true" className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary-fixed text-primary">
+      <span aria-hidden="true" className="vazio-icone mb-5 flex size-12 items-center justify-center rounded-full bg-primary-fixed text-primary">
         <Icone size={22} strokeWidth={1.8} />
       </span>
       <p className="titulo-secao text-on-surface">{titulo}</p>

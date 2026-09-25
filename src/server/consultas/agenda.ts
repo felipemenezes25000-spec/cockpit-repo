@@ -18,6 +18,8 @@ export type AtendimentoDoDia = {
   situacao: SituacaoAtendimento;
   paciente: string;
   pacienteId: string;
+  /** Para o pedido de confirmação ir pelo WhatsApp, do cartão da agenda. */
+  telefone: string | null;
   profissional: string;
   procedimento: string;
   valor: number;
@@ -41,7 +43,7 @@ export const atendimentosDoDia = cache(
       .from("atendimentos")
       .select(
         `id, inicio, duracao_min, situacao, valor, observacoes, paciente_id,
-         pacientes ( nome, nome_social ),
+         pacientes ( nome, nome_social, telefone ),
          profissionais ( nome ),
          procedimentos ( nome )`,
       )
@@ -62,6 +64,7 @@ export const atendimentosDoDia = cache(
       // Nome social tem precedência sempre que preenchido.
       paciente: linha.pacientes?.nome_social || linha.pacientes?.nome || "Paciente",
       pacienteId: linha.paciente_id,
+      telefone: linha.pacientes?.telefone ?? null,
       profissional: linha.profissionais?.nome ?? "",
       procedimento: linha.procedimentos?.nome ?? "",
       valor: linha.valor,

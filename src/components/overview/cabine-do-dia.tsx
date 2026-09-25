@@ -7,6 +7,7 @@ import { atendimentosDeHoje } from "@/server/consultas/agenda";
 import { indicadores } from "@/server/consultas/indicadores";
 import { AgoraNaCabine } from "./agora-na-cabine";
 import { FilaDoDia } from "./fila-do-dia";
+import { NumeroVivo } from "@/components/ui/numero-vivo";
 
 /**
  * A cabine da Visão Geral: o bloco azul que se lê de relance. O agora (quem
@@ -47,7 +48,7 @@ export async function CabineDoDia({ exemplo }: { exemplo: boolean }) {
         <Indicador
           className="lg:border-l lg:border-cabine-linha lg:px-6"
           rotulo="Atendimentos de hoje"
-          valor={concluidos}
+          valor={<NumeroVivo valor={concluidos} />}
           complemento={`de ${total} ${total === 1 ? "concluído" : "concluídos"}`}
           proporcao={total > 0 ? concluidos / total : 0}
           descricaoDaBarra={`${concluidos} de ${total} atendimentos de hoje concluídos`}
@@ -69,7 +70,7 @@ export async function CabineDoDia({ exemplo }: { exemplo: boolean }) {
           className="lg:border-l lg:border-cabine-linha lg:pl-6"
           rotulo={exemplo ? "Recebido no mês · demonstrativo" : "Recebido no mês"}
           tamanho="numero-sm"
-          valor={formatarMoeda(n.recebidoNoMes)}
+          valor={<NumeroVivo valor={n.recebidoNoMes} formato="moeda" />}
           frase={
             <>
               {formatarMoeda(n.aReceber)} a receber

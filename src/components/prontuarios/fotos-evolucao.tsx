@@ -1,5 +1,6 @@
 import { Camera, ShieldCheck } from "lucide-react";
-import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { formatarData, formatarHora } from "@/lib/format";
 import type {
@@ -54,11 +55,10 @@ export function FotosDeEvolucao({
   const { visiveis, arquivadas, eliminacoes } = fotos;
 
   return (
-    <Card>
-      <CardCabecalho
+    <CardRecolhivel id="pront-fotos-de-evolucao"
         titulo="Fotos de evolução"
         descricao="O antes, o durante e o depois. Só a administradora vê e envia."
-      />
+    >
 
       <CardCorpo className="flex flex-col gap-8">
         {visiveis.length > 0 ? (
@@ -146,6 +146,6 @@ export function FotosDeEvolucao({
           assinado, que expira. Nenhuma delas tem URL pública.
         </span>
       </CardRodape>
-    </Card>
+    </CardRecolhivel>
   );
 }

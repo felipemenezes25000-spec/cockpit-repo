@@ -1,6 +1,7 @@
 import { CalendarPlus, ClipboardPlus, History } from "lucide-react";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CardCorpo } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { SituacaoChip } from "@/components/ui/status-chip";
 import { formatarData, formatarHora, formatarMoeda } from "@/lib/format";
@@ -18,8 +19,7 @@ export function HistoricoAtendimentos({
   podeProntuario?: boolean;
 }) {
   return (
-    <Card>
-      <CardCabecalho
+    <CardRecolhivel id="pac-historico-de-atendimentos"
         titulo="Histórico de atendimentos"
         descricao={atendimentos.length === 1 ? "1 atendimento registrado" : `${atendimentos.length} atendimentos registrados`}
         acao={
@@ -28,7 +28,7 @@ export function HistoricoAtendimentos({
             Marcar atendimento
           </BotaoLink>
         }
-      />
+    >
 
       <CardCorpo>
         {atendimentos.length === 0 ? (
@@ -83,6 +83,6 @@ export function HistoricoAtendimentos({
           </ol>
         )}
       </CardCorpo>
-    </Card>
+    </CardRecolhivel>
   );
 }

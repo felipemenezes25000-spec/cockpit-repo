@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { usuarioAtual } from "@/lib/auth";
 import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
 import { registrarFalha } from "@/lib/registro";
@@ -105,6 +106,7 @@ export async function criarProntuario(
   revalidatePath("/prontuarios");
   revalidatePath(`/pacientes/${valores.paciente_id}`);
   revalidatePath("/");
+  await avisarNaProximaTela("prontuario-registrado");
   redirect(`/prontuarios/${data}`);
 }
 
@@ -166,5 +168,6 @@ export async function registrarNovaVersao(
   revalidatePath(`/prontuarios/${prontuarioId}`);
   revalidatePath(`/pacientes/${valores.paciente_id}`);
   revalidatePath("/");
+  await avisarNaProximaTela("prontuario-nova-versao");
   redirect(`/prontuarios/${prontuarioId}`);
 }

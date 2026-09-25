@@ -66,7 +66,7 @@ export function PreviewNotificacoes({ pendenciasAltas }: { pendenciasAltas: numb
           id="preview-notificacoes"
           role="dialog"
           aria-label="Pendências prioritárias"
-          className="glass-surface page-reveal absolute right-0 z-40 mt-3 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-[var(--radius-painel)] border border-card-border shadow-flutuante"
+          className="glass-surface surge absolute right-0 z-40 mt-3 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-[var(--radius-painel)] border border-card-border shadow-flutuante"
         >
           <div className="relative overflow-hidden border-b border-card-border px-4 py-4">
             <div className="relative flex items-start gap-3">

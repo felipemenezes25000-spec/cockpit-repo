@@ -526,7 +526,7 @@ export function AssinarPorLink({
         </div>
 
         <div className="px-6 py-6 sm:px-8">
-          <div className="max-h-[60vh] overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface px-5 py-5 sm:px-7">
+          <div className="rolagem-esmaecida max-h-[60vh] overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface px-5 py-5 sm:px-7">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
               {documento.corpo}
             </p>

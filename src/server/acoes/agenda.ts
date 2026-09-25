@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
 import { clienteServidor } from "@/lib/supabase/server";
@@ -210,6 +211,7 @@ export async function marcarAtendimento(
   }
 
   revalidarAgenda();
+  await avisarNaProximaTela("atendimento-marcado");
   redirect(destinoDepoisDeSalvar(dados, resultado.campos.inicio));
 }
 
@@ -295,6 +297,7 @@ export async function atualizarAtendimento(
   }
 
   revalidarAgenda(id);
+  await avisarNaProximaTela("atendimento-alterado");
   redirect(destinoDepoisDeSalvar(dados, resultado.campos.inicio));
 }
 

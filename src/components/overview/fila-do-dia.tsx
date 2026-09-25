@@ -41,7 +41,15 @@ export function FilaDoDia({ atendimentos }: { atendimentos: AtendimentoDoAgora[]
     const caixa = faixa.current;
     const marcador = caixa?.querySelector<HTMLElement>("[data-agora]");
     if (!caixa || !marcador) return;
-    caixa.scrollLeft = Math.max(0, marcador.offsetLeft - caixa.clientWidth / 3);
+    // O agora fica a um terço da faixa, mas a faixa começa num cartão
+    // inteiro: nada de abrir com "…:45 / …lena" cortado na borda.
+    const inicio = caixa.getBoundingClientRect().left - caixa.scrollLeft;
+    const posicao = (elemento: Element) => elemento.getBoundingClientRect().left - inicio;
+    const alvo = posicao(marcador) - caixa.clientWidth / 3;
+    const primeiro = Array.from(caixa.children).filter((cartao) => posicao(cartao) <= alvo).pop();
+    // A folga de 44 px é a do esmaecimento da borda (`scroll-px-11`): ele cai
+    // sobre a sobra do cartão anterior, não sobre o primeiro inteiro.
+    caixa.scrollLeft = primeiro ? Math.max(0, posicao(primeiro) - 44) : 0;
   }, [posicaoDoAgora]);
 
   if (lista.length === 0) {
@@ -66,7 +74,7 @@ export function FilaDoDia({ atendimentos }: { atendimentos: AtendimentoDoAgora[]
     <ol
       ref={faixa}
       aria-label="Atendimentos de hoje, na ordem do relógio"
-      className="rolagem-discreta -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2"
+      className="rolagem-discreta rolagem-esmaecida-x -mx-1 flex snap-x snap-mandatory scroll-px-11 gap-2 overflow-x-auto px-1 pb-2"
     >
       {lista.map((atendimento, indice) => {
         const estilo = ESTILO_SITUACAO[atendimento.situacao];

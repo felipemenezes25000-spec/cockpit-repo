@@ -20,7 +20,7 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
 
   return (
     <nav aria-label={rotulo} className={cn("relative border-b border-card-border", className)}>
-      <div ref={faixa} className="sem-barra-de-rolagem relative snap-x snap-mandatory scroll-px-1 overflow-x-auto">
+      <div ref={faixa} className="sem-barra-de-rolagem rolagem-esmaecida-x relative snap-x snap-mandatory scroll-px-1 overflow-x-auto">
         <ul className="flex min-w-max gap-1 px-1">
           {abas.map((aba) => (
             <li key={aba.href} className="snap-start">
@@ -43,7 +43,7 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
                     {aba.contagem}
                   </span>
                 ) : null}
-                {aba.ativa ? <span aria-hidden="true" className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-primary-container" /> : null}
+                {aba.ativa ? <span aria-hidden="true" className="traco-ativo absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-primary-container" /> : null}
               </Link>
             </li>
           ))}

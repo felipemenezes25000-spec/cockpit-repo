@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { Card, CardCorpo } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { SituacaoChip } from "@/components/ui/status-chip";
 import { classeDeEntrada } from "@/components/ui/field";
@@ -75,22 +76,26 @@ export default async function PaginaBusca({ searchParams }: { searchParams: Prom
     {!resultado ? <Card><EstadoVazio icone={Search} titulo="O que você procura?" descricao="Digite pelo menos dois caracteres. Para localizar atendimentos, use o nome da paciente, o procedimento ou a data." /></Card> : <>
       <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm text-on-surface-variant">Resultados para <strong className="text-on-surface">“{termo}”</strong></p><SeloHero>{totalVisivel} encontrados</SeloHero></div>
       <div className="grid items-start gap-5 xl:grid-cols-2">
-        <Card className="relative overflow-hidden"><CardCabecalho titulo={`Pacientes · ${resultado.pacientes.total}`} descricao="Nome, contato ou CPF. Inclui cadastros arquivados." acao={resultado.pacientes.total > 0 ? verTodos(`/pacientes?busca=${query}&situacao=todas`) : undefined} /><CardCorpo className="relative">
+        <CardRecolhivel id="busca-pacientes" titulo={`Pacientes · ${resultado.pacientes.total}`} descricao="Nome, contato ou CPF. Inclui cadastros arquivados." acao={resultado.pacientes.total > 0 ? verTodos(`/pacientes?busca=${query}&situacao=todas`) : undefined}
+        ><CardCorpo className="relative">
           {resultado.pacientes.itens.length === 0 ? <SemResultado>Nenhuma paciente encontrada. Tente outro nome ou contato.</SemResultado> : <ul className="flex flex-col gap-2.5">{resultado.pacientes.itens.slice(0, 6).map((p) => <li key={p.id}><Link href={`/pacientes/${p.id}`} className={linhaResultado}><span className="flex items-center gap-3"><Avatar nome={p.exibicao} tom={p.ativo ? "marca" : "neutro"} /><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="truncate font-semibold text-on-surface"><TextoComDestaque texto={p.exibicao} termo={termo} /></span>{!p.ativo ? <SeloHero className="min-h-6 px-2 py-0 text-[0.66rem]">Arquivada</SeloHero> : null}</span><span className="mt-1 block truncate text-xs text-outline">{p.telefone || p.email || "Sem contato"}</span></span><SetaResultado /></span></Link></li>)}</ul>}
-        </CardCorpo></Card>
+        </CardCorpo></CardRecolhivel>
 
-        <Card className="relative overflow-hidden"><CardCabecalho titulo={`Atendimentos · ${resultado.atendimentos.length}${resultado.maisAtendimentos ? "+" : ""}`} descricao="Por paciente, procedimento ou data; até 8 mais recentes." /><CardCorpo className="relative">
+        <CardRecolhivel id="busca-atendimentos" titulo={`Atendimentos · ${resultado.atendimentos.length}${resultado.maisAtendimentos ? "+" : ""}`} descricao="Por paciente, procedimento ou data; até 8 mais recentes."
+        ><CardCorpo className="relative">
           {resultado.atendimentos.length === 0 ? <SemResultado>Nenhum atendimento encontrado. Busque pelo nome, procedimento ou uma data.</SemResultado> : <ul className="flex flex-col gap-2.5">{resultado.atendimentos.map((a) => <li key={a.id}><Link href={a.href} className={linhaResultado}><span className="flex items-start gap-3"><IconeResultado><CalendarClock aria-hidden="true" size={17} strokeWidth={1.65} /></IconeResultado><span className="min-w-0 flex-1"><span className="flex flex-wrap items-start justify-between gap-2"><span className="min-w-0"><span className="block truncate font-semibold text-on-surface"><TextoComDestaque texto={a.paciente} termo={termo} /></span><span className="mt-1 block text-xs text-outline"><TextoComDestaque texto={a.procedimento} termo={termo} /> · {formatarData(a.inicio)} às {formatarHora(a.inicio)}</span></span><SituacaoChip situacao={a.situacao} compacto /></span></span><SetaResultado /></span></Link></li>)}</ul>}
           {resultado.maisAtendimentos ? <p className="mt-3 text-xs text-outline">Há mais atendimentos; refine o termo para encontrá-los.</p> : null}
-        </CardCorpo></Card>
+        </CardCorpo></CardRecolhivel>
 
-        <Card className="relative overflow-hidden"><CardCabecalho titulo={`Documentos${resultado.documentos ? ` · ${resultado.documentos.total}` : ""}`} descricao="Título ou paciente; acesso conforme seu perfil." acao={resultado.documentos?.total ? verTodos(`/formularios?busca=${query}`) : undefined} /><CardCorpo>
+        <CardRecolhivel id="busca-documentos" titulo={`Documentos${resultado.documentos ? ` · ${resultado.documentos.total}` : ""}`} descricao="Título ou paciente; acesso conforme seu perfil." acao={resultado.documentos?.total ? verTodos(`/formularios?busca=${query}`) : undefined}
+        ><CardCorpo>
           {!resultado.documentos ? <SemResultado>Documentos indisponíveis no momento.</SemResultado> : resultado.documentos.itens.length === 0 ? <SemResultado>Nenhum documento encontrado. Tente outro título ou nome de paciente.</SemResultado> : <ul className="flex flex-col gap-2.5">{resultado.documentos.itens.slice(0, 6).map((d) => <li key={d.id}><Link href={`/formularios/${d.id}`} className={linhaResultado}><span className="flex items-center gap-3"><IconeResultado><FileText aria-hidden="true" size={17} strokeWidth={1.65} /></IconeResultado><span className="min-w-0 flex-1"><span className="block truncate font-semibold text-on-surface"><TextoComDestaque texto={d.titulo} termo={termo} /></span><span className="mt-1 block truncate text-xs text-outline">{ROTULO_TIPO[d.tipo]} · <TextoComDestaque texto={d.paciente} termo={termo} /> · {formatarData(d.emitidoEm)}</span></span><SetaResultado /></span></Link></li>)}</ul>}
-        </CardCorpo></Card>
+        </CardCorpo></CardRecolhivel>
 
-        {administradora ? <Card className="relative overflow-hidden"><CardCabecalho titulo={`Prontuários${resultado.prontuarios ? ` · ${resultado.prontuarios.total}` : ""}`} descricao="Registros clínicos visíveis apenas para a administradora." acao={resultado.prontuarios?.total ? verTodos(`/prontuarios?busca=${query}`) : undefined} /><CardCorpo>
+        {administradora ? <CardRecolhivel id="busca-prontuarios" titulo={`Prontuários${resultado.prontuarios ? ` · ${resultado.prontuarios.total}` : ""}`} descricao="Registros clínicos visíveis apenas para a administradora." acao={resultado.prontuarios?.total ? verTodos(`/prontuarios?busca=${query}`) : undefined}
+ ><CardCorpo>
           {!resultado.prontuarios ? <SemResultado>Prontuários indisponíveis no momento.</SemResultado> : resultado.prontuarios.itens.length === 0 ? <SemResultado>Nenhum prontuário encontrado. Tente outro título ou nome de paciente.</SemResultado> : <ul className="flex flex-col gap-2.5">{resultado.prontuarios.itens.slice(0, 6).map((p) => <li key={p.id}><Link href={`/prontuarios/${p.id}`} className={linhaResultado}><span className="flex items-center gap-3"><IconeResultado><ClipboardPlus aria-hidden="true" size={17} strokeWidth={1.65} /></IconeResultado><span className="min-w-0 flex-1"><span className="block truncate font-semibold text-on-surface"><TextoComDestaque texto={p.titulo} termo={termo} /></span><span className="mt-1 block truncate text-xs text-outline"><TextoComDestaque texto={p.paciente} termo={termo} /> · {formatarData(p.dataRegistro)}</span></span><SetaResultado /></span></Link></li>)}</ul>}
-        </CardCorpo></Card> : null}
+        </CardCorpo></CardRecolhivel> : null}
       </div>
       {totalVisivel > 0 ? <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs text-outline"><Users aria-hidden="true" size={14} /><span>Resultados organizados por contexto para entrar direto no registro certo.</span></div> : null}
     </>}

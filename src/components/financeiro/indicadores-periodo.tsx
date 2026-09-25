@@ -13,6 +13,7 @@ import { Indicador } from "@/components/ui/indicador";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 import type { IndicadoresDoPeriodo } from "@/server/consultas/painel-financeiro";
+import { NumeroVivo } from "@/components/ui/numero-vivo";
 
 const RESTRITO = "restrito ao financeiro";
 
@@ -96,7 +97,7 @@ export function IndicadoresPeriodo({
           className="md:col-span-2 lg:col-span-1 lg:pr-6"
           rotulo={exemplo ? "Líquido recebido · demonstrativo" : "Líquido recebido"}
           tamanho="numero"
-          valor={formatarMoeda(n.liquidoRecebido)}
+          valor={<NumeroVivo valor={n.liquidoRecebido} formato="moeda" />}
           frase={
             <>
               {formatarMoeda(n.totalRecebidoBruto)} recebidos; {formatarMoeda(n.taxasDeCartao)} ficaram em taxas de cartão
@@ -108,7 +109,7 @@ export function IndicadoresPeriodo({
           className="lg:border-l lg:border-cabine-linha lg:px-6"
           rotulo="Resultado de caixa"
           tamanho="numero-sm"
-          valor={n.resultadoDeCaixa === null ? "—" : formatarMoeda(n.resultadoDeCaixa)}
+          valor={n.resultadoDeCaixa === null ? "—" : <NumeroVivo valor={n.resultadoDeCaixa} formato="moeda" />}
           proporcao={proporcaoDasSaidas ?? undefined}
           descricaoDaBarra={
             proporcaoDasSaidas === null
@@ -127,7 +128,7 @@ export function IndicadoresPeriodo({
           className="lg:border-l lg:border-cabine-linha lg:pl-6"
           rotulo="A receber"
           tamanho="numero-sm"
-          valor={formatarMoeda(n.aReceber)}
+          valor={<NumeroVivo valor={n.aReceber} formato="moeda" />}
           proporcao={n.aReceber > 0 ? proporcaoVencida : undefined}
           descricaoDaBarra={`${Math.round(proporcaoVencida * 100)}% do que falta receber já venceu`}
           frase={

@@ -155,11 +155,12 @@ não é o zelo extra que parece.
 > aparece só a mensagem do `psql`.
 >
 > **Números (conferidos em 25/09/2026, no branch `main`, não copie sem
-> recontar).** Vitest: **905 testes em 85 arquivos**, todos verdes — 15 em
+> recontar).** Vitest: **935 testes em 93 arquivos**, todos verdes — 17 em
 > `src/lib/`, 12 de ações em `src/server/acoes/`, 11 de consultas em
-> `src/server/consultas/`, 5 em `src/app/` (login, destino do login,
-> recuperação de senha, sem acesso e a página do documento), 35 de componente
-> (`src/components/`), 2 do middleware (`src/middleware.test.ts` e
+> `src/server/consultas/`, 1 em `src/server/` (o aviso depois de salvar), 5 em
+> `src/app/` (login, destino do login, recuperação de senha, sem acesso e a
+> página do documento), 40 de componente (`src/components/`), 2 do middleware
+> (`src/middleware.test.ts` e
 > `src/lib/supabase/`) e 5 em `testes/` (`cabecalhos-seguranca`,
 > `desempenho`, `marca`, `react-ping` e `versao-postgrest`). `test:banco`: **269
 > asserções**, todas verdes numa execução completa a partir de `db reset`
@@ -1016,11 +1017,13 @@ src/
       pacientes/  agenda/  prontuarios/  financeiro/  formularios/ (Documentos e Contratos)
       relacionamento/  busca/  relatorios/  configuracoes/
   components/
-    layout/               estrutura, barra de módulos, faixa do agora, gaveta, barra inferior,
-                          atalhos de tecla, perfil, faixa de demonstração, tela de erro
-    ui/                   cartão, botão, campo, formulário de ação, abas, seletor segmentado,
-                          chip de situação, prioridade, lista, avatar, vazio, cabeçalho de
-                          página (o h1), aviso de tela, indicador
+    layout/               estrutura, letreiro de pendências, barra de módulos, faixa do agora,
+                          gaveta, barra inferior, atalhos de tecla, perfil, faixa de
+                          demonstração, tela de erro, barra de progresso, aviso depois de salvar
+    ui/                   cartão (e o que recolhe), botão, botão do WhatsApp, campo, formulário
+                          de ação, abas, seletor segmentado, chip de situação, prioridade,
+                          lista, avatar, vazio, cabeçalho de página (o h1), aviso de tela,
+                          indicador, número que conta
     overview/  pacientes/  agenda/  financeiro/  configuracoes/  prontuarios/  documentos/
     relacionamento/
   server/
@@ -1356,16 +1359,18 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
 
 **O sistema visual "Cockpit" (setembro de 2026)** — claro, plano, no azul da marca:
 
-- **Painel não tem sombra: tem uma linha de 1px** (`card-border`). `shadow-cartao`,
-  `shadow-realce` e `shadow-primary` continuam como nome, sem efeito. Sombra só
-  no que flutua (`shadow-flutuante`): menu, paleta, gaveta, rodapé fixo de
-  formulário. `premium-panel` e `glass-surface` são hoje fundo branco com linha.
-- **Nada de vidro, desfoque, degradê decorativo, bolha desfocada, luz que segue
-  o mouse ou elevação no hover.** Transparência não entra em cor de estado,
-  texto nem linha: fundo de estado é o token sólido (`bg-positivo-fundo`), azul
-  claro é `bg-primary-fixed` (forte) ou `bg-selecao` (fraco). Linha inteira de
-  lista não ganha fundo de estado: fica branca, e o estado vai no selo e na
-  barrinha à esquerda.
+- **Painel parado não tem sombra: tem uma linha de 1px** (`card-border`).
+  `shadow-cartao`, `shadow-realce` e `shadow-primary` continuam como nome, sem
+  efeito. Sombra só no que flutua (`shadow-flutuante`: menu, paleta, gaveta,
+  rodapé fixo de formulário, aviso depois de salvar) e, desde o "Cockpit vivo"
+  (§7.3.1), no bloco clicável sob o ponteiro e no topo quando a página rola.
+  `premium-panel` e `glass-surface` são fundo branco com linha.
+- **Nada de vidro nos painéis, bolha desfocada nem luz que segue o mouse.**
+  O desfoque existe só no véu atrás de diálogo e gaveta (`.veu`). Transparência
+  não entra em cor de estado, texto nem linha: fundo de estado é o token sólido
+  (`bg-positivo-fundo`), azul claro é `bg-primary-fixed` (forte) ou `bg-selecao`
+  (fraco). Linha inteira de lista não ganha fundo de estado: fica branca, e o
+  estado vai no selo e na barrinha à esquerda.
 - **A cabine** (`.cabine`, do azul de ação `cabine` ao azul de texto
   `cabine-profunda`) é o único degradê e a única cor cheia de cada tela: um bloco
   com o que se lê de relance. Dentro dela o texto é `cabine-texto` (5,04:1 no
@@ -1386,6 +1391,115 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
   `size-10` do componente e `size-16` no `className`) ficam à mercê da ordem do
   CSS. Ponha cada valor numa condição só, ou dê ao componente uma variante (o
   `Avatar` tem `tamanho="lg"` e `tom="cabine"` por isso).
+
+#### 7.3.1 O "Cockpit vivo" — movimento e efeitos (setembro de 2026)
+
+O sistema continua claro, plano e no azul da marca; o que mudou é que ele se
+mexe. **Tudo em CSS** (`globals.css`) e em componentes cliente pequenos: o
+orçamento de JS por rota (`scripts/desempenho.mjs`) não comporta biblioteca de
+animação, e não precisa. **Toda animação some com "reduzir movimento"** (bloco
+`prefers-reduced-motion` no fim do arquivo): a tela aparece pronta, nada gira,
+o letreiro vira uma faixa que rola de lado. Regra ao acrescentar uma animação:
+ponha a classe nesse bloco também.
+
+- **Entrada de tela em cascata** (`.palco`, no `EstruturaApp`): os blocos da
+  tela (cabeçalho, abas, cabine, painéis) sobem um depois do outro, 50 ms de
+  intervalo, a cada troca de endereço. Filtro, aba e paginação não trocam o
+  endereço e não animam. As entradas usam `animation-fill-mode: backwards`,
+  nunca `both`: terminada a animação, o bloco não guarda `transform` — um
+  transform parado prende os filhos `position: fixed` ao bloco, e não à tela.
+  `.cascata` faz o mesmo para filhos diretos (formulário das telas de acesso).
+- **A cabine respira:** o degradê anda devagar, um mostrador de instrumento
+  (marcas e anéis pontilhados) gira no canto e um reflexo atravessa uma vez ao
+  entrar. **Todo efeito da cabine é mais escuro que o azul de ação** — o branco
+  tem 5,04:1 no ponto mais claro e nada pode clarear o fundo sob o texto. A
+  única exceção é o reflexo de entrada (passa uma vez, em menos de 1 s).
+- **Título da tela** (`.titulo-tela`) em degradê só entre azuis de texto (7,6 a
+  5,06:1 no branco). `text-on-surface` na própria tela pinta por cima e o título
+  fica chapado (telas de acesso e de aviso). Na impressão ele volta a ser cor.
+- **Fundo da página** (`.fundo-vivo`): brilho azul leve no alto e grade de
+  pontos que some para baixo, num pseudo-elemento atrás de tudo.
+- **Ponteiro:** o botão principal ganha uma faixa de luz que atravessa; o bloco
+  clicável (`.premium-interactive` que não é `inline-flex`) sobe 2 px com sombra
+  curta; cada ícone mexe do jeito que diz o que faz (a seta anda, o "+" gira, o
+  lápis inclina, o sino balança — regras pela classe que o lucide põe no
+  `<svg>`, sem tocar em componente); a marca no topo dá uma volta (a logo é um
+  ciclo).
+- **Foco:** o anel "fecha" sobre o controle (`anel-foco`). Erro que aparece
+  (`[role=alert]`) entra com um tremor curto.
+- **Navegação:** barra fina no alto enquanto a próxima tela carrega
+  (`layout/progresso-de-navegacao.tsx`; atalho de tecla e paleta avisam por
+  `avisarQueVaiNavegar()`); o traço do módulo e da aba atual nasce do centro
+  (`.traco-ativo`) e o ícone ativo dá um pulinho; menus surgem do botão
+  (`.surge`), a paleta desce (`.surge-centro`) sobre o véu; a gaveta abre com os
+  módulos em cascata; o topo ganha sombra quando o conteúdo passa por baixo
+  (scroll-driven animation, só onde há suporte).
+- **Números que contam** (`ui/numero-vivo.tsx`, nas cabines): quando a tela abre
+  pelo sistema, o número conta até o valor; quando muda depois de uma gravação,
+  desliza do antigo ao novo. **Na primeira carga não conta** — a página vem
+  pronta do servidor e voltar a zero seria um piscar (o componente sabe que
+  nasceu na hidratação pelo `useSyncExternalStore`).
+- **Área que rola** (`.rolagem-esmaecida`, `.rolagem-esmaecida-x`): a borda
+  esmaece só do lado em que ainda há conteúdo, ligada pela própria rolagem. A
+  fila do dia abre com um cartão inteiro depois do esmaecimento.
+- **Estado vazio e aviso de tela:** o ícone flutua e solta ondas (`.vazio-icone`).
+- **Tela de acesso:** a cabine leva órbitas girando em volta da logo
+  (`Orbitas` em `ui/auth-shell.tsx`, anéis mais escuros que o azul), a frase
+  grande ganha um brilho que passa uma vez e o formulário entra em cascata; no
+  celular a cabine vira uma faixa compacta acima do formulário.
+- **Faixa do agora:** cada frase só entra na largura em que cabe inteira (o
+  "depois" e a barra do tempo a partir de 1536 px; a situação da próxima a
+  partir de 1280 px). Antes, a 1440 px, as três frases eram cortadas e o "em
+  10 min" sumia.
+
+**O letreiro de pendências** (`layout/ticker-de-pendencias.tsx`) fica acima da
+barra de módulos em toda tela logada: as 12 pendências mais urgentes
+(`pendenciasAbertas`, a mesma ordem da Visão Geral) passando devagar, cada uma
+um link para onde se resolve, com o total e as prioritárias no rótulo. É
+movimento que dura mais de 5 s, então **tem que poder parar** (WCAG 2.2.2): para
+sozinho com o ponteiro em cima ou com o foco dentro, e o botão ao lado pausa de
+vez. Correndo, os itens não recebem ponteiro: o mouse em cima (ou o primeiro
+toque, no celular) para o letreiro e só então o item vira clicável — tocar em
+texto em movimento abria a pendência errada, e o item comprido recortado pela
+janela "cobria" o rótulo e a pausa na conta de alvo de toque do axe (que mede a
+caixa sem o recorte). A segunda cópia da lista, que fecha o laço sem emenda, é
+`aria-hidden` e fica fora do Tab. Fundo azul profundo (branco a 7,6:1 ou mais); por isso os tons
+de estado dele são os claros (`--ticker-*` no `:root`). Some na impressão.
+
+**O aviso depois de salvar** (`layout/avisos-da-tela.tsx`, `lib/aviso.ts`,
+`server/aviso.ts`): a ação de servidor que deu certo chama
+`avisarNaProximaTela("venda-registrada")` logo antes do `redirect`; o cookie
+curto (20 s, sem `httpOnly`) leva **só a chave** — nunca nome, valor ou dado da
+paciente —, e o navegador troca pela frase fixa, mostra no canto (acima da
+barra inferior no celular) e apaga o cookie. Some em 6,5 s, com o tempo parado
+sob o ponteiro ou o foco; nunca rouba o foco; a região viva existe sempre na
+página. Chave desconhecida é ignorada. Fora de requisição (teste de unidade da
+ação), o aviso não faz nada e nunca derruba a gravação.
+
+**Painéis que recolhem** (`ui/card-recolhivel.tsx`): `CardRecolhivel` é o
+`Card` + `CardCabecalho` com o título como botão (dentro do `<h2>`, com
+`aria-expanded`); a seta gira e o corpo recolhe pela altura (grid `0fr ↔ 1fr`).
+A ação e a descrição do cabeçalho ficam à vista mesmo recolhido; o corpo
+recolhido sai do Tab e do leitor de tela. **A escolha fica num cookie**
+(`cockpit_recolhidos`, só os ids dos painéis, `lib/recolhidos.ts`) que o layout
+lê: o servidor já monta a tela com o painel fechado, sem abrir e fechar ao
+carregar. Cada painel tem um `id` curto e único no sistema (`vg-pendencias`,
+`fin-ultimas-movimentacoes`, `pac-cadastro`…). Hoje recolhem os painéis da Visão
+Geral, da ficha da paciente, do detalhe da venda, do prontuário e do documento,
+de Relacionamento, da Busca e as últimas movimentações do Financeiro. Lista
+principal de uma tela e formulário não recolhem: esconder o campo obrigatório
+ou a própria lista só atrapalha.
+
+**WhatsApp direto** (`ui/botao-whatsapp.tsx`, com `linkWhatsApp` de
+`lib/relacionamento.ts`): o parabéns sai dos Aniversariantes da Visão Geral
+(`ConviteContato` compacto — o "Marcar como enviada" só aparece depois que a
+mensagem foi aberta ou copiada, em vez de um botão apagado), a chamada de
+retorno sai de "Voltam em breve" (fora da fase "aguardando") e o pedido de
+confirmação sai do cartão da Agenda (agendado ou aguardando confirmação). As
+mensagens **não levam o procedimento** (`mensagemRetorno`,
+`mensagemConfirmacao`): é dado de saúde, vai na URL do wa.me e para um telefone
+que pode estar desatualizado. Quem envia de fato é a pessoa da equipe, na outra
+aba.
 
 ### 7.4 Acessibilidade
 
@@ -1430,7 +1544,9 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
 - A fila do dia e a faixa do agora rolam de lado ou cortam texto dentro do
   próprio contêiner; a página nunca rola na horizontal. A fila rola com o
   teclado porque cada cartão é um link.
-- `prefers-reduced-motion` respeitado.
+- `prefers-reduced-motion` respeitado: com ele, nenhuma animação roda
+  (§7.3.1). Movimento que dura mais de 5 s (o letreiro do topo) para com o
+  ponteiro, com o foco e por um botão (WCAG 2.2.2).
 - **Botão que não executa nada fica visivelmente indisponível, com a razão à
   vista** (no `title`). Não some, não engana. A primitiva para isso é
   `BotaoIndisponivel` (`ui/button.tsx`: tracejado, `aria-disabled`, razão no

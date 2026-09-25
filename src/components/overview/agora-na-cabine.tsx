@@ -44,7 +44,7 @@ export function AgoraNaCabine({ atendimentos, className }: { atendimentos: Atend
           {emAtendimento.procedimento ? `${emAtendimento.procedimento} · ` : ""}até <span className="tabular">{hora(fim)}</span>
         </p>
         <span
-          className="barra mt-4"
+          className="barra barra-viva mt-4"
           role="img"
           aria-label={`${Math.round(progresso * 100)}% do tempo previsto já passou`}
         >
