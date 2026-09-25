@@ -1438,10 +1438,11 @@ movimento que dura mais de 5 s, então **tem que poder parar** (WCAG 2.2.2): par
 sozinho com o ponteiro em cima ou com o foco dentro, e o botão ao lado pausa de
 vez. Correndo, os itens não recebem ponteiro: o mouse em cima (ou o primeiro
 toque, no celular) para o letreiro e só então o item vira clicável — tocar em
-texto em movimento abria a pendência errada, e o item comprido recortado pela
-janela "cobria" o rótulo e a pausa na conta de alvo de toque do axe (que mede a
-caixa sem o recorte). A segunda cópia da lista, que fecha o laço sem emenda, é
-`aria-hidden` e fica fora do Tab. Fundo azul profundo (branco a 7,6:1 ou mais); por isso os tons
+texto em movimento abria a pendência errada. O rótulo e a pausa ficam numa
+camada acima da janela (`z-index`): o axe mede a caixa do item comprido sem o
+recorte da janela e, com o ponteiro sobre o letreiro (na CI o ponteiro começa
+em 0,0, que é o letreiro), acusava a pausa "coberta" (target-size). A segunda
+cópia da lista, que fecha o laço sem emenda, é `aria-hidden` e fica fora do Tab. Fundo azul profundo (branco a 7,6:1 ou mais); por isso os tons
 de estado dele são os claros (`--ticker-*` no `:root`). Some na impressão.
 
 **O aviso depois de salvar** (`layout/avisos-da-tela.tsx`, `lib/aviso.ts`,

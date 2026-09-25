@@ -886,6 +886,16 @@
     animation: ticker-varre 8s var(--ease-standard) 1.4s infinite;
   }
 
+  /* O rótulo e a pausa ficam numa camada acima da janela: o item comprido que
+     passa por baixo deles (recortado pela janela) nunca os "cobre" — nem para
+     o dedo, nem na conta de alvo de toque do axe, que mede a caixa do item sem
+     o recorte e, com o ponteiro sobre o letreiro, reprovava a pausa. */
+  .ticker-rotulo,
+  .ticker-pausa {
+    position: relative;
+    z-index: 2;
+  }
+
   .ticker-rotulo {
     display: inline-flex;
     flex-shrink: 0;
@@ -931,6 +941,8 @@
 
   /* A janela por onde o letreiro passa: some nas duas pontas. */
   .ticker-janela {
+    position: relative;
+    z-index: 1;
     overflow: hidden;
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
     mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
@@ -982,10 +994,8 @@
 
   /* Correndo, o letreiro não recebe clique: o ponteiro sobre ele (ou o
      primeiro toque, no celular) para o letreiro e aí o item vira clicável —
-     tocar num texto em movimento abria outra pendência. De quebra, o item
-     comprido recortado pela janela deixa de "cobrir" o rótulo e a pausa na
-     conta de alvo de toque do axe, que mede a caixa sem o recorte. O teclado
-     não muda: o foco para o letreiro e o Enter abre. */
+     tocar num texto em movimento abria outra pendência. O teclado não muda:
+     o foco para o letreiro e o Enter abre. */
   .ticker-item {
     pointer-events: none;
   }
