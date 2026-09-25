@@ -31,6 +31,29 @@
   }
 }
 
+/* Detalhes de venda: os quatro indicadores passam a parecer parte de um painel único. */
+.app-premium section[aria-labelledby="resumo-venda"] > div {
+  gap: .75rem;
+  padding: .25rem;
+  border-radius: calc(var(--radius-painel) + .2rem);
+  background: linear-gradient(180deg, rgba(240,247,255,.86), rgba(248,251,255,.48));
+}
+
+.app-premium section[aria-labelledby="resumo-venda"] > div > div {
+  border-color: #d6e4f2;
+  background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+  box-shadow: 0 16px 38px -32px rgba(7,57,112,.42);
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+}
+
+@media (hover: hover) {
+  .app-premium section[aria-labelledby="resumo-venda"] > div > div:hover {
+    transform: translateY(-2px);
+    border-color: #bfd3e7;
+    box-shadow: 0 20px 46px -32px rgba(7,57,112,.5);
+  }
+}
+
 .app-premium .documento-folha {
   background:
     linear-gradient(180deg, rgba(255,255,255,.98), rgba(252,253,255,.98)),
@@ -79,6 +102,35 @@
     radial-gradient(420px 160px at 100% 0%, rgba(230, 243, 255, .7), transparent 70%),
     #fff;
   box-shadow: 0 20px 48px -40px rgba(7, 57, 112, .42);
+}
+
+/* Grupos compartilhados dos formulários: a melhora chega em agenda, pacientes,
+   prontuários, financeiro, relacionamento e configurações sem atingir o login. */
+.app-premium fieldset.premium-panel {
+  position: relative;
+  overflow: hidden;
+  border-color: #d9e5f1;
+  background:
+    radial-gradient(360px 130px at 100% 0%, rgba(232,244,255,.68), transparent 72%),
+    linear-gradient(180deg, #fff 0%, #fcfdff 100%);
+}
+
+.app-premium fieldset.premium-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, #68aef0 0%, #0a6ed1 45%, #07457f 100%);
+  opacity: .7;
+}
+
+.app-premium fieldset.premium-panel > div:first-of-type {
+  position: relative;
+}
+
+.app-premium fieldset.premium-panel:focus-within {
+  border-color: #bfd5ea;
+  box-shadow: 0 20px 48px -36px rgba(8,74,137,.42);
 }
 
 .app-premium .loading-premium {
