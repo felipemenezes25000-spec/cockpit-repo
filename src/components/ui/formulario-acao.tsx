@@ -33,16 +33,12 @@ export function FormularioDeAcao({
       {children}
 
       {!estado.ok && estado.mensagem ? (
-        <p role="alert" className={cn("inline-flex max-w-sm items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3 py-2 text-xs leading-5 text-negativo", alinhamento === "fim" && "text-right")}>
+        <p role="alert" className={cn("inline-flex max-w-sm items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3 py-2 text-xs leading-5 text-negativo shadow-[0_10px_24px_-20px_rgba(187,0,0,.45)]", alinhamento === "fim" && "text-right")}>
           <CircleAlert aria-hidden="true" size={14} strokeWidth={1.8} className="mt-0.5 shrink-0" />
           <span>{estado.mensagem}</span>
         </p>
       ) : null}
 
-      {/* O sucesso é só para o leitor de tela: quem enxerga já vê a lista
-          mudar. Visível, a frase repetia a mudança da linha ("Resolvida") e,
-          quando o formulário sobrevive à revalidação — "Concluir" vira
-          "Reabrir" na mesma tarefa —, ficava colada ao botão novo. */}
       {estado.ok && estado.mensagem ? (
         <p role="status" className="sr-only">
           {estado.mensagem}
@@ -55,12 +51,12 @@ export function FormularioDeAcao({
 type Tom = "neutro" | "positivo" | "negativo" | "informativo" | "silencioso" | "primario";
 
 const TONS: Record<Tom, string> = {
-  neutro: "border border-borda-controle bg-surface text-on-surface-variant hover:border-primary-container hover:bg-selecao hover:text-primary",
-  positivo: "border border-positivo-borda bg-positivo-fundo text-positivo hover:border-positivo",
-  negativo: "border border-negativo-borda bg-negativo-fundo text-negativo hover:border-negativo",
-  informativo: "border border-informativo-borda bg-informativo-fundo text-informativo-texto hover:border-informativo",
+  neutro: "border border-borda-controle bg-surface text-on-surface-variant shadow-[0_7px_18px_-18px_rgba(8,41,76,.35)] hover:-translate-y-0.5 hover:border-primary-container hover:bg-selecao hover:text-primary",
+  positivo: "border border-positivo-borda bg-positivo-fundo text-positivo shadow-[0_8px_18px_-18px_rgba(14,118,57,.35)] hover:-translate-y-0.5 hover:border-positivo",
+  negativo: "border border-negativo-borda bg-negativo-fundo text-negativo shadow-[0_8px_18px_-18px_rgba(187,0,0,.35)] hover:-translate-y-0.5 hover:border-negativo",
+  informativo: "border border-informativo-borda bg-informativo-fundo text-informativo-texto shadow-[0_8px_18px_-18px_rgba(10,110,209,.35)] hover:-translate-y-0.5 hover:border-informativo",
   silencioso: "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
-  primario: "border border-primary-container bg-primary-container text-on-primary hover:border-primary-hover hover:bg-primary-hover",
+  primario: "border border-primary-container bg-primary-container text-on-primary shadow-[0_12px_26px_-18px_rgba(10,110,209,.82)] hover:-translate-y-0.5 hover:border-primary-hover hover:bg-primary-hover hover:shadow-[0_16px_30px_-18px_rgba(8,60,115,.72)]",
 };
 
 const TAMANHOS = {
@@ -102,7 +98,7 @@ export function BotaoDeAcao({
       aria-label={rotuloAcessivel}
       title={indisponivel ? motivoIndisponivel : undefined}
       className={cn(
-        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,filter] duration-150 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100",
+        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,filter,box-shadow] duration-180 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100",
         TAMANHOS[tamanho],
         TONS[tom],
         className,
