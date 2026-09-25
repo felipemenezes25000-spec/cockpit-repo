@@ -89,7 +89,7 @@ export function GrupoDeCampos({ titulo, descricao, children, className }: { titu
   return (
     <fieldset
       className={cn(
-        "rounded-[var(--radius-painel)] border border-card-border bg-surface px-4 py-5 sm:px-6 sm:py-6",
+        "premium-panel rounded-[var(--radius-painel)] border border-card-border bg-surface px-4 py-5 shadow-[0_14px_34px_-30px_rgba(8,41,76,.38)] sm:px-6 sm:py-6",
         className,
       )}
     >
