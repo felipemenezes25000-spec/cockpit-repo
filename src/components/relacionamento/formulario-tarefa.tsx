@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardPlus } from "lucide-react";
+import { CircleAlert, ClipboardPlus } from "lucide-react";
 import Link from "next/link";
 import { useActionState } from "react";
 import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
@@ -15,12 +15,15 @@ export function FormularioTarefa() {
   const [estado, enviar] = useActionState(criarTarefa, { erros: {} } as EstadoRelacionamento);
   const { erros, valores = {} } = estado;
 
-  return <form action={enviar} noValidate className="flex flex-col gap-6 sm:gap-7">
+  return <form action={enviar} noValidate className="flex flex-col gap-6">
     {erros.geral ? (
-      <p role="alert" className="rounded-[var(--radius-painel)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo shadow-[0_12px_30px_-26px_rgba(153,27,27,.35)]">{erros.geral}</p>
+      <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo">
+        <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
+        {erros.geral}
+      </p>
     ) : null}
 
-    <GrupoDeCampos titulo="Organização" descricao="Defina o tipo e a prioridade para a tarefa cair no lugar certo da fila operacional.">
+    <GrupoDeCampos titulo="Classificação" descricao="Defina o tipo e a prioridade para a fila organizar o que exige atenção primeiro.">
       <div className="grid gap-5 sm:grid-cols-2">
         <Campo id="tipo" rotulo="Tipo" obrigatorio erro={erros.tipo}>
           <select key={`tipo-${valores.tipo}`} id="tipo" name="tipo" defaultValue={valores.tipo || "retorno"} className={cn(ENTRADA, erros.tipo && ENTRADA_ERRO)}>
@@ -35,17 +38,17 @@ export function FormularioTarefa() {
       </div>
     </GrupoDeCampos>
 
-    <GrupoDeCampos titulo="Pessoa relacionada" descricao="Vincule uma paciente quando a tarefa fizer parte de um acompanhamento individual.">
+    <GrupoDeCampos titulo="Responsabilidade de contato" descricao="A paciente é opcional: vincule quando a tarefa estiver ligada a um relacionamento específico.">
       <SeletorPaciente inicial={null} erro={erros.paciente_id} obrigatorio={false} />
     </GrupoDeCampos>
 
-    <GrupoDeCampos titulo="Ação e prazo" descricao="Escreva o próximo passo de forma objetiva e, se necessário, determine quando ele deve estar concluído.">
-      <div className="flex flex-col gap-5">
+    <GrupoDeCampos titulo="Próximo passo" descricao="Escreva a ação em linguagem operacional e adicione prazo somente quando houver uma data real.">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
         <Campo id="descricao" rotulo="O que precisa ser feito" obrigatorio erro={erros.descricao}>
-          <textarea id="descricao" name="descricao" maxLength={500} defaultValue={valores.descricao} className={cn(AREA_TEXTO, erros.descricao && ENTRADA_ERRO)} />
+          <textarea id="descricao" name="descricao" maxLength={500} defaultValue={valores.descricao} placeholder="Ex.: ligar para confirmar se recebeu o orçamento" className={cn(AREA_TEXTO, erros.descricao && ENTRADA_ERRO)} />
         </Campo>
 
-        <Campo id="prazo" rotulo="Prazo" erro={erros.prazo} className="sm:max-w-xs">
+        <Campo id="prazo" rotulo="Prazo" erro={erros.prazo}>
           <input id="prazo" name="prazo" type="date" defaultValue={valores.prazo} className={cn(ENTRADA, erros.prazo && ENTRADA_ERRO)} />
         </Campo>
       </div>
@@ -60,7 +63,7 @@ export function FormularioTarefa() {
       >
         Criar tarefa
       </BotaoDeAcao>
-      <Link href="/relacionamento?aba=tarefas" className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] duration-150 hover:bg-surface-container-low hover:text-primary active:scale-[0.985]">
+      <Link href="/relacionamento?aba=tarefas" className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-[0.985]">
         Cancelar
       </Link>
     </RodapeAcoesFormulario>
