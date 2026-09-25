@@ -17,3 +17,4 @@ export type SituacaoAcompanhamento = Enums["situacao_acompanhamento"];
 export type SituacaoRecebimento = Enums["situacao_recebimento"];
 export type FormaPagamento = Enums["forma_pagamento"];
 export type CategoriaDespesa = Enums["categoria_despesa"];
+export type EtapaLead = Enums["etapa_lead"];

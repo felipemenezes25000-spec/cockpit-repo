@@ -986,6 +986,278 @@ select testes.falha('recepção não registra foto (a RLS recusa antes do arquiv
     testes.lido('prontuario_0028'), testes.lido('foto_0028_png')), '42501');
 
 -- ---------------------------------------------------------------------
+-- Captação: leads, trilha de etapas e metas (0029); contatos comerciais
+-- (0030) conferidos pelo banco (0031)
+-- ---------------------------------------------------------------------
+
+select testes.como(null);
+select testes.falha('anon não lê leads', 'select * from public.leads', '42501');
+select testes.falha('anon não lê a trilha de etapas', 'select * from public.lead_etapas', '42501');
+select testes.falha('anon não lê metas comerciais', 'select * from public.metas_comerciais', '42501');
+select testes.falha('anon não lê contatos comerciais', 'select * from public.lead_interacoes', '42501');
+select testes.falha('anon não converte lead em paciente',
+  $q$ select public.lead_converter_em_paciente('00000000-0000-4000-8000-000000000000') $q$, '42501');
+
+-- O que a API alcança é o que os grants dizem: resumo do contato, venda,
+-- autoria e hora são escritos só pelo banco.
+select testes.igual('a sessão não escreve resumo do contato, venda nem autoria do lead',
+  $q$ select concat_ws(':',
+        has_column_privilege('authenticated', 'public.leads', 'proximo_contato', 'update')::text,
+        has_column_privilege('authenticated', 'public.leads', 'ultimo_contato_em', 'update')::text,
+        has_column_privilege('authenticated', 'public.leads', 'proximo_contato', 'insert')::text,
+        has_column_privilege('authenticated', 'public.leads', 'venda_id', 'update')::text,
+        has_column_privilege('authenticated', 'public.leads', 'criado_por', 'insert')::text,
+        has_table_privilege('authenticated', 'public.leads', 'delete')::text) $q$,
+  'false:false:false:false:false:false');
+select testes.igual('contato comercial: a sessão só insere canal, observação e retorno',
+  $q$ select concat_ws(':',
+        has_column_privilege('authenticated', 'public.lead_interacoes', 'canal', 'insert')::text,
+        has_column_privilege('authenticated', 'public.lead_interacoes', 'proximo_contato', 'insert')::text,
+        has_column_privilege('authenticated', 'public.lead_interacoes', 'por', 'insert')::text,
+        has_column_privilege('authenticated', 'public.lead_interacoes', 'em', 'insert')::text,
+        has_any_column_privilege('authenticated', 'public.lead_interacoes', 'update')::text,
+        has_table_privilege('authenticated', 'public.lead_interacoes', 'delete')::text) $q$,
+  'true:true:false:false:false:false');
+select testes.igual('sequências da Captação: a da trilha sem a sessão, a do contato só com USAGE',
+  $q$ select concat_ws(':',
+        has_sequence_privilege('authenticated', 'public.lead_etapas_id_seq', 'usage')::text,
+        has_sequence_privilege('authenticated', 'public.lead_interacoes_id_seq', 'usage')::text,
+        has_sequence_privilege('authenticated', 'public.lead_interacoes_id_seq', 'select')::text,
+        has_sequence_privilege('authenticated', 'public.lead_interacoes_id_seq', 'update')::text,
+        has_sequence_privilege('anon', 'public.lead_interacoes_id_seq', 'usage')::text) $q$,
+  'false:true:false:false:false');
+
+-- Recepção opera a carteira.
+select testes.como('recepcao@cockpit.local');
+
+select testes.linhas('recepção cadastra lead',
+  $q$ insert into public.leads (nome, telefone, email, origem, campanha, procedimento_interesse_id)
+      values ('Lead Banco Conversão', '11987650001', 'lead.conversao@teste.local', 'Instagram', 'Teste 0029',
+              'b0000000-0000-4000-8000-000000000001') $q$, 1);
+select testes.guardar('lead_conversao', (select id::text from public.leads where nome = 'Lead Banco Conversão'));
+select testes.igual('lead nasce com autor e trilha escritos pelo banco',
+  format($q$ select (l.criado_por = auth.uid())::text || ':' || count(e.id) || ':' || min(e.para::text) || ':' || bool_and(e.por = auth.uid())::text
+      from public.leads l join public.lead_etapas e on e.lead_id = l.id
+     where l.id = %L group by l.criado_por $q$, testes.lido('lead_conversao')),
+  'true:1:novo:true');
+
+select testes.falha('a carteira não fabrica venda concluída',
+  format($q$ update public.leads set etapa = 'ganho' where id = %L $q$, testes.lido('lead_conversao')), '23514');
+select testes.falha('a sessão não grava venda_id no lead',
+  format($q$ update public.leads set venda_id = %L where id = %L $q$, testes.lido('venda_pix'), testes.lido('lead_conversao')), '42501');
+select testes.falha('a sessão não escreve o retorno direto no lead',
+  format($q$ update public.leads set proximo_contato = current_date + 3 where id = %L $q$, testes.lido('lead_conversao')), '42501');
+select testes.falha('perda sem motivo é recusada',
+  format($q$ update public.leads set etapa = 'perdido' where id = %L $q$, testes.lido('lead_conversao')), '23514');
+select testes.falha('recepção não apaga lead',
+  format($q$ delete from public.leads where id = %L $q$, testes.lido('lead_conversao')), '42501');
+select testes.falha('ninguém escreve na trilha de etapas',
+  format($q$ insert into public.lead_etapas (lead_id, para) values (%L, 'ganho') $q$, testes.lido('lead_conversao')), '42501');
+select testes.falha('ninguém apaga a trilha de etapas', $q$ delete from public.lead_etapas $q$, '42501');
+select testes.falha('recepção não cria meta comercial',
+  $q$ insert into public.metas_comerciais (competencia, meta_faturamento, ticket_medio_planejado)
+      values (date_trunc('month', current_date)::date, 50000, 1500) $q$, '42501');
+
+-- Um lead para a limpeza dos dados de exemplo, lá no fim: vinculado a uma
+-- paciente e interessado num procedimento que só existem como exemplo.
+select testes.linhas('recepção vincula lead a paciente e procedimento de exemplo',
+  $q$ insert into public.leads (nome, origem, paciente_id, procedimento_interesse_id)
+      values ('Lead Banco Limpeza', 'Instagram', 'c0000000-0000-4000-8000-000000000013',
+              'b0000000-0000-4000-8000-000000000009') $q$, 1);
+select testes.guardar('lead_limpeza', (select id::text from public.leads where nome = 'Lead Banco Limpeza'));
+
+-- Financeiro acompanha o funil e cuida da meta.
+select testes.como('financeiro@cockpit.local');
+
+select testes.igual('financeiro acompanha o funil',
+  $q$ select (count(*) > 0)::text from public.leads $q$, 'true');
+select testes.falha('financeiro não cadastra lead',
+  $q$ insert into public.leads (nome, origem) values ('Lead do Financeiro', 'Outro') $q$, '42501');
+select testes.linhas('financeiro não move lead',
+  format($q$ update public.leads set etapa = 'qualificado' where id = %L $q$, testes.lido('lead_conversao')), 0);
+select testes.falha('financeiro não converte lead',
+  format($q$ select public.lead_converter_em_paciente(%L) $q$, testes.lido('lead_conversao')), '42501');
+select testes.falha('financeiro não registra contato comercial',
+  format($q$ insert into public.lead_interacoes (lead_id, canal) values (%L, 'telefone') $q$, testes.lido('lead_conversao')), '42501');
+select testes.linhas('financeiro define a meta do mês',
+  $q$ insert into public.metas_comerciais (competencia, meta_faturamento, ticket_medio_planejado)
+      values (date_trunc('month', current_date)::date, 50000, 1500) $q$, 1);
+select testes.linhas('financeiro ajusta a meta',
+  $q$ update public.metas_comerciais set meta_faturamento = 60000
+       where competencia = date_trunc('month', current_date)::date and procedimento_id is null $q$, 1);
+select testes.falha('a competência da meta não muda pela API',
+  $q$ update public.metas_comerciais set competencia = '2000-01-01' $q$, '42501');
+select testes.falha('meta fora do primeiro dia do mês é recusada',
+  $q$ insert into public.metas_comerciais (competencia, meta_faturamento, ticket_medio_planejado)
+      values (date_trunc('month', current_date)::date + 5, 1000, 100) $q$, '23514');
+select testes.falha('segunda meta geral no mesmo mês é recusada',
+  $q$ insert into public.metas_comerciais (competencia, meta_faturamento, ticket_medio_planejado)
+      values (date_trunc('month', current_date)::date, 1, 1) $q$, '23505');
+-- Procedimento de exemplo com meta própria: a limpeza, lá no fim, não o apaga.
+select testes.linhas('meta por procedimento convive com a geral',
+  $q$ insert into public.metas_comerciais (competencia, procedimento_id, meta_faturamento, ticket_medio_planejado)
+      values (date_trunc('month', current_date)::date, 'b0000000-0000-4000-8000-000000000008', 5000, 250) $q$, 1);
+
+-- De volta à recepção: conversão, perda e reabertura.
+select testes.como('recepcao@cockpit.local');
+
+select testes.linhas('recepção não altera meta',
+  $q$ update public.metas_comerciais set meta_faturamento = 1 $q$, 0);
+
+select testes.guardar('paciente_do_lead',
+  public.lead_converter_em_paciente(testes.lido('lead_conversao')::uuid)::text);
+select testes.igual('conversão cria a paciente com os dados do lead e promove a etapa',
+  format($q$ select p.nome || ':' || p.telefone || ':' || coalesce(p.origem, '') || ':' || l.etapa::text || ':' || p.exemplo::text
+      from public.leads l join public.pacientes p on p.id = l.paciente_id where l.id = %L $q$, testes.lido('lead_conversao')),
+  'Lead Banco Conversão:11987650001:Instagram:qualificado:false');
+select testes.igual('conversão repetida devolve a mesma paciente, sem duplicar',
+  format($q$ select (public.lead_converter_em_paciente(%L) = %L::uuid)::text || ':' ||
+        (select count(*) from public.pacientes where nome = 'Lead Banco Conversão') $q$,
+    testes.lido('lead_conversao'), testes.lido('paciente_do_lead')),
+  'true:1');
+
+select testes.linhas('recepção cadastra lead que vai ser perdido',
+  $q$ insert into public.leads (nome, origem) values ('Lead Banco Perda', 'Indicação') $q$, 1);
+select testes.guardar('lead_perda', (select id::text from public.leads where nome = 'Lead Banco Perda'));
+select testes.linhas('perda com motivo',
+  format($q$ update public.leads set etapa = 'perdido', motivo_perda = 'Preço acima do esperado' where id = %L $q$,
+    testes.lido('lead_perda')), 1);
+select testes.falha('lead perdido não vira paciente sem ser reaberto',
+  format($q$ select public.lead_converter_em_paciente(%L) $q$, testes.lido('lead_perda')), 'P0001');
+select testes.falha('lead perdido não recebe contato',
+  format($q$ insert into public.lead_interacoes (lead_id, canal) values (%L, 'telefone') $q$, testes.lido('lead_perda')), 'P0001');
+select testes.linhas('lead perdido é reaberto',
+  format($q$ update public.leads set etapa = 'novo', motivo_perda = null where id = %L $q$, testes.lido('lead_perda')), 1);
+select testes.linhas('e perdido de novo, com outro motivo',
+  format($q$ update public.leads set etapa = 'perdido', motivo_perda = 'Sem horário disponível' where id = %L $q$,
+    testes.lido('lead_perda')), 1);
+select testes.igual('cada perda guarda o próprio motivo na trilha',
+  format($q$ select string_agg(motivo, ' | ' order by id) from public.lead_etapas where lead_id = %L and para = 'perdido' $q$,
+    testes.lido('lead_perda')),
+  'Preço acima do esperado | Sem horário disponível');
+select testes.igual('o lead guarda só o motivo atual',
+  format($q$ select motivo_perda from public.leads where id = %L $q$, testes.lido('lead_perda')), 'Sem horário disponível');
+
+-- Contatos comerciais (0030) e o que a 0031 passou a conferir.
+select testes.linhas('recepção registra contato com retorno para hoje',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, observacao, proximo_contato)
+      values (%L, 'whatsapp', 'Pediu os valores por mensagem.', (now() at time zone 'America/Sao_Paulo')::date) $q$,
+    testes.lido('lead_conversao')), 1);
+select testes.igual('contato: autor e hora escritos pelo banco',
+  format($q$ select (por = auth.uid())::text || ':' || (em > now() - interval '1 minute')::text
+      from public.lead_interacoes where lead_id = %L $q$, testes.lido('lead_conversao')),
+  'true:true');
+select testes.igual('o contato atualiza o resumo do lead',
+  format($q$ select (proximo_contato = (now() at time zone 'America/Sao_Paulo')::date)::text || ':' || (ultimo_contato_em is not null)::text
+      from public.leads where id = %L $q$, testes.lido('lead_conversao')),
+  'true:true');
+select testes.falha('contato não informa o autor',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, por) values (%L, 'telefone', auth.uid()) $q$,
+    testes.lido('lead_conversao')), '42501');
+select testes.falha('contato não informa a hora',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, em) values (%L, 'telefone', now() - interval '3 days') $q$,
+    testes.lido('lead_conversao')), '42501');
+select testes.falha('retorno no passado é recusado',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, proximo_contato)
+      values (%L, 'telefone', (now() at time zone 'America/Sao_Paulo')::date - 1) $q$, testes.lido('lead_conversao')), 'P0001');
+select testes.falha('canal fora da lista é recusado',
+  format($q$ insert into public.lead_interacoes (lead_id, canal) values (%L, 'sinal de fumaça') $q$,
+    testes.lido('lead_conversao')), '23514');
+select testes.falha('observação acima de 1000 caracteres é recusada',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, observacao) values (%L, 'email', repeat('x', 1001)) $q$,
+    testes.lido('lead_conversao')), '23514');
+select testes.linhas('contato sem retorno',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, observacao) values (%L, 'telefone', 'Ligou de volta e vai pensar.') $q$,
+    testes.lido('lead_conversao')), 1);
+select testes.igual('o resumo segue o contato mais recente: sem retorno programado',
+  format($q$ select coalesce(proximo_contato::text, 'sem retorno') from public.leads where id = %L $q$, testes.lido('lead_conversao')),
+  'sem retorno');
+select testes.falha('ninguém edita um contato registrado',
+  format($q$ update public.lead_interacoes set observacao = 'reescrito' where lead_id = %L $q$, testes.lido('lead_conversao')), '42501');
+select testes.falha('ninguém apaga um contato registrado',
+  format($q$ delete from public.lead_interacoes where lead_id = %L $q$, testes.lido('lead_conversao')), '42501');
+
+select testes.como('admin@cockpit.local');
+
+select testes.linhas('administradora registra contato com retorno em uma semana',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, observacao, proximo_contato)
+      values (%L, 'presencial', 'Passou na clínica para conhecer.', (now() at time zone 'America/Sao_Paulo')::date + 7) $q$,
+    testes.lido('lead_conversao')), 1);
+select testes.igual('contato entra na auditoria',
+  format($q$ select count(*)::text from public.auditoria where tabela = 'lead_interacoes' and dados ->> 'lead_id' = %L $q$,
+    testes.lido('lead_conversao')), '3');
+
+-- Agenda e Financeiro movem o funil pelo banco.
+select testes.como('recepcao@cockpit.local');
+
+select testes.linhas('atendimento para a paciente vinda do lead',
+  format($q$ insert into public.atendimentos (paciente_id, profissional_id, procedimento_id, inicio, duracao_min)
+      values (%L, 'a0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000001', (current_date + 500) + time '09:00', 45) $q$,
+    testes.lido('paciente_do_lead')), 1);
+select testes.igual('o agendamento avança o lead',
+  format($q$ select etapa::text from public.leads where id = %L $q$, testes.lido('lead_conversao')), 'agendamento');
+
+select testes.guardar('venda_do_lead', public.venda_registrar(
+  testes.lido('paciente_do_lead')::uuid, 'b0000000-0000-4000-8000-000000000001', current_date,
+  1450, 0, 'pix', 1, null, 0, 0, false, null, null, 'previsto', current_date + 7, null, 'Venda do lead')::text);
+select testes.igual('a venda converte o lead: ganho, com a venda real e sem retorno pendente',
+  format($q$ select etapa::text || ':' || (venda_id = %L::uuid)::text || ':' || coalesce(proximo_contato::text, 'sem retorno')
+      from public.leads where id = %L $q$, testes.lido('venda_do_lead'), testes.lido('lead_conversao')),
+  'ganho:true:sem retorno');
+select testes.igual('a trilha registra o caminho inteiro',
+  format($q$ select string_agg(para::text, '>' order by id) from public.lead_etapas where lead_id = %L $q$,
+    testes.lido('lead_conversao')),
+  'novo>qualificado>agendamento>ganho');
+select testes.falha('lead ganho não volta de etapa',
+  format($q$ update public.leads set etapa = 'qualificado' where id = %L $q$, testes.lido('lead_conversao')), '23514');
+select testes.falha('lead ganho não recebe contato comercial',
+  format($q$ insert into public.lead_interacoes (lead_id, canal) values (%L, 'whatsapp') $q$, testes.lido('lead_conversao')), 'P0001');
+select testes.igual('o histórico comercial fica depois do ganho',
+  format($q$ select count(*)::text from public.lead_interacoes where lead_id = %L $q$, testes.lido('lead_conversao')), '3');
+
+select testes.linhas('recepção cadastra lead para acompanhar',
+  $q$ insert into public.leads (nome, origem) values ('Lead Banco Retorno', 'Google') $q$, 1);
+select testes.guardar('lead_retorno', (select id::text from public.leads where nome = 'Lead Banco Retorno'));
+select testes.linhas('contato com retorno em três dias',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, proximo_contato)
+      values (%L, 'instagram', (now() at time zone 'America/Sao_Paulo')::date + 3) $q$, testes.lido('lead_retorno')), 1);
+select testes.linhas('lead acompanhado é perdido',
+  format($q$ update public.leads set etapa = 'perdido', motivo_perda = 'Escolheu outra clínica' where id = %L $q$,
+    testes.lido('lead_retorno')), 1);
+select testes.igual('encerrar limpa o retorno e preserva o histórico',
+  format($q$ select coalesce(proximo_contato::text, 'sem retorno') || ':' || (ultimo_contato_em is not null)::text || ':' ||
+        (select count(*) from public.lead_interacoes where lead_id = %1$L)
+      from public.leads where id = %1$L $q$, testes.lido('lead_retorno')),
+  'sem retorno:true:1');
+select testes.linhas('recepção cadastra lead com retorno que vai atrasar',
+  $q$ insert into public.leads (nome, origem) values ('Lead Banco Atrasado', 'WhatsApp') $q$, 1);
+select testes.guardar('lead_atrasado', (select id::text from public.leads where nome = 'Lead Banco Atrasado'));
+
+-- Manutenção pelo SQL do projeto (sem sessão): importa histórico, mas o
+-- lead encerrado continua sem retorno e o resumo não volta no tempo.
+select testes.como(null);
+select set_config('role', 'postgres', true);
+select set_config('request.jwt.claims', '', true);
+
+select testes.igual('lead encerrado não guarda retorno nem pelo SQL do projeto',
+  format($q$ with feito as (update public.leads set proximo_contato = current_date + 5 where id = %L returning proximo_contato)
+      select coalesce(proximo_contato::text, 'sem retorno') from feito $q$, testes.lido('lead_retorno')),
+  'sem retorno');
+select testes.igual('a CHECK do lead encerrado sem retorno existe',
+  $q$ select count(*)::text from pg_constraint where conname = 'leads_encerrado_sem_retorno' and contype = 'c' $q$, '1');
+select testes.linhas('importação de contato antigo pelo SQL',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, observacao, em)
+      values (%L, 'telefone', 'Contato antigo importado.', now() - interval '30 days') $q$, testes.lido('lead_retorno')), 1);
+select testes.igual('o contato antigo não volta o resumo no tempo',
+  format($q$ select (ultimo_contato_em = now())::text from public.leads where id = %L $q$, testes.lido('lead_retorno')), 'true');
+select testes.linhas('retorno que já passou só entra sem sessão (importação)',
+  format($q$ insert into public.lead_interacoes (lead_id, canal, proximo_contato)
+      values (%L, 'telefone', (now() at time zone 'America/Sao_Paulo')::date - 2) $q$, testes.lido('lead_atrasado')), 1);
+select testes.igual('é o retorno atrasado da carteira',
+  format($q$ select ((now() at time zone 'America/Sao_Paulo')::date - proximo_contato)::text from public.leads where id = %L $q$,
+    testes.lido('lead_atrasado')), '2');
+
+-- ---------------------------------------------------------------------
 -- Limpeza dos dados de exemplo (`supabase/dados-exemplo-limpar.sql`)
 --
 -- Por último, porque apaga o seed — e tudo volta no ROLLBACK. O
@@ -1091,8 +1363,15 @@ select testes.igual('limpeza: só fica paciente de exemplo que um dado real apon
          and not exists (select 1 from public.recebimentos x where x.paciente_id = p.id)
          and not exists (select 1 from public.vendas x where x.paciente_id = p.id)
          and not exists (select 1 from public.prontuarios x where x.paciente_id = p.id)
-         and not exists (select 1 from public.documentos x where x.paciente_id = p.id) $q$,
+         and not exists (select 1 from public.documentos x where x.paciente_id = p.id)
+         and not exists (select 1 from public.leads x where x.paciente_id = p.id) $q$,
   '0');
+select testes.igual('limpeza: lead real mantém a paciente e o procedimento de exemplo que aponta',
+  format($q$ select paciente_id::text || ':' || procedimento_interesse_id::text from public.leads where id = %L $q$,
+    testes.lido('lead_limpeza')),
+  'c0000000-0000-4000-8000-000000000013:b0000000-0000-4000-8000-000000000009');
+select testes.igual('limpeza: procedimento de exemplo com meta comercial própria fica',
+  $q$ select count(*)::text from public.procedimentos where id = 'b0000000-0000-4000-8000-000000000008' $q$, '1');
 select testes.igual('limpeza: paciente de exemplo com venda real fica',
   $q$ select count(*)::text from public.pacientes where id = 'c0000000-0000-4000-8000-000000000001' $q$, '1');
 select testes.igual('limpeza: atendimento de exemplo com tarefa real fica',

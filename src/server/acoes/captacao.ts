@@ -6,18 +6,23 @@ import { ehFinanceira, usuarioAtual } from "@/lib/auth";
 import {
   ETAPAS_FUNIL,
   lerValoresMeta,
+  normalizarContato,
   normalizarLead,
+  validarContato,
   validarLead,
+  type ErrosContato,
   type ErrosLead,
   type ErrosMeta,
+  type EtapaLead,
   type ValoresLead,
   type ValoresMeta,
 } from "@/lib/captacao";
-import { comoClienteCaptacao, type EtapaLead } from "@/lib/captacao-banco";
+import { chaveDoDia } from "@/lib/dates";
 import { mensagemDoBanco } from "@/lib/erros-banco";
 import { campoTexto, uuidValido, valoresDigitados } from "@/lib/formulario";
 import { registrarFalha } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
+import type { TablesInsert } from "@/lib/supabase/tipos-banco";
 
 export type EstadoLead = {
   erros: ErrosLead;
@@ -30,6 +35,22 @@ export type EstadoMeta = {
   valores?: Record<string, string>;
   sucesso?: string;
 };
+
+export type EstadoContato = {
+  erros: ErrosContato;
+  valores?: Record<string, string>;
+  sucesso?: string;
+};
+
+/**
+ * O que a ação grava em `lead_interacoes`: exatamente as colunas do grant de
+ * INSERT (0030). Autor (`por`) e hora (`em`) são do banco — o tipo gerado os
+ * aceita, o grant não —, e o resumo no lead é do gatilho.
+ */
+type NovoContatoLead = Pick<
+  TablesInsert<"lead_interacoes">,
+  "lead_id" | "canal" | "observacao" | "proximo_contato"
+>;
 
 async function exigirOperadorDeLeads(): Promise<string | null> {
   const usuario = await usuarioAtual();
@@ -71,8 +92,7 @@ export async function criarLead(
   }
   if (Object.keys(erros).length > 0) return { erros, valores: valoresDigitados(dados) };
 
-  const base = await clienteServidor();
-  const supabase = comoClienteCaptacao(base);
+  const supabase = await clienteServidor();
   const { error } = await supabase.from("leads").insert({
     nome: valores.nome,
     telefone: valores.telefone || null,
@@ -120,8 +140,7 @@ export async function salvarMetaComercial(
   const leitura = lerValoresMeta(valores);
   if ("erros" in leitura) return { erros: leitura.erros, valores: valoresDigitados(dados) };
 
-  const base = await clienteServidor();
-  const supabase = comoClienteCaptacao(base);
+  const supabase = await clienteServidor();
   const existente = await supabase
     .from("metas_comerciais")
     .select("id")
@@ -185,8 +204,7 @@ export async function converterLeadEmPaciente(
   const leadId = campoTexto(dados, "id", 36);
   if (!uuidValido(leadId)) return falha("Lead não identificado.");
 
-  const base = await clienteServidor();
-  const supabase = comoClienteCaptacao(base);
+  const supabase = await clienteServidor();
   const { data: pacienteId, error } = await supabase.rpc("lead_converter_em_paciente", {
     p_lead_id: leadId,
   });
@@ -226,8 +244,8 @@ export async function vincularPacienteLead(
   if (!uuidValido(leadId)) return falha("Lead não identificado.");
   if (!uuidValido(pacienteId)) return falha("Escolha uma paciente para vincular.");
 
-  const base = await clienteServidor();
-  const paciente = await base
+  const supabase = await clienteServidor();
+  const paciente = await supabase
     .from("pacientes")
     .select("id")
     .eq("id", pacienteId)
@@ -241,7 +259,6 @@ export async function vincularPacienteLead(
   }
   if (!paciente.data) return falha("Paciente não encontrada.");
 
-  const supabase = comoClienteCaptacao(base);
   const { data, error } = await supabase
     .from("leads")
     .update({ paciente_id: pacienteId })
@@ -283,8 +300,7 @@ export async function mudarEtapaLead(
   }
   if (para === "perdido" && motivo.length < 3) return falha("Informe o motivo da perda.");
 
-  const base = await clienteServidor();
-  const supabase = comoClienteCaptacao(base);
+  const supabase = await clienteServidor();
   const { data, error } = await supabase
     .from("leads")
     .update({
@@ -303,4 +319,71 @@ export async function mudarEtapaLead(
 
   revalidarCaptacao();
   return sucesso("Lead movido no funil.");
+}
+
+/**
+ * Registra um contato comercial e, se houver, o próximo combinado. A etapa
+ * não muda: contato diz QUANDO a equipe falou com o lead, a etapa diz ONDE
+ * ele está. Lead encerrado e retorno no passado são recusados aqui e, de
+ * novo, pelo banco (0031) — que também trava o lead contra um encerramento
+ * no mesmo instante.
+ */
+export async function registrarContatoLead(
+  _anterior: EstadoContato,
+  dados: FormData,
+): Promise<EstadoContato> {
+  const barrado = await exigirOperadorDeLeads();
+  if (barrado) return { erros: { geral: barrado }, valores: valoresDigitados(dados) };
+
+  const leadId = campoTexto(dados, "lead_id", 36);
+  if (!uuidValido(leadId)) {
+    return { erros: { geral: "Lead não identificado." }, valores: valoresDigitados(dados) };
+  }
+
+  // Sem corte no limite da regra: observação longa volta como erro do campo,
+  // e não truncada em silêncio.
+  const valores = normalizarContato({
+    canal: campoTexto(dados, "canal", 20),
+    observacao: campoTexto(dados, "observacao"),
+    proximo_contato: campoTexto(dados, "proximo_contato", 20),
+  });
+  const erros = validarContato(valores, chaveDoDia());
+  if (Object.keys(erros).length > 0) return { erros, valores: valoresDigitados(dados) };
+
+  const contato: NovoContatoLead = {
+    lead_id: leadId,
+    canal: valores.canal,
+    observacao: valores.observacao || null,
+    proximo_contato: valores.proximo_contato || null,
+  };
+
+  const supabase = await clienteServidor();
+  const { data, error } = await supabase
+    .from("lead_interacoes")
+    .insert(contato)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    registrarFalha("captação: registrar contato", error);
+    return {
+      erros: {
+        geral: mensagemDoBanco(error, "Não foi possível registrar o contato. Tente de novo."),
+      },
+      valores: valoresDigitados(dados),
+    };
+  }
+  if (!data) {
+    return {
+      erros: { geral: "O contato não foi registrado. Confira se o lead continua aberto." },
+      valores: valoresDigitados(dados),
+    };
+  }
+
+  revalidarCaptacao();
+  return {
+    erros: {},
+    valores: {},
+    sucesso: contato.proximo_contato ? "Contato registrado e retorno programado." : "Contato registrado.",
+  };
 }

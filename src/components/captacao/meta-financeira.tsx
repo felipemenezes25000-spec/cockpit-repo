@@ -85,6 +85,7 @@ export function MetaFinanceira({
           </div>
           <span
             className="barra mt-3"
+            role="img"
             aria-label={configurada ? `${percentualMeta}% da meta atingida` : "Meta ainda não definida"}
           >
             <span style={{ width: configurada ? `${Math.min(100, plano.percentualMeta)}%` : "0%" }} />

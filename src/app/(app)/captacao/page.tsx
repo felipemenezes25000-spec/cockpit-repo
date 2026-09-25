@@ -11,12 +11,13 @@ import { NavegacaoMes } from "@/components/financeiro/navegacao-mes";
 import { Card, CardCorpo } from "@/components/ui/card";
 import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { usuarioAtual } from "@/lib/auth";
-import { ETAPAS_FUNIL } from "@/lib/captacao";
+import { ETAPAS_FUNIL, lerFiltroAtencao } from "@/lib/captacao";
+import { chaveDoDia } from "@/lib/dates";
+import { formatarMesAno } from "@/lib/format";
 import { dataParaColuna, lerMes } from "@/lib/periodo";
 import { painelCaptacao } from "@/server/consultas/captacao";
 import {
   listarLeadsCaptacao,
-  type FiltroAtencaoLead,
   type FiltroEtapaLead,
   type PaginaDeLeads,
 } from "@/server/consultas/captacao-leads";
@@ -39,10 +40,6 @@ function lerEtapa(valor: string | string[] | undefined): FiltroEtapaLead {
     : "todos";
 }
 
-function lerAtencao(valor: string | string[] | undefined): FiltroAtencaoLead {
-  return lerTexto(valor, 20) === "parados" ? "parados" : "todos";
-}
-
 const CARTEIRA_VAZIA: PaginaDeLeads = {
   itens: [],
   total: 0,
@@ -59,7 +56,7 @@ export default async function PaginaCaptacao({
   const periodo = lerMes(parametros.mes);
   const busca = lerTexto(parametros.busca);
   const etapa = lerEtapa(parametros.etapa);
-  const atencao = lerAtencao(parametros.atencao);
+  const atencao = lerFiltroAtencao(lerTexto(parametros.atencao, 20));
   const origemSolicitada = lerTexto(parametros.origem, 60);
   const campanhaSolicitada = lerTexto(parametros.campanha, 120);
   const pagina = Math.max(1, Number(lerTexto(parametros.pagina, 8)) || 1);
@@ -105,6 +102,11 @@ export default async function PaginaCaptacao({
             <SeloHero>{painel.vendasNoMes} vendas no período</SeloHero>
             {painel.estruturaDisponivel ? <SeloHero>{carteira.total} leads no recorte</SeloHero> : null}
             {painel.leadsParados > 0 ? <SeloHero tom="atencao">{painel.leadsParados} pedindo atenção</SeloHero> : null}
+            {painel.retornosAtrasados > 0 ? (
+              <SeloHero tom="negativo">
+                {painel.retornosAtrasados === 1 ? "1 retorno atrasado" : `${painel.retornosAtrasados} retornos atrasados`}
+              </SeloHero>
+            ) : null}
             {metaConfigurada ? <SeloHero tom="positivo">Meta configurada</SeloHero> : <SeloHero tom="atencao">Meta ainda não definida</SeloHero>}
           </>
         }
@@ -130,7 +132,7 @@ export default async function PaginaCaptacao({
             </span>
             <h2 className="titulo-secao mt-5 text-on-surface">A estrutura de Captação ainda não foi aplicada ao banco</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
-              O frontend já está pronto, mas as tabelas de leads, histórico de etapas e metas nascem na migração 0029. Aplique as migrações pendentes antes de usar este módulo.
+              O frontend já está pronto, mas as tabelas de leads, histórico de etapas, metas e contatos comerciais nascem nas migrações 0029 a 0031. Aplique as migrações pendentes antes de usar este módulo.
             </p>
             <code className="mt-4 rounded-[var(--radius-controle)] border border-card-border bg-surface-container-low px-3 py-2 text-xs text-primary">npm run db:push</code>
           </CardCorpo>
@@ -167,6 +169,8 @@ export default async function PaginaCaptacao({
             percentualReceitaAtribuida={painel.percentualReceitaAtribuida}
             leadsAbertos={painel.leadsAbertos}
             leadsParados={painel.leadsParados}
+            retornosHoje={painel.retornosHoje}
+            retornosAtrasados={painel.retornosAtrasados}
             mes={mesDoRecorte}
           />
 
@@ -198,6 +202,10 @@ export default async function PaginaCaptacao({
             paginas={carteira.paginas}
             busca={busca}
             etapa={etapa}
+            atencao={atencao}
+            filtrosExtras={Boolean(origem || campanha)}
+            mesDoPeriodo={formatarMesAno(periodo.de)}
+            hoje={chaveDoDia()}
             parametrosPaginacao={parametrosPaginacao}
           />
         </>

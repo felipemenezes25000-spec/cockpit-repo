@@ -571,6 +571,242 @@ export type Database = {
           },
         ]
       }
+      lead_etapas: {
+        Row: {
+          de: Database["public"]["Enums"]["etapa_lead"] | null
+          em: string
+          id: number
+          lead_id: string
+          motivo: string | null
+          para: Database["public"]["Enums"]["etapa_lead"]
+          por: string | null
+        }
+        Insert: {
+          de?: Database["public"]["Enums"]["etapa_lead"] | null
+          em?: string
+          id?: never
+          lead_id: string
+          motivo?: string | null
+          para: Database["public"]["Enums"]["etapa_lead"]
+          por?: string | null
+        }
+        Update: {
+          de?: Database["public"]["Enums"]["etapa_lead"] | null
+          em?: string
+          id?: never
+          lead_id?: string
+          motivo?: string | null
+          para?: Database["public"]["Enums"]["etapa_lead"]
+          por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_etapas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_etapas_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_interacoes: {
+        Row: {
+          canal: string
+          em: string
+          id: number
+          lead_id: string
+          observacao: string | null
+          por: string | null
+          proximo_contato: string | null
+        }
+        Insert: {
+          canal: string
+          em?: string
+          id?: never
+          lead_id: string
+          observacao?: string | null
+          por?: string | null
+          proximo_contato?: string | null
+        }
+        Update: {
+          canal?: string
+          em?: string
+          id?: never
+          lead_id?: string
+          observacao?: string | null
+          por?: string | null
+          proximo_contato?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_interacoes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interacoes_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          atualizado_em: string
+          campanha: string | null
+          criado_em: string
+          criado_por: string | null
+          email: string | null
+          etapa: Database["public"]["Enums"]["etapa_lead"]
+          id: string
+          motivo_perda: string | null
+          nome: string
+          observacoes: string | null
+          origem: string
+          paciente_id: string | null
+          procedimento_interesse_id: string | null
+          proximo_contato: string | null
+          telefone: string | null
+          ultimo_contato_em: string | null
+          venda_id: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          campanha?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          email?: string | null
+          etapa?: Database["public"]["Enums"]["etapa_lead"]
+          id?: string
+          motivo_perda?: string | null
+          nome: string
+          observacoes?: string | null
+          origem?: string
+          paciente_id?: string | null
+          procedimento_interesse_id?: string | null
+          proximo_contato?: string | null
+          telefone?: string | null
+          ultimo_contato_em?: string | null
+          venda_id?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          campanha?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          email?: string | null
+          etapa?: Database["public"]["Enums"]["etapa_lead"]
+          id?: string
+          motivo_perda?: string | null
+          nome?: string
+          observacoes?: string | null
+          origem?: string
+          paciente_id?: string | null
+          procedimento_interesse_id?: string | null
+          proximo_contato?: string | null
+          telefone?: string | null
+          ultimo_contato_em?: string | null
+          venda_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_procedimento_interesse_id_fkey"
+            columns: ["procedimento_interesse_id"]
+            isOneToOne: false
+            referencedRelation: "procedimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metas_comerciais: {
+        Row: {
+          atualizado_em: string
+          competencia: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          meta_faturamento: number
+          procedimento_id: string | null
+          taxa_agendamento_venda: number
+          taxa_lead_qualificado: number
+          taxa_qualificado_agendamento: number
+          ticket_medio_planejado: number
+        }
+        Insert: {
+          atualizado_em?: string
+          competencia: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          meta_faturamento: number
+          procedimento_id?: string | null
+          taxa_agendamento_venda?: number
+          taxa_lead_qualificado?: number
+          taxa_qualificado_agendamento?: number
+          ticket_medio_planejado: number
+        }
+        Update: {
+          atualizado_em?: string
+          competencia?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          meta_faturamento?: number
+          procedimento_id?: string | null
+          taxa_agendamento_venda?: number
+          taxa_lead_qualificado?: number
+          taxa_qualificado_agendamento?: number
+          ticket_medio_planejado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_comerciais_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metas_comerciais_procedimento_id_fkey"
+            columns: ["procedimento_id"]
+            isOneToOne: false
+            referencedRelation: "procedimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modelo_documento_versoes: {
         Row: {
           campos: Json
@@ -1576,6 +1812,10 @@ export type Database = {
         Args: { p_nascimento: string; p_respostas: Json; p_token: string }
         Returns: string
       }
+      lead_converter_em_paciente: {
+        Args: { p_lead_id: string }
+        Returns: string
+      }
       modelo_documento_criar: {
         Args: {
           p_campos: Json
@@ -1688,6 +1928,7 @@ export type Database = {
         | "marketing"
         | "impostos"
         | "outros"
+      etapa_lead: "novo" | "qualificado" | "agendamento" | "ganho" | "perdido"
       forma_pagamento:
         | "pix"
         | "credito"
@@ -1867,6 +2108,7 @@ export const Constants = {
         "impostos",
         "outros",
       ],
+      etapa_lead: ["novo", "qualificado", "agendamento", "ganho", "perdido"],
       forma_pagamento: [
         "pix",
         "credito",

@@ -5,8 +5,10 @@ function LinhaCarteira() {
         <span className="esqueleto block h-4 w-40" />
         <span className="esqueleto mt-3 block h-3 w-full max-w-sm" />
         <span className="esqueleto mt-3 block h-3 w-56" />
+        <span className="esqueleto mt-3 block h-6 w-48" />
       </div>
       <div className="flex flex-col gap-2 border-t border-card-border pt-3 lg:border-t-0 lg:pt-0">
+        <span className="esqueleto h-10 w-full" />
         <span className="esqueleto h-8 w-full" />
         <span className="esqueleto h-9 w-full" />
       </div>
@@ -66,8 +68,8 @@ export default function CarregandoCaptacao() {
           <span className="esqueleto h-5 w-72 max-w-full" />
           <span className="esqueleto h-3 w-full max-w-xl" />
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, indice) => (
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, indice) => (
             <div key={indice} className="rounded-[var(--radius-cartao)] border border-card-border p-4">
               <span className="esqueleto block h-3 w-24" />
               <span className="esqueleto mt-3 block h-7 w-32" />

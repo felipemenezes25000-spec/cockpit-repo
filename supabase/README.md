@@ -36,6 +36,9 @@ versionado nesta pasta — nada é alterado direto pelo painel.
 | `0026_marca_de_exemplo_e_privilegios.sql` | A marca `exemplo` não se grava pela API: com sessão, gatilho recusa INSERT marcado e UPDATE que troque a marca nas dez tabelas que o `dados:limpar` apaga (sem sessão passa); `private.sem_acento` com EXECUTE para `service_role`; privilégio padrão de sequência nova só com USAGE para `authenticated`. |
 | `0027_banco_escreve_a_evidencia.sql` | Com sessão, o banco escreve e confere o que quem chamava dizia: versão de modelo na sequência, com perguntas válidas e autor e hora do banco; `tipo` do modelo fora do grant de UPDATE; quem respondeu a anamnese e quando (nulo pelo link); autor, hora e data de captura não futura da foto. `documento_para_assinatura` é refeita (drop + create) para devolver `assinado_canal`. CHECK `recebimentos_taxa_ate_o_valor`, NOT VALID e validada só sem legado. IP e dispositivo da assinatura ficam de fora (decisão do dono, `AGENTS.md` §13). |
 | `0028_venda_idempotente_e_foto_do_arquivo.sql` | Venda idempotente: `vendas.chave_envio` + índice único parcial; `venda_registrar` ganha `p_chave uuid default null` (mesmo envio do mesmo perfil devolve a venda já criada). Foto só nasce com o objeto no bucket, e tipo e tamanho vêm dos metadados do Storage (`private.imagem_nasce_do_arquivo`). IP e dispositivo da assinatura comentados como declarados. |
+| `0029_captacao_e_metas.sql` | Captação: `leads` (entidade própria, antes de virar paciente), trilha `lead_etapas` escrita por gatilho (com o motivo de cada perda), `metas_comerciais` (meta geral do mês ou por procedimento, com as premissas do funil). `ganho ⇔ venda_id` por CHECK; `lead_converter_em_paciente` (DEFINER, confere o perfil, trava o lead, idempotente); gatilhos de atendimento (→ `agendamento`) e de venda (→ `ganho`). Grants por coluna; recepção e administradora operam leads, administradora e financeiro a meta. |
+| `0030_contatos_comerciais.sql` | Acompanhamento comercial: `lead_interacoes` (canal, observação, próximo contato; autor e hora do banco; só INSERT, e só em lead aberto) e o resumo em `leads.ultimo_contato_em`/`proximo_contato`, escrito só por gatilho. |
+| `0031_acompanhamento_comercial_conferido.sql` | Lead encerrado não guarda retorno (gatilho + CHECK `leads_encerrado_sem_retorno`); contato conferido na entrada — trava o lead, frase legível para lead encerrado e próximo contato não nasce no passado (dia de São Paulo; sem sessão passa); o resumo só anda para a frente; `lead_interacoes` na auditoria; sequência de `lead_etapas` sem `authenticated`. |
 
 ## Projeto
 
@@ -77,6 +80,15 @@ para `pacientes`, `atendimentos`, `procedimentos` ou `profissionais` precisa
 entrar nas condições do script — senão o bloco falha inteiro (sem apagar nada
 pela metade) e o `test:banco` acusa.
 
+Desde a Captação (0029), um **lead real** também segura o exemplo que aponta:
+a paciente e o procedimento de interesse (senão o `on delete set null`
+apagaria o vínculo em silêncio) e a venda que o fez `ganho` (senão a CHECK
+`ganho ⇔ venda_id` abortaria a limpeza); procedimento com **meta comercial**
+própria também fica (a FK é `restrict`). Consequência de ordem: o script agora
+cita `leads` e `metas_comerciais`, e rodado contra um banco **sem a 0029**
+falha inteiro, sem apagar nada — aplique 0029–0031 antes de rodar esta versão
+em produção.
+
 `config.toml` usa as portas 5532x porque o Windows reserva 54286–54385 para o
 Hyper-V. O banco local é onde toda migração nova se testa antes de produção:
 `db reset` precisa passar do zero, e `test:banco` precisa continuar verde.
@@ -94,6 +106,36 @@ Auth local sobe praticamente sem limite de envio.
 API de administração do Auth, como o painel.
 
 ## Pendente de aplicação em produção
+
+### Próxima onda: 0029 → 0031 (Captação)
+
+**Não aplicadas em produção.** Escritas no branch `main` e verificadas no banco
+local em 25/09/2026: `db reset` do zero (0001 → 0031 + seed), `test:banco` com
+269 asserções verdes (as da Captação incluídas) e `db:tipos:local` gerando só o
+acréscimo das quatro tabelas, do enum `etapa_lead` e da função
+`lead_converter_em_paciente`. **Checklist do dono; nenhum agente executa.**
+
+> **Banco primeiro, código depois.** O código da Captação lê
+> `lead_interacoes`, `ultimo_contato_em` e `proximo_contato`. Sem a 0029, a
+> tela mostra o aviso "estrutura ainda não aplicada"; sem a 0030, idem (o
+> painel reconhece a coluna ausente). O deploy do código antes do banco não
+> quebra as outras telas, mas a Captação fica fora do ar até o `db:push`.
+
+1. Backup (painel do Supabase).
+2. `npm run db:push` — aplica 0029 → 0031, em ordem. Só acrescentam: tabelas,
+   colunas nulas, gatilhos, a CHECK nova (com o ajuste dos leads fechados antes
+   dela, que num banco sem a 0030 não encontra nada) e grants.
+3. `npm run db:tipos` — o `git diff` de `src/lib/supabase/tipos-banco.ts` deve
+   sair **vazio**: o arquivo do repositório já foi gerado com 0029–0031.
+4. Conferência (`npx supabase db query --linked`):
+   - `select count(*) from supabase_migrations.schema_migrations where version in ('0029','0030','0031')` → `3`;
+   - `select bool_and(relrowsecurity) from pg_class where oid in ('public.leads'::regclass, 'public.lead_etapas'::regclass, 'public.metas_comerciais'::regclass, 'public.lead_interacoes'::regclass)` → `t`;
+   - `select has_function_privilege('anon', 'public.lead_converter_em_paciente(uuid)', 'execute')` → `f`;
+   - `select count(*) from pg_constraint where conname = 'leads_encerrado_sem_retorno'` → `1`.
+5. Só então o código: levar o `main` para o branch que a Vercel publica.
+
+### Onda anterior: 0019 → 0028
+
 
 > **Aplicado em 23/09/2026.** O projeto `pghmzbtfsaupwezglddo` nasceu vazio e
 > recebeu as 28 migrações de uma vez (`db push`, 0001 → 0028, sem seed). As

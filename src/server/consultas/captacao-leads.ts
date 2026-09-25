@@ -2,18 +2,28 @@ import "server-only";
 
 import { cache } from "react";
 import { termoDeBusca } from "@/lib/busca";
-import { comoClienteCaptacao, type EtapaLead } from "@/lib/captacao-banco";
-import { diferencaEmDias, inicioDoDia, somarDias } from "@/lib/dates";
+import {
+  canalValido,
+  recorteDeRetorno,
+  situacaoDoRetorno,
+  type CanalContatoLead,
+  type EtapaLead,
+  type FiltroAtencaoLead,
+} from "@/lib/captacao";
+import { chaveDoDia, dataDoBanco, diferencaEmDias, inicioDoDia, somarDias } from "@/lib/dates";
 import { falhaDeConsulta } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import type { Periodo } from "@/lib/periodo";
 import type { LeadDoPainel } from "./captacao";
-import { paginaAlemDoFim } from "./todas-as-linhas";
+import { paginaAlemDoFim, todasAsLinhas } from "./todas-as-linhas";
 
 export const LEADS_POR_PAGINA = 15;
 
+/** Quantos contatos a linha do lead mostra; o total vem ao lado. */
+export const INTERACOES_POR_LEAD = 8;
+
 export type FiltroEtapaLead = EtapaLead | "todos";
-export type FiltroAtencaoLead = "todos" | "parados";
+export type { FiltroAtencaoLead };
 
 export type MovimentoLead = {
   de: EtapaLead | null;
@@ -22,11 +32,28 @@ export type MovimentoLead = {
   em: Date;
 };
 
+export type InteracaoLead = {
+  id: number;
+  canal: CanalContatoLead;
+  observacao: string | null;
+  proximoContato: Date | null;
+  em: Date;
+};
+
 export type LeadDaCarteira = LeadDoPainel & {
   atualizadoEm: Date;
   diasSemMovimento: number;
   motivoPerda: string | null;
   historico: MovimentoLead[];
+  ultimoContatoEm: Date | null;
+  proximoContato: Date | null;
+  /** Dias até o retorno no calendário da clínica: 0 é hoje, negativo é atraso. */
+  diasParaRetorno: number | null;
+  retornoHoje: boolean;
+  retornoAtrasado: boolean;
+  /** Os contatos mais recentes primeiro, até `INTERACOES_POR_LEAD`. */
+  interacoes: InteracaoLead[];
+  totalInteracoes: number;
 };
 
 export type PaginaDeLeads = {
@@ -51,8 +78,7 @@ export const listarLeadsCaptacao = cache(
     campanha = "",
     atencao: FiltroAtencaoLead = "todos",
   ): Promise<PaginaDeLeads> => {
-    const base = await clienteServidor();
-    const supabase = comoClienteCaptacao(base);
+    const supabase = await clienteServidor();
     let pagina = Math.max(1, Math.trunc(paginaRecebida));
     const termo = termoDeBusca(busca);
     const digitos = termo.replace(/\D/g, "");
@@ -61,17 +87,23 @@ export const listarLeadsCaptacao = cache(
     // Três dias de calendário ou mais: no dia 24, qualquer movimento feito no
     // dia 21 já pede atenção, independentemente da hora em que aconteceu.
     const limiteParado = somarDias(inicioDoDia(), -2);
+    // `proximo_contato` é `date`: compara com o dia da clínica, não com o UTC.
+    const hojeClinica = chaveDoDia();
     const frase = "Não foi possível carregar a carteira de leads.";
 
     const montar = (contagem: { count: "exact"; head?: boolean }) => {
       let consulta = supabase
         .from("leads")
         .select(
-          "id, nome, telefone, email, origem, campanha, procedimento_interesse_id, paciente_id, etapa, motivo_perda, criado_em, atualizado_em",
+          "id, nome, telefone, email, origem, campanha, procedimento_interesse_id, paciente_id, etapa, motivo_perda, criado_em, atualizado_em, ultimo_contato_em, proximo_contato",
           contagem,
-        )
-        .gte("criado_em", periodo.de.toISOString())
-        .lt("criado_em", periodo.ate.toISOString());
+        );
+
+      if (!recorteDeRetorno(atencao)) {
+        consulta = consulta
+          .gte("criado_em", periodo.de.toISOString())
+          .lt("criado_em", periodo.ate.toISOString());
+      }
 
       if (etapa !== "todos") consulta = consulta.eq("etapa", etapa);
       if (origemExata) consulta = consulta.eq("origem", origemExata);
@@ -80,6 +112,12 @@ export const listarLeadsCaptacao = cache(
         consulta = consulta
           .lt("atualizado_em", limiteParado.toISOString())
           .not("etapa", "in", "(ganho,perdido)");
+      }
+      if (atencao === "retorno_hoje") {
+        consulta = consulta.eq("proximo_contato", hojeClinica).not("etapa", "in", "(ganho,perdido)");
+      }
+      if (atencao === "retorno_atrasado") {
+        consulta = consulta.lt("proximo_contato", hojeClinica).not("etapa", "in", "(ganho,perdido)");
       }
 
       if (termo) {
@@ -99,9 +137,15 @@ export const listarLeadsCaptacao = cache(
     const lerPagina = (numero: number) => {
       const de = (numero - 1) * LEADS_POR_PAGINA;
       const consulta = montar({ count: "exact" });
+      // Quem espera há mais tempo aparece primeiro em cada recorte de atenção.
       const ordenada = atencao === "parados"
         ? consulta.order("atualizado_em", { ascending: true }).order("id", { ascending: true })
-        : consulta.order("criado_em", { ascending: false }).order("id", { ascending: true });
+        : recorteDeRetorno(atencao)
+          ? consulta
+              .order("proximo_contato", { ascending: true })
+              .order("criado_em", { ascending: true })
+              .order("id", { ascending: true })
+          : consulta.order("criado_em", { ascending: false }).order("id", { ascending: true });
       return ordenada.range(de, de + LEADS_POR_PAGINA - 1);
     };
 
@@ -135,9 +179,10 @@ export const listarLeadsCaptacao = cache(
       }
     }
 
+    // Uma ida ao banco por assunto para a página inteira, nunca uma por lead.
     const ids = linhas.map((lead) => lead.id);
-    const [procedimentosResposta, historicoResposta] = await Promise.all([
-      base.from("procedimentos").select("id, nome"),
+    const [procedimentosResposta, historicoResposta, interacoes] = await Promise.all([
+      supabase.from("procedimentos").select("id, nome"),
       ids.length > 0
         ? supabase
             .from("lead_etapas")
@@ -145,6 +190,22 @@ export const listarLeadsCaptacao = cache(
             .in("lead_id", ids)
             .order("em", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
+      // Em blocos: o total de contatos por lead é contado aqui, e o PostgREST
+      // cortaria em silêncio acima de `max_rows` (AGENTS.md §5).
+      ids.length > 0
+        ? todasAsLinhas(
+            (inicio, fim) =>
+              supabase
+                .from("lead_interacoes")
+                .select("id, lead_id, canal, observacao, proximo_contato, em")
+                .in("lead_id", ids)
+                .order("em", { ascending: false })
+                .order("id", { ascending: false })
+                .range(inicio, fim),
+            "consulta captação: contatos da carteira",
+            "Não foi possível carregar o histórico comercial dos leads.",
+          )
+        : Promise.resolve([]),
     ]);
 
     if (procedimentosResposta.error) {
@@ -178,9 +239,30 @@ export const listarLeadsCaptacao = cache(
       historicoPorLead.set(passo.lead_id, atual);
     }
 
+    const interacoesPorLead = new Map<string, { recentes: InteracaoLead[]; total: number }>();
+    for (const contato of interacoes) {
+      const atual = interacoesPorLead.get(contato.lead_id) ?? { recentes: [], total: 0 };
+      atual.total += 1;
+      if (atual.recentes.length < INTERACOES_POR_LEAD) {
+        atual.recentes.push({
+          id: contato.id,
+          // A CHECK do banco garante a lista; o tipo gerado só sabe que é texto.
+          canal: canalValido(contato.canal) ? contato.canal : "outro",
+          observacao: contato.observacao,
+          proximoContato: contato.proximo_contato ? dataDoBanco(contato.proximo_contato) : null,
+          em: new Date(contato.em),
+        });
+      }
+      interacoesPorLead.set(contato.lead_id, atual);
+    }
+
     return {
       itens: linhas.map((lead) => {
         const atualizadoEm = new Date(lead.atualizado_em);
+        const retorno = situacaoDoRetorno(lead.etapa, lead.proximo_contato, hojeClinica);
+        const proximoContato =
+          retorno !== "encerrado" && lead.proximo_contato ? dataDoBanco(lead.proximo_contato) : null;
+        const contatos = interacoesPorLead.get(lead.id);
         return {
           id: lead.id,
           nome: lead.nome,
@@ -198,6 +280,13 @@ export const listarLeadsCaptacao = cache(
           diasSemMovimento: Math.max(0, -diferencaEmDias(atualizadoEm)),
           motivoPerda: lead.motivo_perda,
           historico: historicoPorLead.get(lead.id) ?? [],
+          ultimoContatoEm: lead.ultimo_contato_em ? new Date(lead.ultimo_contato_em) : null,
+          proximoContato,
+          diasParaRetorno: proximoContato ? diferencaEmDias(proximoContato) : null,
+          retornoHoje: retorno === "hoje",
+          retornoAtrasado: retorno === "atrasado",
+          interacoes: contatos?.recentes ?? [],
+          totalInteracoes: contatos?.total ?? 0,
         };
       }),
       total,

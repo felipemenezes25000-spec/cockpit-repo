@@ -56,6 +56,7 @@ demonstração com cadastro real.
 | Prontuários | `/prontuarios` | **Pronto** — registro clínico versionado, restrito à administradora |
 | Documentos e Contratos | `/formularios` | **Pronto** — modelos versionados, emissão com texto congelado, assinatura no balcão e por link, anamnese |
 | Relacionamento | `/relacionamento` | **Pronto** — confirmações, retornos, tarefas, aniversários e convites para avaliação no Google |
+| Captação | `/captacao` | **Pronto no branch `main`, banco pendente em produção** — meta e funil inverso, carteira de leads, contatos e retornos, conversão em paciente, avanço por agenda e venda (§8.9, [`docs/captacao.md`](docs/captacao.md)) |
 | Busca global | `/busca` | **Pronta** — pacientes, atendimentos, documentos e prontuários conforme o perfil |
 | Relatórios | `/relatorios` | Página provisória |
 
@@ -129,7 +130,7 @@ não é o zelo extra que parece.
 > |---|---|---|
 > | `npm test` | Regras de `lib/` (dinheiro, datas, validações, CSV, erros), ações de servidor com o Supabase trocado por um falso (`testes/supabase-falso.ts`) e componentes (jsdom + Testing Library) | `src/**/*.test.ts(x)` |
 > | `npm run test:banco` | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim | `supabase/testes/permissoes.sql` |
-> | `npm run test:e2e` | Fluxos inteiros no navegador — login e redirecionamento seguro, permissões na interface e **por URL** para recepção e financeiro, paciente, agenda, venda (recepção registra, financeiro confirma), despesa, prontuário, **fotos de evolução**, **importação CSV**, **Relacionamento**, **procedimentos**, **busca**, página 404, documento e assinatura por link, CSP — e 41 endereços (36 do sistema, com a sessão da administradora e a 404 logada, e 5 públicos) em 320, 768 e 1440 px, sem rolagem horizontal nem erro de console, e sem violação WCAG 2.2 A/AA (axe) em 360 e 1440 px. Ficam fora as telas de detalhe e de edição por `[id]` (exceto a ficha e a edição da paciente) e `/sem-acesso` | `e2e/` |
+> | `npm run test:e2e` | Fluxos inteiros no navegador — login e redirecionamento seguro, permissões na interface e **por URL** para recepção e financeiro, paciente, agenda, venda (recepção registra, financeiro confirma), despesa, prontuário, **fotos de evolução**, **importação CSV**, **Relacionamento**, **procedimentos**, **busca**, página 404, documento e assinatura por link, CSP, **Captação** (lead → contato → paciente → agenda → venda; retorno atrasado, perda e reabertura) — e 42 endereços (37 do sistema, com a sessão da administradora e a 404 logada, e 5 públicos) em 320, 768 e 1440 px, sem rolagem horizontal nem erro de console, e sem violação WCAG 2.2 A/AA (axe) em 360 e 1440 px. Ficam fora as telas de detalhe e de edição por `[id]` (exceto a ficha e a edição da paciente) e `/sem-acesso` | `e2e/` |
 >
 > Os dois últimos precisam do Supabase local no ar (abaixo) com as contas de
 > teste. O E2E exige o `.env.local` e recusa rodar se ele não apontar para
@@ -152,19 +153,20 @@ não é o zelo extra que parece.
 > preparação, uma conta de teste que não existe — para tudo antes da tabela, e
 > aparece só a mensagem do `psql`.
 >
-> **Números (conferidos em 23/09/2026, não copie sem recontar).** Vitest: **800
-> testes em 76 arquivos**, todos verdes — 13 em `src/lib/`, 11 de ações em
-> `src/server/acoes/`, 9 de consultas em `src/server/consultas/`, 5 em
-> `src/app/` (login, destino do login, recuperação de senha, sem acesso e a
-> página do documento), 32 de componente (`src/components/`), 2 do middleware
-> (`src/middleware.test.ts` e `src/lib/supabase/`) e 4 em `testes/`
-> (`cabecalhos-seguranca`, `desempenho`, `react-ping` e `versao-postgrest`).
-> `test:banco`: **194 asserções**, todas verdes numa execução completa a partir
-> de `db reset` (migrações 0001–0028 + seed) em 23/09/2026. E2E: **298 testes em 8 arquivos**
-> (contados com `--list` em 23/09/2026) — `chromium` 251 (43 de fluxo + 126 de
-> telas: 41 endereços — 36 do sistema, com a 404 logada, e 5 públicos — × 3
-> larguras, mais 3 da faixa de áreas no celular + 82 do axe: os mesmos 41
-> endereços × 2 larguras), `webkit` 43 e `webkit-celular` 4. Para recontar: `npx vitest run`,
+> **Números (conferidos em 25/09/2026, no branch `main`, não copie sem
+> recontar).** Vitest: **895 testes em 83 arquivos**, todos verdes — 15 em
+> `src/lib/`, 12 de ações em `src/server/acoes/`, 11 de consultas em
+> `src/server/consultas/`, 5 em `src/app/` (login, destino do login,
+> recuperação de senha, sem acesso e a página do documento), 34 de componente
+> (`src/components/`), 2 do middleware (`src/middleware.test.ts` e
+> `src/lib/supabase/`) e 4 em `testes/` (`cabecalhos-seguranca`,
+> `desempenho`, `react-ping` e `versao-postgrest`). `test:banco`: **269
+> asserções**, todas verdes numa execução completa a partir de `db reset`
+> (migrações 0001–0031 + seed) em 25/09/2026. E2E: **311 testes em 9
+> arquivos** (contados com `--list` em 25/09/2026) — `chromium` 260 (47 de
+> fluxo + 129 de telas: 42 endereços — 37 do sistema, com a 404 logada, e 5
+> públicos — × 3 larguras, mais 3 da faixa de áreas no celular + 84 do axe:
+> os mesmos 42 endereços × 2 larguras), `webkit` 47 e `webkit-celular` 4. Para recontar: `npx vitest run`,
 > `npx playwright test --list [--project=...]`; banco: conte as chamadas
 > `select testes.falha|igual|linhas|registrar(` em `permissoes.sql`.
 >
@@ -197,7 +199,7 @@ não é o zelo extra que parece.
 > dados com sufixo a cada execução (pacientes, procedimentos, tarefas): o banco
 > local cresce até o próximo `db reset`.
 >
-> **O que ainda não tem teste.** 44 das 47 funções exportadas por
+> **O que ainda não tem teste.** 50 das 53 funções exportadas por
 > `src/server/acoes/` são chamadas por um teste de unidade. Sem teste direto:
 > `salvarNovaVersaoModelo`, `alternarModeloAtivo` (`documentos.ts`) e
 > `alternarArquivamentoImagem` (`prontuario-imagens.ts`). Seis arquivos de
@@ -360,7 +362,7 @@ as quebras de linha para LF no repositório.
 | Camada | Onde | Detalhe |
 |---|---|---|
 | Aplicação | **Vercel** | Projeto `cockpit-consultorio`, em <https://cockpit-consultorio.vercel.app>, ligado ao GitHub: **todo push no `jamal-do-mal` publica em produção sozinho**. `vercel.json`: `framework: nextjs`, região **`gru1`** (São Paulo) |
-| Repositório | **GitHub** | `https://github.com/felipemenezes25000-spec/cockpit-repo`. Um único branch, `jamal-do-mal`; o trabalho entra direto nele, sem criar outros (decisão do dono, 23/09/2026) |
+| Repositório | **GitHub** | `https://github.com/felipemenezes25000-spec/cockpit-repo`. Produção publica o `jamal-do-mal` (branch padrão); o `main` (desde 24/09/2026) está à frente com a Captação. O trabalho entra direto no branch, sem criar outros (decisão do dono, 23/09/2026) |
 | Banco e autenticação | **Supabase** | Ref `pghmzbtfsaupwezglddo` (produção desde 23/09/2026, no lugar do `Cockpit-Consultorio2`/`khoaluytzzagtwmpaukx`); região **`us-west-2` (Oregon, EUA)**, exceção decidida pelo dono (abaixo). MCP do Supabase configurado em `.mcp.json` |
 
 **Por que tudo em São Paulo:** latência e soberania do dado. A região do projeto
@@ -502,6 +504,11 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 > `venda_registrar`; contra um banco sem ela o PostgREST não acha a função
 > (`PGRST202`) e o registro de venda para.
 > Remova este aviso no mesmo commit em que registrar a aplicação.
+>
+> **Pendentes em produção: 0029 → 0031 (Captação).** Verificadas no banco
+> local em 25/09/2026 (`db reset` do zero + `test:banco`). Mesma ordem: banco
+> antes do código — roteiro em
+> [`supabase/README.md`](supabase/README.md#próxima-onda-0029--0031-captação).
 
 | Arquivo | O que faz |
 |---|---|
@@ -533,6 +540,9 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `0026_marca_de_exemplo_e_privilegios.sql` | A marca `exemplo` não se grava pela API: com sessão, gatilho `private.exemplo_so_sem_sessao()` recusa INSERT marcado e UPDATE que troque a marca nas dez tabelas que o `dados:limpar` apaga (sem sessão passa); `private.sem_acento` executável por `service_role`; sequência nova só com USAGE para `authenticated` |
 | `0027_banco_escreve_a_evidencia.sql` | O banco escreve o que quem chamava dizia: versão de modelo na sequência, com perguntas válidas e autor e hora do banco (`modelo_versao_conferida`); `tipo` do modelo fora do UPDATE (grant de coluna); quem respondeu a anamnese e quando (`campo_resposta_autor`: nulo pelo link); autor, hora e data de captura não futura da foto (`imagem_registrada_conferida`); `documento_para_assinatura` devolve o canal da assinatura (`assinado_canal`); recebimento avulso sem taxa maior que o valor (CHECK) |
 | `0028_venda_idempotente_e_foto_do_arquivo.sql` | Venda idempotente: `vendas.chave_envio` + índice único parcial; `venda_registrar` ganha `p_chave uuid default null` (mesmo envio do mesmo perfil devolve a venda já criada). Foto só nasce com o objeto no bucket, e tipo e tamanho vêm dos metadados do Storage (`private.imagem_nasce_do_arquivo`). IP e dispositivo da assinatura comentados como declarados |
+| `0029_captacao_e_metas.sql` | Captação: `leads`, trilha `lead_etapas` (gatilho, com o motivo de cada perda) e `metas_comerciais`. `ganho ⇔ venda_id` por CHECK; `lead_converter_em_paciente` (DEFINER, confere o perfil, trava o lead, idempotente); atendimento avança o lead para `agendamento` e venda o leva a `ganho`, por gatilho. Grants por coluna |
+| `0030_contatos_comerciais.sql` | `lead_interacoes` (contato comercial, só INSERT, só em lead aberto) e o resumo `leads.ultimo_contato_em`/`proximo_contato`, escrito por gatilho |
+| `0031_acompanhamento_comercial_conferido.sql` | Lead encerrado sem retorno (gatilho + CHECK `leads_encerrado_sem_retorno`); `lead_interacao_conferida`: trava o lead, frase para lead encerrado, próximo contato não no passado (com sessão); resumo só anda para a frente; `lead_interacoes` auditada; sequência de `lead_etapas` sem `authenticated` |
 
 ### Tabelas
 
@@ -563,6 +573,10 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `documento_links` | Links de assinatura à distância. Guarda o **hash** do token, nunca o token | Criar e revogar: só `documento_link_criar`/`documento_link_revogar`. Tentativas e aberturas: as funções públicas. A equipe atualiza só `canal_envio`, no clique do envio (0015) |
 | `documento_campos` | Respostas da anamnese, com a pergunta congelada em cada linha. **A pergunta não muda; a resposta, sim** | Administradora edita só as colunas de resposta, e só com o documento `emitido`; quem respondeu e quando são escritos pelo banco (0027); ninguém insere nem apaga |
 | `auditoria` | Quem alterou o quê, por gatilho, com a cópia da linha inteira (`to_jsonb`) em `dados` | Só os gatilhos (leitura: administradora) |
+| `leads` | Oportunidade comercial antes de virar paciente: contato, origem, campanha, procedimento de interesse, etapa, vínculo com paciente e venda. `ultimo_contato_em`/`proximo_contato` são resumo (0030) | Administradora e recepção, por coluna — `venda_id`, autoria, datas e o resumo só pelo banco. Ganho só com venda real; sem DELETE (0029) |
+| `lead_etapas` | Trilha imutável das mudanças de etapa, com o motivo de cada perda | Só o gatilho `private.lead_registrar_etapa` (leitura para todos) |
+| `lead_interacoes` | Contato comercial: canal, observação, próximo contato; autor e hora do banco | Administradora e recepção inserem, só em lead aberto (0030/0031); ninguém edita nem apaga |
+| `metas_comerciais` | Meta de faturamento do mês e premissas do funil; `procedimento_id` nulo é a meta geral | Administradora e financeiro; a competência não muda pela API |
 
 Gatilhos de auditoria em: `pacientes`, `atendimentos`, `recebimentos`, `vendas`,
 `ajustes_financeiros`, `prontuarios`, `prontuario_versoes`, `prontuario_imagens`,
@@ -570,7 +584,8 @@ cinco das seis tabelas do módulo de documentos (`modelo_documento_versoes` fica
 de fora: só recebe INSERT, e cada versão já guarda autor e data — escritos pelo
 banco desde a 0027) e — desde a
 0019 — `retornos`, `pendencias`, `despesas`, `taxas_cartao`, `procedimentos`,
-`profissionais` e `perfis`.
+`profissionais` e `perfis`; desde a 0029, `leads` e `metas_comerciais`; desde a
+0031, `lead_interacoes`. `lead_etapas` fica de fora: ela já é a trilha.
 
 ### Funções do banco
 
@@ -638,6 +653,13 @@ No schema `public`, chamadas por RPC pela aplicação:
   módulo de documentos (§8.7)
 - `public.prontuario_imagens_reconciliar()` — só leitura, só administradora
   (42501 para os demais): foto sem arquivo e arquivo sem linha (0024, §8.5)
+- `public.lead_converter_em_paciente(lead)` — **`SECURITY DEFINER`** (0029):
+  confere o papel (administradora ou recepção, 42501) antes de tudo, trava o
+  lead, cria a paciente com os dados dele e vincula; repetir devolve a mesma
+  paciente; lead perdido é recusado. Gatilhos da Captação, todos em `private`:
+  `lead_registrar_etapa`, `atendimento_avanca_lead`, `venda_converte_lead`
+  (0029), `lead_interacao_atualiza_resumo` (0030), `lead_interacao_conferida`
+  e `lead_encerrado_sem_retorno` (0031)
 
 As de prontuário, fotos e documentos são **`SECURITY INVOKER`** de propósito:
 a RLS de quem chama continua valendo; só a administradora passa nas políticas
@@ -2503,6 +2525,35 @@ troca de origem, mas a descrição e a hora (`resolvida_em`) continuam
 **editáveis** pela API, então não é uma prova inviolável de contato. Se for exigida uma trilha imutável de contatos, isso
 precisará de uma migração e tabela próprias.
 
+### 8.9 Captação (migrações 0029–0031)
+
+Rota `/captacao`. O documento do módulo é [`docs/captacao.md`](docs/captacao.md);
+aqui ficam as regras que não se quebram.
+
+- **Lead não é paciente.** Vira paciente por `lead_converter_em_paciente` ou
+  pelo vínculo a um cadastro que já existe.
+- **Venda concluída é evidência do Financeiro:** `ganho ⇔ venda_id` (CHECK),
+  `ganho` fora do seletor e recusado pela ação; quem põe o lead em `ganho` é o
+  gatilho da venda. Atendimento novo leva o lead aberto a `agendamento`.
+- **Etapa não é contato.** `lead_etapas` diz onde o lead está (trilha do
+  gatilho, com o motivo de cada perda); `lead_interacoes` diz quando a equipe
+  falou com ele e o que ficou combinado — só INSERT, autor e hora do banco,
+  só em lead aberto. O resumo no lead (`ultimo_contato_em`, `proximo_contato`)
+  é do gatilho, e a sessão não tem grant para escrevê-lo.
+- **Lead encerrado não tem retorno** (0031): o banco limpa `proximo_contato`
+  ao encerrar e a CHECK garante; o histórico de contatos fica.
+- **Próximo contato não nasce no passado** — ação e banco, no dia de São
+  Paulo. O retorno atrasado é o que nasceu válido e venceu.
+- **Recortes:** o funil, as conversões, a atribuição e "parados" são da
+  **coorte** (leads que entraram no mês); "retorno hoje" e "retorno atrasado"
+  olham a **carteira aberta inteira**, e a tela diz isso.
+- **Atribuição por coorte:** receita atribuída = vendas do mês ligadas a leads
+  que entraram no mês. Atribuir a venda do mês ao lead de qualquer mês é
+  decisão em aberto (§10, item 28).
+- **Perfis:** administradora e recepção operam leads e contatos; financeiro e
+  administradora, a meta. Resultado derivado (plano, ritmo, projeção) nunca é
+  gravado.
+
 ## 9. Invariantes — o que nunca pode ser quebrado
 
 Checklist rápido antes de comitar. Se sua mudança viola algum item, ou está
@@ -2644,6 +2695,15 @@ padrão para destravar.**
     lista vira `null` (coberto por teste). Reabrir despesa ou taxa desativada
     só troca a situação, sem outra conferência.
 
+28. **Captação — modelo de atribuição.** Hoje é por coorte de entrada: a
+    venda de setembro de um lead que entrou em agosto conta na coorte de
+    agosto e aparece como "sem lead atribuído" em setembro. A alternativa é
+    atribuir cada venda do mês ao lead de onde veio, qualquer que seja o mês
+    de entrada (leitura de ROI de marketing). Não troque em silêncio.
+29. **Captação — próximos passos** (listados em `lib/nav.ts`, não prontos):
+    meta por procedimento na interface (o banco já aceita), tempo médio entre
+    etapas e integração com formulários e campanhas de anúncio.
+
 Já decididas e **fechadas** — não reabra sem motivo novo: divisão de permissões
 (três perfis), método de assinatura (interna; troca de provedor prevista só no
 modelo de dados, §8.7), fuso
@@ -2699,10 +2759,12 @@ dezenas de linhas.
 
 Commits do trabalho assistido levam o trailer `Co-Authored-By:` do agente.
 
-**Só comite ou dê push quando o usuário pedir.** O repositório tem hoje **um
-único branch, `jamal-do-mal`**, que é o branch padrão (`origin/HEAD`) — não
-existe `main`. **Não crie branch nenhum** (nem `main`): o dono decidiu, em
-23/09/2026, que o trabalho entra direto no `jamal-do-mal`. Como a CI então só
+**Só comite ou dê push quando o usuário pedir.** O branch padrão
+(`origin/HEAD`) e de produção é o **`jamal-do-mal`**. Desde 24/09/2026 existe
+também o **`main`**, à frente dele com a Captação (0029–0031), onde o trabalho
+do módulo continua por pedido do dono; levá-lo à produção é decisão dele, com
+o banco antes (§4). **Não crie outros branches**: o dono decidiu, em
+23/09/2026, que o trabalho entra direto no branch, sem branch paralelo. Como a CI então só
 avisa depois do push (§2), rode os gates antes de comitar. **Push publica:** o projeto
 `cockpit-consultorio` da Vercel está ligado ao repositório e põe no ar, em
 produção, cada push no `jamal-do-mal` (§3). Com migração nova, o banco vai
@@ -2795,8 +2857,9 @@ muda o que o banco faz.
 
 ### Dívidas conhecidas
 
-- **As migrações 0019 a 0028 não estão em produção.** Motivo: só o dono aplica
-  (§2, §4). Roteiro em `supabase/README.md`.
+- **As migrações 0029 a 0031 (Captação) não estão em produção.** Motivo: só o
+  dono aplica (§2, §4). Roteiro em `supabase/README.md`. (As 0019 a 0028 foram
+  aplicadas em 23/09/2026, junto com todas as anteriores.)
 - **IP e dispositivo da assinatura são informados por quem chama a função.**
   Pelo link, `anon` chama `documento_assinar_por_link` direto com o IP e o
   user-agent que quiser; no balcão, qualquer perfil ativo chama

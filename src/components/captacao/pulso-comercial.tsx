@@ -1,5 +1,7 @@
 import {
   ArrowRight,
+  BellRing,
+  CalendarX2,
   CircleDollarSign,
   Link2,
   Radar,
@@ -7,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardCorpo } from "@/components/ui/card";
+import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 
 function hrefCaptacao(mes: string | null, parametros: Record<string, string>): string {
@@ -19,35 +22,64 @@ function hrefCaptacao(mes: string | null, parametros: Record<string, string>): s
   return texto ? `/captacao?${texto}` : "/captacao";
 }
 
+/**
+ * `destaque` é o azul da marca (há o que abrir). `atencao` e `negativo` são
+ * estado: laranja para o que falta fazer hoje, vermelho para o que já venceu
+ * (AGENTS.md §7.3). O rótulo do cartão diz o estado em texto; a cor reforça.
+ */
+type TomDoKpi = "neutro" | "destaque" | "atencao" | "negativo";
+
+const TOM: Record<TomDoKpi, { cartao: string; valor: string; icone: string }> = {
+  neutro: {
+    cartao: "border-card-border bg-surface-container-low",
+    valor: "text-on-surface",
+    icone: "bg-primary-fixed text-primary",
+  },
+  destaque: {
+    cartao: "border-primary-fixed bg-selecao",
+    valor: "text-primary",
+    icone: "bg-primary-container text-on-primary",
+  },
+  atencao: {
+    cartao: "border-atencao-borda bg-surface",
+    valor: "text-atencao",
+    icone: "bg-atencao-fundo text-atencao",
+  },
+  negativo: {
+    cartao: "border-negativo-borda bg-surface",
+    valor: "text-negativo",
+    icone: "bg-negativo-fundo text-negativo",
+  },
+};
+
 function Kpi({
   rotulo,
   valor,
   detalhe,
   icone: Icone,
-  destaque = false,
+  tom = "neutro",
   href,
 }: {
   rotulo: string;
   valor: string;
   detalhe: string;
   icone: typeof Radar;
-  destaque?: boolean;
+  tom?: TomDoKpi;
   href?: string;
 }) {
+  const estilo = TOM[tom];
   const conteudo = (
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase">{rotulo}</p>
-          <p className={`mt-2 text-2xl font-semibold tracking-[-0.04em] tabular-nums ${destaque ? "text-primary" : "text-on-surface"}`}>
+          <p className={cn("mt-2 text-2xl font-semibold tracking-[-0.04em] tabular-nums", estilo.valor)}>
             {valor}
           </p>
         </div>
         <span
           aria-hidden="true"
-          className={`flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] ${
-            destaque ? "bg-primary-container text-on-primary" : "bg-primary-fixed text-primary"
-          }`}
+          className={cn("flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)]", estilo.icone)}
         >
           <Icone size={17} strokeWidth={1.8} />
         </span>
@@ -61,14 +93,12 @@ function Kpi({
     </>
   );
 
-  const classe = `rounded-[var(--radius-cartao)] border p-4 ${
-    destaque ? "border-primary-fixed bg-selecao" : "border-card-border bg-surface-container-low"
-  }`;
+  const classe = cn("rounded-[var(--radius-cartao)] border p-4", estilo.cartao);
 
   return href ? (
     <Link
       href={href}
-      className={`${classe} premium-interactive block transition-[transform,background-color,border-color] hover:border-primary-fixed-dim hover:bg-selecao`}
+      className={cn(classe, "premium-interactive block transition-[transform,background-color,border-color] hover:border-primary-fixed-dim hover:bg-selecao")}
     >
       {conteudo}
     </Link>
@@ -84,6 +114,8 @@ export function PulsoComercial({
   percentualReceitaAtribuida,
   leadsAbertos,
   leadsParados,
+  retornosHoje,
+  retornosAtrasados,
   mes,
 }: {
   faturamentoAtual: number;
@@ -92,6 +124,8 @@ export function PulsoComercial({
   percentualReceitaAtribuida: number;
   leadsAbertos: number;
   leadsParados: number;
+  retornosHoje: number;
+  retornosAtrasados: number;
   mes: string | null;
 }) {
   const temFaturamento = faturamentoAtual > 0;
@@ -112,13 +146,13 @@ export function PulsoComercial({
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Kpi
             rotulo="Receita atribuída"
             valor={formatarMoeda(receitaAtribuida)}
             detalhe={temFaturamento ? "Parte do faturamento do mês ligada a leads identificáveis." : "Ainda não há vendas no período para atribuir."}
             icone={Link2}
-            destaque={receitaAtribuida > 0}
+            tom={receitaAtribuida > 0 ? "destaque" : "neutro"}
             href={receitaAtribuida > 0 ? hrefCaptacao(mes, { etapa: "ganho" }) : undefined}
           />
           <Kpi
@@ -142,8 +176,32 @@ export function PulsoComercial({
                 : `${leadsParados} de ${leadsAbertos} leads abertos estão há 3+ dias de calendário sem movimento.`
             }
             icone={TriangleAlert}
-            destaque={leadsParados > 0}
+            tom={leadsParados > 0 ? "destaque" : "neutro"}
             href={leadsParados > 0 ? hrefCaptacao(mes, { atencao: "parados" }) : undefined}
+          />
+          <Kpi
+            rotulo="Retornos para hoje"
+            valor={retornosHoje.toLocaleString("pt-BR")}
+            detalhe={
+              retornosHoje === 0
+                ? "Nenhum retorno combinado para hoje."
+                : "Leads abertos, de qualquer mês de entrada, com o próximo contato combinado para hoje."
+            }
+            icone={BellRing}
+            tom={retornosHoje > 0 ? "atencao" : "neutro"}
+            href={retornosHoje > 0 ? hrefCaptacao(mes, { atencao: "retorno_hoje" }) : undefined}
+          />
+          <Kpi
+            rotulo="Retornos atrasados"
+            valor={retornosAtrasados.toLocaleString("pt-BR")}
+            detalhe={
+              retornosAtrasados === 0
+                ? "Nenhum retorno vencido na carteira aberta."
+                : "Retornos combinados que já passaram sem um novo contato registrado."
+            }
+            icone={CalendarX2}
+            tom={retornosAtrasados > 0 ? "negativo" : "neutro"}
+            href={retornosAtrasados > 0 ? hrefCaptacao(mes, { atencao: "retorno_atrasado" }) : undefined}
           />
         </div>
       </CardCorpo>

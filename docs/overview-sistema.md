@@ -56,6 +56,7 @@ interface: mesmo que alguém contorne a tela, o banco recusa.
 | Financeiro | `/financeiro` | Recebimentos, despesas e valores em aberto |
 | Documentos e Contratos | `/formularios` | Contratos, termos e orientações assinados pelas pacientes, e anamneses preenchidas por elas ou na consulta |
 | Relacionamento | `/relacionamento` | Confirmações, retornos, tarefas, aniversários e convites para avaliação no Google |
+| Captação | `/captacao` | Meta do mês, funil comercial, carteira de leads com contatos e retornos, até virar paciente e venda |
 | Relatórios | `/relatorios` | Indicadores de atendimento e faturamento |
 | Configurações | `/configuracoes` | Clínica, equipe, procedimentos e preferências |
 
@@ -1362,3 +1363,39 @@ arquivo que protege as rotas (`middleware` vira `proxy`), a configuração de
 verificação de código (com 7 avisos novos a tratar), o compilador do build e
 a forma de medir o tamanho das telas. Detalhes no `AGENTS.md` §13.
 
+## 23. Captação — funil comercial e acompanhamento dos leads (setembro de 2026)
+
+Documento do módulo: [`captacao.md`](captacao.md). Migrações 0029, 0030 e 0031,
+no branch `main`; **ainda não aplicadas em produção**.
+
+### Para quem usa
+
+- **A meta vira plano:** quanto falta faturar, quantas vendas, agendamentos,
+  qualificados e leads isso exige, e o ritmo por dia até o fim do mês — como
+  projeção no ritmo atual, não previsão.
+- **O funil é o dos leads que entraram no mês** (coorte). A receita atribuída
+  é a das vendas reais do Financeiro ligadas a esses leads.
+- **Cada lead tem acompanhamento:** "Registrar contato" guarda o canal, o que
+  foi conversado e, se combinado, o próximo contato. A linha mostra o último
+  contato e o estado do retorno — atrasado (vermelho), hoje (laranja), futuro
+  ou sem retorno —, e o **histórico comercial** fica separado do **histórico
+  do funil**.
+- **Retornos de hoje e atrasados** aparecem no Pulso e num filtro próprio, para
+  a carteira aberta inteira — de qualquer mês de entrada.
+- **Lead não vira venda na mão:** só a venda registrada no Financeiro fecha o
+  lead como "Venda concluída". Agendar a paciente vinculada avança o lead para
+  "Agendamento" sozinho.
+- **Encerrado é encerrado:** lead ganho ou perdido não recebe contato novo e
+  perde o retorno programado; perdido pode ser reaberto, e nada do histórico
+  se apaga.
+
+### Decisões desta etapa
+
+- Retornos olham a carteira aberta inteira; funil, conversões, atribuição e
+  "parados" olham a coorte do mês. A tela diz qual é qual.
+- O próximo contato não nasce no passado (ação e banco, no dia de São Paulo);
+  o banco limpa o retorno quando o lead fecha.
+- Contato comercial é só de inserção e entra na auditoria.
+- Em aberto com a clínica: atribuir a venda do mês ao lead de qualquer mês
+  (ROI de marketing) em vez da coorte; meta por procedimento na tela; tempo
+  médio entre etapas; integração com anúncios (`AGENTS.md` §10, itens 28 e 29).

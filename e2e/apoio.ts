@@ -1,4 +1,7 @@
 import { expect, test, type Browser, type Locator, type Page } from "@playwright/test";
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { arquivoDaSessao, type Papel } from "./contas";
 
 /**
@@ -132,3 +135,30 @@ export const TELAS_PUBLICAS = [
   "/assinar/link-que-nao-existe-xxxxxxxxxxxxxxxxxxxxxxxxx",
   "/nao-existe",
 ];
+
+/**
+ * Roda um comando SQL no banco LOCAL, como o SQL do projeto (sem sessão).
+ *
+ * Só para o que a interface não faz de propósito — hoje, o tempo passar: o
+ * retorno combinado que venceu. Pela API o banco recusa próximo contato no
+ * passado (0031); sem sessão ele entra, como numa importação de histórico. O
+ * caminho é o do `npm run test:banco` (`psql` dentro do contêiner local, nome
+ * tirado do `project_id`): não existe rota daqui até um banco remoto.
+ */
+export function sqlNoBancoLocal(comando: string): string {
+  const config = readFileSync(join(__dirname, "..", "supabase", "config.toml"), "utf8");
+  const projeto = /^project_id\s*=\s*"([^"]+)"/m.exec(config)?.[1];
+  if (!projeto) throw new Error("project_id não encontrado em supabase/config.toml.");
+  const execucao = spawnSync(
+    "docker",
+    ["exec", "-i", `supabase_db_${projeto}`, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-qAt"],
+    { input: comando, encoding: "utf8" },
+  );
+  if (execucao.status !== 0) throw new Error(`SQL local falhou: ${execucao.stderr || execucao.error}`);
+  return execucao.stdout.trim();
+}
+
+/** Texto como literal SQL (aspas simples dobradas). */
+export function literalSql(texto: string): string {
+  return `'${texto.replaceAll("'", "''")}'`;
+}

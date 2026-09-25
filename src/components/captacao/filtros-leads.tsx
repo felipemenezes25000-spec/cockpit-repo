@@ -1,11 +1,20 @@
 "use client";
 
-import { LoaderCircle, Search, SlidersHorizontal, TriangleAlert, UsersRound, X } from "lucide-react";
+import { Info, LoaderCircle, Search, SlidersHorizontal, UsersRound, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { classeDeEntrada } from "@/components/ui/field";
-import { ETAPAS_FUNIL, ORIGENS_CAPTACAO, ROTULO_ETAPA } from "@/lib/captacao";
-import type { FiltroAtencaoLead, FiltroEtapaLead } from "@/server/consultas/captacao-leads";
+import {
+  ETAPAS_FUNIL,
+  FILTROS_ATENCAO,
+  lerFiltroAtencao,
+  ORIGENS_CAPTACAO,
+  recorteDeRetorno,
+  ROTULO_ATENCAO,
+  ROTULO_ETAPA,
+  type FiltroAtencaoLead,
+} from "@/lib/captacao";
+import type { FiltroEtapaLead } from "@/server/consultas/captacao-leads";
 
 type EstadoFiltros = {
   termo: string;
@@ -28,7 +37,7 @@ export function FiltrosLeads({
   const parametros = useSearchParams();
   const origem = parametros?.get("origem")?.slice(0, 60) ?? "";
   const campanha = parametros?.get("campanha")?.slice(0, 120) ?? "";
-  const atencao: FiltroAtencaoLead = parametros?.get("atencao") === "parados" ? "parados" : "todos";
+  const atencao = lerFiltroAtencao(parametros?.get("atencao"));
   const [pendente, iniciar] = useTransition();
   const [termo, setTermo] = useState(busca);
   const [enviado, setEnviado] = useState(busca);
@@ -182,6 +191,20 @@ export function FiltrosLeads({
           </select>
         </label>
 
+        <label className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-40 sm:max-w-52">
+          <span className="text-[0.62rem] font-semibold tracking-[0.055em] text-outline uppercase">Acompanhamento</span>
+          <select
+            name="atencao"
+            value={atencao}
+            onChange={(evento) => navegar({ ...atuais(), atencao: lerFiltroAtencao(evento.target.value) })}
+            className={classeDeEntrada({ altura: "compacta", texto: "xs" })}
+          >
+            {FILTROS_ATENCAO.map((item) => (
+              <option key={item} value={item}>{ROTULO_ATENCAO[item]}</option>
+            ))}
+          </select>
+        </label>
+
         {campanha ? (
           <button
             type="button"
@@ -190,18 +213,6 @@ export function FiltrosLeads({
             className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-primary-fixed bg-selecao px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary-fixed"
           >
             <span className="max-w-52 truncate">Campanha: {campanha}</span>
-            <X aria-hidden="true" size={13} className="shrink-0" />
-          </button>
-        ) : null}
-
-        {atencao === "parados" ? (
-          <button
-            type="button"
-            onClick={() => navegar({ ...atuais(), atencao: "todos" })}
-            className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-atencao-borda bg-atencao-fundo px-3 text-xs font-semibold text-atencao transition-colors hover:bg-surface"
-          >
-            <TriangleAlert aria-hidden="true" size={13} />
-            Parados há 3+ dias
             <X aria-hidden="true" size={13} className="shrink-0" />
           </button>
         ) : null}
@@ -217,6 +228,13 @@ export function FiltrosLeads({
           </button>
         ) : null}
       </div>
+
+      {recorteDeRetorno(atencao) ? (
+        <p className="flex items-start gap-2 border-t border-card-border pt-3 text-xs leading-5 text-on-surface-variant">
+          <Info aria-hidden="true" size={14} className="mt-0.5 shrink-0 text-primary" />
+          Retornos valem para toda a carteira aberta: aparecem aqui os leads de qualquer mês de entrada, não só os que entraram no período selecionado.
+        </p>
+      ) : null}
     </form>
   );
 }

@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { instanteNaClinica } from "./dates";
-import { calcularPlanoDaMeta, calcularRitmoMensal, percentual } from "./captacao";
+import {
+  calcularPlanoDaMeta,
+  calcularRitmoMensal,
+  canalValido,
+  leadAberto,
+  lerFiltroAtencao,
+  normalizarContato,
+  percentual,
+  recorteDeRetorno,
+  situacaoDoRetorno,
+  validarContato,
+} from "./captacao";
 
 describe("calcularPlanoDaMeta", () => {
   it("parte do gap financeiro e sobe o funil arredondando para cima", () => {
@@ -86,5 +97,87 @@ describe("percentual", () => {
     expect(percentual(0, 0)).toBe(0);
     expect(percentual(47, 100)).toBe(47);
     expect(percentual(2, 3)).toBe(66.7);
+  });
+});
+
+describe("validarContato", () => {
+  const HOJE = "2026-09-25";
+  const valido = { canal: "whatsapp", observacao: "Pediu os valores.", proximo_contato: "" };
+
+  it("canal da lista, sem retorno: passa", () => {
+    expect(validarContato(valido, HOJE)).toEqual({});
+  });
+
+  it("canal fora da lista (o mesmo da CHECK do banco) é recusado", () => {
+    expect(validarContato({ ...valido, canal: "sinal de fumaça" }, HOJE).canal).toBeTruthy();
+    expect(validarContato({ ...valido, canal: "" }, HOJE).canal).toBeTruthy();
+    for (const canal of ["whatsapp", "telefone", "instagram", "email", "presencial", "outro"]) {
+      expect(canalValido(canal)).toBe(true);
+    }
+  });
+
+  it("observação até 1000 caracteres; 1001 volta como erro do campo", () => {
+    expect(validarContato({ ...valido, observacao: "x".repeat(1000) }, HOJE)).toEqual({});
+    expect(validarContato({ ...valido, observacao: "x".repeat(1001) }, HOJE).observacao).toMatch(/1000/);
+  });
+
+  it("retorno hoje ou depois passa; no passado não", () => {
+    expect(validarContato({ ...valido, proximo_contato: HOJE }, HOJE)).toEqual({});
+    expect(validarContato({ ...valido, proximo_contato: "2026-10-02" }, HOJE)).toEqual({});
+    expect(validarContato({ ...valido, proximo_contato: "2026-09-24" }, HOJE).proximo_contato).toMatch(/passado/);
+  });
+
+  it("data que não existe no calendário é inválida, não normalizada", () => {
+    // 31/09 viraria 01/10 em silêncio com `instanteNaClinica` (AGENTS.md §7.2).
+    expect(validarContato({ ...valido, proximo_contato: "2026-09-31" }, HOJE).proximo_contato).toBe("Data inválida.");
+    expect(validarContato({ ...valido, proximo_contato: "25/09/2026" }, HOJE).proximo_contato).toBe("Data inválida.");
+  });
+
+  it("normaliza canal e aparas antes de validar", () => {
+    expect(normalizarContato({ canal: " WhatsApp ", observacao: "  ok  ", proximo_contato: " 2026-09-26 " })).toEqual({
+      canal: "whatsapp",
+      observacao: "ok",
+      proximo_contato: "2026-09-26",
+    });
+  });
+});
+
+describe("situacaoDoRetorno", () => {
+  const HOJE = "2026-09-25";
+
+  it("lê o próximo contato contra o dia da clínica", () => {
+    expect(situacaoDoRetorno("qualificado", "2026-09-23", HOJE)).toBe("atrasado");
+    expect(situacaoDoRetorno("novo", HOJE, HOJE)).toBe("hoje");
+    expect(situacaoDoRetorno("agendamento", "2026-09-26", HOJE)).toBe("futuro");
+    expect(situacaoDoRetorno("novo", null, HOJE)).toBe("sem_retorno");
+  });
+
+  it("lead encerrado nunca tem retorno, mesmo com data velha", () => {
+    expect(situacaoDoRetorno("ganho", "2026-09-20", HOJE)).toBe("encerrado");
+    expect(situacaoDoRetorno("perdido", HOJE, HOJE)).toBe("encerrado");
+    expect(leadAberto("ganho")).toBe(false);
+    expect(leadAberto("perdido")).toBe(false);
+    expect(leadAberto("agendamento")).toBe(true);
+  });
+});
+
+describe("lerFiltroAtencao", () => {
+  it("aceita só os quatro recortes; valor torto na URL cai no padrão", () => {
+    expect(lerFiltroAtencao("parados")).toBe("parados");
+    expect(lerFiltroAtencao("retorno_hoje")).toBe("retorno_hoje");
+    expect(lerFiltroAtencao("retorno_atrasado")).toBe("retorno_atrasado");
+    expect(lerFiltroAtencao("todos")).toBe("todos");
+    expect(lerFiltroAtencao("retorno_ontem")).toBe("todos");
+    expect(lerFiltroAtencao("RETORNO_HOJE")).toBe("todos");
+    expect(lerFiltroAtencao("")).toBe("todos");
+    expect(lerFiltroAtencao(null)).toBe("todos");
+    expect(lerFiltroAtencao(undefined)).toBe("todos");
+  });
+
+  it("só os retornos saem da coorte do mês", () => {
+    expect(recorteDeRetorno("retorno_hoje")).toBe(true);
+    expect(recorteDeRetorno("retorno_atrasado")).toBe(true);
+    expect(recorteDeRetorno("parados")).toBe(false);
+    expect(recorteDeRetorno("todos")).toBe(false);
   });
 });

@@ -5,12 +5,12 @@ import {
   calcularPlanoDaMeta,
   calcularRitmoMensal,
   percentual,
+  type EtapaLead,
   type PlanoDaMeta,
   type RitmoMensal,
 } from "@/lib/captacao";
-import { comoClienteCaptacao, type EtapaLead } from "@/lib/captacao-banco";
-import { diferencaEmDias } from "@/lib/dates";
-import { estruturaAusente } from "@/lib/erros-banco";
+import { chaveDoDia, diferencaEmDias } from "@/lib/dates";
+import { estruturaAusente, type ErroDoBanco } from "@/lib/erros-banco";
 import { falhaDeConsulta } from "@/lib/registro";
 import { clienteServidor } from "@/lib/supabase/server";
 import { dataParaColuna, type Periodo } from "@/lib/periodo";
@@ -87,6 +87,9 @@ export type PainelCaptacao = {
   percentualReceitaAtribuida: number;
   leadsAbertos: number;
   leadsParados: number;
+  /** Retornos da carteira aberta inteira, não só da coorte (ver `recorteDeRetorno`). */
+  retornosHoje: number;
+  retornosAtrasados: number;
   plano: PlanoDaMeta;
   ritmo: RitmoMensal;
   etapas: EtapaDoPainel[];
@@ -128,6 +131,8 @@ function painelSemEstrutura(periodo: Periodo): PainelCaptacao {
     percentualReceitaAtribuida: 0,
     leadsAbertos: 0,
     leadsParados: 0,
+    retornosHoje: 0,
+    retornosAtrasados: 0,
     plano,
     ritmo: calcularRitmoMensal({
       inicio: periodo.de,
@@ -148,6 +153,15 @@ function painelSemEstrutura(periodo: Periodo): PainelCaptacao {
 }
 
 /**
+ * Coluna da 0030 que ainda não existe: o PostgREST devolve o 42703 do
+ * Postgres. É a mesma situação da tabela ausente — banco atrás do código —,
+ * e a tela pede a migração em vez de cair na tela de erro.
+ */
+function contatosAusentes(erro: ErroDoBanco): boolean {
+  return estruturaAusente(erro) || erro?.code === "42703";
+}
+
+/**
  * A tela cruza três fontes sem duplicar verdade:
  * - `leads` + `lead_etapas`: funil comercial;
  * - `metas_comerciais`: alvo e premissas;
@@ -158,8 +172,7 @@ function painelSemEstrutura(periodo: Periodo): PainelCaptacao {
  * recorte seria possível mostrar uma "conversão" acima de 100%.
  */
 export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCaptacao> => {
-  const base = await clienteServidor();
-  const supabase = comoClienteCaptacao(base);
+  const supabase = await clienteServidor();
   const competencia = dataParaColuna(periodo.de);
 
   const metaResposta = await supabase
@@ -176,6 +189,25 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
 
   const contexto = "consulta captação";
   const frase = "Não foi possível carregar o funil de captação.";
+  const hojeClinica = chaveDoDia();
+
+  // Contados no banco (`head`): nenhuma linha vem, e o `max_rows` não corta.
+  const contarRetornos = (comparacao: "eq" | "lt") =>
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .filter("proximo_contato", comparacao, hojeClinica)
+      .not("etapa", "in", "(ganho,perdido)");
+
+  const [retornosHojeResposta, retornosAtrasadosResposta] = await Promise.all([
+    contarRetornos("eq"),
+    contarRetornos("lt"),
+  ]);
+  for (const resposta of [retornosHojeResposta, retornosAtrasadosResposta]) {
+    if (!resposta.error) continue;
+    if (contatosAusentes(resposta.error)) return painelSemEstrutura(periodo);
+    falhaDeConsulta("consulta captação: retornos", resposta.error, frase);
+  }
 
   const [leads, historico, vendas] = await Promise.all([
     todasAsLinhas(
@@ -205,7 +237,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     ),
     todasAsLinhas(
       (inicio, fim) =>
-        base
+        supabase
           .from("vendas")
           .select("id, valor_final")
           .gte("data_venda", dataParaColuna(periodo.de))
@@ -236,7 +268,7 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
   const idsVendasAtribuidas = new Set(
     leads
       .map((lead) => lead.venda_id)
-      .filter((id): id is string => Boolean(id) && valorVendaPorId.has(id)),
+      .filter((id): id is string => id !== null && valorVendaPorId.has(id)),
   );
   const receitaAtribuida = [...idsVendasAtribuidas].reduce(
     (soma, id) => soma + (valorVendaPorId.get(id) ?? 0),
@@ -419,6 +451,8 @@ export const painelCaptacao = cache(async (periodo: Periodo): Promise<PainelCapt
     percentualReceitaAtribuida,
     leadsAbertos,
     leadsParados,
+    retornosHoje: retornosHojeResposta.count ?? 0,
+    retornosAtrasados: retornosAtrasadosResposta.count ?? 0,
     plano,
     ritmo,
     etapas,

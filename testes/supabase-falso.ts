@@ -18,6 +18,8 @@ import { expect } from "vitest";
 export type RespostaFalsa = {
   data?: unknown;
   error?: { code?: string; message?: string; details?: string } | null;
+  /** O `count` de `select(..., { count: "exact" })`. Sem ele, a resposta não traz `count`. */
+  count?: number | null;
 };
 
 export type ChamadaFalsa = {
@@ -26,7 +28,7 @@ export type ChamadaFalsa = {
 };
 
 type Construtor = {
-  then: (resolver: (valor: { data: unknown; error: unknown }) => void) => void;
+  then: (resolver: (valor: { data: unknown; error: unknown; count?: number | null }) => void) => void;
 } & Record<string, (...argumentos: unknown[]) => Construtor>;
 
 export function supabaseFalso(respostas: Record<string, RespostaFalsa | RespostaFalsa[]> = {}) {
@@ -37,12 +39,13 @@ export function supabaseFalso(respostas: Record<string, RespostaFalsa | Resposta
     Object.entries(respostas).map(([alvo, r]) => [alvo, Array.isArray(r) ? [...r] : [r]]),
   );
 
-  function proxima(alvo: string): { data: unknown; error: unknown } {
+  function proxima(alvo: string): { data: unknown; error: unknown; count?: number | null } {
     const fila = filas.get(alvo);
     // A última resposta de cada alvo se repete: basta configurar uma quando
     // a ação consulta a mesma tabela várias vezes.
     const resposta = fila && fila.length > 1 ? fila.shift()! : fila?.[0];
-    return { data: resposta?.data ?? null, error: resposta?.error ?? null };
+    const base = { data: resposta?.data ?? null, error: resposta?.error ?? null };
+    return resposta && "count" in resposta ? { ...base, count: resposta.count } : base;
   }
 
   function construtor(alvo: string): Construtor {
@@ -52,7 +55,8 @@ export function supabaseFalso(respostas: Record<string, RespostaFalsa | Resposta
     const alvoProxy: Construtor = new Proxy({} as Construtor, {
       get(_objeto, propriedade) {
         if (propriedade === "then") {
-          return (resolver: (valor: { data: unknown; error: unknown }) => void) => resolver(proxima(alvo));
+          return (resolver: (valor: { data: unknown; error: unknown; count?: number | null }) => void) =>
+            resolver(proxima(alvo));
         }
         return (...argumentos: unknown[]) => {
           chamada.passos.push({ metodo: String(propriedade), argumentos });
