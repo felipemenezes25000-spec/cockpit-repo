@@ -41,9 +41,37 @@ function semO404Esperado(rota: string, erros: string[]): string[] {
   return rota === "/nao-existe" ? erros.filter((e) => !/404|Not Found/i.test(e)) : erros;
 }
 
-async function conferir(pagina: Page, rota: string, largura: string, erros: string[]) {
+/**
+ * Abre a rota e espera a página assentar: rede parada e navegador ocioso.
+ *
+ * Rede parada não quer dizer página hidratada. No `next dev`, com o trace
+ * ligado (playwright.config.ts), a /captacao ainda hidrata uns 300 ms depois
+ * do `networkidle`. O React hidrata em fatias e agenda a próxima na hora, então
+ * o navegador só fica ocioso (`requestIdleCallback`) quando a hidratação
+ * acaba: daí em diante o console já disse o que tinha a dizer, e a captura
+ * mostra a tela pronta. O prazo é só para uma tela que nunca sossega não
+ * travar o teste.
+ */
+async function abrir(pagina: Page, rota: string) {
   await pagina.goto(rota);
   await pagina.waitForLoadState("networkidle");
+  await pagina.evaluate(
+    () => new Promise<void>((pronta) => requestIdleCallback(() => pronta(), { timeout: 5_000 })),
+  );
+}
+
+/**
+ * A captura não mexe na página. Para esconder o cursor (`caret: "hide"`, o
+ * padrão), o Playwright 1.63 grava `caret-color: transparent !important` no
+ * `style` de todo input e textarea e, ao terminar, deixa um `style=""` vazio
+ * no lugar: se o React ainda estiver hidratando, acusa o atributo a mais como
+ * erro de hidratação. A captura é para revisão visual, não comparação de
+ * pixels — o cursor à vista não atrapalha.
+ */
+const CAPTURA = { fullPage: true, caret: "initial" } as const;
+
+async function conferir(pagina: Page, rota: string, largura: string, erros: string[]) {
+  await abrir(pagina, rota);
 
   // Nada de rolagem horizontal na página inteira. Tabela larga rola dentro
   // do próprio contêiner, nunca empurrando a tela.
@@ -53,7 +81,7 @@ async function conferir(pagina: Page, rota: string, largura: string, erros: stri
   await expect(pagina.locator("main")).toHaveCount(1);
   await expect(pagina.locator("h1").first()).toBeVisible();
 
-  await pagina.screenshot({ path: nomeDoArquivo(rota, largura, true), fullPage: true });
+  await pagina.screenshot({ ...CAPTURA, path: nomeDoArquivo(rota, largura, true) });
 
   expect(semO404Esperado(rota, erros), `erros de console em ${rota} (${largura})`).toEqual([]);
 }
@@ -85,12 +113,11 @@ for (const { nome, width, height } of LARGURAS) {
     for (const rota of TELAS_PUBLICAS) {
       test(`${rota}`, async ({ page }) => {
         const erros = vigiarConsole(page);
-        await page.goto(rota);
-        await page.waitForLoadState("networkidle");
+        await abrir(page, rota);
         const excesso = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(excesso).toBeLessThanOrEqual(0);
         await expect(page.locator("h1").first()).toBeVisible();
-        await page.screenshot({ path: nomeDoArquivo(rota, nome), fullPage: true });
+        await page.screenshot({ ...CAPTURA, path: nomeDoArquivo(rota, nome) });
         expect(semO404Esperado(rota, erros)).toEqual([]);
       });
     }

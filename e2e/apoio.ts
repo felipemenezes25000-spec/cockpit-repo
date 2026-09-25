@@ -8,9 +8,10 @@ import { arquivoDaSessao, type Papel } from "./contas";
  * O que os specs de ponta a ponta compartilham.
  *
  * Os fluxos rodam em mais de um navegador (ver playwright.config.ts) contra o
- * MESMO banco local. Tudo o que um fluxo cria leva um sufixo único, e o que
- * disputa recurso fixo (um horário da agenda, por exemplo) é deslocado por
- * projeto — assim o Chromium e o WebKit não pisam um no outro.
+ * MESMO banco local, que guarda o que toda execução criou até o próximo
+ * `db reset`. Tudo o que um fluxo cria leva um sufixo único, e o horário da
+ * agenda sai de um dia que o banco diz estar vazio (`diaSemAtendimento`) —
+ * assim o Chromium, o WebKit e as execuções anteriores não pisam um no outro.
  */
 
 /** Sufixo único por processo: dá para rodar de novo sem limpar o banco. */
@@ -45,9 +46,9 @@ export function hojeNaClinica(deslocamentoDias = 0): string {
 /**
  * Posição do projeto atual na configuração (0 para o primeiro).
  *
- * Serve para separar recursos fixos entre navegadores que rodam em sequência
- * no mesmo banco — sem isso, o segundo navegador acharia o horário ocupado
- * pelo primeiro e o teste falharia por choque, não por defeito.
+ * Separa, entre os navegadores que rodam em sequência no mesmo banco, o que
+ * precisa ser só de um deles — hoje, o nome dos leads da Captação, que a
+ * busca da carteira acharia em dobro.
  */
 export function indiceDoProjeto(): number {
   const info = test.info();
@@ -139,11 +140,13 @@ export const TELAS_PUBLICAS = [
 /**
  * Roda um comando SQL no banco LOCAL, como o SQL do projeto (sem sessão).
  *
- * Só para o que a interface não faz de propósito — hoje, o tempo passar: o
- * retorno combinado que venceu. Pela API o banco recusa próximo contato no
- * passado (0031); sem sessão ele entra, como numa importação de histórico. O
- * caminho é o do `npm run test:banco` (`psql` dentro do contêiner local, nome
- * tirado do `project_id`): não existe rota daqui até um banco remoto.
+ * Só para o que a interface não faz de propósito. Hoje, duas coisas: o tempo
+ * passar (o retorno combinado que venceu — pela API o banco recusa próximo
+ * contato no passado, 0031; sem sessão ele entra, como numa importação de
+ * histórico) e olhar a agenda inteira de uma vez, para achar um dia sem
+ * ninguém (`diaSemAtendimento`). O caminho é o do `npm run test:banco`
+ * (`psql` dentro do contêiner local, nome tirado do `project_id`): não existe
+ * rota daqui até um banco remoto.
  */
 export function sqlNoBancoLocal(comando: string): string {
   const config = readFileSync(join(__dirname, "..", "supabase", "config.toml"), "utf8");
@@ -161,4 +164,31 @@ export function sqlNoBancoLocal(comando: string): string {
 /** Texto como literal SQL (aspas simples dobradas). */
 export function literalSql(texto: string): string {
   return `'${texto.replaceAll("'", "''")}'`;
+}
+
+/**
+ * Um dia sem nenhum atendimento, de um a dez anos adiante — longe da semente
+ * e das telas de hoje e do mês —, "AAAA-MM-DD" no relógio da clínica.
+ *
+ * Sortear às cegas numa faixa curta (40 ou 50 dias por projeto, sempre na
+ * mesma hora) caía, cedo ou tarde, num dia que uma execução anterior já tinha
+ * ocupado: o choque de horário barrava a marcação e o teste falhava pela
+ * sobra, não por defeito. Aqui o banco diz quais dias estão vazios e o sorteio
+ * é só entre eles; como os projetos rodam em sequência, o WebKit já vê o dia
+ * que o Chromium usou. Vazio mesmo, não só sem a profissional do teste: a
+ * agenda do dia mostra só o que o teste marcou.
+ */
+export function diaSemAtendimento(): string {
+  const dia = sqlNoBancoLocal(`
+    select to_char(dia, 'YYYY-MM-DD') from (
+      select (now() at time zone 'America/Sao_Paulo')::date + deslocamento as dia
+        from generate_series(365, 3650) as deslocamento
+      except
+      select (inicio at time zone 'America/Sao_Paulo')::date from public.atendimentos
+    ) as livres
+    order by random()
+    limit 1;
+  `);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) throw new Error(`Nenhum dia livre na agenda local: "${dia}".`);
+  return dia;
 }

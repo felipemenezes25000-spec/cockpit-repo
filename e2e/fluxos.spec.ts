@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { SUFIXO, comoPerfil, digitarNoSeletorDePaciente, hojeNaClinica, indiceDoProjeto } from "./apoio";
+import { SUFIXO, comoPerfil, diaSemAtendimento, digitarNoSeletorDePaciente, hojeNaClinica } from "./apoio";
 import { SENHA_LOCAL } from "./contas";
 
 /**
@@ -129,9 +129,8 @@ test.describe("pacientes", () => {
 test.describe("agenda", () => {
   test("marca pelo seletor com teclado, recusa choque e confirma", async ({ browser }) => {
     const pagina = await comoPerfil(browser, "recepcao");
-    // Um dia longe e sem ninguém; cada navegador fica com a sua faixa de 50
-    // dias, porque os projetos rodam em sequência no mesmo banco.
-    const dia = hojeNaClinica(300 + indiceDoProjeto() * 50 + (Date.now() % 50));
+    // Um dia longe e sem ninguém na agenda local, perguntado ao banco.
+    const dia = diaSemAtendimento();
 
     await pagina.goto(`/agenda/novo?dia=${dia}`);
     const busca = await digitarNoSeletorDePaciente(pagina, "Aline");

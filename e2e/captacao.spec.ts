@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   SUFIXO,
   comoPerfil,
+  diaSemAtendimento,
   digitarNoSeletorDePaciente,
   fechar,
   hojeNaClinica,
@@ -118,7 +119,7 @@ test.describe("captação", () => {
     await linha.getByRole("link", { name: "Agendar" }).click();
     await expect(pagina).toHaveURL(/\/agenda\/novo\?paciente=[0-9a-f-]{36}/);
     await expect(pagina.getByText(nome).first()).toBeVisible();
-    const dia = hojeNaClinica(600 + indiceDoProjeto() * 40 + (Date.now() % 40));
+    const dia = diaSemAtendimento();
     await pagina.getByLabel("Quem atende").selectOption({ label: "Camila Duarte" });
     await pagina.getByLabel("Procedimento").selectOption({ label: "Toxina botulínica" });
     await pagina.getByLabel("Data").fill(dia);
