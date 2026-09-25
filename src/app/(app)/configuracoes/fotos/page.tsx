@@ -1,4 +1,4 @@
-import { Clock3, ImageOff, Images, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Clock3, Database, HardDrive, ImageOff, Images, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
@@ -13,6 +13,21 @@ export const metadata: Metadata = {
   title: "Conferência das fotos",
   description: "Fotos de evolução com registro e sem arquivo, ou com arquivo e sem registro.",
 };
+
+function MetricaIntegridade({ icone: Icone, rotulo, valor, apoio }: { icone: typeof Images; rotulo: string; valor: number; apoio: string }) {
+  return (
+    <div className="min-w-0 rounded-[var(--radius-painel)] border border-card-border bg-white/78 p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-3">
+        <span className="rotulo text-primary">{rotulo}</span>
+        <span className="flex size-9 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary">
+          <Icone aria-hidden="true" size={17} strokeWidth={1.7} />
+        </span>
+      </div>
+      <p className="numero mt-4 text-on-surface">{valor}</p>
+      <p className="mt-1 text-xs leading-5 text-outline">{apoio}</p>
+    </div>
+  );
+}
 
 export default async function PaginaConferenciaDasFotos() {
   const administradora = await ehAdministradora();
@@ -29,7 +44,7 @@ export default async function PaginaConferenciaDasFotos() {
   const recentes = conferencia.permitida ? conferencia.sobras.filter((s) => s.recente).length : 0;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="page-reveal flex flex-col gap-6">
       <LinkDeVoltar href="/configuracoes">Voltar para configurações</LinkDeVoltar>
 
       <CabecalhoDePagina
@@ -52,6 +67,14 @@ export default async function PaginaConferenciaDasFotos() {
           )
         }
       />
+
+      {conferencia.permitida ? (
+        <section aria-label="Pulso de integridade" className="integridade-cabine grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
+          <MetricaIntegridade icone={Database} rotulo="Divergências" valor={conferencia.sobras.length} apoio={conferencia.sobras.length === 0 ? "metadados e arquivos estão reconciliados" : "itens precisam de conferência manual"} />
+          <MetricaIntegridade icone={HardDrive} rotulo="Sem arquivo" valor={semArquivo.length} apoio="registro clínico existe, mas o objeto não foi localizado" />
+          <MetricaIntegridade icone={Images} rotulo="Sem registro" valor={semRegistro.length} apoio={recentes > 0 ? `${recentes} ainda podem estar em processo de envio` : "objetos encontrados sem metadado correspondente"} />
+        </section>
+      ) : null}
 
       <Card>
         <CardCabecalho
@@ -114,7 +137,7 @@ function Grupo({
   semRegistro?: boolean;
 }) {
   return (
-    <section aria-labelledby={id} className="rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 sm:p-5">
+    <section aria-labelledby={id} className="integridade-cabine p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="rotulo text-primary">Conferência</p>
@@ -134,7 +157,7 @@ function Grupo({
           {sobras.map((sobra) => (
             <li
               key={`${sobra.situacao}-${sobra.caminho}`}
-              className="rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3.5"
+              className="integridade-item rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3.5"
             >
               <div className="flex items-start gap-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-surface-container-low text-outline">
