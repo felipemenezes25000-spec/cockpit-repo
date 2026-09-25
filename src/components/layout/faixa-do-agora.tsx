@@ -11,26 +11,17 @@ import { useAgora } from "./use-agora";
 
 /**
  * A faixa do agora: logo abaixo da barra de módulos, em toda tela.
- *
- * Três frases lado a lado — quem está em atendimento, quem é a próxima e quem
- * vem depois — e um atalho para o dia inteiro. Frase cortada levava junto o
- * que mais importa ("em 10 min"), e o comprimento delas muda a cada minuto:
- * então a faixa se mede e vai tirando o que importa menos — o depois, a barra
- * do tempo, o selo da próxima e, com alguém em atendimento, a próxima — até
- * o que fica caber inteiro. As classes de largura são só o ponto de partida.
- * Prazo vai escrito ("em 53 min", "faltam 18 min"), nunca em mostrador. A
- * hora é lida só no navegador.
  */
 export function FaixaDoAgora({ atendimentos }: { atendimentos: AtendimentoDoAgora[] | null }) {
   const agora = useAgora();
 
   return (
-    <section aria-label="Agora na clínica" className="border-b border-card-border bg-surface">
-      <div className="mx-auto flex min-h-[var(--altura-faixa)] w-full max-w-[1600px] items-center gap-3 px-3 py-2 sm:px-6 xl:px-10 2xl:px-14">
+    <section aria-label="Agora na clínica" className="border-b border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#f9fbfe_100%)] shadow-[0_8px_24px_-24px_rgba(8,41,76,.42)]">
+      <div className="mx-auto flex min-h-[var(--altura-faixa)] w-full max-w-[1680px] items-center gap-3 px-3 py-2 sm:px-6 xl:px-10 2xl:px-14">
         <Conteudo atendimentos={atendimentos} agora={agora} />
         <Link
           href="/agenda"
-          className="group ml-auto inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius-controle)] px-2.5 text-sm font-semibold text-primary transition-colors hover:bg-selecao"
+          className="group ml-auto inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius-controle)] border border-transparent px-2.5 text-sm font-semibold text-primary transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-primary-fixed hover:bg-selecao"
         >
           Ver o dia
           <ArrowRight aria-hidden="true" size={15} strokeWidth={1.9} className="transition-transform duration-150 group-hover:translate-x-0.5" />
@@ -51,7 +42,6 @@ function Conteudo({ atendimentos, agora }: { atendimentos: AtendimentoDoAgora[] 
 
   const ativos = atendimentos.filter((a) => a.situacao !== "cancelado").length;
 
-  // Antes de montar não há hora: mostra só o que não depende do relógio.
   if (agora === null) {
     return (
       <Frase icone={<CalendarClock aria-hidden="true" size={16} strokeWidth={1.8} />}>
@@ -70,16 +60,12 @@ function Retrato({ atendimentos, agora, ativos }: { atendimentos: AtendimentoDoA
   const retrato = retratoDoAgora(atendimentos, agora);
   const { emAtendimento, proxima, depois } = retrato;
   const linha = useRef<HTMLDivElement>(null);
-  // Quantos itens opcionais saíram, do menos importante para o mais.
   const [cortes, setCortes] = useState(0);
-  // Sobe a cada mudança de largura: obriga a medir de novo mesmo sem corte a desfazer.
   const [medida, setMedida] = useState(0);
   const maximo = emAtendimento && proxima ? 4 : 3;
   const assinatura = [emAtendimento?.id, proxima?.id, depois?.id, retrato.faltamMin, retrato.emMin].join("|");
   const ultimaAssinatura = useRef(assinatura);
 
-  // Antes da pintura: texto novo recomeça com tudo; senão, se alguma frase
-  // ficou cortada, tira mais um item. Converge em poucas passadas.
   useLayoutEffect(() => {
     if (ultimaAssinatura.current !== assinatura) {
       ultimaAssinatura.current = assinatura;
@@ -94,7 +80,6 @@ function Retrato({ atendimentos, agora, ativos }: { atendimentos: AtendimentoDoA
     if (cortada) setCortes(cortes + 1);
   }, [assinatura, cortes, maximo, medida]);
 
-  // A largura mudou (janela, gaveta): mede tudo de novo.
   useEffect(() => {
     const caixa = linha.current;
     if (!caixa || typeof ResizeObserver === "undefined") return;
@@ -111,9 +96,9 @@ function Retrato({ atendimentos, agora, ativos }: { atendimentos: AtendimentoDoA
 
   return (
     <div ref={linha} className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
-      <p className="flex shrink-0 items-center gap-2">
-        <span aria-hidden="true" className="now-pulse size-2 rounded-full bg-primary-container" />
-        <span className="rotulo hidden sm:inline">Agora</span>
+      <p className="flex shrink-0 items-center gap-2 rounded-[var(--radius-controle)] bg-selecao px-2 py-1">
+        <span aria-hidden="true" className="now-pulse size-2 rounded-full bg-primary-container shadow-[0_0_0_4px_rgba(10,110,209,.10)]" />
+        <span className="rotulo hidden text-primary sm:inline">Agora</span>
         <span className="tabular text-sm font-bold text-on-surface">{formatarHora(new Date(agora))}</span>
       </p>
 
@@ -146,9 +131,6 @@ function Retrato({ atendimentos, agora, ativos }: { atendimentos: AtendimentoDoA
                 <span className={cn((retrato.emMin ?? 0) < 0 && "font-semibold text-atencao")}>{descreverEspera(retrato.emMin ?? 0)}</span>
               </span>
             </Frase>
-            {/* O invólucro esconde: passado ao chip, o "hidden" brigava com o
-                "inline-flex" dele (o cn() não resolve conflito) e o selo
-                aparecia em qualquer largura. */}
             {cortes < 3 ? (
               <span className="hidden shrink-0 lg:inline-flex">
                 <SituacaoChip situacao={proxima.situacao} compacto />
