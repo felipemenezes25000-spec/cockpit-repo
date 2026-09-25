@@ -1371,6 +1371,18 @@ texto. `#e9730c` sobre o fundo suave dá 2.75:1 e reprova no WCAG AA.
   (`bg-positivo-fundo`), azul claro é `bg-primary-fixed` (forte) ou `bg-selecao`
   (fraco). Linha inteira de lista não ganha fundo de estado: fica branca, e o
   estado vai no selo e na barrinha à esquerda.
+- **Exceção: o funil 3D da Captação** (decisão do dono em 25/09/2026). Dentro
+  do palco do funil (`captacao/funil-vivo.tsx` + `funil-3d-cena.tsx`, geometria
+  em `lib/funil-3d.ts`) valem degradê, brilho, desfoque e movimento — é uma
+  ilustração viva do funil, não um painel. As cores são os tokens
+  `--color-funil-*` (bloco `:root` de `globals.css`, fora do `@theme` porque
+  nenhuma utilitária as usa e o Tailwind só emite variável de tema usada). O
+  desenho é `aria-hidden`; quem opera usa os botões por cima (um por etapa,
+  `aria-pressed`). O desenho monta só no navegador; movimento parado com
+  `prefers-reduced-motion`, pausado fora da tela e com qualidade adaptativa
+  (começa leve, sobe ou para conforme os fps; ver `docs/captacao.md`). Nada
+  de filtro SVG na cena animada. Fora do palco, as regras acima continuam
+  valendo — não use o funil como precedente para outra tela.
 - **A cabine** (`.cabine`, do azul de ação `cabine` ao azul de texto
   `cabine-profunda`) é o único degradê e a única cor cheia de cada tela: um bloco
   com o que se lê de relance. Dentro dela o texto é `cabine-texto` (5,04:1 no

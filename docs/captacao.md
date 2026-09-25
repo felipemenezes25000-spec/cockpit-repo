@@ -255,9 +255,16 @@ Não existe DELETE no módulo. Um lead encerrado sem conversão vai para `perdid
 
 ## Visual e movimento
 
-A tela segue o sistema visual Cockpit: superfícies planas, borda de 1 px, uma cabine azul dominante e sem vidro/blur decorativo. O movimento fica restrito ao próprio funil e desaparece com `prefers-reduced-motion`.
+A tela segue o sistema visual Cockpit: superfícies planas, borda de 1 px e uma cabine azul dominante. **A exceção é o funil** (decisão do dono em 25/09/2026, AGENTS.md §7.3): um funil 3D vivo, desenhado em SVG, dentro de um palco azul profundo na cabine.
 
-As partículas do fluxo só aparecem quando existem leads no período; um funil vazio não simula atividade.
+- **O desenho** (`components/captacao/funil-3d-cena.tsx`) é decorativo (`aria-hidden`): quatro faixas em tronco de cone com degradê espelhado e lábio de luz, frisos que giram em perspectiva (o funil "roda"), uma varredura de brilho em cascata, o vórtice na boca com partículas sugadas, leads entrando pelas trilhas com seta, energia descendo em espiral pela superfície e moedas "R$" saindo pela ponta numa plataforma com ondas. As cores são os tokens `--color-funil-*` de `globals.css`.
+- **A geometria** (`lib/funil-3d.ts`) é função pura: o desenho e os botões por cima dele usam os mesmos números (viewBox 620 × 500; funil em x 0–400, balões a partir de x 432).
+- **Quem opera** usa os botões: uma faixa horizontal por etapa (`aria-pressed`, nome "Etapa: volume"), com o rótulo dentro da faixa e o balão de volume e conversão ao lado; a etapa escolhida levanta no desenho e o painel abaixo mostra conversão, o necessário a partir de agora e o link para a carteira filtrada.
+- **Container query:** abaixo de 520 px de largura do cartão, o desenho é recortado em x 0–400 (o funil ocupa a largura toda) e os balões e traços saem; o painel continua embaixo.
+- **Movimento:** todo em SMIL, com períodos que dividem 6 s (a cena se repete a cada 6 s; `svg.setCurrentTime(t)` congela qualquer instante — é o que a captura de vídeo usa). O desenho só monta no navegador, depois da hidratação (hidratar as centenas de nós junto atrasava a página ~270 ms no `next dev`); no servidor vão os botões, rótulos, balões e o painel. O movimento some com `prefers-reduced-motion` e pausa fora da tela (`IntersectionObserver`). A entrada das faixas em cascata é CSS e também respeita o movimento reduzido.
+- **Qualidade adaptativa** (`proximaQualidade`, `lib/funil-3d.ts`): o funil começa **leve** (sem estrelas piscando, frisos parados, metade das partículas), mede 1,2 s de quadros com ele na tela e sobe para **plena** com folga (45+ fps) ou **para** abaixo de 30 — decoração engasgando é pior que parada. A decisão fica no `localStorage` (`cockpit.funil.qualidade`), por aparelho. Medido em 25/09/2026: Chromium no Windows fica na plena a 60 fps; o WebKit do Playwright no Windows (renderização por software) para.
+- **Sem filtro SVG na cena:** blur e sombra em elementos que se mexem faziam o WebKit refazer o desfoque na CPU a cada quadro (9 fps). Brilho é degradê radial ou traço em camadas.
+- **Sem leads no período, não há fluxo:** leads, espiral e moedas só aparecem com entradas; o funil vazio só gira. Os números não animam (a contagem de 0 até o valor piscava na hidratação).
 
 O `loading.tsx` reproduz a composição real do dashboard — cabine, pulso com seis cartões, ritmo, inteligência e carteira — para reduzir salto de layout durante a navegação.
 
@@ -269,6 +276,7 @@ O `loading.tsx` reproduz a composição real do dashboard — cabine, pulso com 
 | Ações | `src/server/acoes/captacao.test.ts` | as cinco ações: sessão, perfil, UUID, validação, frase do banco × frase segura, log, zero linhas, revalidação; o contato grava só as colunas do grant, com "hoje" no fuso da clínica |
 | Consultas | `src/server/consultas/captacao-leads.test.ts`, `captacao.test.ts` | cada recorte (coorte × carteira aberta), ordem, combinação de filtros, busca com operador, página além do fim, contatos em lote e agrupados, lead encerrado sem retorno, retornos contados no banco, 0030 ausente |
 | Componentes | `src/components/captacao/*.test.tsx` | selos de retorno, último contato, formulário só para lead aberto e para quem opera, históricos separados, erro por campo com foco, estados vazios, links do Pulso |
+| Funil 3D | `src/lib/funil-3d.test.ts`, `src/components/captacao/funil-vivo.test.tsx` | faixas empilhadas e contíguas, rótulo dentro da faixa, traço saindo de fora do funil, frisos que somem atrás, espiral em tempo uniforme; um botão por etapa, seleção, painel, link sem a página antiga, desenho `aria-hidden`, parado com movimento reduzido e sem fluxo quando não há leads |
 | Banco | `supabase/testes/permissoes.sql` (seção Captação) | RLS e grants das quatro tabelas, sequências, ganho ⇔ venda, trilha de etapas e de perdas, RPC de conversão (perfil, idempotência, perdido), gatilhos de agenda e venda, contato append-only, autor e hora do banco, retorno no passado, lead encerrado, resumo que não volta no tempo, auditoria, limpeza de exemplo |
 | Ponta a ponta | `e2e/captacao.spec.ts` | lead → contato → retorno hoje → qualificado → paciente → agenda → venda (ganho e receita atribuída); retorno recusado no passado, retorno que venceu, perda, reabertura e as duas trilhas; financeiro só acompanha; axe (WCAG 2.2 AA) e sem rolagem lateral de 320 a 1440 px com tudo aberto |
 

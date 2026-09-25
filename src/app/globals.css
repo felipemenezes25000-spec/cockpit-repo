@@ -90,8 +90,37 @@
   --shadow-flutuante: 0 24px 64px -24px rgba(8, 41, 76, 0.28), 0 8px 24px -12px rgba(8, 41, 76, 0.16);
 }
 
+
 :root {
   --surface-canvas: var(--color-fundo);
+
+  /* Funil 3D da Captação — a exceção ilustrada do sistema (AGENTS.md §7.3):
+     só dentro do palco do funil. Do abismo da boca ao gelo das bordas, e o
+     ouro das moedas que saem pela ponta. Fora do @theme de propósito: nenhuma
+     utilitária usa estas cores, e o Tailwind só emite as variáveis do tema
+     que alguma classe usa — aqui elas saem sempre, para o SVG ler. */
+  --color-funil-abismo: #01081f;
+  --color-funil-noite: #031d4d;
+  --color-funil-fundo: #07347e;
+  --color-funil-palco: #0e4dac;
+  --color-funil-profundo: #0a2f7a;
+  --color-funil-escuro: #1552c2;
+  --color-funil-medio: #2e7bea;
+  --color-funil-vivo: #3f8df2;
+  --color-funil-claro: #8ccbff;
+  --color-funil-gelo: #d6ecff;
+  --color-funil-luz: #ffffff;
+  --color-funil-sombra: #000c2e;
+  --color-funil-ouro-luz: #fff4c9;
+  --color-funil-ouro-claro: #ffd35c;
+  --color-funil-ouro: #f2a516;
+  --color-funil-ouro-escuro: #b86e00;
+  --color-funil-ouro-texto: #8a5200;
+  --color-funil-lead-1: #1d63d8;
+  --color-funil-lead-2: #7b5ce0;
+  --color-funil-lead-3: #0f9f8f;
+  --color-funil-lead-4: #d8467a;
+  --color-funil-lead-5: #e58a00;
 
   --motion-instant: 110ms;
   --motion-fast: 160ms;

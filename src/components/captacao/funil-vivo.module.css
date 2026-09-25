@@ -1,90 +1,323 @@
-.palco {
+/* Funil 3D da Captação — a exceção ilustrada do sistema (AGENTS.md §7.3):
+   brilho, degradê e movimento só dentro do palco; cores nos tokens
+   --color-funil-* de globals.css. */
+
+.secao {
   isolation: isolate;
 }
 
-.eixo {
+/* O corpo do funil mede a própria largura (container query), não a da tela:
+   no desktop o cartão ocupa metade da linha; abaixo do xl, a largura toda. */
+.cena {
+  container-type: inline-size;
+  margin-top: 1.25rem;
+}
+
+/* Palco: o "espaço" azul profundo onde o funil brilha. A caixa tem a
+   proporção do viewBox (620 × 500) e os botões usam % dela, como o desenho. */
+.palco {
+  --x-eixo: 32.258%; /* 200 / 620 */
+  --x-balao: 71.29%; /* 442 / 620 */
+  position: relative;
+  max-width: 47.5rem;
+  margin-inline: auto;
+  aspect-ratio: 620 / 500;
+  overflow: hidden;
+  contain: layout paint;
+  border: 1px solid color-mix(in srgb, var(--color-funil-luz) 16%, transparent);
+  border-radius: var(--radius-painel);
+  background:
+    radial-gradient(ellipse 58% 62% at 32% 50%, color-mix(in srgb, var(--color-funil-claro) 30%, transparent), transparent 72%),
+    radial-gradient(ellipse 40% 36% at 88% 12%, color-mix(in srgb, var(--color-funil-lead-2) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 42% 38% at 6% 92%, color-mix(in srgb, var(--color-funil-lead-3) 18%, transparent), transparent 70%),
+    radial-gradient(ellipse 95% 85% at 45% 38%, var(--color-funil-palco) 0%, var(--color-funil-fundo) 52%, var(--color-funil-noite) 100%);
+}
+
+.desenho {
   position: absolute;
-  top: 2rem;
-  bottom: 2rem;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.32);
+  inset: 0;
+  /* Camada própria: o que pisca fora do palco (o "agora" do topo, o selo
+     do fluxo) não obriga a repintar as centenas de nós do desenho. */
+  will-change: transform;
 }
 
-.segmento {
-  clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%);
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  background: rgba(255, 255, 255, 0.08);
-  transition:
-    transform 220ms var(--ease-enter),
-    background-color 180ms var(--ease-standard),
-    border-color 180ms var(--ease-standard);
+.desenho svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.segmento:hover,
-.segmento[aria-pressed="true"] {
-  transform: scale(1.018);
-  background: rgba(255, 255, 255, 0.17);
-  border-color: rgba(255, 255, 255, 0.62);
+/* Entrada: as faixas descem em cascata, de baixo para cima, e a selecionada
+   se destaca (levanta um pouco) quando o toque muda. */
+.desenho [data-faixa] {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transition: transform 360ms var(--ease-enter);
+  animation: faixaEntra 900ms var(--ease-enter) backwards;
 }
 
-.particula {
-  position: absolute;
-  z-index: 5;
-  top: 9%;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  margin-left: -3px;
-  border-radius: 999px;
-  background: #ffffff;
+.desenho [data-faixa="3"] {
+  animation-delay: 0.05s;
+}
+
+.desenho [data-faixa="2"] {
+  animation-delay: 0.17s;
+}
+
+.desenho [data-faixa="1"] {
+  animation-delay: 0.29s;
+}
+
+.desenho [data-faixa="0"] {
+  animation-delay: 0.41s;
+}
+
+.desenho [data-faixa][data-sel="sim"] {
+  transform: scale(1.03);
+}
+
+.desenho [data-onda] {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: ondaDoToque 750ms var(--ease-enter) forwards;
   pointer-events: none;
-  opacity: 0;
-  animation: descer 4.8s linear infinite;
 }
 
-.particula2 {
-  margin-left: -18%;
-  animation-delay: 1.55s;
-  animation-duration: 5.4s;
-}
-
-.particula3 {
-  margin-left: 15%;
-  animation-delay: 3.1s;
-  animation-duration: 5.1s;
-}
-
-@keyframes descer {
-  0% {
+@keyframes ondaDoToque {
+  from {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  to {
     opacity: 0;
-    transform: translateY(0) scale(0.65);
+    transform: scale(1.22);
   }
-  12% {
-    opacity: 0.72;
-  }
-  55% {
-    opacity: 0.9;
-    transform: translateY(15rem) scale(1);
-  }
-  92% {
-    opacity: 0.32;
-  }
-  100% {
+}
+
+@keyframes faixaEntra {
+  from {
     opacity: 0;
-    transform: translateY(26rem) scale(0.7);
+    transform: translateY(-46px) scale(0.96);
+  }
+}
+
+/* Uma faixa horizontal por etapa: o toque vale na faixa do funil e no balão. */
+.faixa {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-painel);
+  background: transparent;
+  color: var(--color-cabine-texto);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.faixa:focus-visible {
+  outline: 2px solid var(--color-cabine-texto);
+  outline-offset: -3px;
+}
+
+.rotuloFaixa {
+  position: absolute;
+  left: var(--x-eixo);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-funil-sombra) 70%, transparent),
+    0 0 14px color-mix(in srgb, var(--color-funil-sombra) 45%, transparent);
+  transition: transform 260ms var(--ease-enter);
+  animation: rotuloEntra 700ms var(--ease-enter) backwards;
+  animation-delay: calc(var(--atraso, 0s) + 0.35s);
+}
+
+.faixa:hover .rotuloFaixa,
+.faixa[aria-pressed="true"] .rotuloFaixa {
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+@keyframes rotuloEntra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -30%);
+  }
+}
+
+.iconeFaixa {
+  display: flex;
+  flex-shrink: 0;
+  width: 2.15rem;
+  height: 2.15rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--color-funil-luz) 60%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-funil-luz) 18%, transparent);
+  transition:
+    background-color 220ms var(--ease-standard),
+    transform 220ms var(--ease-enter);
+}
+
+.faixa[aria-pressed="true"] .iconeFaixa {
+  background: color-mix(in srgb, var(--color-funil-luz) 34%, transparent);
+  transform: scale(1.08);
+}
+
+.textoFaixa {
+  display: flex;
+  flex-direction: column;
+}
+
+.nomeFaixa {
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.numeroFaixa {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.balao {
+  position: absolute;
+  left: var(--x-balao);
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-cartao);
+  color: var(--color-cabine-texto-secundario);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition:
+    background-color 220ms var(--ease-standard),
+    border-color 220ms var(--ease-standard);
+  animation: balaoEntra 700ms var(--ease-enter) backwards;
+  animation-delay: calc(var(--atraso, 0s) + 0.55s);
+}
+
+@keyframes balaoEntra {
+  from {
+    opacity: 0;
+    transform: translate(18px, -50%);
+  }
+}
+
+.balao strong {
+  color: var(--color-cabine-texto);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.balaoNome {
+  color: var(--color-cabine-texto);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.faixa:hover .balao {
+  background: color-mix(in srgb, var(--color-funil-luz) 8%, transparent);
+}
+
+.faixa[aria-pressed="true"] .balao {
+  border-color: color-mix(in srgb, var(--color-funil-luz) 45%, transparent);
+  background: color-mix(in srgb, var(--color-funil-luz) 15%, transparent);
+}
+
+/* Etapa selecionada, sob o palco. */
+.detalhe {
+  display: grid;
+  gap: 1rem;
+  max-width: 47.5rem;
+  margin: 1rem auto 0;
+  padding: 1rem;
+  border: 1px solid var(--color-cabine-linha);
+  border-radius: var(--radius-painel);
+  background: color-mix(in srgb, var(--color-funil-noite) 42%, transparent);
+}
+
+.detalheNumeros {
+  display: grid;
+  gap: 0.9rem;
+}
+
+@container (min-width: 520px) {
+  .detalhe {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+/* Estreito (celular, coluna do cartão): o funil ocupa a largura toda; os
+   balões e os traços ficam de fora (o desenho é recortado em x 0–400). */
+@container (max-width: 519px) {
+  .palco {
+    --x-eixo: 50%;
+    aspect-ratio: 400 / 500;
+  }
+
+  .desenho {
+    right: auto;
+    width: 155%; /* 620 / 400 */
+  }
+
+  .desenho [data-traco],
+  .balao {
+    display: none;
+  }
+
+  .rotuloFaixa {
+    gap: 0.4rem;
+  }
+
+  .iconeFaixa {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .nomeFaixa {
+    font-size: 0.66rem;
+  }
+
+  .numeroFaixa {
+    font-size: 1.25rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .segmento,
-  .particula {
-    animation: none !important;
-    transition: none !important;
+  .desenho [data-faixa],
+  .rotuloFaixa,
+  .iconeFaixa,
+  .balao {
+    animation: none;
+    transition: none;
   }
 
-  .particula {
+  .desenho [data-onda] {
     display: none;
+  }
+
+  .desenho [data-faixa][data-sel="sim"] {
+    transform: none;
+  }
+
+  .faixa:hover .rotuloFaixa,
+  .faixa[aria-pressed="true"] .rotuloFaixa {
+    transform: translate(-50%, -50%);
   }
 }
