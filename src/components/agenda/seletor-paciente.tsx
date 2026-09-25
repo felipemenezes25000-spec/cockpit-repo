@@ -2,7 +2,7 @@
 
 import { Check, LoaderCircle, Search, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Campo, classeDeEntrada, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
@@ -45,12 +45,27 @@ export function SeletorPaciente({
 
   const listaAberta = opcoes.length > 0 && !listaFechada;
 
+  /**
+   * Leva o foco a `alvo` no próximo quadro — só se ninguém o levou para outro
+   * lugar nesse meio-tempo. O quadro atrasa quando a tela está ocupada (as
+   * animações de entrada), e quem já tinha clicado no campo seguinte e
+   * começado a digitar perdia o texto: o foco pulava para o "Trocar" no meio
+   * da digitação. Foco solto (no body) ou ainda aqui dentro: pode levar.
+   */
+  function focarDepois(alvo: RefObject<HTMLElement | null>) {
+    requestAnimationFrame(() => {
+      const ativo = document.activeElement;
+      const caixa = oculto.current?.parentElement;
+      if (!ativo || ativo === document.body || caixa?.contains(ativo)) alvo.current?.focus();
+    });
+  }
+
   function escolher(opcao: PacienteParaSelecao) {
     setEscolhida(opcao);
     setOpcoes([]);
     setDestacada(-1);
     aoEscolher?.(opcao);
-    requestAnimationFrame(() => trocar.current?.focus());
+    focarDepois(trocar);
   }
 
   function aoTeclar(evento: KeyboardEvent<HTMLInputElement>) {
@@ -153,7 +168,7 @@ export function SeletorPaciente({
               setEscolhida(null);
               setTermo("");
               aoEscolher?.(null);
-              requestAnimationFrame(() => campo.current?.focus());
+              focarDepois(campo);
             }}
             className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline transition-[transform,background-color,color,border-color] duration-150 hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary active:scale-95"
             aria-label={`Trocar a paciente (${escolhida.nome})`}

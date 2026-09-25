@@ -39,7 +39,7 @@ do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como �
 
 <br>
 
-<img src="docs/assets/numeros.svg" width="100%" alt="31 migrações SQL versionadas · 42 rotas testadas em 3 larguras · 935 testes de unidade e componente · 269 asserções de permissão no banco · 47 testes de fluxo E2E · 3 perfis com RLS em toda tabela">
+<img src="docs/assets/numeros.svg" width="100%" alt="31 migrações SQL versionadas · 42 rotas testadas em 3 larguras · 936 testes de unidade e componente · 269 asserções de permissão no banco · 47 testes de fluxo E2E · 3 perfis com RLS em toda tabela">
 
 <details>
 <summary><b>Todos os números</b> — contados no código em 25/09/2026, no branch <code>main</code></summary>
@@ -54,7 +54,7 @@ do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como �
 | Políticas de RLS | **72** (69 em `public` + 3 no Storage) |
 | Gatilhos | **77** em `public`, dos quais **23** de auditoria |
 | Funções no banco | **57** — 24 em `public`, 33 em `private`; 18 chamadas pela aplicação, **4** alcançáveis por `anon` |
-| Verificações automatizadas | **1515** — 935 Vitest · 269 SQL por perfil · 311 Playwright (260 Chromium, 47 WebKit, 4 iPhone 13) |
+| Verificações automatizadas | **1516** — 936 Vitest · 269 SQL por perfil · 311 Playwright (260 Chromium, 47 WebKit, 4 iPhone 13) |
 | Dependências | **7** de execução, 18 de desenvolvimento |
 | Histórico | **299 commits** no `main`, de 01/08/2026 a 25/09/2026; o `jamal-do-mal`, que a Vercel publica, está atrás dele |
 
@@ -478,7 +478,7 @@ Três camadas, **1475 verificações automatizadas** — e nenhuma toca produç�
 
 | Camada | Comando | Quanto | O que confere |
 |---|---|---|---|
-| Unidade e componente | `npm test` | **935 testes** em 93 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, login e redirecionamento, middleware, cabeçalhos de segurança, **50 das 53 ações de servidor** com um Supabase falso e componentes (jsdom + Testing Library) |
+| Unidade e componente | `npm test` | **936 testes** em 93 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, login e redirecionamento, middleware, cabeçalhos de segurança, **50 das 53 ações de servidor** com um Supabase falso e componentes (jsdom + Testing Library) |
 | Banco | `npm run test:banco` | **269 asserções**, todas verdes do zero (`db reset` + seed, 25/09/2026) | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim |
 | Navegador | `npm run test:e2e` | **311 testes**: Chromium 260 (47 de fluxo + 129 de telas: 42 endereços × 3 larguras + 3 + 84 de acessibilidade com axe: 42 endereços × 2 larguras), WebKit 47, iPhone 13 4 | Login e redirecionamento seguro, permissões por perfil pela URL, paciente, agenda, venda, despesa, prontuário, fotos, importação, Relacionamento, procedimentos, busca, 404, CSP, documento e assinatura por link (também no WebKit e no celular), Captação de ponta a ponta; 42 endereços em 320, 768 e 1440 px, sem rolagem horizontal nem erro de console, e sem violação WCAG 2.2 A/AA (axe) em 360 e 1440 px |
 
