@@ -155,13 +155,13 @@ não é o zelo extra que parece.
 > aparece só a mensagem do `psql`.
 >
 > **Números (conferidos em 25/09/2026, no branch `main`, não copie sem
-> recontar).** Vitest: **895 testes em 83 arquivos**, todos verdes — 15 em
+> recontar).** Vitest: **905 testes em 85 arquivos**, todos verdes — 15 em
 > `src/lib/`, 12 de ações em `src/server/acoes/`, 11 de consultas em
 > `src/server/consultas/`, 5 em `src/app/` (login, destino do login,
-> recuperação de senha, sem acesso e a página do documento), 34 de componente
+> recuperação de senha, sem acesso e a página do documento), 35 de componente
 > (`src/components/`), 2 do middleware (`src/middleware.test.ts` e
-> `src/lib/supabase/`) e 4 em `testes/` (`cabecalhos-seguranca`,
-> `desempenho`, `react-ping` e `versao-postgrest`). `test:banco`: **269
+> `src/lib/supabase/`) e 5 em `testes/` (`cabecalhos-seguranca`,
+> `desempenho`, `marca`, `react-ping` e `versao-postgrest`). `test:banco`: **269
 > asserções**, todas verdes numa execução completa a partir de `db reset`
 > (migrações 0001–0031 + seed) em 25/09/2026. E2E: **311 testes em 9
 > arquivos** (contados com `--list` em 25/09/2026) — `chromium` 260 (47 de
