@@ -21,16 +21,7 @@ function tirarDoCookie(): string | null {
   }
 }
 
-/**
- * "Venda registrada", "Horário marcado": a confirmação de que a gravação deu
- * certo, na tela para onde a ação levou (ver `lib/aviso.ts`).
- *
- * Canto de baixo à direita no computador; no celular e no tablet, acima da
- * barra inferior. Some sozinho em 6,5 s — a linha de baixo mostra o tempo —,
- * e o tempo para enquanto o ponteiro ou o foco estão nele (WCAG 2.2.1). A
- * região viva existe sempre na página, para o leitor de tela anunciar o aviso
- * quando ele entra; o foco nunca é roubado.
- */
+/** Confirmações pós-ação: venda registrada, horário marcado etc. */
 export function AvisosDaTela() {
   const caminho = usePathname();
   const busca = useSearchParams();
@@ -53,7 +44,6 @@ export function AvisosDaTela() {
 
   const fechar = useCallback(() => setSaindo(true), []);
 
-  // O relógio do aviso: corre enquanto não está pausado; guarda o que falta.
   useEffect(() => {
     if (!aviso || saindo || pausado) return;
     retomadoEm.current = performance.now();
@@ -83,29 +73,31 @@ export function AvisosDaTela() {
           onFocus={() => setPausado(true)}
           onBlur={() => setPausado(false)}
           className={cn(
-            "aviso-entra pointer-events-auto relative flex w-full max-w-[380px] items-start gap-3 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface py-3.5 pr-2.5 pl-3.5 shadow-flutuante sm:w-[380px]",
+            "aviso-entra pointer-events-auto relative flex w-full max-w-[390px] items-start gap-3 overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-positivo-borda bg-[linear-gradient(145deg,#ffffff_0%,#f7fcf8_100%)] py-3.5 pr-2.5 pl-3.5 shadow-[0_26px_70px_-34px_rgba(8,41,76,.38),0_8px_22px_-16px_rgba(14,118,57,.18)] sm:w-[390px]",
             saindo && "aviso-sai",
-            pausado && "aviso-pausado",
+            pausado && "aviso-pausado ring-1 ring-inset ring-positivo-borda/60",
           )}
         >
-          <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-positivo-fundo text-positivo">
+          <span aria-hidden="true" className="pointer-events-none absolute -top-12 -left-10 size-28 rounded-full bg-positivo-fundo blur-2xl" />
+          <span aria-hidden="true" className="relative flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo text-positivo shadow-[0_10px_22px_-18px_rgba(14,118,57,.5)]">
             <CircleCheck size={19} strokeWidth={2} />
           </span>
-          <span className="min-w-0 flex-1 pt-0.5">
-            <span className="block text-sm font-semibold text-on-surface">{aviso.titulo}</span>
+          <span className="relative min-w-0 flex-1 pt-0.5">
+            <span className="block text-sm font-semibold tracking-[-0.01em] text-on-surface">{aviso.titulo}</span>
             <span className="mt-0.5 block text-xs leading-5 text-on-surface-variant">{aviso.texto}</span>
+            {pausado ? <span className="mt-1.5 block text-[0.62rem] font-semibold tracking-[0.04em] text-positivo uppercase">Tempo pausado enquanto você lê</span> : null}
           </span>
           <button
             type="button"
             onClick={fechar}
             aria-label="Fechar aviso"
-            className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-colors hover:bg-surface-container-low hover:text-primary"
+            className="relative flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] hover:bg-positivo-fundo hover:text-positivo active:scale-95"
           >
             <X aria-hidden="true" size={16} strokeWidth={1.9} />
           </button>
           <span
             aria-hidden="true"
-            className="aviso-tempo absolute inset-x-0 bottom-0 h-[3px] bg-positivo"
+            className="aviso-tempo absolute inset-x-0 bottom-0 h-[3px] bg-[linear-gradient(90deg,#0e7639,#36a163)]"
             style={{ "--aviso-duracao": `${DURACAO_MS}ms` } as CSSProperties}
           />
         </div>
