@@ -81,6 +81,44 @@ describe("SeletorPaciente — reset do formulário", () => {
     expect(container.querySelector('[role="option"]')).toBeNull();
     expect(buscar).toHaveBeenCalledTimes(1);
   });
+
+  // Regressão: o reset devolvia a escolha ao estado inicial (nenhuma). Como o
+  // React 19 reinicia o form depois de toda ação, a venda recusada por valor
+  // vazio voltava sem a paciente, e o segundo envio pedia "Escolha a paciente".
+  it("a paciente escolhida sobrevive ao reset que segue uma ação recusada", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    vi.useFakeTimers();
+    await act(async () => {
+      createRoot(container).render(
+        <form>
+          <SeletorPaciente inicial={null} />
+        </form>,
+      );
+    });
+
+    const campo = container.querySelector<HTMLInputElement>("#busca-paciente");
+    if (!campo) throw new Error("campo não encontrado");
+    await act(async () => {
+      fireEvent.change(campo, { target: { value: "Carol" } });
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    await act(async () => {
+      fireEvent.mouseDown(container.querySelector('[role="option"]') as HTMLElement);
+    });
+    const oculto = container.querySelector<HTMLInputElement>('input[name="paciente_id"]');
+    expect(oculto?.value).toBe("p1");
+
+    await act(async () => {
+      container.querySelector("form")?.reset();
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    vi.useRealTimers();
+
+    expect(container.querySelector<HTMLInputElement>('input[name="paciente_id"]')?.value).toBe("p1");
+    expect(container.textContent).toContain("Achada Carol");
+  });
 });
 
 describe("SeletorPaciente — teclado e leitor de tela", () => {

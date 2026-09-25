@@ -80,19 +80,20 @@ export function SeletorPaciente({
   useEffect(() => {
     const formulario = oculto.current?.form;
     if (!formulario) return;
+    // O React 19 reinicia o formulário depois de TODA ação, inclusive a que
+    // o servidor recusou ("Informe o valor original."). A paciente escolhida
+    // é dado da pessoa, como o texto de um campo: sobrevive ao reset, senão o
+    // segundo envio volta com "Escolha a paciente". O reset só limpa a busca
+    // em andamento.
     function aoResetar() {
-      // Formulários como Agenda podem nascer com uma paciente já escolhida.
-      // Reset devolve ao estado inicial daquele formulário, não a "nenhuma".
-      setEscolhida(inicial);
       setTermo("");
       setOpcoes([]);
       setDestacada(-1);
       setListaFechada(false);
-      aoEscolher?.(inicial);
     }
     formulario.addEventListener("reset", aoResetar);
     return () => formulario.removeEventListener("reset", aoResetar);
-  }, [aoEscolher, inicial]);
+  }, []);
 
   useEffect(() => {
     if (escolhida || termo.trim().length < 2) {

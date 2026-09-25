@@ -138,7 +138,9 @@ test.describe("agenda", () => {
     await busca.press("ArrowDown");
     await expect(busca).toHaveAttribute("aria-activedescendant", /.+/);
     await busca.press("Enter");
-    await expect(pagina.getByText("Aline Bastos")).toBeVisible();
+    // No conteúdo: de manhã, a faixa do agora, no topo, também mostra Aline
+    // (o atendimento das 14h30 da semente).
+    await expect(pagina.locator("#conteudo").getByText("Aline Bastos")).toBeVisible();
 
     await pagina.getByLabel("Quem atende").selectOption({ label: "Dra. Marina Rocha" });
     await pagina.getByLabel("Procedimento").selectOption({ label: "Toxina botulínica" });
