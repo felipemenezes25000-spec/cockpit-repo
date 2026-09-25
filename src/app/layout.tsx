@@ -16,12 +16,13 @@ const sans = Hanken_Grotesk({
 /**
  * A prévia de link (`og:image`, de `opengraph-image.png`) precisa de endereço
  * absoluto. A base é a mesma origem do link de assinatura (`ORIGEM_PUBLICA`,
- * AGENTS.md §3), que é o link que a clínica manda pelo WhatsApp. Sem ela, o
- * Next usa o domínio de produção da Vercel — ou o localhost, fora dela.
+ * AGENTS.md §3), que é o link que a clínica manda pelo WhatsApp. Sem ela
+ * (desenvolvimento, build da CI), o localhost — o mesmo que o Next usaria,
+ * mas dito aqui, sem o aviso no meio do build.
  */
-function baseDaPrevia(): URL | undefined {
+function baseDaPrevia(): URL {
   const origem = origemPublica({ configurada: process.env.ORIGEM_PUBLICA, host: null, protocolo: null, producao: true });
-  return origem.ok ? new URL(origem.origem) : undefined;
+  return new URL(origem.ok ? origem.origem : "http://localhost:3000");
 }
 
 export const metadata: Metadata = {
