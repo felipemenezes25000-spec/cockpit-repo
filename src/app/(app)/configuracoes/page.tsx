@@ -29,25 +29,27 @@ type Secao = {
   resumo?: string;
 };
 
-function CartaoConfiguracao({ secao }: { secao: Secao }) {
+function CartaoConfiguracao({ secao, indice }: { secao: Secao; indice: number }) {
   const Icone = secao.icone;
   const disponivel = Boolean(secao.href);
 
   const conteudo = (
     <>
-      <div className="flex items-start justify-between gap-4">
+      <span aria-hidden="true" className="pointer-events-none absolute -top-14 -right-12 size-32 rounded-full bg-primary-fixed/45 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+      <div className="relative flex items-start justify-between gap-4">
         <span
           className={
             disponivel
-              ? "flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-primary-fixed text-primary"
-              : "flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-card-border bg-surface-container-low text-outline"
+              ? "flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-gradient-to-br from-surface to-selecao text-primary shadow-[0_14px_28px_-22px_rgba(8,84,160,.65)] transition-transform duration-200 group-hover:-translate-y-0.5"
+              : "flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-card-border bg-surface-container-low text-outline"
           }
         >
-          <Icone aria-hidden="true" size={20} strokeWidth={1.65} />
+          <Icone aria-hidden="true" size={21} strokeWidth={1.7} />
         </span>
 
         {disponivel ? (
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-surface-container-low text-outline transition-[transform,background-color,color] duration-150 group-hover:translate-x-0.5 group-hover:bg-primary-fixed group-hover:text-primary">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline transition-[transform,background-color,border-color,color] duration-150 group-hover:translate-x-0.5 group-hover:border-primary-fixed-dim group-hover:bg-selecao group-hover:text-primary">
             <ChevronRight aria-hidden="true" size={17} strokeWidth={1.7} />
           </span>
         ) : (
@@ -55,22 +57,26 @@ function CartaoConfiguracao({ secao }: { secao: Secao }) {
         )}
       </div>
 
-      <div className="mt-5">
-        <h3 className="text-base font-semibold tracking-[-0.015em] text-on-surface">{secao.titulo}</h3>
+      <div className="relative mt-5">
+        <div className="mb-1.5 flex items-center gap-2">
+          <span className="tabular text-[0.64rem] font-bold tracking-[0.08em] text-outline uppercase">0{indice + 1}</span>
+          <span aria-hidden="true" className="h-px w-6 bg-card-border" />
+        </div>
+        <h3 className="text-base font-bold tracking-[-0.018em] text-on-surface transition-colors group-hover:text-primary">{secao.titulo}</h3>
         <p className="mt-1.5 text-sm leading-6 text-on-surface-variant">{secao.descricao}</p>
       </div>
 
       {secao.resumo ? (
-        <div className="mt-4 border-t border-card-border pt-3">
-          <span className="text-xs font-semibold text-primary">{secao.resumo}</span>
+        <div className="relative mt-5 border-t border-card-border pt-3.5">
+          <span className="inline-flex rounded-full border border-primary-fixed bg-selecao px-2.5 py-1 text-xs font-semibold text-primary">{secao.resumo}</span>
         </div>
       ) : null}
     </>
   );
 
   const classe = disponivel
-    ? "premium-interactive group relative isolate block h-full overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-5"
-    : "relative block h-full rounded-[var(--radius-painel)] border border-dashed border-outline-variant bg-surface-container-low p-5";
+    ? "premium-interactive group relative isolate block h-full overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface p-5"
+    : "group relative block h-full overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-dashed border-outline-variant bg-surface-container-low p-5";
 
   if (secao.href) {
     return (
@@ -134,7 +140,7 @@ export default async function PaginaConfiguracoes() {
   const disponiveis = secoes.filter((secao) => secao.href).length;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="page-reveal flex flex-col gap-6">
       <CabecalhoDePagina
         icone={Settings2}
         rotulo="Sistema"
@@ -154,23 +160,27 @@ export default async function PaginaConfiguracoes() {
         }
       />
 
-      <section aria-labelledby="configuracoes-disponiveis">
-        <div className="mb-4 flex items-end justify-between gap-4">
+      <section className="premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5" aria-labelledby="configuracoes-disponiveis">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-28 -right-20 size-72 rounded-full bg-primary-fixed/35 blur-3xl" />
+        <div className="relative mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="rotulo text-primary">Operação</p>
-            <h2 id="configuracoes-disponiveis" className="mt-1 text-xl font-semibold tracking-[-0.025em] text-on-surface">
+            <h2 id="configuracoes-disponiveis" className="mt-1 text-xl font-bold tracking-[-0.03em] text-on-surface">
               Áreas do sistema
             </h2>
+            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-on-surface-variant">
+              Ajustes que governam agenda, cadastros e integridade operacional ficam reunidos aqui.
+            </p>
           </div>
-          <p className="hidden max-w-md text-right text-xs leading-5 text-outline sm:block">
+          <p className="max-w-md text-xs leading-5 text-outline sm:text-right">
             Itens sem link permanecem visíveis para deixar claro o que está planejado, sem criar falsas ações.
           </p>
         </div>
 
-        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {secoes.map((secao) => (
+        <ul className="relative grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {secoes.map((secao, indice) => (
             <li key={secao.titulo}>
-              <CartaoConfiguracao secao={secao} />
+              <CartaoConfiguracao secao={secao} indice={indice} />
             </li>
           ))}
         </ul>
