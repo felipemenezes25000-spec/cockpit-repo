@@ -9,21 +9,20 @@ import { cn } from "@/lib/cn";
 import { formatarHora } from "@/lib/format";
 import { useAgora } from "./use-agora";
 
-/**
- * A faixa do agora: logo abaixo da barra de módulos, em toda tela.
- */
+/** A faixa do agora: logo abaixo da barra de módulos, em toda tela. */
 export function FaixaDoAgora({ atendimentos }: { atendimentos: AtendimentoDoAgora[] | null }) {
   const agora = useAgora();
 
   return (
-    <section aria-label="Agora na clínica" className="border-b border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#f9fbfe_100%)] shadow-[0_8px_24px_-24px_rgba(8,41,76,.42)]">
+    <section aria-label="Agora na clínica" className="relative border-b border-card-border bg-surface/82 shadow-[0_10px_30px_-28px_rgba(8,41,76,.48)] backdrop-blur-xl">
+      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-fixed-dim/65 to-transparent" />
       <div className="mx-auto flex min-h-[var(--altura-faixa)] w-full max-w-[1680px] items-center gap-3 px-3 py-2 sm:px-6 xl:px-10 2xl:px-14">
         <Conteudo atendimentos={atendimentos} agora={agora} />
         <Link
           href="/agenda"
-          className="group ml-auto inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius-controle)] border border-transparent px-2.5 text-sm font-semibold text-primary transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-primary-fixed hover:bg-selecao"
+          className="group premium-interactive ml-auto inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao px-2.5 text-sm font-semibold text-primary shadow-[0_8px_20px_-18px_rgba(8,84,160,.55)] hover:border-primary-fixed-dim hover:bg-primary-fixed"
         >
-          Ver o dia
+          <span className="hidden min-[360px]:inline">Ver o dia</span>
           <ArrowRight aria-hidden="true" size={15} strokeWidth={1.9} className="transition-transform duration-150 group-hover:translate-x-0.5" />
         </Link>
       </div>
@@ -96,10 +95,10 @@ function Retrato({ atendimentos, agora, ativos }: { atendimentos: AtendimentoDoA
 
   return (
     <div ref={linha} className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
-      <p className="flex shrink-0 items-center gap-2 rounded-[var(--radius-controle)] bg-selecao px-2 py-1">
+      <p className="flex shrink-0 items-center gap-2 rounded-[var(--radius-controle)] border border-primary-fixed bg-gradient-to-b from-surface to-selecao px-2.5 py-1.5 shadow-[0_8px_20px_-18px_rgba(8,84,160,.5)]">
         <span aria-hidden="true" className="now-pulse size-2 rounded-full bg-primary-container shadow-[0_0_0_4px_rgba(10,110,209,.10)]" />
         <span className="rotulo hidden text-primary sm:inline">Agora</span>
-        <span className="tabular text-sm font-bold text-on-surface">{formatarHora(new Date(agora))}</span>
+        <span className="tabular text-sm font-bold tracking-[-0.015em] text-on-surface">{formatarHora(new Date(agora))}</span>
       </p>
 
       <Separador />
@@ -174,7 +173,7 @@ function Frase({ icone, children }: { icone?: ReactNode; children: ReactNode }) 
 }
 
 function Separador({ className }: { className?: string }) {
-  return <span aria-hidden="true" className={cn("h-6 w-px shrink-0 bg-card-border", className)} />;
+  return <span aria-hidden="true" className={cn("h-6 w-px shrink-0 bg-gradient-to-b from-transparent via-card-border to-transparent", className)} />;
 }
 
 /** "Ana Paula Ribeiro Lima" → "Ana Lima": cabe na faixa sem perder quem é. */
