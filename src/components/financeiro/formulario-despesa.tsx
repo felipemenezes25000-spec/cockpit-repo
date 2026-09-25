@@ -4,7 +4,8 @@ import { CircleAlert, Save } from "lucide-react";
 import Link from "next/link";
 import { useActionState } from "react";
 import { BotaoDeAcao } from "@/components/ui/formulario-acao";
-import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
+import { RodapeAcoesFormulario } from "@/components/ui/form-actions";
+import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO, GrupoDeCampos } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import {
   CATEGORIAS_EM_ORDEM,
@@ -35,48 +36,52 @@ export function FormularioDespesa({
   const erros = estado.erros;
 
   return (
-    <form action={enviar} className="flex flex-col gap-6" noValidate>
+    <form action={enviar} className="flex flex-col gap-6 sm:gap-7" noValidate>
       {despesaId ? <input type="hidden" name="id" value={despesaId} /> : null}
 
       {erros.geral ? (
-        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm leading-6 text-negativo">
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-painel)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo shadow-[0_12px_30px_-26px_rgba(153,27,27,.35)]">
           <CircleAlert aria-hidden="true" size={16} className="mt-1 shrink-0" />
           {erros.geral}
         </p>
       ) : null}
 
-      <Campo id="descricao" rotulo="Descrição" obrigatorio erro={erros.descricao}>
-        <input id="descricao" name="descricao" type="text" required maxLength={200} defaultValue={de("descricao")} placeholder="Aluguel da sala" className={cn(ENTRADA, erros.descricao && ENTRADA_ERRO)} />
-      </Campo>
-
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <Campo id="categoria" rotulo="Categoria" obrigatorio erro={erros.categoria}>
-          {/* `key`: o React 19 reinicia o formulário depois da ação, e o <select> só lê o
-              defaultValue ao montar — sem remontar, a escolha se perderia num erro. */}
-          <select key={`categoria-${de("categoria")}`} id="categoria" name="categoria" required defaultValue={de("categoria")} className={cn(ENTRADA, erros.categoria && ENTRADA_ERRO)}>
-            {CATEGORIAS_EM_ORDEM.map((c) => <option key={c} value={c}>{ROTULO_CATEGORIA[c]}</option>)}
-          </select>
+      <GrupoDeCampos titulo="Identificação da despesa" descricao="Descreva a saída de forma que ela continue clara no extrato e nos relatórios do mês.">
+        <Campo id="descricao" rotulo="Descrição" obrigatorio erro={erros.descricao}>
+          <input id="descricao" name="descricao" type="text" required maxLength={200} defaultValue={de("descricao")} placeholder="Aluguel da sala" className={cn(ENTRADA, erros.descricao && ENTRADA_ERRO)} />
         </Campo>
-        <Campo id="valor" rotulo="Valor (R$)" obrigatorio erro={erros.valor}>
-          <input id="valor" name="valor" type="text" inputMode="decimal" required defaultValue={de("valor")} placeholder="0,00" className={cn(ENTRADA, "tabular", erros.valor && ENTRADA_ERRO)} />
-        </Campo>
-        <Campo id="vencimento" rotulo="Vencimento" obrigatorio erro={erros.vencimento}>
-          <input id="vencimento" name="vencimento" type="date" required defaultValue={de("vencimento")} className={cn(ENTRADA, erros.vencimento && ENTRADA_ERRO)} />
-        </Campo>
-      </div>
+      </GrupoDeCampos>
 
-      <Campo id="observacoes" rotulo="Observação" dica="A taxa de cartão não entra como despesa: ela já é descontada no líquido dos recebimentos.">
-        <textarea id="observacoes" name="observacoes" maxLength={2000} defaultValue={de("observacoes")} className={AREA_TEXTO} />
-      </Campo>
+      <GrupoDeCampos titulo="Classificação e vencimento" descricao="Categoria, valor e data determinam como a despesa aparece no caixa.">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <Campo id="categoria" rotulo="Categoria" obrigatorio erro={erros.categoria}>
+            <select key={`categoria-${de("categoria")}`} id="categoria" name="categoria" required defaultValue={de("categoria")} className={cn(ENTRADA, erros.categoria && ENTRADA_ERRO)}>
+              {CATEGORIAS_EM_ORDEM.map((c) => <option key={c} value={c}>{ROTULO_CATEGORIA[c]}</option>)}
+            </select>
+          </Campo>
+          <Campo id="valor" rotulo="Valor (R$)" obrigatorio erro={erros.valor}>
+            <input id="valor" name="valor" type="text" inputMode="decimal" required defaultValue={de("valor")} placeholder="0,00" className={cn(ENTRADA, "tabular", erros.valor && ENTRADA_ERRO)} />
+          </Campo>
+          <Campo id="vencimento" rotulo="Vencimento" obrigatorio erro={erros.vencimento}>
+            <input id="vencimento" name="vencimento" type="date" required defaultValue={de("vencimento")} className={cn(ENTRADA, erros.vencimento && ENTRADA_ERRO)} />
+          </Campo>
+        </div>
+      </GrupoDeCampos>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
+      <GrupoDeCampos titulo="Contexto administrativo" descricao="Anote informações que ajudam a conferir ou entender este lançamento no futuro.">
+        <Campo id="observacoes" rotulo="Observação" dica="A taxa de cartão não entra como despesa: ela já é descontada no líquido dos recebimentos.">
+          <textarea id="observacoes" name="observacoes" maxLength={2000} defaultValue={de("observacoes")} className={AREA_TEXTO} />
+        </Campo>
+      </GrupoDeCampos>
+
+      <RodapeAcoesFormulario>
         <BotaoDeAcao tom="primario" tamanho="md" icone={<Save aria-hidden="true" strokeWidth={1.75} />} rotuloPendente="Salvando despesa…">
           {rotuloSalvar}
         </BotaoDeAcao>
         <Link href="/financeiro/despesas" className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] duration-150 hover:bg-surface-container-low hover:text-primary active:scale-[0.985]">
           Cancelar
         </Link>
-      </div>
+      </RodapeAcoesFormulario>
     </form>
   );
 }
