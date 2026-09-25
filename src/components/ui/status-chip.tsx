@@ -71,7 +71,7 @@ export function SituacaoChip({
   return (
     <span
       className={cn(
-        "inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.75rem] font-semibold whitespace-nowrap",
+        "inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.75rem] font-semibold whitespace-nowrap shadow-[0_7px_16px_-15px_rgba(8,41,76,.45)]",
         estilo.classes,
         className,
       )}
