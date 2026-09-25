@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, LoaderCircle, PencilLine, Target } from "lucide-react";
+import { CircleAlert, LoaderCircle, PencilLine, Sparkles, Target } from "lucide-react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Card, CardCorpo } from "@/components/ui/card";
@@ -22,7 +22,7 @@ function BotaoSalvar() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline"
+      className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-4 text-sm font-semibold text-on-primary shadow-[0_12px_26px_-18px_rgba(10,110,209,.8)] transition-[transform,background-color,box-shadow] hover:-translate-y-px hover:bg-primary-hover hover:shadow-[0_16px_30px_-18px_rgba(8,60,115,.75)] disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:text-outline disabled:shadow-none"
     >
       {pending ? <LoaderCircle aria-hidden="true" size={16} className="animate-spin" /> : <PencilLine aria-hidden="true" size={16} />}
       {pending ? "Salvando…" : "Salvar meta"}
@@ -50,19 +50,28 @@ export function MetaFinanceira({
 
   return (
     <Card className="h-full">
-      <CardCorpo className="flex h-full flex-col">
-        <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-primary-fixed text-primary">
-            <Target size={20} strokeWidth={1.9} />
-          </span>
-          <div>
-            <p className="rotulo text-primary">Meta financeira</p>
-            <h2 className="titulo-secao mt-1">O alvo do mês</h2>
+      <CardCorpo className="relative flex h-full flex-col overflow-hidden">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-16 size-44 rounded-full bg-primary-fixed/55 blur-2xl" />
+
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-gradient-to-br from-surface to-selecao text-primary shadow-[0_14px_28px_-22px_rgba(8,84,160,.65)]">
+              <Target size={20} strokeWidth={1.9} />
+            </span>
+            <div>
+              <p className="rotulo text-primary">Meta financeira</p>
+              <h2 className="titulo-secao mt-1">O alvo do mês</h2>
+            </div>
           </div>
+          {configurada ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-positivo-borda bg-positivo-fundo px-2 py-1 text-[0.65rem] font-semibold text-positivo">
+              <Sparkles aria-hidden="true" size={11} /> ativa
+            </span>
+          ) : null}
         </div>
 
         {!configurada ? (
-          <div className="mt-5 rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-3">
+          <div className="relative mt-5 rounded-[var(--radius-cartao)] border border-atencao-borda bg-atencao-fundo px-3.5 py-3">
             <p className="text-xs font-semibold text-atencao">Meta ainda não definida</p>
             <p className="mt-1 text-xs leading-5 text-on-surface-variant">
               Defina faturamento, ticket e conversões para ativar o cálculo do funil inverso e da cadência mensal.
@@ -70,18 +79,16 @@ export function MetaFinanceira({
           </div>
         ) : null}
 
-        <div className="mt-5">
+        <div className="relative mt-5 rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low p-4">
           <p className="text-xs font-medium text-outline">{configurada ? "Meta definida" : "Meta do mês"}</p>
           <p className="numero mt-1 text-on-surface">{configurada ? formatarMoeda(meta.metaFaturamento) : "—"}</p>
-        </div>
 
-        <div className="mt-4">
-          <div className="flex items-end justify-between gap-3">
+          <div className="mt-4 flex items-end justify-between gap-3">
             <div>
               <p className="text-xs text-outline">Faturamento atual</p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-on-surface">{formatarMoeda(faturamentoAtual)}</p>
             </div>
-            <strong className="text-lg font-semibold tabular-nums text-primary">{configurada ? `${percentualMeta}%` : "—"}</strong>
+            <strong className="text-lg font-bold tabular-nums text-primary">{configurada ? `${percentualMeta}%` : "—"}</strong>
           </div>
           <span
             className="barra mt-3"
@@ -92,25 +99,25 @@ export function MetaFinanceira({
           </span>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 border-y border-card-border py-4">
-          <div>
+        <div className="relative mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3.5">
             <p className="text-xs text-outline">Falta faturar</p>
             <p className="mt-1 text-base font-semibold tabular-nums text-on-surface">{configurada ? formatarMoeda(plano.gapFinanceiro) : "—"}</p>
           </div>
-          <div>
-            <p className="text-xs text-outline">Leads necessários</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">{configurada ? `+${plano.leadsNecessarios.toLocaleString("pt-BR")}` : "—"}</p>
+          <div className="rounded-[var(--radius-cartao)] border border-primary-fixed bg-selecao p-3.5">
+            <p className="text-xs text-primary">Leads necessários</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-primary">{configurada ? `+${plano.leadsNecessarios.toLocaleString("pt-BR")}` : "—"}</p>
           </div>
         </div>
 
-        <p className="mt-4 text-xs leading-5 text-outline">
+        <p className="relative mt-4 text-xs leading-5 text-outline">
           {configurada
             ? "O número de leads é recalculado do fundo para o topo usando ticket e conversões planejadas. Nada desse resultado é salvo manualmente."
             : "O faturamento realizado continua vindo do Financeiro; configurar a meta não cria nenhum total paralelo."}
         </p>
 
         {podeEditar ? (
-          <details className="group mt-5 border-t border-card-border pt-4" open={!configurada}>
+          <details className="group relative mt-5 border-t border-card-border pt-4" open={!configurada}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-[var(--radius-controle)] py-2 text-sm font-semibold text-primary focus-visible:outline-2">
               {configurada ? "Ajustar meta e premissas" : "Definir meta e premissas"}
               <PencilLine aria-hidden="true" size={16} className="transition-transform group-open:rotate-[-8deg]" />
@@ -139,31 +146,13 @@ export function MetaFinanceira({
 
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
                 <Campo id="taxa_lead_qualificado" rotulo="Lead → qualificado" obrigatorio erro={estado.erros.taxa_lead_qualificado}>
-                  <input
-                    id="taxa_lead_qualificado"
-                    name="taxa_lead_qualificado"
-                    inputMode="decimal"
-                    defaultValue={estado.valores?.taxa_lead_qualificado ?? textoNumero(meta.taxaLeadQualificado)}
-                    className={classeDeEntrada({ altura: "compacta" })}
-                  />
+                  <input id="taxa_lead_qualificado" name="taxa_lead_qualificado" inputMode="decimal" defaultValue={estado.valores?.taxa_lead_qualificado ?? textoNumero(meta.taxaLeadQualificado)} className={classeDeEntrada({ altura: "compacta" })} />
                 </Campo>
                 <Campo id="taxa_qualificado_agendamento" rotulo="Qualif. → agenda" obrigatorio erro={estado.erros.taxa_qualificado_agendamento}>
-                  <input
-                    id="taxa_qualificado_agendamento"
-                    name="taxa_qualificado_agendamento"
-                    inputMode="decimal"
-                    defaultValue={estado.valores?.taxa_qualificado_agendamento ?? textoNumero(meta.taxaQualificadoAgendamento)}
-                    className={classeDeEntrada({ altura: "compacta" })}
-                  />
+                  <input id="taxa_qualificado_agendamento" name="taxa_qualificado_agendamento" inputMode="decimal" defaultValue={estado.valores?.taxa_qualificado_agendamento ?? textoNumero(meta.taxaQualificadoAgendamento)} className={classeDeEntrada({ altura: "compacta" })} />
                 </Campo>
                 <Campo id="taxa_agendamento_venda" rotulo="Agenda → venda" obrigatorio erro={estado.erros.taxa_agendamento_venda}>
-                  <input
-                    id="taxa_agendamento_venda"
-                    name="taxa_agendamento_venda"
-                    inputMode="decimal"
-                    defaultValue={estado.valores?.taxa_agendamento_venda ?? textoNumero(meta.taxaAgendamentoVenda)}
-                    className={classeDeEntrada({ altura: "compacta" })}
-                  />
+                  <input id="taxa_agendamento_venda" name="taxa_agendamento_venda" inputMode="decimal" defaultValue={estado.valores?.taxa_agendamento_venda ?? textoNumero(meta.taxaAgendamentoVenda)} className={classeDeEntrada({ altura: "compacta" })} />
                 </Campo>
               </div>
 
@@ -179,7 +168,7 @@ export function MetaFinanceira({
             </form>
           </details>
         ) : (
-          <p className="mt-auto pt-5 text-xs leading-5 text-outline">
+          <p className="relative mt-auto pt-5 text-xs leading-5 text-outline">
             {configurada
               ? "A meta pode ser alterada pela administradora ou pelo perfil financeiro."
               : "A administradora ou o perfil financeiro precisa definir a meta para ativar o planejamento do funil."}
