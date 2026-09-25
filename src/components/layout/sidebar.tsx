@@ -2,8 +2,8 @@
 
 import { X } from "lucide-react";
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { cn } from "@/lib/cn";
 import { MarcaComNome } from "@/components/ui/marca-da-clinica";
+import { cn } from "@/lib/cn";
 import { MenuNavegacao } from "./sidebar-nav";
 
 /**
@@ -49,25 +49,26 @@ export function GavetaDeModulos({ aberta, aoFechar }: { aberta: boolean; aoFecha
         aria-label="Menu de módulos"
         onKeyDown={prenderFoco}
         className={cn(
-          "absolute inset-y-0 left-0 flex w-[min(320px,88vw)] flex-col border-r border-card-border bg-surface shadow-flutuante transition-transform duration-[380ms] ease-[var(--ease-suave)]",
+          "absolute inset-y-0 left-0 flex w-[min(340px,90vw)] flex-col border-r border-card-border bg-surface shadow-[24px_0_70px_-34px_rgba(8,41,76,.55)] transition-transform duration-[380ms] ease-[var(--ease-suave)]",
           "pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
           aberta ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex min-h-[var(--altura-barra)] items-center justify-between gap-3 border-b border-card-border px-4">
+        <div className="relative flex min-h-[var(--altura-barra)] items-center justify-between gap-3 overflow-hidden border-b border-card-border bg-[linear-gradient(145deg,#ffffff_0%,#f4f9ff_100%)] px-4">
+          <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-16 size-36 rounded-full bg-primary-fixed/55 blur-2xl" />
           <MarcaComNome />
           <button
             ref={botaoFechar}
             type="button"
             onClick={aoFechar}
             aria-label="Fechar menu"
-            className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+            className="relative flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-on-surface-variant shadow-[0_8px_18px_-16px_rgba(8,41,76,.42)] transition-[transform,background-color,color] hover:-translate-y-0.5 hover:bg-selecao hover:text-primary"
           >
             <X aria-hidden="true" size={20} strokeWidth={1.7} />
           </button>
         </div>
 
-        <div className="rolagem-discreta rolagem-esmaecida flex-1 overflow-y-auto px-3 py-4">
+        <div className="rolagem-discreta rolagem-esmaecida flex-1 overflow-y-auto bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] px-3 py-4">
           <MenuNavegacao aoNavegar={aoFechar} />
         </div>
       </aside>
