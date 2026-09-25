@@ -36,7 +36,7 @@ export function AvisoDeTela({
 }) {
   return (
     <section className={cn("premium-panel mx-auto w-full max-w-2xl rounded-[var(--radius-painel)] border px-6 py-9 text-center sm:px-10 sm:py-11", className)}>
-      <span aria-hidden="true" className={cn("mx-auto flex size-14 items-center justify-center rounded-[var(--radius-painel)]", TOM[tom])}>
+      <span aria-hidden="true" className={cn("vazio-icone mx-auto flex size-14 items-center justify-center rounded-[var(--radius-painel)]", TOM[tom])}>
         <Icone size={26} strokeWidth={1.7} />
       </span>
       <p className={cn("rotulo mt-6", tom === "negativo" ? "text-negativo" : "text-primary")}>{rotulo}</p>

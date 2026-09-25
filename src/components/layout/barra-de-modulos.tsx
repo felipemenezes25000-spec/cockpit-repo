@@ -41,7 +41,7 @@ export function BarraDeModulos({ className }: { className?: string }) {
               >
                 <Icone aria-hidden="true" size={19} strokeWidth={atual ? 2 : 1.7} className="shrink-0 xl:hidden 2xl:block" />
                 <span className="sr-only xl:not-sr-only">{rotulo}</span>
-                {atual ? <span aria-hidden="true" className="absolute inset-x-2.5 -bottom-[13px] h-[3px] rounded-full bg-primary-container" /> : null}
+                {atual ? <span aria-hidden="true" className="traco-ativo absolute inset-x-2.5 -bottom-[13px] h-[3px] rounded-full bg-primary-container" /> : null}
               </Link>
             </li>
           );
@@ -107,13 +107,13 @@ function MenuMais() {
       >
         Mais
         <ChevronDown aria-hidden="true" size={15} strokeWidth={1.8} className={cn("transition-transform duration-150", aberto && "rotate-180")} />
-        {dentro ? <span aria-hidden="true" className="absolute inset-x-2.5 -bottom-[13px] h-[3px] rounded-full bg-primary-container" /> : null}
+        {dentro ? <span aria-hidden="true" className="traco-ativo absolute inset-x-2.5 -bottom-[13px] h-[3px] rounded-full bg-primary-container" /> : null}
       </button>
 
       {aberto ? (
         <div
           id="menu-mais-modulos"
-          className="page-reveal absolute top-full right-0 z-40 mt-3 w-72 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-1.5 shadow-flutuante"
+          className="surge absolute top-full right-0 z-40 mt-3 w-72 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-1.5 shadow-flutuante"
         >
           <ul className="flex flex-col gap-0.5">
             {MODULOS_EM_MAIS.map((item) => {

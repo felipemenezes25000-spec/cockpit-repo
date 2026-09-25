@@ -2,7 +2,9 @@ import { Cake, Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/avatar";
 import { BotaoLink } from "@/components/ui/button";
+import { ConviteContato } from "@/components/relacionamento/convite-contato";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { ItemLista, Lista } from "@/components/ui/data-list";
 import { descreverPrazo, formatarData, formatarDiaMes } from "@/lib/format";
@@ -25,8 +27,8 @@ export async function Aniversariantes() {
   }
 
   return (
-    <Card className="relative overflow-hidden">
-      <CardCabecalho
+    <CardRecolhivel
+        id="vg-aniversarios"
         titulo="Aniversariantes do mês"
         descricao={`${aniversariantes.length} ${aniversariantes.length === 1 ? "paciente faz" : "pacientes fazem"} aniversário neste mês${hoje > 0 ? ` · ${hoje} hoje` : ""}`}
         acao={hoje > 0 ? (
@@ -35,7 +37,7 @@ export async function Aniversariantes() {
             {hoje === 1 ? "1 aniversário hoje" : `${hoje} aniversários hoje`}
           </span>
         ) : undefined}
-      />
+    >
 
       <CardCorpo className="relative">
         <Lista rotulo="Aniversariantes do mês">
@@ -72,16 +74,19 @@ export async function Aniversariantes() {
                   </p>
                 </div>
 
-                <BotaoLink href="/relacionamento?aba=aniversarios" tamanho="sm">Preparar mensagem</BotaoLink>
+                <ConviteContato pacienteId={pessoa.id} nome={pessoa.nome} telefone={pessoa.telefone} tipo="aniversario" compacto />
               </ItemLista>
             );
           })}
         </Lista>
       </CardCorpo>
 
-      <CardRodape className="relative text-outline">
-        O texto é preparado em Relacionamento; a equipe envia a mensagem manualmente.
+      <CardRodape className="relative flex flex-wrap items-center justify-between gap-3 text-outline">
+        <span>O WhatsApp abre com o parabéns escrito; quem envia é a equipe. Depois, marque como enviada para registrar o contato.</span>
+        <BotaoLink href="/relacionamento?aba=aniversarios" tamanho="sm">
+          {aniversariantes.length > LIMITE ? `Ver os ${aniversariantes.length}` : "Abrir em Relacionamento"}
+        </BotaoLink>
       </CardRodape>
-    </Card>
+    </CardRecolhivel>
   );
 }

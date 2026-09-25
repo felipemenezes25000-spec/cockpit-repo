@@ -5,7 +5,8 @@ import { IndicadoresPeriodo } from "@/components/financeiro/indicadores-periodo"
 import { ListaMovimentacoes } from "@/components/financeiro/lista-movimentacoes";
 import { NavegacaoMes } from "@/components/financeiro/navegacao-mes";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CardCorpo } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
 import { ehFinanceira } from "@/lib/auth";
 import { lerMes } from "@/lib/periodo";
@@ -71,15 +72,14 @@ export default async function PaginaFinanceiro({
 
       <IndicadoresPeriodo numeros={numeros} exemplo={exemplo} />
 
-      <Card>
-        <CardCabecalho
+      <CardRecolhivel id="fin-ultimas-movimentacoes"
           titulo="Últimas movimentações"
           descricao="Uma leitura rápida das entradas e saídas mais recentes; o extrato completo continua na aba Movimentações."
-        />
+      >
         <CardCorpo>
           <ListaMovimentacoes itens={extrato.slice(0, 8)} />
         </CardCorpo>
-      </Card>
+      </CardRecolhivel>
     </div>
   );
 }

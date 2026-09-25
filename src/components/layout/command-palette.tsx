@@ -24,6 +24,7 @@ import {
 import { MENU } from "@/lib/nav";
 import { cn } from "@/lib/cn";
 import type { Papel } from "@/lib/perfil";
+import { avisarQueVaiNavegar } from "./progresso-de-navegacao";
 
 type AcaoRapida = {
   rotulo: string;
@@ -111,6 +112,7 @@ export function CommandPalette({
   if (!aberta) return null;
 
   function navegar(href: string) {
+    avisarQueVaiNavegar();
     aoFechar();
     router.push(href);
   }
@@ -173,7 +175,7 @@ export function CommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-start justify-center bg-on-surface/40 px-3 pt-[10vh] sm:px-6 sm:pt-[14vh]"
+      className="veu veu-entra fixed inset-0 z-[80] flex items-start justify-center px-3 pt-[10vh] sm:px-6 sm:pt-[14vh]"
       role="presentation"
       onMouseDown={(evento) => {
         if (evento.target === evento.currentTarget) aoFechar();
@@ -185,7 +187,7 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Comandos rápidos"
         onKeyDown={aoTeclar}
-        className="page-reveal glass-surface w-full max-w-[680px] overflow-hidden rounded-[var(--radius-painel)] border border-card-border"
+        className="surge-centro glass-surface w-full max-w-[680px] overflow-hidden rounded-[var(--radius-painel)] border border-card-border shadow-flutuante"
       >
         <div className="relative border-b border-card-border px-4 py-4 sm:px-5">
           <div className="relative flex items-center gap-3">
@@ -215,7 +217,7 @@ export function CommandPalette({
           </div>
         </div>
 
-        <div className="rolagem-discreta max-h-[62vh] overflow-y-auto p-2.5 sm:p-3">
+        <div className="rolagem-discreta rolagem-esmaecida max-h-[62vh] overflow-y-auto p-2.5 sm:p-3">
           {podeBuscar ? (
             <button
               type="button"

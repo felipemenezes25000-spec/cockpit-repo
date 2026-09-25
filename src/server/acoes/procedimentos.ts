@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehAdministradora, usuarioAtual } from "@/lib/auth";
 import { mensagemDoBanco } from "@/lib/erros-banco";
@@ -71,6 +72,7 @@ export async function criarProcedimento(
   }
 
   revalidar();
+  await avisarNaProximaTela("procedimento-criado");
   redirect("/configuracoes/procedimentos");
 }
 
@@ -105,6 +107,7 @@ export async function atualizarProcedimento(
   if (!data) return { erros: { geral: "Procedimento não encontrado." }, valores: valoresDigitados(dados) };
 
   revalidar(id);
+  await avisarNaProximaTela("procedimento-alterado");
   redirect("/configuracoes/procedimentos");
 }
 

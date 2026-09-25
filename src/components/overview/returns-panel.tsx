@@ -1,10 +1,13 @@
 import { Repeat2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { BotaoLink } from "@/components/ui/button";
+import { BotaoWhatsApp } from "@/components/ui/botao-whatsapp";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { ItemLista, Lista } from "@/components/ui/data-list";
 import { formatarData } from "@/lib/format";
+import { linkWhatsApp, mensagemRetorno } from "@/lib/relacionamento";
 import {
   ROTULO_ACOMPANHAMENTO,
   retornosEmAberto,
@@ -98,16 +101,17 @@ export async function ProximosRetornos() {
   }
 
   return (
-    <Card className="relative overflow-hidden">
-      <CardCabecalho
-        titulo="Voltam em breve"
-        descricao="Oportunidades de acompanhamento, das mais antigas para as mais recentes."
-      />
+    <CardRecolhivel
+      id="vg-retornos"
+      titulo="Voltam em breve"
+      descricao="Oportunidades de acompanhamento, das mais antigas para as mais recentes."
+    >
 
       <CardCorpo className="relative">
         <Lista rotulo="Pacientes para retorno">
           {visiveis.map((retorno) => {
             const fase = FASE[retorno.janela.fase];
+            const whatsapp = linkWhatsApp(retorno.telefone, mensagemRetorno(retorno.paciente));
             return (
               <ItemLista
                 key={retorno.id}
@@ -133,6 +137,14 @@ export async function ProximosRetornos() {
                 </p>
 
                 <div className="pl-1"><BarraJanela janela={retorno.janela} /></div>
+
+                {whatsapp && retorno.janela.fase !== "aguardando" ? (
+                  <div className="mt-3 pl-1">
+                    <BotaoWhatsApp href={whatsapp} paraQuem={retorno.paciente} tamanho="xs">
+                      Chamar para o retorno
+                    </BotaoWhatsApp>
+                  </div>
+                ) : null}
               </ItemLista>
             );
           })}
@@ -147,6 +159,6 @@ export async function ProximosRetornos() {
           Abrir relacionamento
         </BotaoLink>
       </CardRodape>
-    </Card>
+    </CardRecolhivel>
   );
 }

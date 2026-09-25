@@ -1,17 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { MENU, itemAtivo } from "@/lib/nav";
 
 const SECOES = [
-  { rotulo: "Operação", itens: MENU.slice(0, 4) },
-  { rotulo: "Gestão", itens: MENU.slice(4, 7) },
-  { rotulo: "Sistema", itens: MENU.slice(7) },
+  { rotulo: "Operação", itens: MENU.slice(0, 4), inicio: 0 },
+  { rotulo: "Gestão", itens: MENU.slice(4, 7), inicio: 4 },
+  { rotulo: "Sistema", itens: MENU.slice(7), inicio: 7 },
 ] as const;
 
-/** A lista de módulos da gaveta, em três seções. */
+/**
+ * A lista de módulos da gaveta, em três seções. Ao abrir a gaveta, os itens
+ * entram em cascata (`--i` é a posição do item na lista inteira).
+ */
 export function MenuNavegacao({ aoNavegar }: { aoNavegar?: () => void }) {
   const caminho = usePathname();
   const ativo = itemAtivo(caminho ?? "/");
@@ -23,11 +27,11 @@ export function MenuNavegacao({ aoNavegar }: { aoNavegar?: () => void }) {
           <section key={secao.rotulo} aria-label={secao.rotulo}>
             <p className="rotulo mb-2 px-3">{secao.rotulo}</p>
             <ul className="flex flex-col gap-0.5">
-              {secao.itens.map((item) => {
+              {secao.itens.map((item, indice) => {
                 const Icone = item.icone;
                 const estaAtivo = ativo?.href === item.href;
                 return (
-                  <li key={item.href}>
+                  <li key={item.href} className="item-gaveta" style={{ "--i": secao.inicio + indice } as CSSProperties}>
                     <Link
                       href={item.href}
                       onClick={aoNavegar}
@@ -39,7 +43,7 @@ export function MenuNavegacao({ aoNavegar }: { aoNavegar?: () => void }) {
                           : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
                       )}
                     >
-                      {estaAtivo ? <span aria-hidden="true" className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-primary-container" /> : null}
+                      {estaAtivo ? <span aria-hidden="true" className="traco-ativo absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-primary-container" /> : null}
                       <Icone aria-hidden="true" size={19} strokeWidth={estaAtivo ? 2 : 1.7} className="shrink-0" />
                       <span className="min-w-0 flex-1 truncate">{item.rotulo}</span>
                       {item.emConstrucao ? (

@@ -1,6 +1,7 @@
 import { IdCard, Mail, MapPin, MessageCircle, NotebookPen, Phone } from "lucide-react";
 import type { ReactNode } from "react";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CardCorpo } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { formatarCep, formatarCpf, formatarEndereco, formatarTelefone, linkWhatsapp, enderecoVazio } from "@/lib/paciente";
 import type { PacienteCompleto } from "@/server/consultas/pacientes";
 
@@ -33,8 +34,8 @@ export function PainelCadastro({ paciente }: { paciente: PacienteCompleto }) {
   const temEndereco = !enderecoVazio(paciente.endereco);
 
   return (
-    <Card>
-      <CardCabecalho titulo="Cadastro" descricao="Contato, identificação e informações administrativas." />
+    <CardRecolhivel id="pac-cadastro" titulo="Cadastro" descricao="Contato, identificação e informações administrativas."
+    >
       <CardCorpo className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
         <Dado icone={<Phone size={16} strokeWidth={1.65} />} rotulo="Telefone">
           {paciente.telefone ? (
@@ -79,6 +80,6 @@ export function PainelCadastro({ paciente }: { paciente: PacienteCompleto }) {
           </div>
         ) : null}
       </CardCorpo>
-    </Card>
+    </CardRecolhivel>
   );
 }

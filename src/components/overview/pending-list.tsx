@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { BotaoLink } from "@/components/ui/button";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { ItemLista, Lista } from "@/components/ui/data-list";
 import { PrioridadeTag } from "@/components/ui/priority-tag";
@@ -30,8 +31,9 @@ export async function PendenciasDaClinica() {
   }
 
   return (
-    <Card className="relative flex flex-col overflow-hidden">
-      <CardCabecalho
+    <CardRecolhivel
+        id="vg-pendencias"
+        className="flex flex-col"
         titulo="Pede atenção"
         descricao={
           atrasadas > 0 ? (
@@ -43,9 +45,9 @@ export async function PendenciasDaClinica() {
             `${todas.length} em aberto`
           )
         }
-      />
+    >
 
-      <CardCorpo className="rolagem-discreta relative max-h-[560px] flex-1 overflow-y-auto">
+      <CardCorpo className="rolagem-discreta rolagem-esmaecida relative max-h-[560px] flex-1 overflow-y-auto">
         <Lista rotulo="Pendências da clínica">
           {visiveis.map((pendencia) => {
             const atrasada = (pendencia.prazoEmDias ?? 0) < 0;
@@ -134,6 +136,6 @@ export async function PendenciasDaClinica() {
           </BotaoLink>
         </CardRodape>
       ) : null}
-    </Card>
+    </CardRecolhivel>
   );
 }

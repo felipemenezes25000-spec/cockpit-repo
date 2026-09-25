@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
 import { mensagemDoBanco } from "@/lib/erros-banco";
@@ -110,6 +111,7 @@ export async function cadastrarPaciente(
 
   revalidatePath("/pacientes");
   revalidatePath("/");
+  await avisarNaProximaTela("paciente-cadastrada");
   redirect(`/pacientes/${data.id}`);
 }
 
@@ -169,6 +171,7 @@ export async function atualizarPaciente(
   revalidatePath("/pacientes");
   revalidatePath(`/pacientes/${id}`);
   revalidatePath("/");
+  await avisarNaProximaTela("paciente-atualizada");
   redirect(`/pacientes/${id}`);
 }
 

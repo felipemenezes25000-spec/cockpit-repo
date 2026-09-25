@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { capitalizar, formatarMesCurto, formatarMoeda } from "@/lib/format";
+import { capitalizar, formatarMesCurto, formatarMoeda, formatarMoedaCompacta } from "@/lib/format";
 import { mesmoMes } from "@/lib/dates";
 import type { PontoMensal } from "@/server/consultas/financeiro";
 
@@ -43,19 +43,22 @@ export function EvolucaoRecebimentos({ serie, exemplo }: { serie: PontoMensal[];
                 className="group relative flex h-full min-w-0 flex-1 flex-col justify-end"
                 aria-label={`${mes}: ${formatarMoeda(ponto.recebido)}${emAndamento ? " (mês em andamento)" : ""}${ehPico ? " (maior valor do período)" : ""}`}
               >
+                {/* Abaixo de 640 px cada barra tem uns 33 px e o valor virava
+                    "R$ 27.3…": o rótulo some (fica o espaço), e o mês atual e o
+                    maior do período seguem inteiros nos quadros de cima. */}
                 <span className={cn(
-                  "tabular mb-1.5 flex min-h-4 items-center justify-center gap-1 truncate text-center text-[0.625rem] font-semibold transition-[opacity,transform] duration-150",
+                  "tabular mb-1.5 flex min-h-4 items-center justify-center gap-1 text-center text-[0.625rem] font-semibold whitespace-nowrap transition-[opacity,transform] duration-150 max-sm:invisible",
                   emAndamento || ehPico ? "text-primary opacity-100" : "translate-y-1 text-on-surface opacity-0 group-hover:translate-y-0 group-hover:opacity-100",
                 )}>
                   {ehPico ? <Sparkles aria-hidden="true" size={10} strokeWidth={1.7} className="shrink-0" /> : null}
-                  <span className="truncate">{formatarMoeda(ponto.recebido)}</span>
+                  <span>{formatarMoedaCompacta(ponto.recebido)}</span>
                 </span>
 
                 <span aria-hidden="true" className="relative flex h-[112px] w-full items-end overflow-hidden rounded-t-[var(--radius-controle)] bg-selecao">
                   <span
                     className={cn(
                       "chart-grow absolute inset-x-0 bottom-0 rounded-t-[var(--radius-controle)]",
-                      emAndamento ? hachura : "bg-primary-container",
+                      emAndamento ? hachura : "barra-grafico",
                     )}
                     style={{ height: `${altura}%`, animationDelay: `${indice * 80 + 80}ms` }}
                   />

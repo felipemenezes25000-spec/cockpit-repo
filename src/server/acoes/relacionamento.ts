@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
 import { inicioDoDia } from "@/lib/dates";
@@ -84,6 +85,7 @@ export async function criarTarefa(
   }
 
   revalidarRelacionamento();
+  await avisarNaProximaTela("tarefa-criada");
   redirect("/relacionamento?aba=tarefas");
 }
 
@@ -109,6 +111,7 @@ export async function criarRetorno(
   }
 
   revalidarRelacionamento();
+  await avisarNaProximaTela("retorno-marcado");
   redirect("/relacionamento?aba=retornos");
 }
 

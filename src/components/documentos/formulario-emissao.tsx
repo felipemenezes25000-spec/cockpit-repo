@@ -95,7 +95,7 @@ export function FormularioEmissao({
               <FileText aria-hidden="true" size={14} className="mt-0.5 shrink-0 text-informativo-texto" />
               Confira antes de emitir. O texto gravado é lido do banco na hora da emissão, não daqui.
             </p>
-            <div className="rolagem-discreta max-h-96 overflow-y-auto rounded-[var(--radius-painel)] border border-card-border bg-surface px-5 py-4">
+            <div className="rolagem-discreta rolagem-esmaecida max-h-96 overflow-y-auto rounded-[var(--radius-painel)] border border-card-border bg-surface px-5 py-4">
               <p className="whitespace-pre-wrap text-sm leading-7 text-on-surface">{escolhido.corpo}</p>
             </div>
           </CardCorpo>

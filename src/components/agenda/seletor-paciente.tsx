@@ -181,7 +181,7 @@ export function SeletorPaciente({
                 <span>{opcoes.length === 1 ? "1 paciente encontrada" : `${opcoes.length} pacientes encontradas`}</span>
                 <span className="hidden sm:inline">↑ ↓ escolher · Enter confirmar</span>
               </div>
-              <ul id={idLista} role="listbox" aria-label="Pacientes encontradas" className="rolagem-discreta max-h-80 overflow-y-auto p-1.5">
+              <ul id={idLista} role="listbox" aria-label="Pacientes encontradas" className="rolagem-discreta rolagem-esmaecida max-h-80 overflow-y-auto p-1.5">
                 {opcoes.map((opcao, indice) => (
                   <li
                     key={opcao.id}

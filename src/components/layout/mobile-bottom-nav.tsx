@@ -93,5 +93,5 @@ export function NavegacaoInferiorMobile({
 
 function Marcador({ ativo }: { ativo: boolean }): ReactNode {
   if (!ativo) return null;
-  return <span aria-hidden="true" className="absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-b-full bg-primary-container" />;
+  return <span aria-hidden="true" className="traco-ativo absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-b-full bg-primary-container" />;
 }

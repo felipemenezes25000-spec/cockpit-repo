@@ -15,6 +15,8 @@ export type Aniversariante = {
   /** Negativo quando já passou neste mês. */
   emDias: number;
   ultimoAtendimento: Date | null;
+  /** Para o parabéns ir direto pelo WhatsApp, da Visão Geral. */
+  telefone: string | null;
 };
 
 /**
@@ -35,7 +37,7 @@ export const aniversariantesDoMes = cache(async (): Promise<Aniversariante[]> =>
     (inicio, fim) =>
       supabase
         .from("pacientes")
-        .select("id, nome, nome_social, data_nascimento")
+        .select("id, nome, nome_social, data_nascimento, telefone")
         .eq("ativo", true)
         .not("data_nascimento", "is", null)
         .order("id")
@@ -98,6 +100,7 @@ export const aniversariantesDoMes = cache(async (): Promise<Aniversariante[]> =>
         data,
         emDias: diferencaEmDias(data),
         ultimoAtendimento: ultimoPorPaciente.get(p.id) ?? null,
+        telefone: p.telefone ?? null,
       };
     })
     .sort((a, b) => partesDoDia(a.data).dia - partesDoDia(b.data).dia);

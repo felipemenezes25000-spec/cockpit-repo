@@ -34,13 +34,13 @@ export function GavetaDeModulos({ aberta, aoFechar }: { aberta: boolean; aoFecha
   }
 
   return (
-    <div className={cn("fixed inset-0 z-40 lg:hidden", aberta ? "pointer-events-auto" : "pointer-events-none")} inert={!aberta}>
+    <div data-aberta={aberta} className={cn("gaveta fixed inset-0 z-40 lg:hidden", aberta ? "pointer-events-auto" : "pointer-events-none")} inert={!aberta}>
       <button
         type="button"
         tabIndex={-1}
         aria-hidden="true"
         onClick={aoFechar}
-        className={cn("absolute inset-0 bg-on-surface/40 transition-opacity duration-300", aberta ? "opacity-100" : "opacity-0")}
+        className={cn("veu absolute inset-0 transition-opacity duration-300", aberta ? "opacity-100" : "opacity-0")}
       />
       <aside
         ref={gaveta}
@@ -49,7 +49,7 @@ export function GavetaDeModulos({ aberta, aoFechar }: { aberta: boolean; aoFecha
         aria-label="Menu de módulos"
         onKeyDown={prenderFoco}
         className={cn(
-          "absolute inset-y-0 left-0 flex w-[min(320px,88vw)] flex-col border-r border-card-border bg-surface shadow-flutuante transition-transform duration-300 ease-out",
+          "absolute inset-y-0 left-0 flex w-[min(320px,88vw)] flex-col border-r border-card-border bg-surface shadow-flutuante transition-transform duration-[380ms] ease-[var(--ease-suave)]",
           "pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
           aberta ? "translate-x-0" : "-translate-x-full",
         )}
@@ -67,7 +67,7 @@ export function GavetaDeModulos({ aberta, aoFechar }: { aberta: boolean; aoFecha
           </button>
         </div>
 
-        <div className="rolagem-discreta flex-1 overflow-y-auto px-3 py-4">
+        <div className="rolagem-discreta rolagem-esmaecida flex-1 overflow-y-auto px-3 py-4">
           <MenuNavegacao aoNavegar={aoFechar} />
         </div>
       </aside>

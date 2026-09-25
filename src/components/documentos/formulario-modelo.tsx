@@ -112,7 +112,7 @@ export function FormularioModelo({ modelo }: { modelo: ModeloCompleto | null }) 
                   <span className="hidden text-xs font-semibold text-primary group-open:inline">Fechar</span>
                 </summary>
                 <div className="border-t border-card-border p-3 sm:p-4">
-                  <div className="rolagem-discreta max-h-96 overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface px-4 py-4">
+                  <div className="rolagem-discreta rolagem-esmaecida max-h-96 overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface px-4 py-4">
                     <p className="whitespace-pre-wrap text-sm leading-7 text-on-surface">{versao.corpo}</p>
                   </div>
                 </div>

@@ -2,7 +2,7 @@
 
 import { Activity, ArrowRight, CalendarClock, CalendarX2, Clock3 } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { SituacaoChip } from "@/components/ui/status-chip";
 import { descreverEspera, descreverRestante, retratoDoAgora, type AtendimentoDoAgora } from "@/lib/agora";
 import { cn } from "@/lib/cn";
@@ -13,8 +13,13 @@ import { useAgora } from "./use-agora";
  * A faixa do agora: logo abaixo da barra de módulos, em toda tela.
  *
  * Três frases lado a lado — quem está em atendimento, quem é a próxima e quem
- * vem depois — e um atalho para o dia inteiro. Prazo vai escrito ("em 53 min",
- * "faltam 18 min"), nunca em mostrador. A hora é lida só no navegador.
+ * vem depois — e um atalho para o dia inteiro. Frase cortada levava junto o
+ * que mais importa ("em 10 min"), e o comprimento delas muda a cada minuto:
+ * então a faixa se mede e vai tirando o que importa menos — o depois, a barra
+ * do tempo, o selo da próxima e, com alguém em atendimento, a próxima — até
+ * o que fica caber inteiro. As classes de largura são só o ponto de partida.
+ * Prazo vai escrito ("em 53 min", "faltam 18 min"), nunca em mostrador. A
+ * hora é lida só no navegador.
  */
 export function FaixaDoAgora({ atendimentos }: { atendimentos: AtendimentoDoAgora[] | null }) {
   const agora = useAgora();
@@ -58,11 +63,54 @@ function Conteudo({ atendimentos, agora }: { atendimentos: AtendimentoDoAgora[] 
     );
   }
 
+  return <Retrato atendimentos={atendimentos} agora={agora} ativos={ativos} />;
+}
+
+function Retrato({ atendimentos, agora, ativos }: { atendimentos: AtendimentoDoAgora[]; agora: number; ativos: number }) {
   const retrato = retratoDoAgora(atendimentos, agora);
   const { emAtendimento, proxima, depois } = retrato;
+  const linha = useRef<HTMLDivElement>(null);
+  // Quantos itens opcionais saíram, do menos importante para o mais.
+  const [cortes, setCortes] = useState(0);
+  // Sobe a cada mudança de largura: obriga a medir de novo mesmo sem corte a desfazer.
+  const [medida, setMedida] = useState(0);
+  const maximo = emAtendimento && proxima ? 4 : 3;
+  const assinatura = [emAtendimento?.id, proxima?.id, depois?.id, retrato.faltamMin, retrato.emMin].join("|");
+  const ultimaAssinatura = useRef(assinatura);
+
+  // Antes da pintura: texto novo recomeça com tudo; senão, se alguma frase
+  // ficou cortada, tira mais um item. Converge em poucas passadas.
+  useLayoutEffect(() => {
+    if (ultimaAssinatura.current !== assinatura) {
+      ultimaAssinatura.current = assinatura;
+      setCortes(0);
+      return;
+    }
+    const caixa = linha.current;
+    if (!caixa || cortes >= maximo) return;
+    const cortada = Array.from(caixa.querySelectorAll<HTMLElement>("[data-frase]")).some(
+      (frase) => frase.getClientRects().length > 0 && frase.scrollWidth > frase.clientWidth + 1,
+    );
+    if (cortada) setCortes(cortes + 1);
+  }, [assinatura, cortes, maximo, medida]);
+
+  // A largura mudou (janela, gaveta): mede tudo de novo.
+  useEffect(() => {
+    const caixa = linha.current;
+    if (!caixa || typeof ResizeObserver === "undefined") return;
+    let largura = caixa.clientWidth;
+    const observador = new ResizeObserver(() => {
+      if (Math.abs(caixa.clientWidth - largura) < 1) return;
+      largura = caixa.clientWidth;
+      setCortes(0);
+      setMedida((vez) => vez + 1);
+    });
+    observador.observe(caixa);
+    return () => observador.disconnect();
+  }, []);
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
+    <div ref={linha} className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
       <p className="flex shrink-0 items-center gap-2">
         <span aria-hidden="true" className="now-pulse size-2 rounded-full bg-primary-container" />
         <span className="rotulo hidden sm:inline">Agora</span>
@@ -78,13 +126,15 @@ function Conteudo({ atendimentos, agora }: { atendimentos: AtendimentoDoAgora[] 
             <strong className="font-semibold text-on-surface">{nomeCurto(emAtendimento.paciente)}</strong>
             <span className="text-on-surface-variant">, {descreverRestante(retrato.faltamMin)}</span>
           </Frase>
-          <span aria-hidden="true" className="barra barra-fina hidden w-20 shrink-0 xl:block">
-            <span style={{ width: `${Math.round(retrato.progresso * 100)}%` }} />
-          </span>
+          {cortes < 2 ? (
+            <span aria-hidden="true" className="barra barra-fina barra-viva hidden w-20 shrink-0 xl:block">
+              <span style={{ width: `${Math.round(retrato.progresso * 100)}%` }} />
+            </span>
+          ) : null}
         </div>
       ) : null}
 
-      {proxima ? (
+      {proxima && !(emAtendimento && cortes >= 4) ? (
         <>
           {emAtendimento ? <Separador className="hidden md:block" /> : null}
           <div className={cn("min-w-0 items-center gap-2", emAtendimento ? "hidden md:flex" : "flex")}>
@@ -96,10 +146,17 @@ function Conteudo({ atendimentos, agora }: { atendimentos: AtendimentoDoAgora[] 
                 <span className={cn((retrato.emMin ?? 0) < 0 && "font-semibold text-atencao")}>{descreverEspera(retrato.emMin ?? 0)}</span>
               </span>
             </Frase>
-            <SituacaoChip situacao={proxima.situacao} compacto className="hidden shrink-0 lg:inline-flex" />
+            {/* O invólucro esconde: passado ao chip, o "hidden" brigava com o
+                "inline-flex" dele (o cn() não resolve conflito) e o selo
+                aparecia em qualquer largura. */}
+            {cortes < 3 ? (
+              <span className="hidden shrink-0 lg:inline-flex">
+                <SituacaoChip situacao={proxima.situacao} compacto />
+              </span>
+            ) : null}
           </div>
         </>
-      ) : !emAtendimento ? (
+      ) : !emAtendimento && !proxima ? (
         <Frase icone={<CalendarClock aria-hidden="true" size={16} strokeWidth={1.8} />}>
           <span className="text-on-surface-variant">
             {ativos === 0 ? "Nenhum atendimento marcado para hoje." : "Nenhum outro atendimento hoje."}
@@ -107,7 +164,7 @@ function Conteudo({ atendimentos, agora }: { atendimentos: AtendimentoDoAgora[] 
         </Frase>
       ) : null}
 
-      {depois ? (
+      {depois && cortes < 1 ? (
         <>
           <Separador className="hidden xl:block" />
           <div className="hidden min-w-0 xl:flex">
@@ -129,7 +186,7 @@ function Frase({ icone, children }: { icone?: ReactNode; children: ReactNode }) 
   return (
     <p className="flex min-w-0 items-center gap-2 text-sm">
       {icone ? <span className="flex shrink-0 text-outline">{icone}</span> : null}
-      <span className="min-w-0 truncate">{children}</span>
+      <span data-frase className="min-w-0 truncate">{children}</span>
     </p>
   );
 }

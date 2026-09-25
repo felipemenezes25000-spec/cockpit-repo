@@ -386,7 +386,7 @@ export function Importador({ modeloCsv }: { modeloCsv: string }) {
                     Nenhum problema encontrado. Todas as linhas estão prontas.
                   </p>
                 ) : (
-                  <ul className="max-h-[28rem] overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface">
+                  <ul className="rolagem-esmaecida max-h-[28rem] overflow-y-auto rounded-[var(--radius-cartao)] border border-card-border bg-surface">
                     {visiveis.map((linha) => (
                       <LinhaDaPrevia key={linha.numero} linha={linha} />
                     ))}

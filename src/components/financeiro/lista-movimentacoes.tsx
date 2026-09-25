@@ -50,11 +50,11 @@ export function ListaMovimentacoes({
 
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-sm font-semibold break-words text-on-surface sm:truncate">{item.titulo}</span>
+                <span className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] text-on-surface sm:truncate">{item.titulo}</span>
                 <span className={cn("size-1.5 shrink-0 rounded-full", estilo.trilha)} aria-hidden="true" />
                 <span className="text-[0.68rem] font-semibold tracking-wide text-outline uppercase">{estilo.rotulo}</span>
               </span>
-              <span className="mt-1 block text-xs leading-5 break-words text-outline sm:truncate">
+              <span className="mt-1 block text-xs leading-5 [overflow-wrap:anywhere] text-outline sm:truncate">
                 {formatarData(item.data)}
                 {item.detalhe ? ` · ${item.detalhe}` : ""}
                 {item.forma ? ` · ${ROTULO_FORMA[item.forma]}` : ""}

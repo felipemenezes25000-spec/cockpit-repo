@@ -4,7 +4,6 @@ import {
   CalendarCheck,
   ClipboardList,
   HeartHandshake,
-  MessageCircle,
   Repeat2,
   Star,
   type LucideIcon,
@@ -18,6 +17,7 @@ import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
 import { BotaoLink } from "@/components/ui/button";
 import { recortarFila } from "@/components/relacionamento/fila";
 import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { EstadoVazio } from "@/components/ui/empty-state";
 import { classeDeEntrada } from "@/components/ui/field";
 import { CabecalhoDePagina, SeloHero } from "@/components/ui/page-hero";
@@ -25,7 +25,9 @@ import { SituacaoChip } from "@/components/ui/status-chip";
 import { diferencaEmDias, partesDoDia } from "@/lib/dates";
 import { descreverPrazo, formatarData, formatarHora } from "@/lib/format";
 import type { SituacaoAcompanhamento } from "@/lib/dominio";
-import { ROTULO_TAREFA, linkWhatsApp, mensagemConfirmacao } from "@/lib/relacionamento";
+import { ROTULO_TAREFA, linkWhatsApp, mensagemConfirmacao, mensagemRetorno } from "@/lib/relacionamento";
+import { BotaoWhatsApp } from "@/components/ui/botao-whatsapp";
+import { NumeroVivo } from "@/components/ui/numero-vivo";
 import {
   confirmarPelaLista,
   mudarSituacaoRetorno,
@@ -172,16 +174,24 @@ function ContatoDaConfirmacao({ item }: { item: Confirmacao }) {
     <div className="mt-1 flex flex-wrap items-center gap-2.5 text-xs text-outline">
       <span className="tabular">{item.telefone || item.email || "Sem contato cadastrado"}</span>
       {whatsapp ? (
-        <a
-          href={whatsapp}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-7 items-center gap-1.5 rounded-[var(--radius-controle)] border border-positivo-borda bg-positivo-fundo px-2.5 font-semibold text-positivo transition-[transform,background-color] duration-150 hover:bg-positivo-fundo"
-        >
-          <MessageCircle aria-hidden="true" size={12} strokeWidth={1.8} />
-          WhatsApp
-          <span className="sr-only"> de {item.paciente} (abre em nova aba)</span>
-        </a>
+        <BotaoWhatsApp href={whatsapp} paraQuem={item.paciente} tamanho="xs">
+          Pedir confirmação
+        </BotaoWhatsApp>
+      ) : null}
+    </div>
+  );
+}
+
+/** O telefone e, com número válido, a chamada para o retorno já escrita. */
+function ContatoDoRetorno({ retorno }: { retorno: RetornoRelacionamento }) {
+  const whatsapp = linkWhatsApp(retorno.telefone, mensagemRetorno(retorno.paciente));
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-xs text-outline">
+      <span className="tabular">{retorno.telefone}</span>
+      {whatsapp && retorno.situacao !== "agendado" && retorno.situacao !== "recusado" ? (
+        <BotaoWhatsApp href={whatsapp} paraQuem={retorno.paciente} tamanho="xs">
+          Chamar para o retorno
+        </BotaoWhatsApp>
       ) : null}
     </div>
   );
@@ -217,7 +227,7 @@ function Retorno({ retorno }: { retorno: RetornoRelacionamento }) {
         Contato {descreverPrazo(diferencaEmDias(retorno.sugeridoPara))} · {formatarData(retorno.sugeridoPara)} ·{" "}
         {ROTULO_RETORNO[retorno.situacao]}
       </p>
-      {retorno.telefone ? <p className="mt-1 text-xs text-outline">{retorno.telefone}</p> : null}
+      {retorno.telefone ? <ContatoDoRetorno retorno={retorno} /> : null}
       {retorno.observacoes ? <p className="mt-2 text-xs leading-5 text-on-surface-variant">{retorno.observacoes}</p> : null}
     </Linha>
   );
@@ -246,7 +256,7 @@ function Indicador({
           <ArrowRight aria-hidden="true" size={13} strokeWidth={2} className="transition-transform duration-150 group-hover:translate-x-0.5" />
         </span>
       </span>
-      <span className="numero mt-4 block">{valor}</span>
+      <span className="numero mt-4 block">{typeof valor === "number" ? <NumeroVivo valor={valor} /> : valor}</span>
       <span className="mt-1 block text-sm text-cabine-texto-secundario">{titulo}</span>
     </Link>
   );
@@ -323,8 +333,8 @@ export default async function PaginaRelacionamento({
             <Indicador href="/relacionamento?aba=avaliacoes" titulo="Convites de avaliação" valor={candidatas.length} icone={Star} />
           </section>
 
-          <Card>
-            <CardCabecalho titulo="Fila de acompanhamento" descricao="Tarefas abertas e retornos que chegaram à data combinada." />
+          <CardRecolhivel id="rel-fila-de-acompanhamento" titulo="Fila de acompanhamento" descricao="Tarefas abertas e retornos que chegaram à data combinada."
+          >
             <CardCorpo>
               {abertas.length + retornosNoPrazo.length === 0 ? (
                 <EstadoVazio icone={ClipboardList} titulo="Acompanhamento em dia" descricao="As próximas ações aparecerão aqui." />
@@ -349,13 +359,13 @@ export default async function PaginaRelacionamento({
                 ) : null}
               </CardRodape>
             ) : null}
-          </Card>
+          </CardRecolhivel>
         </>
       ) : null}
 
       {aba === "confirmacoes" ? (
-        <Card>
-          <CardCabecalho titulo="Confirmações" descricao="Atendimentos dos próximos 15 dias ainda sem confirmação." />
+        <CardRecolhivel id="rel-confirmacoes" titulo="Confirmações" descricao="Atendimentos dos próximos 15 dias ainda sem confirmação."
+        >
           <CardCorpo>
             {confirmacoes.length === 0 ? (
               <EstadoVazio icone={CalendarCheck} titulo="Tudo confirmado" descricao="Não há atendimentos aguardando confirmação." />
@@ -388,12 +398,12 @@ export default async function PaginaRelacionamento({
               </ul>
             )}
           </CardCorpo>
-        </Card>
+        </CardRecolhivel>
       ) : null}
 
       {aba === "retornos" ? (
-        <Card>
-          <CardCabecalho titulo="Retornos" descricao="Datas combinadas pela equipe e situação de cada contato." />
+        <CardRecolhivel id="rel-retornos" titulo="Retornos" descricao="Datas combinadas pela equipe e situação de cada contato."
+        >
           <CardCorpo>
             {retornos.length === 0 ? (
               <EstadoVazio icone={Repeat2} titulo="Nenhum retorno" descricao="Registre uma data combinada para acompanhar a paciente." />
@@ -401,12 +411,12 @@ export default async function PaginaRelacionamento({
               <ul className="flex flex-col gap-3">{retornos.map((r) => <Retorno key={r.id} retorno={r} />)}</ul>
             )}
           </CardCorpo>
-        </Card>
+        </CardRecolhivel>
       ) : null}
 
       {aba === "tarefas" ? (
-        <Card>
-          <CardCabecalho titulo="Tarefas de contato" descricao={`${abertas.length} em aberto · ${tarefas.length - abertas.length} resolvidas ou canceladas`} />
+        <CardRecolhivel id="rel-tarefas-de-contato" titulo="Tarefas de contato" descricao={`${abertas.length} em aberto · ${tarefas.length - abertas.length} resolvidas ou canceladas`}
+        >
           <CardCorpo>
             {tarefas.length === 0 ? (
               <EstadoVazio icone={ClipboardList} titulo="Nenhuma tarefa" descricao="Crie uma tarefa para não perder um contato importante." />
@@ -416,7 +426,7 @@ export default async function PaginaRelacionamento({
               </ul>
             )}
           </CardCorpo>
-        </Card>
+        </CardRecolhivel>
       ) : null}
 
       {aba === "aniversarios" ? <Aniversarios mes={mesDaUrl(parametros.mes)} /> : null}
@@ -470,13 +480,13 @@ async function Avaliacoes() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <CardCabecalho titulo="Convidar uma paciente" descricao="Busque qualquer paciente ativa para preparar o link de avaliação." />
+      <CardRecolhivel id="rel-convidar-uma-paciente" titulo="Convidar uma paciente" descricao="Busque qualquer paciente ativa para preparar o link de avaliação."
+      >
         <CardCorpo><BuscarConvite /></CardCorpo>
-      </Card>
+      </CardRecolhivel>
 
-      <Card>
-        <CardCabecalho titulo="Convites para avaliar no Google" descricao="Pacientes atendidas recentemente. Abra a mensagem e marque o envio depois de concluí-lo." />
+      <CardRecolhivel id="rel-convites-para-avaliar-no-goo" titulo="Convites para avaliar no Google" descricao="Pacientes atendidas recentemente. Abra a mensagem e marque o envio depois de concluí-lo."
+      >
         <CardCorpo>
           {pessoas.length === 0 ? (
             <EstadoVazio icone={Star} titulo="Nenhum atendimento concluído" descricao="Pacientes atendidas aparecerão aqui." />
@@ -491,10 +501,10 @@ async function Avaliacoes() {
             </ul>
           )}
         </CardCorpo>
-      </Card>
+      </CardRecolhivel>
 
-      <Card>
-        <CardCabecalho titulo="Convites registrados" descricao="O sistema registra o envio informado pela equipe, sem consultar a avaliação no Google." />
+      <CardRecolhivel id="rel-convites-registrados" titulo="Convites registrados" descricao="O sistema registra o envio informado pela equipe, sem consultar a avaliação no Google."
+      >
         <CardCorpo>
           {convites.length === 0 ? (
             <EstadoVazio icone={Star} titulo="Nenhum convite registrado" descricao="Após o envio, marque a paciente na lista acima." />
@@ -509,7 +519,7 @@ async function Avaliacoes() {
             </ul>
           )}
         </CardCorpo>
-      </Card>
+      </CardRecolhivel>
     </div>
   );
 }

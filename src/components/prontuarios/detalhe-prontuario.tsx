@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo } from "@/components/ui/card";
+import { CardCorpo } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
 import { formatarData, formatarHora } from "@/lib/format";
 import type { FotosDoProntuario } from "@/server/consultas/prontuario-imagens";
@@ -140,15 +141,14 @@ export function DetalheProntuario({
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
-        <Card>
-          <CardCabecalho
+        <CardRecolhivel id="pront-registro-atual"
             titulo="Registro atual"
             descricao={
               versaoAtual
                 ? `${versaoAtual.motivo} · ${formatarData(versaoAtual.criadoEm)} às ${formatarHora(versaoAtual.criadoEm)}${versaoAtual.criadoPor ? ` · ${versaoAtual.criadoPor}` : ""}`
                 : "Este prontuário ainda não tem versão registrada."
             }
-          />
+        >
           <CardCorpo>
             {versaoAtual ? (
               <div className="flex flex-col gap-5">
@@ -162,11 +162,11 @@ export function DetalheProntuario({
               <p className="text-sm text-outline">Este prontuário ainda não tem versão registrada.</p>
             )}
           </CardCorpo>
-        </Card>
+        </CardRecolhivel>
 
         <aside className="flex flex-col gap-6 xl:sticky xl:top-28 xl:self-start">
-          <Card as="div">
-            <CardCabecalho titulo="Resumo" />
+          <CardRecolhivel id="pront-resumo" as="div" titulo="Resumo"
+          >
             <CardCorpo>
               <dl className="grid gap-3">
                 <Metadado icone={UserRound} rotulo="Paciente" valor={prontuario.paciente} />
@@ -195,11 +195,11 @@ export function DetalheProntuario({
                 Abrir ficha da paciente
               </Link>
             </CardCorpo>
-          </Card>
+          </CardRecolhivel>
 
           {prontuario.atendimento ? (
-            <Card as="div">
-              <CardCabecalho titulo="Atendimento de origem" />
+            <CardRecolhivel id="pront-atendimento-de-origem" as="div" titulo="Atendimento de origem"
+            >
               <CardCorpo>
                 <p className="text-sm font-semibold text-on-surface">
                   {prontuario.atendimento.procedimento ?? "Atendimento"}
@@ -211,11 +211,11 @@ export function DetalheProntuario({
                   <p className="mt-1 text-sm text-outline">{prontuario.atendimento.profissional}</p>
                 ) : null}
               </CardCorpo>
-            </Card>
+            </CardRecolhivel>
           ) : null}
 
-          <Card as="div">
-            <CardCabecalho titulo="Histórico de versões" />
+          <CardRecolhivel id="pront-historico-de-versoes" as="div" titulo="Histórico de versões"
+          >
             <CardCorpo>
               {prontuario.versoes.length > 0 ? (
                 <div className="flex flex-col gap-2.5">
@@ -227,7 +227,7 @@ export function DetalheProntuario({
                 <p className="text-sm text-outline">Nenhuma versão registrada.</p>
               )}
             </CardCorpo>
-          </Card>
+          </CardRecolhivel>
         </aside>
       </div>
 

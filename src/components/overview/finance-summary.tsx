@@ -2,7 +2,8 @@ import { ArrowDownRight, ArrowUpRight, CircleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { BotaoLink } from "@/components/ui/button";
-import { Card, CardCabecalho, CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardCorpo, CardRodape } from "@/components/ui/card";
+import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { formatarMesAno, formatarMoeda } from "@/lib/format";
 import { resumoFinanceiro, serieMensalRecebimentos } from "@/server/consultas/financeiro";
 import { EvolucaoRecebimentos } from "./revenue-chart";
@@ -56,12 +57,12 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
   ];
 
   return (
-    <Card>
-      <CardCabecalho
-        titulo={`Caixa de ${mesCorrente()}`}
-        descricao={exemplo ? "Movimento do mês corrente, com dados fictícios." : "Movimento do mês corrente."}
-        acao={<BotaoLink href="/financeiro" tamanho="sm">Abrir financeiro</BotaoLink>}
-      />
+    <CardRecolhivel
+      id="vg-caixa"
+      titulo={`Caixa de ${mesCorrente()}`}
+      descricao={exemplo ? "Movimento do mês corrente, com dados fictícios." : "Movimento do mês corrente."}
+      acao={<BotaoLink href="/financeiro" tamanho="sm">Abrir financeiro</BotaoLink>}
+    >
 
       <CardCorpo>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -113,6 +114,6 @@ export async function ResumoFinanceiro({ exemplo }: { exemplo: boolean }) {
       <CardRodape className="text-outline">
         {exemplo ? "Todos os números são demonstrativos. " : ""}A regra de lucro ainda não foi definida e por isso não aparece nesta tela.
       </CardRodape>
-    </Card>
+    </CardRecolhivel>
   );
 }

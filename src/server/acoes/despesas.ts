@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { avisarNaProximaTela } from "@/server/aviso";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { ehFinanceira, usuarioAtual } from "@/lib/auth";
 import { chaveDoDia, dataValida } from "@/lib/dates";
@@ -85,6 +86,7 @@ export async function criarDespesa(
   }
 
   revalidar();
+  await avisarNaProximaTela("despesa-lancada");
   redirect("/financeiro/despesas");
 }
 
@@ -127,6 +129,7 @@ export async function atualizarDespesa(
   if (!data) return { erros: { geral: "Despesa não encontrada." }, valores: valoresDigitados(dados) };
 
   revalidar();
+  await avisarNaProximaTela("despesa-alterada");
   redirect("/financeiro/despesas");
 }
 

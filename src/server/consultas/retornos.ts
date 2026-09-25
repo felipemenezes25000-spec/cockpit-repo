@@ -31,6 +31,8 @@ export type JanelaContato = {
 export type RetornoEmAberto = {
   id: string;
   paciente: string;
+  /** Para chamar a paciente pelo WhatsApp direto do painel. */
+  telefone: string | null;
   procedimento: string;
   ultimoAtendimento: Date;
   situacao: SituacaoAcompanhamento;
@@ -71,7 +73,7 @@ export const retornosEmAberto = cache(async (): Promise<RetornoEmAberto[]> => {
         .from("retornos")
         .select(
           `id, sugerido_para, situacao,
-           pacientes ( nome, nome_social ),
+           pacientes ( nome, nome_social, telefone ),
            procedimentos ( nome, retorno_sugerido_dias )`,
         )
         .not("situacao", "in", "(agendado,recusado)")
@@ -94,6 +96,7 @@ export const retornosEmAberto = cache(async (): Promise<RetornoEmAberto[]> => {
       return {
         id: linha.id,
         paciente: linha.pacientes?.nome_social || linha.pacientes?.nome || "Paciente",
+        telefone: linha.pacientes?.telefone ?? null,
         procedimento: linha.procedimentos?.nome ?? "Procedimento",
         ultimoAtendimento,
         situacao: linha.situacao,

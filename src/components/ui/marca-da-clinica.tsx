@@ -69,7 +69,7 @@ export function SeloDaMarca({
     <span
       aria-hidden="true"
       className={cn(
-        "flex shrink-0 items-center justify-center",
+        "selo-da-marca flex shrink-0 items-center justify-center",
         selo.quadro,
         tom === "cabine" ? "bg-cabine-texto text-cabine-profunda" : "bg-primary-container text-on-primary",
         className,
