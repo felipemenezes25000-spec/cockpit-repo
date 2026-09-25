@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, FileText, Replace, Snowflake } from "lucide-react";
+import { CircleAlert, FileText, Replace, ShieldCheck, Snowflake } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { SeletorPaciente } from "@/components/agenda/seletor-paciente";
@@ -52,24 +52,55 @@ export function FormularioEmissao({
         </p>
       ) : null}
 
-      <GrupoDeCampos titulo="Paciente" descricao="Escolha para quem este documento será emitido. O vínculo fica preservado no histórico.">
-        <SeletorPaciente inicial={pacienteInicial} erro={estado.erros.geral} />
-      </GrupoDeCampos>
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <GrupoDeCampos titulo="Paciente" descricao="Escolha para quem este documento será emitido. O vínculo fica preservado no histórico.">
+            <SeletorPaciente inicial={pacienteInicial} erro={estado.erros.geral} />
+          </GrupoDeCampos>
 
-      <GrupoDeCampos titulo="Documento" descricao="O modelo define o texto-base que será congelado no momento da emissão.">
-        <div className="flex flex-col gap-5">
-          <Campo id="modelo" rotulo="Modelo" obrigatorio erro={estado.erros.tipo} dica="Só aparecem modelos ativos e com texto.">
-            <select id="modelo" name="modelo_id" value={modeloId} onChange={(evento) => setModeloId(evento.target.value)} required className={ENTRADA}>
-              <option value="">Escolha o modelo</option>
-              {modelos.map((modelo) => <option key={modelo.id} value={modelo.id}>{ROTULO_TIPO[modelo.tipo]} · {modelo.nome} (v{modelo.versao})</option>)}
-            </select>
-          </Campo>
+          <GrupoDeCampos titulo="Documento" descricao="O modelo define o texto-base que será congelado no momento da emissão.">
+            <div className="flex flex-col gap-5">
+              <Campo id="modelo" rotulo="Modelo" obrigatorio erro={estado.erros.tipo} dica="Só aparecem modelos ativos e com texto.">
+                <select id="modelo" name="modelo_id" value={modeloId} onChange={(evento) => setModeloId(evento.target.value)} required className={ENTRADA}>
+                  <option value="">Escolha o modelo</option>
+                  {modelos.map((modelo) => <option key={modelo.id} value={modelo.id}>{ROTULO_TIPO[modelo.tipo]} · {modelo.nome} (v{modelo.versao})</option>)}
+                </select>
+              </Campo>
 
-          <Campo id="titulo" rotulo="Título do documento" dica="Em branco, usa o nome do modelo.">
-            <input id="titulo" name="titulo" type="text" maxLength={160} defaultValue={estado.valores?.titulo ?? ""} placeholder={escolhido?.nome ?? "Contrato de prestação de serviços"} className={ENTRADA} />
-          </Campo>
+              <Campo id="titulo" rotulo="Título do documento" dica="Em branco, usa o nome do modelo.">
+                <input id="titulo" name="titulo" type="text" maxLength={160} defaultValue={estado.valores?.titulo ?? ""} placeholder={escolhido?.nome ?? "Contrato de prestação de serviços"} className={ENTRADA} />
+              </Campo>
+            </div>
+          </GrupoDeCampos>
         </div>
-      </GrupoDeCampos>
+
+        <aside className="integridade-cabine p-4 sm:p-5 xl:sticky xl:top-28">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
+              <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.75} />
+            </span>
+            <div>
+              <p className="rotulo text-primary">Registro definitivo</p>
+              <h2 className="mt-1 text-base font-semibold text-on-surface">Confira antes de congelar</h2>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3">
+            <div className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3">
+              <p className="text-xs font-semibold text-on-surface">Paciente</p>
+              <p className="mt-1 text-xs leading-5 text-outline">O documento fica vinculado à ficha escolhida e não migra para outra paciente.</p>
+            </div>
+            <div className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3">
+              <p className="text-xs font-semibold text-on-surface">Modelo</p>
+              <p className="mt-1 text-xs leading-5 text-outline">{escolhido ? `${ROTULO_TIPO[escolhido.tipo]} · ${escolhido.nome} · versão ${escolhido.versao}` : "Selecione um modelo para ver a versão que será usada."}</p>
+            </div>
+            <div className="rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao px-3.5 py-3">
+              <p className="text-xs font-semibold text-primary">Depois da emissão</p>
+              <p className="mt-1 text-xs leading-5 text-on-surface-variant">O corpo fica imutável. Correções geram um novo documento e preservam o anterior.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       {estado.erros.geral ? (
         <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-painel)] border border-negativo-borda bg-negativo-fundo px-4 py-3 text-sm leading-6 text-negativo shadow-[0_12px_30px_-26px_rgba(153,27,27,.35)]">
@@ -86,7 +117,7 @@ export function FormularioEmissao({
               <FileText aria-hidden="true" size={14} className="mt-0.5 shrink-0 text-informativo-texto" />
               Confira antes de emitir. O texto gravado é lido do banco na hora da emissão, não daqui.
             </p>
-            <div className="rolagem-discreta rolagem-esmaecida max-h-96 overflow-y-auto rounded-[var(--radius-painel)] border border-card-border bg-surface px-5 py-5 shadow-inner">
+            <div className="documento-folha rolagem-discreta rolagem-esmaecida max-h-[32rem] overflow-y-auto rounded-[var(--radius-painel)] border border-card-border px-5 py-6 sm:px-7 sm:py-7">
               <p className="whitespace-pre-wrap text-sm leading-7 text-on-surface">{escolhido.corpo}</p>
             </div>
           </CardCorpo>
