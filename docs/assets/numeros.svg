@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="220" viewBox="0 0 1280 220" role="img" aria-labelledby="t d">
   <title id="t">O Cockpit em números</title>
-  <desc id="d">Faixa com seis cartões de números do projeto: 28 migrações SQL versionadas; 41 rotas testadas em três larguras (320, 768 e 1440 pixels); 800 testes de unidade e de componente; 194 testes de permissão no banco, trocando de perfil como a API troca; 43 testes de fluxo de ponta a ponta no navegador (Chromium, e os fluxos também no WebKit); 3 perfis de acesso (administradora, financeiro e recepção), com RLS ligada em toda tabela. Na entrada, cada dígito gira como um odômetro até o valor final e uma régua azul se preenche embaixo do número; depois, em laço, um brilho atravessa os cartões e o ícone de cada um pulsa quando ele passa.</desc>
+  <desc id="d">Faixa com seis cartões de números do projeto: 31 migrações SQL versionadas; 42 rotas testadas em três larguras (320, 768 e 1440 pixels); 895 testes de unidade e de componente; 269 testes de permissão no banco, trocando de perfil como a API troca; 47 testes de fluxo de ponta a ponta no navegador (Chromium, e os fluxos também no WebKit); 3 perfis de acesso (administradora, financeiro e recepção), com RLS ligada em toda tabela. Na entrada, cada dígito gira como um odômetro até o valor final e uma régua azul se preenche embaixo do número; depois, em laço, um brilho atravessa os cartões e o ícone de cada um pulsa quando ele passa.</desc>
 
   <style>
     svg {
@@ -207,7 +207,7 @@
 
   <!-- Camada 3: conteúdo dos cartões -->
   <g>
-    <!-- 1. 28 migrações SQL versionadas -->
+    <!-- 1. 31 migrações SQL versionadas -->
     <g transform="translate(40 40)">
       <g class="entra" style="animation-delay:0.1s">
         <g class="movimento">
@@ -221,10 +221,10 @@
           </g>
         </g>
         <g mask="url(#janela)">
-          <g class="rolo p2" style="animation-duration:1.3s;animation-delay:0.35s">
+          <g class="rolo p3" style="animation-duration:1.3s;animation-delay:0.35s">
             <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
           </g>
-          <g class="rolo p18" style="animation-duration:2.1s;animation-delay:0.42s">
+          <g class="rolo p11" style="animation-duration:2.1s;animation-delay:0.42s">
             <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
           </g>
         </g>
@@ -234,7 +234,7 @@
       </g>
     </g>
 
-    <!-- 2. 41 rotas testadas em 3 larguras -->
+    <!-- 2. 42 rotas testadas em 3 larguras -->
     <g transform="translate(242 40)">
       <g class="entra" style="animation-delay:0.19s">
         <g class="movimento">
@@ -251,7 +251,7 @@
           <g class="rolo p4" style="animation-duration:1.3s;animation-delay:0.49s">
             <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
           </g>
-          <g class="rolo p11" style="animation-duration:2.1s;animation-delay:0.56s">
+          <g class="rolo p12" style="animation-duration:2.1s;animation-delay:0.56s">
             <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
           </g>
         </g>
@@ -261,7 +261,7 @@
       </g>
     </g>
 
-    <!-- 3. 800 testes de unidade e de componente -->
+    <!-- 3. 895 testes de unidade e de componente -->
     <g transform="translate(444 40)">
       <g class="entra" style="animation-delay:0.28s">
         <g class="movimento">
@@ -278,10 +278,10 @@
           <g class="rolo p8" style="animation-duration:1.3s;animation-delay:0.63s">
             <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
           </g>
-          <g class="rolo p10" style="animation-duration:2.1s;animation-delay:0.7s">
+          <g class="rolo p19" style="animation-duration:2.1s;animation-delay:0.7s">
             <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
           </g>
-          <g class="rolo p10" style="animation-duration:2.1s;animation-delay:0.77s">
+          <g class="rolo p15" style="animation-duration:2.1s;animation-delay:0.77s">
             <text class="num"><tspan x="95.5" y="56">0</tspan><tspan x="95.5" y="120">1</tspan><tspan x="95.5" y="184">2</tspan><tspan x="95.5" y="248">3</tspan><tspan x="95.5" y="312">4</tspan><tspan x="95.5" y="376">5</tspan><tspan x="95.5" y="440">6</tspan><tspan x="95.5" y="504">7</tspan><tspan x="95.5" y="568">8</tspan><tspan x="95.5" y="632">9</tspan><tspan x="95.5" y="696">0</tspan><tspan x="95.5" y="760">1</tspan><tspan x="95.5" y="824">2</tspan><tspan x="95.5" y="888">3</tspan><tspan x="95.5" y="952">4</tspan><tspan x="95.5" y="1016">5</tspan><tspan x="95.5" y="1080">6</tspan><tspan x="95.5" y="1144">7</tspan><tspan x="95.5" y="1208">8</tspan><tspan x="95.5" y="1272">9</tspan></text>
           </g>
         </g>
@@ -291,7 +291,7 @@
       </g>
     </g>
 
-    <!-- 4. 194 testes de permissão no banco, por perfil -->
+    <!-- 4. 269 testes de permissão no banco, por perfil -->
     <g transform="translate(646 40)">
       <g class="entra" style="animation-delay:0.37s">
         <g class="movimento">
@@ -305,13 +305,13 @@
           </g>
         </g>
         <g mask="url(#janela)">
-          <g class="rolo p1" style="animation-duration:1.3s;animation-delay:0.77s">
+          <g class="rolo p2" style="animation-duration:1.3s;animation-delay:0.77s">
             <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
           </g>
-          <g class="rolo p19" style="animation-duration:2.1s;animation-delay:0.84s">
+          <g class="rolo p16" style="animation-duration:2.1s;animation-delay:0.84s">
             <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
           </g>
-          <g class="rolo p14" style="animation-duration:2.1s;animation-delay:0.91s">
+          <g class="rolo p19" style="animation-duration:2.1s;animation-delay:0.91s">
             <text class="num"><tspan x="95.5" y="56">0</tspan><tspan x="95.5" y="120">1</tspan><tspan x="95.5" y="184">2</tspan><tspan x="95.5" y="248">3</tspan><tspan x="95.5" y="312">4</tspan><tspan x="95.5" y="376">5</tspan><tspan x="95.5" y="440">6</tspan><tspan x="95.5" y="504">7</tspan><tspan x="95.5" y="568">8</tspan><tspan x="95.5" y="632">9</tspan><tspan x="95.5" y="696">0</tspan><tspan x="95.5" y="760">1</tspan><tspan x="95.5" y="824">2</tspan><tspan x="95.5" y="888">3</tspan><tspan x="95.5" y="952">4</tspan><tspan x="95.5" y="1016">5</tspan><tspan x="95.5" y="1080">6</tspan><tspan x="95.5" y="1144">7</tspan><tspan x="95.5" y="1208">8</tspan><tspan x="95.5" y="1272">9</tspan></text>
           </g>
         </g>
@@ -321,7 +321,7 @@
       </g>
     </g>
 
-    <!-- 5. 43 fluxos E2E no navegador -->
+    <!-- 5. 47 fluxos E2E no navegador -->
     <g transform="translate(848 40)">
       <g class="entra" style="animation-delay:0.46s">
         <g class="movimento">
@@ -338,7 +338,7 @@
           <g class="rolo p4" style="animation-duration:1.3s;animation-delay:0.91s">
             <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
           </g>
-          <g class="rolo p13" style="animation-duration:2.1s;animation-delay:0.98s">
+          <g class="rolo p17" style="animation-duration:2.1s;animation-delay:0.98s">
             <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
           </g>
         </g>

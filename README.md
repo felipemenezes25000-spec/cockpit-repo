@@ -20,7 +20,7 @@
 [![LGPD](https://img.shields.io/badge/LGPD-dado_de_sa%C3%BAde-BB0000?style=flat-square)](#seguranca)
 [![pt-BR](https://img.shields.io/badge/tudo_em-portugu%C3%AAs-107E3E?style=flat-square)](AGENTS.md)
 
-**Agenda · Pacientes · Prontuários · Financeiro · Documentos e Contratos · Relacionamento · Indicadores**<br>
+**Agenda · Pacientes · Prontuários · Financeiro · Documentos e Contratos · Relacionamento · Captação · Indicadores**<br>
 O sistema de gestão do consultório de estética da **Dra. Érika Passos** — no lugar da agenda de papel,<br>
 do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como última linha de defesa.
 
@@ -39,24 +39,24 @@ do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como �
 
 <br>
 
-<img src="docs/assets/numeros.svg" width="100%" alt="28 migrações SQL versionadas · 41 rotas testadas em 3 larguras · 800 testes de unidade e componente · 194 asserções de permissão no banco · 43 testes de fluxo E2E · 3 perfis com RLS em toda tabela">
+<img src="docs/assets/numeros.svg" width="100%" alt="31 migrações SQL versionadas · 42 rotas testadas em 3 larguras · 895 testes de unidade e componente · 269 asserções de permissão no banco · 47 testes de fluxo E2E · 3 perfis com RLS em toda tabela">
 
 <details>
-<summary><b>Todos os números</b> — contados no código em 23/09/2026</summary>
+<summary><b>Todos os números</b> — contados no código em 25/09/2026, no branch <code>main</code></summary>
 
 | Onde | Quanto |
 |---|---|
-| Páginas (`page.tsx`) | **48** — 43 autenticadas em `(app)` e 5 públicas |
-| Componentes React | **96**, em 10 pastas (documentos e financeiro são as maiores) |
-| TypeScript em `src/` | ~**43 mil linhas** em 296 arquivos, testes incluídos (~33 mil em 224 sem eles; 1.922 são os tipos gerados do banco) |
-| Migrações SQL | **28**, somando ~**8,1 mil linhas** (a maior, 0022, tem 1.237) — 0019 a 0028 ainda não aplicadas em produção |
-| Tabelas no schema `public` | **25** — todas com RLS; só uma com DELETE (fotos, pela LGPD) |
-| Políticas de RLS | **63** (60 em `public` + 3 no Storage) — menos que antes porque a 0023 tirou as de escrita direta em venda, histórico e ajuste |
-| Gatilhos | **67**, dos quais **20** de auditoria |
-| Funções no banco | **50** — 23 em `public`, 27 em `private`; 17 chamadas pela aplicação, **4** alcançáveis por `anon` |
-| Verificações automatizadas | **1292** — 800 Vitest · 194 SQL por perfil · 298 Playwright (251 Chromium, 43 WebKit, 4 iPhone 13) |
+| Páginas (`page.tsx`) | **49** — 44 autenticadas em `(app)` e 5 públicas |
+| Componentes React | **114**, em 11 pastas (ui e financeiro são as maiores) |
+| TypeScript em `src/` | ~**49 mil linhas** em 330 arquivos, testes incluídos (~37,5 mil em 251 sem eles; 2.164 são os tipos gerados do banco) |
+| Migrações SQL | **31**, somando ~**8,7 mil linhas** (a maior, 0022, tem 1.237) — 0029 a 0031 (Captação) ainda não aplicadas em produção |
+| Tabelas no schema `public` | **29** — todas com RLS; só uma com DELETE (fotos, pela LGPD) |
+| Políticas de RLS | **72** (69 em `public` + 3 no Storage) |
+| Gatilhos | **77** em `public`, dos quais **23** de auditoria |
+| Funções no banco | **57** — 24 em `public`, 33 em `private`; 18 chamadas pela aplicação, **4** alcançáveis por `anon` |
+| Verificações automatizadas | **1475** — 895 Vitest · 269 SQL por perfil · 311 Playwright (260 Chromium, 47 WebKit, 4 iPhone 13) |
 | Dependências | **7** de execução, 18 de desenvolvimento |
-| Histórico | **40 commits**, de 01/08/2026 a 23/09/2026, num único branch (`jamal-do-mal`) |
+| Histórico | **299 commits** no `main`, de 01/08/2026 a 25/09/2026; o `jamal-do-mal`, que a Vercel publica, está atrás dele |
 
 </details>
 
@@ -102,6 +102,7 @@ Seis princípios atravessam o código inteiro:
 | **Financeiro** | `/financeiro` | Vendas, recebimentos, despesas, taxas de cartão, movimentações e fluxo mensal, com filtros na URL | ✅ Pronto |
 | **Documentos e Contratos** | `/formularios` | Modelos versionados, emissão com texto congelado + SHA-256, assinatura no balcão ou por link, anamnese | ✅ Pronto |
 | **Relacionamento** | `/relacionamento` | Confirmações dos próximos 15 dias, retornos, tarefas, aniversários e convites para avaliação no Google | ✅ Pronto |
+| **Captação** | `/captacao` | Meta do mês e funil inverso, carteira de leads com contatos e retornos, conversão em paciente, agenda e venda movendo o funil pelo banco | 🟡 No `main`; banco pendente em produção |
 | **Busca global** | `/busca` | Pacientes, atendimentos, documentos e — para a administradora — prontuários, respeitando a RLS | ✅ Pronta |
 | **Configurações** | `/configuracoes` | Tabela de procedimentos; equipe, dados da clínica, horário e permissões ainda "em breve" | 🟠 Parcial |
 | **Relatórios** | `/relatorios` | Página provisória: navegável, descreve o que virá e avisa que está em construção | ⏳ Provisória |
@@ -137,6 +138,17 @@ Seis princípios atravessam o código inteiro:
 - Fotos em **bucket privado** (`prontuario-imagens`, até 10 MB cada, jpeg/png/webp, até 12 por envio), exibidas por URL assinada de **15 minutos** — nunca URL pública, e nada de `next/image` (o otimizador copiaria a foto para fora do bucket).
 - **O arquivo não passa pela ação de servidor**: o navegador envia direto ao Storage, e o servidor relê tamanho e tipo do objeto antes de gravar a linha.
 - **Eliminar é a única exceção ao "não se apaga"** — pela LGPD (art. 18, VI), a pedido da titular, com motivo guardado e o arquivo removido **antes** da linha, para nunca sobrar dado de saúde sem dono.
+
+</details>
+
+<details>
+<summary><b>Captação</b> — do lead à venda, com contato e retorno</summary>
+
+- **Lead não é paciente**: entra pela carteira com origem, campanha e procedimento de interesse; vira paciente por conversão (numa transação, idempotente) ou vínculo a um cadastro que já existe.
+- **Meta vira plano**: gap → vendas → agendamentos → qualificados → leads, e o ritmo por dia até o fim do mês — "projeção no ritmo atual", nunca previsão.
+- **Venda concluída é evidência do Financeiro**: `ganho ⇔ venda_id`, garantido pelo banco; agenda e venda da paciente vinculada movem o lead por gatilho.
+- **Acompanhamento**: cada contato registra canal, conversa e próximo retorno (só inserção, autor e hora do banco); selos de retorno atrasado, de hoje e futuro; histórico comercial separado do histórico do funil; lead encerrado perde o retorno e não recebe contato.
+- **Coorte × carteira aberta**: funil, conversões e receita atribuída olham os leads que entraram no mês; os retornos olham a carteira aberta inteira. Tudo em [`docs/captacao.md`](docs/captacao.md).
 
 </details>
 
@@ -243,6 +255,10 @@ sequenceDiagram
 **O que o banco garante sozinho**, mesmo contra quem chama a API direto com a chave anônima:
 
 > [!NOTE]
+> As migrações **0029 a 0031** (Captação) estão no branch `main`, verificadas no banco local do zero, e
+> **ainda não foram aplicadas em produção** — o roteiro está no
+> [`supabase/README.md`](supabase/README.md#próxima-onda-0029--0031-captação).
+>
 > As migrações **0019 a 0028** estão escritas e verificadas no banco local (do zero, com o seed e com
 > `npm run test:banco`), e foram **aplicadas em produção em 23/09/2026**, antes do primeiro deploy — ver
 > [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção). Antes disso, as garantias
@@ -408,6 +424,9 @@ erDiagram
 | `0026_marca_de_exemplo_e_privilegios.sql` | A marca de dado de exemplo não se grava pela API; sequência nova só com USAGE |
 | `0027_banco_escreve_a_evidencia.sql` | Versão de modelo, autor da resposta e autor e data da foto escritos pelo banco; a via diz o canal da assinatura; recebimento sem taxa maior que o valor |
 | `0028_venda_idempotente_e_foto_do_arquivo.sql` | Venda idempotente pela chave do envio (`vendas.chave_envio`, `p_chave` em `venda_registrar`); foto só com o objeto no bucket, tipo e tamanho do Storage; IP e dispositivo da assinatura marcados como declarados |
+| `0029_captacao_e_metas.sql` | Captação: leads, trilha de etapas por gatilho, metas comerciais; `ganho ⇔ venda_id`; conversão em paciente idempotente; agenda e venda movem o funil |
+| `0030_contatos_comerciais.sql` | Contato comercial só de inserção e o resumo de último contato e próximo retorno no lead, escrito por gatilho |
+| `0031_acompanhamento_comercial_conferido.sql` | Lead encerrado sem retorno; contato conferido (trava, lead aberto, retorno não no passado); resumo que não volta no tempo; contato na auditoria |
 
 O detalhe de cada uma está em [`supabase/README.md`](supabase/README.md) e no [`AGENTS.md`](AGENTS.md) §4.
 
@@ -455,13 +474,13 @@ aplicação não sobe — de propósito.
 
 ## Testes
 
-Três camadas, **1292 verificações automatizadas** — e nenhuma toca produção.
+Três camadas, **1475 verificações automatizadas** — e nenhuma toca produção.
 
 | Camada | Comando | Quanto | O que confere |
 |---|---|---|---|
-| Unidade e componente | `npm test` | **800 testes** em 76 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, login e redirecionamento, middleware, cabeçalhos de segurança, **44 das 47 ações de servidor** com um Supabase falso e componentes (jsdom + Testing Library) |
-| Banco | `npm run test:banco` | **194 asserções**, todas verdes do zero (`db reset` + seed, 23/09/2026) | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim |
-| Navegador | `npm run test:e2e` | **298 testes**: Chromium 251 (43 de fluxo + 126 de telas: 41 endereços × 3 larguras + 3 + 82 de acessibilidade com axe: 41 endereços × 2 larguras), WebKit 43, iPhone 13 4 | Login e redirecionamento seguro, permissões por perfil pela URL, paciente, agenda, venda, despesa, prontuário, fotos, importação, Relacionamento, procedimentos, busca, 404, CSP, documento e assinatura por link (também no WebKit e no celular); 41 endereços em 320, 768 e 1440 px, sem rolagem horizontal nem erro de console, e sem violação WCAG 2.2 A/AA (axe) em 360 e 1440 px |
+| Unidade e componente | `npm test` | **895 testes** em 83 arquivos | Dinheiro, datas no fuso da clínica, CPF, CSV, erros do banco, login e redirecionamento, middleware, cabeçalhos de segurança, **50 das 53 ações de servidor** com um Supabase falso e componentes (jsdom + Testing Library) |
+| Banco | `npm run test:banco` | **269 asserções**, todas verdes do zero (`db reset` + seed, 25/09/2026) | RLS, grants e gatilhos **por perfil**, trocando de papel como a API troca — numa transação desfeita no fim |
+| Navegador | `npm run test:e2e` | **311 testes**: Chromium 260 (47 de fluxo + 129 de telas: 42 endereços × 3 larguras + 3 + 84 de acessibilidade com axe: 42 endereços × 2 larguras), WebKit 47, iPhone 13 4 | Login e redirecionamento seguro, permissões por perfil pela URL, paciente, agenda, venda, despesa, prontuário, fotos, importação, Relacionamento, procedimentos, busca, 404, CSP, documento e assinatura por link (também no WebKit e no celular), Captação de ponta a ponta; 42 endereços em 320, 768 e 1440 px, sem rolagem horizontal nem erro de console, e sem violação WCAG 2.2 A/AA (axe) em 360 e 1440 px |
 
 Os dois últimos precisam do Supabase local no ar com as contas de teste; o E2E recusa rodar se o `.env.local`
 não apontar para `127.0.0.1`. Na primeira vez: `npx playwright install chromium webkit`. Um projeto só:
@@ -533,7 +552,7 @@ src/
     acoes/                   ESCRITA — "use server", validação de verdade
   lib/                       regras compartilhadas: moeda, datas, CPF, CSV, venda, documento…
 supabase/
-  migrations/                0001 → 0028: a estrutura inteira do banco
+  migrations/                0001 → 0031: a estrutura inteira do banco
   testes/permissoes.sql      as asserções do banco por perfil
 testes/                      preparação do Vitest e o Supabase falso das ações
 e2e/                         Playwright: fluxos e telas
