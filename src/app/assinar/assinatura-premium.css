@@ -7,12 +7,35 @@
   border-radius: calc(var(--radius-painel) + 3px);
 }
 
+.assinatura-publica-premium > div > div[class*="border-card-border"],
+.assinatura-publica-premium > div > form,
+.assinatura-publica-premium > form {
+  border-color: #d6e3ef;
+  background:
+    radial-gradient(460px 180px at 100% 0%, rgba(224, 240, 255, .52), transparent 72%),
+    linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+  box-shadow: var(--assinatura-sombra);
+}
+
 .assinatura-publica-premium form {
   border: 1px solid var(--color-card-border);
   background:
     radial-gradient(460px 180px at 100% 0%, rgba(224, 240, 255, .58), transparent 72%),
     linear-gradient(180deg, #fff 0%, #fbfdff 100%);
   box-shadow: var(--assinatura-sombra);
+}
+
+.assinatura-publica-premium .t-headline {
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.assinatura-publica-premium form > span:first-child {
+  border: 1px solid var(--color-primary-fixed-dim);
+  background: linear-gradient(145deg, #fff 0%, var(--color-primary-fixed) 100%);
+  box-shadow: 0 12px 28px -22px rgba(8,84,160,.6);
 }
 
 .assinatura-publica-premium .folha {
@@ -22,15 +45,27 @@
   box-shadow: 0 30px 76px -56px rgba(7,57,112,.56);
 }
 
-.assinatura-publica-premium .folha-texto {
+.assinatura-publica-premium .folha-texto,
+.assinatura-publica-premium div[class*="max-h-[60vh]"] {
   border-color: #dce7f1;
   background:
     linear-gradient(180deg, rgba(255,255,255,.99), rgba(252,253,255,.99)),
     repeating-linear-gradient(0deg, transparent 0 31px, rgba(18,91,160,.025) 31px 32px);
 }
 
+.assinatura-publica-premium div[class*="max-h-[60vh]"] {
+  box-shadow: inset 0 1px 0 rgba(8,84,160,.035), inset 0 -16px 32px -30px rgba(8,41,76,.3);
+}
+
 .assinatura-publica-premium .folha-evidencias {
   background: linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%);
+}
+
+.assinatura-publica-premium label:has(input[type="checkbox"]) {
+  border-radius: var(--radius-controle);
+  border: 1px solid #dbe6f1;
+  background: #fbfdff;
+  padding: .8rem .9rem;
 }
 
 .assinatura-publica-premium button[type="submit"],
@@ -47,7 +82,7 @@
   }
 }
 
-.assinatura-publica-premium input {
+.assinatura-publica-premium input:not([type="checkbox"]) {
   min-height: 2.8rem;
 }
 
@@ -57,7 +92,12 @@
 
 .assinatura-publica-premium [role="alert"],
 .assinatura-publica-premium [role="status"] {
+  border-radius: var(--radius-controle);
   box-shadow: 0 16px 38px -32px rgba(8,41,76,.38);
+}
+
+.assinatura-publica-premium code {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 639px) {
@@ -67,9 +107,14 @@
 
   .assinatura-publica-premium form {
     border-radius: var(--radius-painel);
+    padding-inline: 1rem;
   }
 
-  .assinatura-publica-premium input {
+  .assinatura-publica-premium .t-headline {
+    font-size: 1.18rem;
+  }
+
+  .assinatura-publica-premium input:not([type="checkbox"]) {
     min-height: 2.9rem;
     font-size: 16px;
   }
@@ -90,8 +135,13 @@
     padding-inline: 1rem;
   }
 
-  .assinatura-publica-premium .folha-texto {
+  .assinatura-publica-premium .folha-texto,
+  .assinatura-publica-premium div[class*="max-h-[60vh]"] {
     padding: 1rem;
+  }
+
+  .assinatura-publica-premium label:has(input[type="checkbox"]) {
+    padding: .75rem;
   }
 }
 
