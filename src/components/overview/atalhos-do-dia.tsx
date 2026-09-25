@@ -71,7 +71,7 @@ export function AtalhosDoDia({ papel }: { papel: Papel }) {
                   aria-hidden="true"
                   className={cn(
                     "flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)]",
-                    principal ? "bg-white/14 text-white" : "bg-primary-fixed text-primary",
+                    principal ? "bg-white/[0.14] text-white" : "bg-primary-fixed text-primary",
                   )}
                 >
                   <Icone size={17} strokeWidth={1.9} />
