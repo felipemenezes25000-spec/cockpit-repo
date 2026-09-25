@@ -35,7 +35,7 @@ function Metadado({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+    <div className="documento-evidencia flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
         <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
       </span>
@@ -49,7 +49,7 @@ function Metadado({
 
 function Evidencia({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
-    <div className="grid gap-1 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
+    <div className="documento-evidencia grid gap-1 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
       <span className="rotulo text-[0.65rem] text-outline">{rotulo}</span>
       <span className="text-sm leading-5 break-words text-on-surface">{valor}</span>
     </div>
@@ -69,7 +69,7 @@ export function DetalheDocumento({
   const aceitaResposta = documento.situacao === "emitido";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="page-reveal mx-auto flex w-full max-w-[1680px] flex-col gap-6">
       <LinkDeVoltar href="/formularios">Voltar para documentos</LinkDeVoltar>
 
       <CabecalhoDePagina
@@ -104,8 +104,8 @@ export function DetalheDocumento({
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
-        <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           <CardRecolhivel id="doc-conteudo"
               titulo={anamnese ? "Conteúdo congelado" : "Texto assinado ou a assinar"}
               descricao="Esta é a cópia preservada do conteúdo emitido. Alterações posteriores no modelo não reescrevem este registro."
@@ -117,9 +117,16 @@ export function DetalheDocumento({
                 </p>
               ) : null}
 
-              <article className="relative mx-auto max-w-4xl rounded-[var(--radius-painel)] border border-card-border bg-surface px-5 py-6 sm:px-8 sm:py-8">
+              <article className="documento-folha relative mx-auto max-w-4xl rounded-[var(--radius-painel)] border border-card-border px-5 py-7 sm:px-9 sm:py-10">
                 <span aria-hidden="true" className="absolute inset-x-10 top-0 h-px bg-primary-fixed" />
-                <p className="whitespace-pre-wrap text-[0.94rem] leading-7 text-on-surface">
+                <div className="mb-7 flex items-center justify-between gap-4 border-b border-card-border pb-4">
+                  <div>
+                    <p className="rotulo text-primary">Via preservada</p>
+                    <p className="mt-1 text-xs text-outline">Texto congelado no momento da emissão</p>
+                  </div>
+                  <FileSignature aria-hidden="true" size={22} strokeWidth={1.5} className="text-primary" />
+                </div>
+                <p className="whitespace-pre-wrap text-[0.95rem] leading-8 text-on-surface">
                   {documento.corpo}
                 </p>
               </article>
@@ -256,7 +263,7 @@ export function DetalheDocumento({
 
               <Link
                 href={`/pacientes/${documento.pacienteId}`}
-                className="mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] px-3 text-sm font-medium text-primary transition-colors hover:bg-selecao"
+                className="premium-interactive mt-4 inline-flex min-h-9 items-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao px-3 text-sm font-semibold text-primary hover:bg-primary-fixed"
               >
                 Abrir ficha da paciente
               </Link>
@@ -264,7 +271,7 @@ export function DetalheDocumento({
               {documento.documentoAnteriorId ? (
                 <Link
                   href={`/formularios/${documento.documentoAnteriorId}`}
-                  className="mt-2 flex items-start gap-2 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3 text-sm text-on-surface-variant transition-colors hover:border-primary-fixed-dim hover:text-primary"
+                  className="documento-evidencia mt-2 flex items-start gap-2 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3 text-sm text-on-surface-variant hover:text-primary"
                 >
                   <Replace aria-hidden="true" size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
                   Este documento corrige um anterior
