@@ -37,7 +37,7 @@ export function BotaoWhatsApp({
       rel="noopener noreferrer"
       onClick={onClick}
       className={cn(
-        "botao-whatsapp group inline-flex items-center rounded-[var(--radius-controle)] border border-positivo bg-positivo font-semibold whitespace-nowrap text-on-primary transition-[transform,filter] duration-150 hover:brightness-[0.9] active:scale-[0.985]",
+        "botao-whatsapp group inline-flex items-center rounded-[var(--radius-controle)] border border-positivo bg-positivo font-semibold whitespace-nowrap text-on-primary shadow-[0_12px_24px_-18px_rgba(14,118,57,.65)] transition-[transform,filter,box-shadow] duration-180 hover:-translate-y-0.5 hover:brightness-[0.92] hover:shadow-[0_16px_30px_-18px_rgba(14,118,57,.72)] active:translate-y-0 active:scale-[0.985]",
         TAMANHOS[tamanho],
         className,
       )}
