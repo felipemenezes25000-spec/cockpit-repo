@@ -12,6 +12,7 @@ import { atendimentosDeHoje } from "@/server/consultas/agenda";
 import { temDadosDeExemplo } from "@/server/consultas/exemplo";
 import { ROTULO_PENDENCIA, pendenciasAbertas } from "@/server/consultas/pendencias";
 import "./app-premium.css";
+import "./app-premium-extended.css";
 
 /** Quantas pendências passam no letreiro do topo (as mais urgentes primeiro). */
 const NO_LETREIRO = 12;
