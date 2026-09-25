@@ -1,0 +1,294 @@
+/*
+ * Camada visual premium das telas autenticadas do Cockpit.
+ *
+ * Importada apenas pelo route group `(app)`: a tela de login e as demais
+ * telas públicas continuam com a identidade própria delas.
+ */
+
+.app-premium {
+  --premium-borda: #d9e3ee;
+  --premium-borda-forte: #c7d5e5;
+  --premium-superficie: rgba(255, 255, 255, 0.98);
+  --premium-superficie-suave: #f8fbff;
+  --premium-azul-suave: #eef6ff;
+  --premium-sombra: 0 1px 2px rgba(7, 38, 76, 0.03), 0 18px 46px -32px rgba(7, 57, 112, 0.28);
+  --premium-sombra-hover: 0 2px 5px rgba(7, 38, 76, 0.05), 0 22px 54px -30px rgba(7, 57, 112, 0.34);
+  --premium-sombra-forte: 0 28px 70px -38px rgba(7, 57, 112, 0.46);
+  background: #f5f9fd;
+}
+
+.app-premium.fundo-vivo::before {
+  height: min(960px, 100%);
+  background-image:
+    radial-gradient(980px 420px at 18% -5%, rgba(201, 226, 250, 0.62), transparent 72%),
+    radial-gradient(780px 360px at 88% 5%, rgba(228, 240, 252, 0.86), transparent 74%),
+    radial-gradient(circle at 1px 1px, rgba(8, 84, 160, 0.085) 1px, transparent 1.35px);
+  background-size: 100% 100%, 100% 100%, 24px 24px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 42%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 42%, transparent 100%);
+}
+
+.app-premium #conteudo {
+  padding-top: clamp(1.35rem, 2.4vw, 2.25rem);
+}
+
+.app-premium .palco {
+  max-width: 1680px;
+}
+
+/* Navegação */
+.app-premium .topo-vivo {
+  border-color: rgba(199, 213, 229, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 34px -28px rgba(5, 45, 92, 0.5);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+  backdrop-filter: blur(16px) saturate(125%);
+}
+
+.app-premium .topo-vivo [aria-current="page"] {
+  box-shadow: inset 0 -2px 0 var(--color-primary-container);
+}
+
+.app-premium .topo-vivo button,
+.app-premium .topo-vivo a {
+  transition-duration: 180ms;
+}
+
+.app-premium .topo-vivo button:hover,
+.app-premium .topo-vivo a:hover {
+  transform: translateY(-1px);
+}
+
+/* Tipografia e cabeçalhos */
+.app-premium .titulo-tela {
+  font-size: clamp(1.85rem, 1.45rem + 1.35vw, 2.55rem);
+  line-height: 1.04;
+  font-weight: 760;
+  letter-spacing: -0.045em;
+  background: linear-gradient(104deg, #063f7c 0%, #0854a0 46%, #0a6ed1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.app-premium .titulo-secao {
+  font-size: 1rem;
+  line-height: 1.35rem;
+  font-weight: 720;
+  letter-spacing: -0.018em;
+}
+
+.app-premium .rotulo {
+  font-size: 0.65rem;
+  letter-spacing: 0.095em;
+  font-weight: 760;
+}
+
+.app-premium .selo-tela {
+  border: 1px solid #d7e7f7;
+  background: linear-gradient(145deg, #ffffff 0%, #edf6ff 72%, #dceeff 100%);
+  box-shadow: 0 10px 24px -18px rgba(8, 84, 160, 0.58), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* Painéis compartilhados */
+.app-premium .premium-panel {
+  border-color: var(--premium-borda);
+  background: linear-gradient(180deg, var(--premium-superficie) 0%, #fcfdff 100%);
+  box-shadow: var(--premium-sombra);
+}
+
+.app-premium .premium-interactive {
+  transition:
+    transform 190ms var(--ease-enter),
+    border-color 190ms var(--ease-standard),
+    background-color 190ms var(--ease-standard),
+    box-shadow 190ms var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .app-premium .premium-interactive:hover {
+    transform: translateY(-2px);
+    border-color: #b8cee5;
+    box-shadow: var(--premium-sombra-hover);
+  }
+}
+
+.app-premium .premium-panel > [class*="border-b"] {
+  border-color: #e2e9f1;
+}
+
+.app-premium .premium-panel > [class*="border-t"] {
+  border-color: #e2e9f1;
+}
+
+/* Cabines / blocos de leitura rápida */
+.app-premium .cabine {
+  border: 1px solid rgba(45, 130, 213, 0.72);
+  background-image:
+    radial-gradient(680px 260px at 7% 0%, rgba(77, 164, 239, 0.34), transparent 72%),
+    radial-gradient(520px 340px at 100% 100%, rgba(2, 38, 82, 0.46), transparent 72%),
+    linear-gradient(118deg, #0a73d8 0%, #0865c1 34%, #0756a4 68%, #063f7c 100%);
+  background-size: 100% 100%;
+  box-shadow: var(--premium-sombra-forte), inset 0 1px 0 rgba(255,255,255,.15);
+}
+
+.app-premium .cabine::before {
+  opacity: 0.78;
+}
+
+.app-premium .cabine::after {
+  opacity: 0.9;
+}
+
+.app-premium .cabine .barra {
+  background: rgba(255,255,255,.24);
+  box-shadow: inset 0 1px 2px rgba(0, 31, 70, 0.22);
+}
+
+/* Controles */
+.app-premium #conteudo input:not([type="checkbox"]):not([type="radio"]),
+.app-premium #conteudo select,
+.app-premium #conteudo textarea {
+  border-color: #aebfd0;
+  background-color: #fff;
+  box-shadow: inset 0 1px 0 rgba(8, 41, 76, 0.015), 0 1px 2px rgba(8, 41, 76, 0.02);
+}
+
+.app-premium #conteudo input:not([type="checkbox"]):not([type="radio"]):hover,
+.app-premium #conteudo select:hover,
+.app-premium #conteudo textarea:hover {
+  border-color: #7f9fbd;
+}
+
+.app-premium #conteudo input:not([type="checkbox"]):not([type="radio"]):focus,
+.app-premium #conteudo select:focus,
+.app-premium #conteudo textarea:focus {
+  border-color: var(--color-primary-container);
+  box-shadow: 0 0 0 4px rgba(10, 110, 209, 0.11);
+}
+
+.app-premium #conteudo button[class*="bg-primary-container"],
+.app-premium #conteudo a[class*="bg-primary-container"] {
+  box-shadow: 0 12px 26px -18px rgba(10, 110, 209, 0.82);
+}
+
+@media (hover: hover) {
+  .app-premium #conteudo button[class*="bg-primary-container"]:hover,
+  .app-premium #conteudo a[class*="bg-primary-container"]:hover {
+    box-shadow: 0 16px 32px -18px rgba(8, 60, 115, 0.78);
+  }
+}
+
+/* Listas e tabelas */
+.app-premium #conteudo table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.app-premium #conteudo thead {
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
+}
+
+.app-premium #conteudo th {
+  color: #4c6177;
+  font-size: 0.69rem;
+  font-weight: 760;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.app-premium #conteudo tbody tr {
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.app-premium #conteudo tbody tr:hover {
+  background: #f7fbff;
+}
+
+.app-premium #conteudo hr {
+  border-color: #e0e8f0;
+}
+
+/* Estados vazios e pequenos destaques */
+.app-premium .vazio-icone {
+  background: linear-gradient(145deg, #ffffff 0%, #eaf5ff 100%);
+  border: 1px solid #d5e7f8;
+  box-shadow: 0 14px 30px -22px rgba(8, 84, 160, 0.5);
+}
+
+.app-premium .tecla {
+  border-color: #aebdcb;
+  background: linear-gradient(180deg, #fff 0%, #f5f8fb 100%);
+  box-shadow: 0 1px 1px rgba(8, 41, 76, 0.05);
+}
+
+/* Visão Geral */
+.app-premium .visao-geral-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0 0.35rem;
+}
+
+.app-premium .visao-geral-saudacao {
+  font-size: clamp(2rem, 1.55rem + 1.55vw, 2.85rem);
+  line-height: 1.02;
+  font-weight: 780;
+  letter-spacing: -0.05em;
+  color: #142033;
+}
+
+.app-premium .visao-geral-data {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #d9e6f2;
+  border-radius: var(--radius-controle);
+  padding: 0.45rem 0.8rem;
+  background: rgba(255,255,255,.76);
+  color: #52677c;
+  font-size: 0.75rem;
+  font-weight: 650;
+  box-shadow: 0 8px 20px -18px rgba(8, 65, 120, .45);
+}
+
+.app-premium .visao-geral-grade-dupla > * {
+  min-width: 0;
+}
+
+.app-premium .visao-geral-grade-baixa > * {
+  min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .app-premium .visao-geral-grade-dupla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .app-premium .visao-geral-grade-baixa {
+    display: grid;
+    grid-template-columns: minmax(0, 2.15fr) minmax(20rem, .85fr);
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .app-premium .visao-geral-grade-dupla > *,
+  .app-premium .visao-geral-grade-baixa > * {
+    height: 100%;
+  }
+}
+
+/* Respeita quem prefere menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+  .app-premium .premium-interactive,
+  .app-premium .topo-vivo button,
+  .app-premium .topo-vivo a {
+    transition: none !important;
+    transform: none !important;
+  }
+}
