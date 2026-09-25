@@ -60,48 +60,56 @@ export function FiltrosFinanceiro({
   const quantidadeAtivos = grupos.reduce((total, grupo) => total + (parametros?.get(grupo.param) ? 1 : 0), 0) + (busca && termo ? 1 : 0);
 
   return (
-    <div className="premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border p-3.5">
-      <div className="relative mb-3 flex flex-wrap items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.05em] text-on-surface-variant uppercase">
-          <span className="flex size-7 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-primary">
-            <SlidersHorizontal aria-hidden="true" size={14} strokeWidth={1.7} />
+    <div className="relative overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface-container-low p-4 sm:p-5">
+      <div className="relative mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary shadow-[0_8px_18px_-16px_rgba(8,84,160,.55)]">
+            <SlidersHorizontal aria-hidden="true" size={15} strokeWidth={1.8} />
           </span>
-          Filtros
-        </span>
+          <div>
+            <p className="rotulo text-primary">Refinar financeiro</p>
+            <p className="mt-1 text-xs leading-5 text-outline">Filtre o recorte sem perder o mês selecionado.</p>
+          </div>
+        </div>
         {quantidadeAtivos > 0 ? (
           <span className="tabular rounded-full border border-primary-fixed bg-selecao px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
-            {quantidadeAtivos} {quantidadeAtivos === 1 ? "ativo" : "ativos"}
+            {quantidadeAtivos} {quantidadeAtivos === 1 ? "filtro ativo" : "filtros ativos"}
           </span>
-        ) : null}
+        ) : (
+          <span className="rounded-full border border-card-border bg-surface px-2.5 py-1 text-[0.65rem] font-medium text-outline">Sem filtros extras</span>
+        )}
       </div>
 
-      <div className="relative flex flex-wrap items-center gap-x-4 gap-y-3">
+      <div className="relative flex flex-wrap items-end gap-x-4 gap-y-3">
         {busca ? (
-          <div className="relative w-full sm:max-w-sm">
-            <Search aria-hidden="true" size={16} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
-            <input
-              type="search"
-              value={termo}
-              onChange={(e) => aoDigitar(busca.param, e.target.value)}
-              maxLength={80}
-              aria-label={busca.placeholder}
-              placeholder={busca.placeholder}
-              className={cn(classeDeEntrada({ altura: "compacta", recuo: "buscaCompacta" }), "bg-surface")}
-            />
-            {termo ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setTermo("");
-                  cancelarEspera();
-                  navegar({ [busca.param]: "" });
-                }}
-                aria-label="Limpar busca"
-                className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
-              >
-                <X aria-hidden="true" size={14} strokeWidth={1.75} />
-              </button>
-            ) : null}
+          <div className="w-full sm:max-w-sm">
+            <label className="mb-1.5 block text-[0.69rem] font-semibold text-on-surface-variant">Busca</label>
+            <div className="relative">
+              <Search aria-hidden="true" size={16} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-primary" />
+              <input
+                type="search"
+                value={termo}
+                onChange={(e) => aoDigitar(busca.param, e.target.value)}
+                maxLength={80}
+                aria-label={busca.placeholder}
+                placeholder={busca.placeholder}
+                className={cn(classeDeEntrada({ altura: "compacta", recuo: "buscaCompacta" }), "bg-surface shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)]")}
+              />
+              {termo ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTermo("");
+                    cancelarEspera();
+                    navegar({ [busca.param]: "" });
+                  }}
+                  aria-label="Limpar busca"
+                  className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
+                >
+                  <X aria-hidden="true" size={14} strokeWidth={1.75} />
+                </button>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
@@ -110,12 +118,12 @@ export function FiltrosFinanceiro({
 
           if (grupo.opcoes.length > 5) {
             return (
-              <label key={grupo.param} className="flex w-full items-center gap-2 sm:w-auto">
-                <span className="rotulo">{grupo.rotulo}</span>
+              <label key={grupo.param} className="flex w-full flex-col gap-1.5 sm:w-auto">
+                <span className="text-[0.69rem] font-semibold text-on-surface-variant">{grupo.rotulo}</span>
                 <select
                   value={atual}
                   onChange={(e) => navegar({ [grupo.param]: e.target.value })}
-                  className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "min-w-0 flex-1 bg-surface font-medium sm:flex-none")}
+                  className={cn(classeDeEntrada({ altura: "compacta", largura: "auto" }), "min-w-0 flex-1 bg-surface font-medium shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)] sm:flex-none")}
                 >
                   {grupo.opcoes.map((opcao) => (
                     <option key={opcao.valor} value={opcao.valor}>{opcao.rotulo}</option>
@@ -126,29 +134,32 @@ export function FiltrosFinanceiro({
           }
 
           return (
-            <div key={grupo.param} role="group" aria-label={grupo.rotulo} className={cn(SEGMENTO_GRUPO, "w-full bg-surface sm:w-auto")}>
-              {grupo.opcoes.map((opcao) => {
-                const ativa = atual === opcao.valor;
-                return (
-                  <label key={opcao.valor} className={classeDaOpcao(ativa)}>
-                    <input
-                      type="radio"
-                      name={grupo.param}
-                      value={opcao.valor}
-                      checked={ativa}
-                      onChange={() => navegar({ [grupo.param]: opcao.valor })}
-                      className="sr-only"
-                    />
-                    {opcao.rotulo}
-                  </label>
-                );
-              })}
+            <div key={grupo.param}>
+              <p className="mb-1.5 text-[0.69rem] font-semibold text-on-surface-variant">{grupo.rotulo}</p>
+              <div role="group" aria-label={grupo.rotulo} className={cn(SEGMENTO_GRUPO, "w-full bg-surface shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)] sm:w-auto")}>
+                {grupo.opcoes.map((opcao) => {
+                  const ativa = atual === opcao.valor;
+                  return (
+                    <label key={opcao.valor} className={classeDaOpcao(ativa)}>
+                      <input
+                        type="radio"
+                        name={grupo.param}
+                        value={opcao.valor}
+                        checked={ativa}
+                        onChange={() => navegar({ [grupo.param]: opcao.valor })}
+                        className="sr-only"
+                      />
+                      {opcao.rotulo}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
 
         {pendente ? (
-          <span role="status" className="inline-flex items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-2.5 py-1.5 text-xs text-outline">
+          <span role="status" className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-2.5 text-xs text-outline">
             <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
             Atualizando…
           </span>
