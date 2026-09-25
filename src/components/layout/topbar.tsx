@@ -56,27 +56,31 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
 
   return (
     <>
-      <header className="topo-vivo sticky top-0 z-30 border-b border-card-border bg-surface">
+      <header className="topo-vivo sticky top-0 z-30 border-b border-card-border bg-surface/94 backdrop-blur-2xl">
         <div className="mx-auto flex h-[var(--altura-barra)] w-full max-w-[1680px] items-center gap-2 px-3 sm:gap-3 sm:px-6 xl:px-10 2xl:px-14">
           <button
             ref={ref}
             type="button"
             onClick={aoAbrirGaveta}
             aria-label="Abrir menu"
-            className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary lg:hidden"
+            className="premium-interactive flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-on-surface-variant shadow-[0_8px_18px_-16px_rgba(8,41,76,.45)] hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary lg:hidden"
           >
-            <Menu aria-hidden="true" size={22} strokeWidth={1.7} />
+            <Menu aria-hidden="true" size={21} strokeWidth={1.7} />
           </button>
 
-          <Link href="/" className="group flex shrink-0 items-center gap-2.5 rounded-[var(--radius-controle)] pr-1" aria-label={`${CLINICA.nome} — Visão Geral`}>
-            <SeloDaMarca className="transition-[transform,background-color] group-hover:-translate-y-0.5 group-hover:bg-primary-hover" />
+          <Link
+            href="/"
+            className="group premium-interactive flex shrink-0 items-center gap-2.5 rounded-[var(--radius-controle)] border border-transparent px-1.5 py-1 hover:border-primary-fixed hover:bg-selecao/60"
+            aria-label={`${CLINICA.nome} — Visão Geral`}
+          >
+            <SeloDaMarca className="transition-[transform,background-color,box-shadow] group-hover:-translate-y-0.5 group-hover:bg-primary-hover group-hover:shadow-[0_8px_18px_-14px_rgba(8,84,160,.7)]" />
             <span aria-hidden="true" className="hidden min-w-0 flex-col leading-tight sm:flex lg:hidden 2xl:flex">
-              <span className="max-w-36 truncate text-sm font-bold tracking-[-0.01em] text-primary">{CLINICA.nome}</span>
-              <span className="text-[0.6875rem] font-medium text-outline">Cockpit do consultório</span>
+              <span className="max-w-36 truncate text-sm font-bold tracking-[-0.015em] text-primary">{CLINICA.nome}</span>
+              <span className="text-[0.67rem] font-medium tracking-[0.015em] text-outline">Cockpit do consultório</span>
             </span>
           </Link>
 
-          <span aria-hidden="true" className="mx-1 hidden h-7 w-px bg-card-border lg:block" />
+          <span aria-hidden="true" className="mx-1 hidden h-7 w-px bg-gradient-to-b from-transparent via-card-border to-transparent lg:block" />
 
           <BarraDeModulos className="hidden lg:block" />
 
@@ -86,9 +90,11 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
               onClick={() => setComandosAbertos(true)}
               aria-label="Buscar e abrir comandos"
               aria-keyshortcuts="Control+K"
-              className="group flex h-10 items-center gap-2 rounded-[var(--radius-controle)] px-2.5 text-sm text-on-surface-variant transition-[transform,background-color,border-color,color,box-shadow] hover:bg-surface-container-low hover:text-primary sm:border sm:border-card-border sm:bg-surface sm:pr-2 sm:shadow-[0_8px_20px_-18px_rgba(8,41,76,.4)] sm:hover:border-primary-fixed-dim sm:hover:bg-surface xl:min-w-[13rem] xl:justify-start"
+              className="group premium-interactive flex h-10 items-center gap-2 rounded-[var(--radius-controle)] border border-card-border bg-gradient-to-b from-surface to-surface-container-low px-2.5 text-sm text-on-surface-variant shadow-[0_10px_22px_-18px_rgba(8,41,76,.45)] hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary sm:pr-2 xl:min-w-[13rem] xl:justify-start"
             >
-              <Search aria-hidden="true" size={18} strokeWidth={1.8} />
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary transition-transform duration-180 group-hover:-translate-y-0.5">
+                <Search aria-hidden="true" size={16} strokeWidth={1.8} />
+              </span>
               <span aria-hidden="true" className="hidden truncate text-outline sm:inline xl:flex-1 xl:text-left">Buscar</span>
               <span aria-hidden="true" className="ml-1 hidden items-center gap-1 md:flex">
                 <kbd className="tecla">Ctrl</kbd>
