@@ -4,6 +4,7 @@ import { Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { forwardRef, useEffect, useState } from "react";
+import { MarcaDaClinica } from "@/components/ui/marca-da-clinica";
 import { ATALHOS, CLINICA } from "@/lib/nav";
 import type { UsuarioAtual } from "@/lib/perfil";
 import { estaEditando, useAtalhosLigados } from "./atalhos-de-tecla";
@@ -67,8 +68,8 @@ export const BarraSuperior = forwardRef<HTMLButtonElement, { aoAbrirGaveta: () =
           </button>
 
           <Link href="/" className="group flex shrink-0 items-center gap-2.5 rounded-[var(--radius-controle)] pr-1" aria-label={`${CLINICA.nome} — Visão Geral`}>
-            <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-[var(--radius-controle)] bg-primary-container text-[0.8rem] font-bold tracking-[-0.02em] text-on-primary transition-colors group-hover:bg-primary-hover">
-              {CLINICA.monograma}
+            <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-[var(--radius-controle)] bg-primary-container text-on-primary transition-colors group-hover:bg-primary-hover">
+              <MarcaDaClinica className="size-6" />
             </span>
             <span aria-hidden="true" className="hidden min-w-0 flex-col leading-tight sm:flex lg:hidden">
               <span className="text-sm font-bold tracking-[-0.01em] text-primary">{CLINICA.nome}</span>

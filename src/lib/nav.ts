@@ -190,9 +190,12 @@ export function itemAtivo(caminho: string): ItemMenu | undefined {
   return MENU.find((item) => item.href !== "/" && caminho.startsWith(item.href));
 }
 
-/** Identidade da clínica, exibida no topo do menu lateral e no login. */
+/**
+ * Identidade da clínica, exibida no topo, no menu lateral, no login e na
+ * página pública de assinatura. A logo é `MarcaDaClinica`
+ * (`components/ui/marca-da-clinica.tsx`), sempre ao lado do nome.
+ */
 export const CLINICA = {
   nome: "Dra. Érika Passos",
   descricao: "Consultório de estética",
-  monograma: "ÉP",
 } as const;
