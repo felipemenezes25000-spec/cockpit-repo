@@ -1,9 +1,12 @@
 import { ArrowLeft, Compass, Home } from "lucide-react";
 import Link from "next/link";
+import { MarcaComNome } from "@/components/ui/marca-da-clinica";
 
 export default function NaoEncontrado() {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-10">
+    <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden px-5 py-10">
+      {/* A 404 abre fora da estrutura do sistema, sem o topo: a marca fica aqui. */}
+      <MarcaComNome tamanho="medio" />
       <section className="premium-panel relative isolate w-full max-w-2xl overflow-hidden rounded-[var(--radius-painel)] border px-6 py-10 text-center sm:px-10 sm:py-12">
 
         <span className="mx-auto flex size-14 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-primary-fixed text-primary">

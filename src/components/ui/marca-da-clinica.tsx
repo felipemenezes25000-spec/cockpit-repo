@@ -1,20 +1,124 @@
+import { cn } from "@/lib/cn";
+import { CLINICA } from "@/lib/nav";
+
 /**
  * A logo da clínica — a seringa no ciclo —, em uma cor só.
  *
  * Pinta com a cor do texto de onde está (`currentColor`): branca no quadrado
- * azul do topo e da gaveta, azul no quadrado claro da cabine do login. Por
- * isso não traz cor nenhuma (AGENTS.md §7.3). É decorativa: o nome da clínica
- * está sempre ao lado, e é ele que o leitor de tela lê.
+ * azul do topo e da gaveta, azul no quadrado claro da cabine do login e na
+ * via impressa. Por isso não traz cor nenhuma (AGENTS.md §7.3). É decorativa:
+ * o nome da clínica está sempre ao lado, e é ele que o leitor de tela lê.
  *
  * Vetorizada da arte original (azul sobre preto, 1254 px), num quadro
  * 100 × 100 com o desenho centrado; os contornos internos são furos
  * (`evenodd`).
+ *
+ * `peso` é um contorno da própria cor, em unidades do quadro: no desenho
+ * original o círculo tem 3,6% da largura, e a 24 px isso dava menos de 1 px —
+ * a logo sumia no topo. O contorno engrossa círculo e seringa por igual, sem
+ * mudar o desenho; acima de ~2 os riscos da seringa colam no corpo. O quadro
+ * do `viewBox` tem 1 unidade de folga para o contorno não ser cortado.
  */
-export function MarcaDaClinica({ className }: { className?: string }) {
+export function MarcaDaClinica({ className, peso = 1.4 }: { className?: string; peso?: number }) {
   return (
-    <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false" className={className}>
-      <path fill="currentColor" fillRule="evenodd" d={CONTORNO} />
+    <svg viewBox="-1 -1 102 102" aria-hidden="true" focusable="false" className={className}>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        stroke="currentColor"
+        strokeWidth={peso}
+        strokeLinejoin="round"
+        d={CONTORNO}
+      />
     </svg>
+  );
+}
+
+/**
+ * O selo: a logo no quadrado da marca. É assim que a clínica aparece em toda
+ * tela — topo, gaveta, telas de acesso, assinatura, 404 e erro —, sempre com
+ * a logo ocupando 80% do quadro. Tamanho e fundo são variantes, não classes
+ * soltas: `cn()` não resolve `size-10` contra `size-16` (§7.3).
+ *
+ * Não vai para a impressão: fundo não sai no papel por padrão, e a logo
+ * branca sumiria no branco. A via impressa usa `MarcaDaClinica` direto.
+ */
+const SELO = {
+  pequeno: { quadro: "size-10 rounded-[var(--radius-controle)]", logo: "size-8", peso: 1.6 },
+  medio: { quadro: "size-12 rounded-[var(--radius-cartao)]", logo: "size-9.5", peso: 1.4 },
+  grande: { quadro: "size-16 rounded-[var(--radius-painel)]", logo: "size-13", peso: 1.2 },
+} as const;
+
+type TamanhoDoSelo = keyof typeof SELO;
+
+/** `cabine`: quadro claro sobre o azul da cabine, com a logo no azul de texto. */
+type TomDaMarca = "marca" | "cabine";
+
+export function SeloDaMarca({
+  tamanho = "pequeno",
+  tom = "marca",
+  className,
+}: {
+  tamanho?: TamanhoDoSelo;
+  tom?: TomDaMarca;
+  /** Só o que não disputa com o selo (transição, hover). */
+  className?: string;
+}) {
+  const selo = SELO[tamanho];
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex shrink-0 items-center justify-center",
+        selo.quadro,
+        tom === "cabine" ? "bg-cabine-texto text-cabine-profunda" : "bg-primary-container text-on-primary",
+        className,
+      )}
+    >
+      <MarcaDaClinica className={selo.logo} peso={selo.peso} />
+    </span>
+  );
+}
+
+const TEXTO = {
+  pequeno: { vao: "gap-2.5", nome: "text-sm", apoio: "text-[0.6875rem] font-medium" },
+  medio: { vao: "gap-3", nome: "text-base", apoio: "text-xs" },
+  grande: { vao: "gap-4", nome: "text-xl", apoio: "text-sm" },
+} as const;
+
+/**
+ * O selo com o nome da clínica e uma linha de apoio ao lado: a assinatura da
+ * marca. Onde a tela já diz o nome de outro jeito (o topo no computador),
+ * usa-se só o `SeloDaMarca`.
+ */
+export function MarcaComNome({
+  tamanho = "pequeno",
+  tom = "marca",
+  apoio = CLINICA.descricao,
+}: {
+  tamanho?: TamanhoDoSelo;
+  tom?: TomDaMarca;
+  apoio?: string;
+}) {
+  const texto = TEXTO[tamanho];
+  return (
+    <span className={cn("flex min-w-0 items-center", texto.vao)}>
+      <SeloDaMarca tamanho={tamanho} tom={tom} />
+      <span className="min-w-0 leading-tight">
+        <span className={cn("block truncate font-bold tracking-[-0.01em]", texto.nome, tom === "marca" && "text-primary")}>
+          {CLINICA.nome}
+        </span>
+        <span
+          className={cn(
+            "mt-0.5 block truncate",
+            texto.apoio,
+            tom === "cabine" ? "text-cabine-texto-secundario" : "text-outline",
+          )}
+        >
+          {apoio}
+        </span>
+      </span>
+    </span>
   );
 }
 

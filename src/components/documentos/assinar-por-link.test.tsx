@@ -115,6 +115,26 @@ describe("AssinarPorLink — ja_assinado ao assinar leva à via, não a um novo 
     await waitFor(() => expect(document.activeElement).toBe(aviso));
   });
 
+  it("a via sai timbrada com a marca, sem depender de fundo para aparecer no papel", async () => {
+    abrirDocumentoParaAssinatura
+      .mockResolvedValueOnce(documento({}))
+      .mockResolvedValueOnce(
+        documento({ situacao: "ja_assinado", assinadoEm: "2026-09-23T15:00:00Z", assinadoPor: "Maria Souza" }),
+      );
+    assinarPorLink.mockResolvedValue({ situacao: "ok", erros: {} });
+
+    await abrirEAssinar();
+    await screen.findByText("Assinatura registrada");
+
+    const folha = document.querySelector(".folha");
+    expect(folha).toHaveTextContent("Dra. Érika Passos");
+    expect(folha).toHaveTextContent("Consultório de estética");
+    expect(folha?.querySelector("svg path")).not.toBeNull();
+    // Fundo não sai na impressão por padrão: a logo branca no quadro azul
+    // sumiria no papel. Na via, a logo é pintada direto, na cor da marca.
+    expect(folha?.querySelector(".bg-primary-container")).toBeNull();
+  });
+
   it("recusa sem frase própria não manda pedir um novo link", async () => {
     abrirDocumentoParaAssinatura.mockResolvedValueOnce(documento({}));
     assinarPorLink.mockResolvedValue({ situacao: "nome_invalido", erros: {} });

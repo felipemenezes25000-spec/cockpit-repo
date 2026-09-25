@@ -1,7 +1,7 @@
 import { CalendarDays, FileText, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { LinkDeVoltar } from "@/components/ui/page-hero";
-import { MarcaDaClinica } from "@/components/ui/marca-da-clinica";
+import { MarcaComNome } from "@/components/ui/marca-da-clinica";
 import { CLINICA } from "@/lib/nav";
 
 /**
@@ -35,15 +35,7 @@ export function AuthShell({
       <div className="page-reveal mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface lg:grid-cols-[1.05fr_0.95fr]">
         <section aria-label={`${CLINICA.nome} — Cockpit do consultório`} className="cabine hidden flex-col justify-between rounded-none p-10 lg:flex xl:p-12">
           <div>
-            <div className="flex items-center gap-3">
-              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[var(--radius-controle)] bg-cabine-texto text-cabine-profunda">
-                <MarcaDaClinica className="size-7" />
-              </span>
-              <div className="leading-tight">
-                <p className="font-bold">{CLINICA.nome}</p>
-                <p className="text-sm text-cabine-texto-secundario">Cockpit do consultório</p>
-              </div>
-            </div>
+            <MarcaComNome tamanho="grande" tom="cabine" apoio="Cockpit do consultório" />
             <p className="mt-14 max-w-md text-[2.75rem] leading-[1.08] font-semibold tracking-[-0.04em] text-balance">
               O dia da clínica numa tela só.
             </p>
@@ -77,14 +69,8 @@ export function AuthShell({
               </LinkDeVoltar>
             ) : null}
 
-            <div className="mb-8 flex items-center gap-3 lg:hidden">
-              <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-[var(--radius-controle)] bg-primary-container text-on-primary">
-                <MarcaDaClinica className="size-6" />
-              </span>
-              <div className="leading-tight">
-                <p className="text-sm font-bold text-primary">{CLINICA.nome}</p>
-                <p className="text-xs text-outline">Cockpit do consultório</p>
-              </div>
+            <div className="mb-8 lg:hidden">
+              <MarcaComNome tamanho="medio" apoio="Cockpit do consultório" />
             </div>
 
             <p className="rotulo text-primary">Acesso seguro</p>

@@ -191,9 +191,10 @@ export function itemAtivo(caminho: string): ItemMenu | undefined {
 }
 
 /**
- * Identidade da clínica, exibida no topo, no menu lateral, no login e na
- * página pública de assinatura. A logo é `MarcaDaClinica`
- * (`components/ui/marca-da-clinica.tsx`), sempre ao lado do nome.
+ * Identidade da clínica, exibida no topo, na gaveta, nas telas de acesso, na
+ * página pública de assinatura e na via impressa, na 404 e nas telas de erro.
+ * A logo e as formas dela (`MarcaDaClinica`, `SeloDaMarca`, `MarcaComNome`)
+ * moram em `components/ui/marca-da-clinica.tsx`, sempre ao lado do nome.
  */
 export const CLINICA = {
   nome: "Dra. Érika Passos",

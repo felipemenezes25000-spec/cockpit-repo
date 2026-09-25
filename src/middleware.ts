@@ -33,8 +33,13 @@ export const config = {
   matcher: [
     /*
      * Tudo, menos os arquivos do próprio Next (`_next/static`, `_next/image`),
-     * o `favicon.ico` e o `robots.txt` — este virava um 307 para /entrar (robô
-     * não tem sessão), e cada robô que o buscasse custava um `getUser` no Auth.
+     * o `robots.txt` — que virava um 307 para /entrar (robô não tem sessão), e
+     * cada robô que o buscasse custava um `getUser` no Auth — e as imagens da
+     * marca que `src/app` publica (`scripts/gerar-marca.mjs`): `favicon.ico`,
+     * `apple-icon.png` (ícone da tela de início do iPhone) e
+     * `opengraph-image.png` (a prévia do link no WhatsApp). Quem as busca não
+     * tem sessão — o celular da paciente, o robô da prévia —, e o 307 para
+     * /entrar trocaria a imagem pela página de login.
      *
      * As exclusões são por caminho exato (ponto escapado, `$` no fim), nunca
      * por extensão: o projeto não tem `public/`, então "tudo que termina em
@@ -43,6 +48,6 @@ export const config = {
      * dia houver imagem estática, exclua pela pasta (`imagens/`), nunca pela
      * extensão.
      */
-    "/((?!_next/static|_next/image|favicon\\.ico$|robots\\.txt$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico$|apple-icon\\.png$|opengraph-image\\.png$|robots\\.txt$).*)",
   ],
 };
