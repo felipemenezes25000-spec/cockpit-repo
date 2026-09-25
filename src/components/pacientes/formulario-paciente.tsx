@@ -46,16 +46,18 @@ export function FormularioPaciente({ acao, inicial, pacienteId, rotuloSalvar = "
   const marcar = (campo: keyof ErrosDoFormulario) => erros[campo] ? ({ "aria-invalid": true as const, "aria-describedby": `${campo}-erro` } as const) : {};
 
   return (
-    <form action={enviar} className="flex flex-col gap-8" noValidate>
+    <form action={enviar} className="flex flex-col gap-6 sm:gap-7" noValidate>
       {pacienteId ? <input type="hidden" name="id" value={pacienteId} /> : null}
-      {erros.geral ? <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"><CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />{erros.geral}</p> : null}
+      {erros.geral ? <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-painel)] border border-error bg-error-container px-4 py-3 text-sm text-on-error-container shadow-[0_12px_30px_-26px_rgba(153,27,27,.35)]"><CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />{erros.geral}</p> : null}
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Campo id="nome" rotulo="Nome completo" obrigatorio erro={erros.nome}><input id="nome" name="nome" type="text" required autoComplete="name" maxLength={120} defaultValue={de("nome")} placeholder="Maria Aparecida da Silva" className={cn(ENTRADA, erros.nome && ENTRADA_ERRO)} {...marcar("nome")} /></Campo>
-        <Campo id="nome_social" rotulo="Nome social" dica="Quando preenchido, é o nome que aparece em todo o sistema." erro={erros.nome_social}><input id="nome_social" name="nome_social" type="text" maxLength={120} defaultValue={de("nome_social")} className={cn(ENTRADA, erros.nome_social && ENTRADA_ERRO)} {...marcar("nome_social")} /></Campo>
-        <Campo id="cpf" rotulo="CPF" erro={erros.cpf}><input id="cpf" name="cpf" type="text" inputMode="numeric" autoComplete="off" value={cpf} onChange={(e) => setCpf(mascararCpf(e.target.value))} placeholder="000.000.000-00" className={cn(ENTRADA, "tabular", erros.cpf && ENTRADA_ERRO)} {...marcar("cpf")} /></Campo>
-        <Campo id="data_nascimento" rotulo="Data de nascimento" erro={erros.data_nascimento}><input id="data_nascimento" name="data_nascimento" type="date" autoComplete="bday" defaultValue={de("data_nascimento")} className={cn(ENTRADA, erros.data_nascimento && ENTRADA_ERRO)} {...marcar("data_nascimento")} /></Campo>
-      </div>
+      <GrupoDeCampos titulo="Identificação" descricao="Dados que individualizam a paciente e aparecem na ficha, documentos e agenda.">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Campo id="nome" rotulo="Nome completo" obrigatorio erro={erros.nome}><input id="nome" name="nome" type="text" required autoComplete="name" maxLength={120} defaultValue={de("nome")} placeholder="Maria Aparecida da Silva" className={cn(ENTRADA, erros.nome && ENTRADA_ERRO)} {...marcar("nome")} /></Campo>
+          <Campo id="nome_social" rotulo="Nome social" dica="Quando preenchido, é o nome que aparece em todo o sistema." erro={erros.nome_social}><input id="nome_social" name="nome_social" type="text" maxLength={120} defaultValue={de("nome_social")} className={cn(ENTRADA, erros.nome_social && ENTRADA_ERRO)} {...marcar("nome_social")} /></Campo>
+          <Campo id="cpf" rotulo="CPF" erro={erros.cpf}><input id="cpf" name="cpf" type="text" inputMode="numeric" autoComplete="off" value={cpf} onChange={(e) => setCpf(mascararCpf(e.target.value))} placeholder="000.000.000-00" className={cn(ENTRADA, "tabular", erros.cpf && ENTRADA_ERRO)} {...marcar("cpf")} /></Campo>
+          <Campo id="data_nascimento" rotulo="Data de nascimento" erro={erros.data_nascimento}><input id="data_nascimento" name="data_nascimento" type="date" autoComplete="bday" defaultValue={de("data_nascimento")} className={cn(ENTRADA, erros.data_nascimento && ENTRADA_ERRO)} {...marcar("data_nascimento")} /></Campo>
+        </div>
+      </GrupoDeCampos>
 
       <GrupoDeCampos titulo="Contato" descricao="Usado para confirmar atendimento, avisar de retorno e enviar documento.">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -64,7 +66,7 @@ export function FormularioPaciente({ acao, inicial, pacienteId, rotuloSalvar = "
         </div>
       </GrupoDeCampos>
 
-      <GrupoDeCampos titulo="Endereço">
+      <GrupoDeCampos titulo="Endereço" descricao="Informação cadastral para documentos e referência administrativa.">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-6">
           <Campo id="cep" rotulo="CEP" erro={erros.cep} className="sm:col-span-2"><input id="cep" name="cep" type="text" inputMode="numeric" autoComplete="postal-code" value={cep} onChange={(e) => setCep(mascararCep(e.target.value))} placeholder="01310-100" className={cn(ENTRADA, "tabular", erros.cep && ENTRADA_ERRO)} {...marcar("cep")} /></Campo>
           <Campo id="logradouro" rotulo="Rua" className="sm:col-span-3"><input id="logradouro" name="logradouro" type="text" maxLength={120} autoComplete="address-line1" defaultValue={de("logradouro")} className={ENTRADA} /></Campo>
@@ -76,9 +78,7 @@ export function FormularioPaciente({ acao, inicial, pacienteId, rotuloSalvar = "
         </div>
       </GrupoDeCampos>
 
-      {/* Os <select> deste formulário levam `key` com o valor devolvido pela ação: o React 19
-          reinicia o formulário depois dela, e o <select> só lê o defaultValue ao montar. */}
-      <GrupoDeCampos titulo="Acompanhamento">
+      <GrupoDeCampos titulo="Acompanhamento" descricao="Origem e observações administrativas ajudam a equipe a manter contexto sem misturar conteúdo clínico.">
         <div className="flex flex-col gap-5">
           <Campo id="origem" rotulo="Como conheceu a clínica" dica="Lista fechada de propósito: texto livre não vira relatório depois." className="sm:max-w-xs"><select key={`origem-${origem}`} id="origem" name="origem" defaultValue={origem} className={ENTRADA}><option value="">—</option>{origemForaDaLista ? <option value={origem}>{origem} (importada)</option> : null}{ORIGENS.map((o) => <option key={o} value={o}>{o}</option>)}</select></Campo>
           <Campo id="observacoes" rotulo="Observações administrativas" dica="Preferência de horário, forma de contato, quem indicou. Conteúdo clínico vai no prontuário, não aqui."><textarea id="observacoes" name="observacoes" maxLength={2000} defaultValue={de("observacoes")} className={AREA_TEXTO} /></Campo>
