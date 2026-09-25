@@ -41,12 +41,11 @@ export default async function PaginaFichaPaciente({ params }: Props) {
   ]);
 
   return (
-    <div>
-
+    <div className="page-reveal">
       <CabecalhoFicha paciente={paciente} podeProntuario={podeProntuario} />
 
-      <div className="grid grid-cols-1 items-start gap-8 pb-10 xl:grid-cols-12">
-        <div className="flex flex-col gap-8 xl:col-span-7">
+      <div className="grid grid-cols-1 items-start gap-5 pb-10 xl:grid-cols-12 xl:gap-6">
+        <div className="flex min-w-0 flex-col gap-5 xl:col-span-8">
           <HistoricoAtendimentos
             atendimentos={historico.atendimentos}
             exemplo={paciente.exemplo && exemplo}
@@ -55,7 +54,7 @@ export default async function PaginaFichaPaciente({ params }: Props) {
           />
         </div>
 
-        <div className="flex flex-col gap-8 xl:col-span-5">
+        <aside aria-label="Resumo e acompanhamento da paciente" className="flex min-w-0 flex-col gap-5 xl:col-span-4">
           <ResumoDaPaciente
             atendimentos={historico.totalConcluidos}
             financeiro={historico.financeiro}
@@ -64,7 +63,7 @@ export default async function PaginaFichaPaciente({ params }: Props) {
           <PainelCadastro paciente={paciente} />
           <PendenciasDaPaciente pendencias={historico.pendencias} />
           <RetornosDaPaciente retornos={historico.retornos} />
-        </div>
+        </aside>
       </div>
     </div>
   );
