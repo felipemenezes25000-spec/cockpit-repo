@@ -1262,10 +1262,11 @@ aplicadas no projeto de produção novo, antes do primeiro deploy.** O roteiro d
 
 ### O repositório
 
-Um único branch, `jamal-do-mal`, que é o padrão — não existe `main` — e o
-trabalho entra direto nele, sem outros branches (decisão do dono). A CI roda a
-cada push e avisa, mas não bloqueia a entrada. Desde 23/09/2026 o branch
-recusa force push e exclusão, inclusive de administradores (`AGENTS.md` §2).
+Um único branch, `main`, que é o padrão e o que a Vercel publica — desde
+25/09/2026; antes era o `jamal-do-mal`, apagado nesse dia —, e o trabalho
+entra direto nele, sem outros branches (decisão do dono). A CI roda a cada
+push e avisa, mas não bloqueia a entrada. O branch recusa force push e
+exclusão, inclusive de administradores (`AGENTS.md` §2).
 
 ### Continua em aberto (decisão da clínica)
 

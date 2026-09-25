@@ -228,7 +228,7 @@ não é o zelo extra que parece.
 
 > ### CI (`.github/workflows/ci.yml`)
 >
-> Roda em todo pull request, em push para `jamal-do-mal` e à mão
+> Roda em todo pull request, em push para `main` e à mão
 > (`workflow_dispatch`). Quatro jobs, **todos contra o Supabase local dentro do
 > runner** — nenhum banco real, nenhum `--linked`, nenhum segredo da clínica; o
 > token do GitHub só lê:
@@ -248,13 +248,15 @@ não é o zelo extra que parece.
 > (`ANON_KEY`/`PUBLISHABLE_KEY`) e o `install-deps` do WebKit no
 > `ubuntu-latest`.
 >
-> **O trabalho entra direto no `jamal-do-mal`, sem outros branches** (decisão
-> do dono em 23/09/2026). Consequência: a CI roda em cada push e **avisa**, mas
-> não **impede** a entrada — checagem obrigatória antes de entrar só existe via
-> pull request, que exige branch. Por isso os gates da §2 continuam sendo
-> rodados antes do commit. **Proteção aplicada no GitHub em 23/09/2026:** o
-> `jamal-do-mal` recusa force push e exclusão, **inclusive para
-> administradores**; o push direto continua liberado (é o fluxo decidido).
+> **O trabalho entra direto no `main`, sem outros branches** (decisão do
+> dono em 23/09/2026, quando o branch único era o `jamal-do-mal`; em
+> 25/09/2026 o dono passou tudo para o `main` e o `jamal-do-mal` foi apagado).
+> Consequência: a CI roda em cada push e **avisa**, mas não **impede** a
+> entrada — checagem obrigatória antes de entrar só existe via pull request,
+> que exige branch. Por isso os gates da §2 continuam sendo rodados antes do
+> commit. **Proteção no GitHub:** o `main` recusa force push e exclusão,
+> **inclusive para administradores** (a mesma que o `jamal-do-mal` tinha desde
+> 23/09/2026); o push direto continua liberado (é o fluxo decidido).
 > Não tente contornar nem mudar essa regra — é configuração do dono. Se um dia o dono
 > quiser que a CI bloqueie, o caminho é branch curta + pull request exigindo
 > os quatro checks acima — mudança de processo, só com ele.
@@ -363,8 +365,8 @@ as quebras de linha para LF no repositório.
 
 | Camada | Onde | Detalhe |
 |---|---|---|
-| Aplicação | **Vercel** | Projeto `cockpit-consultorio`, em <https://cockpit-consultorio.vercel.app>, ligado ao GitHub: **todo push no `jamal-do-mal` publica em produção sozinho**. `vercel.json`: `framework: nextjs`, região **`gru1`** (São Paulo) |
-| Repositório | **GitHub** | `https://github.com/felipemenezes25000-spec/cockpit-repo`. Produção publica o `jamal-do-mal` (branch padrão); o `main` (desde 24/09/2026) está à frente com a Captação. O trabalho entra direto no branch, sem criar outros (decisão do dono, 23/09/2026) |
+| Aplicação | **Vercel** | Projeto `cockpit-consultorio`, em <https://cockpit-consultorio.vercel.app>, ligado ao GitHub: **todo push no `main` publica em produção sozinho** (branch de produção da Vercel desde 25/09/2026; antes, `jamal-do-mal`). `vercel.json`: `framework: nextjs`, região **`gru1`** (São Paulo) |
+| Repositório | **GitHub** | `https://github.com/felipemenezes25000-spec/cockpit-repo`. Branch único: **`main`** (padrão e produção desde 25/09/2026, quando o `jamal-do-mal` foi apagado a pedido do dono). O trabalho entra direto nele, sem criar outros (decisão do dono, 23/09/2026) |
 | Banco e autenticação | **Supabase** | Ref `pghmzbtfsaupwezglddo` (produção desde 23/09/2026, no lugar do `Cockpit-Consultorio2`/`khoaluytzzagtwmpaukx`); região **`us-west-2` (Oregon, EUA)**, exceção decidida pelo dono (abaixo). MCP do Supabase configurado em `.mcp.json` |
 
 **Por que tudo em São Paulo:** latência e soberania do dado. A região do projeto
@@ -498,7 +500,7 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 > banco anterior à 0025** (a busca de pacientes usa `pacientes.busca`; o
 > Relacionamento, `pendencias.origem`). A sequência é: backup → pré-conferência
 > → `db:push` (0019 → 0028) → `db:tipos` → conferência → **só então**
-> merge/deploy deste código → backfill de novo. **Todo push no `jamal-do-mal`
+> merge/deploy deste código → backfill de novo. **Todo push no `main`
 > publica na Vercel** (§3): migração nova vai para o banco **antes** do push que
 > leva o código que depende dela. O roteiro completo está no
 > [`supabase/README.md`](supabase/README.md#pendente-de-aplicação-em-produção).
@@ -507,10 +509,11 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 > (`PGRST202`) e o registro de venda para.
 > Remova este aviso no mesmo commit em que registrar a aplicação.
 >
-> **Pendentes em produção: 0029 → 0031 (Captação).** Verificadas no banco
-> local em 25/09/2026 (`db reset` do zero + `test:banco`). Mesma ordem: banco
-> antes do código — roteiro em
-> [`supabase/README.md`](supabase/README.md#próxima-onda-0029--0031-captação).
+> **0029 → 0031 (Captação) aplicadas em produção em 25/09/2026**, antes do
+> deploy do código que depende delas (banco sem dado nenhum; `db push` + as
+> quatro conferências do roteiro em
+> [`supabase/README.md`](supabase/README.md#próxima-onda-0029--0031-captação);
+> o `db:tipos` saiu idêntico ao arquivo do repositório).
 
 | Arquivo | O que faz |
 |---|---|
@@ -2836,7 +2839,7 @@ padrão para destravar.**
     "Atendimentos de hoje" e "horários" com uma contagem, a Agenda com outra
     (cancelados e ausências à parte). Liga-se ao item 3: definido o que conta,
     as três telas usam o mesmo número.
-23. **Proteção do branch `jamal-do-mal`:** exigir o job da CI
+23. **Proteção do branch `main`:** exigir o job da CI
     (`.github/workflows/ci.yml`) como status check obrigatório. Hoje a
     proteção está ativa, mas sem checks exigidos: a CI roda e não barra o
     merge. É configuração do repositório no GitHub, do dono.
@@ -2920,16 +2923,16 @@ dezenas de linhas.
 
 Commits do trabalho assistido levam o trailer `Co-Authored-By:` do agente.
 
-**Só comite ou dê push quando o usuário pedir.** O branch padrão
-(`origin/HEAD`) e de produção é o **`jamal-do-mal`**. Desde 24/09/2026 existe
-também o **`main`**, à frente dele com a Captação (0029–0031), onde o trabalho
-do módulo continua por pedido do dono; levá-lo à produção é decisão dele, com
-o banco antes (§4). **Não crie outros branches**: o dono decidiu, em
-23/09/2026, que o trabalho entra direto no branch, sem branch paralelo. Como a CI então só
-avisa depois do push (§2), rode os gates antes de comitar. **Push publica:** o projeto
-`cockpit-consultorio` da Vercel está ligado ao repositório e põe no ar, em
-produção, cada push no `jamal-do-mal` (§3). Com migração nova, o banco vai
-primeiro.
+**Só comite ou dê push quando o usuário pedir.** Existe um branch só, o
+**`main`**: é o padrão (`origin/HEAD`) e o de produção. Até 25/09/2026 a
+produção era o `jamal-do-mal`, com o `main` à frente (a Captação); nesse dia o
+dono pediu para usar só o `main`, a Captação foi para a produção (banco antes,
+§4) e o `jamal-do-mal` foi apagado. **Não crie outros branches**: o dono
+decidiu, em 23/09/2026, que o trabalho entra direto no branch, sem branch
+paralelo. Como a CI então só avisa depois do push (§2), rode os gates antes de
+comitar. **Push publica:** o projeto `cockpit-consultorio` da Vercel está
+ligado ao repositório e põe no ar, em produção, cada push no `main` (§3). Com
+migração nova, o banco vai primeiro.
 
 ### Ao mexer no banco
 
@@ -2994,7 +2997,7 @@ comportamento antigo por padrão.
 | CSP com `'unsafe-inline'` em script e estilo | Nonce por requisição + `'strict-dynamic'`; `'unsafe-inline'` só em `style-src-attr` (§6) |
 | Log em texto livre, difícil de filtrar | Uma linha JSON por falha, com `app`, `codigo` e `id` (§3) |
 | `npm audit` com alertas (`postcss` do Next, `vercel` CLI, `vitest`) | Zero: `overrides` de `postcss` (8.5.x), Vitest 5, CLI da Vercel fora das dependências (use `npx vercel`) |
-| Branch único sem proteção | `jamal-do-mal` recusa force push e exclusão, inclusive de administradores (§2) |
+| Branch único sem proteção | `main` recusa force push e exclusão, inclusive de administradores (§2) |
 | `/recuperar-senha` com 178 kB de First Load JS | 109 kB: o cliente do Supabase carrega só no envio (§2) |
 | Tela parada na versão anterior depois de `router.refresh()`/revalidação, só no build do Chromium | Ping perdido no `react-dom` do Next 15.5.x; `scripts/corrigir-ping-react.mjs` no `postinstall` + `testes/react-ping.test.ts` (§13) |
 
@@ -3026,9 +3029,6 @@ muda o que o banco faz.
 
 ### Dívidas conhecidas
 
-- **As migrações 0029 a 0031 (Captação) não estão em produção.** Motivo: só o
-  dono aplica (§2, §4). Roteiro em `supabase/README.md`. (As 0019 a 0028 foram
-  aplicadas em 23/09/2026, junto com todas as anteriores.)
 - **IP e dispositivo da assinatura são informados por quem chama a função.**
   Pelo link, `anon` chama `documento_assinar_por_link` direto com o IP e o
   user-agent que quiser; no balcão, qualquer perfil ativo chama
@@ -3085,9 +3085,9 @@ muda o que o banco faz.
 - **Token de assinatura no caminho** (`/assinar/<token>`) aparece no log de
   requisição da Vercel, que o app não controla. Mudar exige outro desenho —
   decisão do dono.
-- **CI:** o workflow existe mas não rodou no GitHub. A proteção do
-  `jamal-do-mal` está aplicada (§2), mas não exige checagem: a CI avisa, não
-  barra.
+- **CI:** roda no GitHub a cada push no `main` (os quatro jobs, verde desde
+  24/09/2026). A proteção do `main` está aplicada (§2), mas não exige
+  checagem: a CI avisa, não barra.
 - **Autenticação em dobro** por tela interna (middleware + `usuarioAtual`):
   é o gargalo medido (§2). Mudar é decisão de segurança (§10, item 18).
 - **Foto: o banco confere o objeto, não o conteúdo.** Os primeiros bytes

@@ -146,7 +146,7 @@ permissão. Se uma delas atrapalhar sua tarefa, me avise.
   `npm run test:banco`; mexeu em tela ou fluxo, `npm run test:e2e`. Regra nova
   ou bug corrigido ganha teste junto. Só diga que "os testes passam" se rodou.
 - Não comite nem faça push sem eu pedir. O repositório tem um único branch,
-  `jamal-do-mal` (o padrão; não existe `main`), e o trabalho entra direto nele:
+  `main` (o padrão, que a Vercel publica), e o trabalho entra direto nele:
   não crie branch nenhum. Rode os gates antes de comitar — a CI só avisa depois
   do push. O branch recusa force push e exclusão (inclusive de administrador):
   nada de reescrever histórico.

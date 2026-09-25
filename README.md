@@ -49,14 +49,14 @@ do caderno, das conversas de WhatsApp e da planilha. Com o banco de dados como �
 | Páginas (`page.tsx`) | **49** — 44 autenticadas em `(app)` e 5 públicas |
 | Componentes React | **114**, em 11 pastas (ui e financeiro são as maiores) |
 | TypeScript em `src/` | ~**49 mil linhas** em 330 arquivos, testes incluídos (~37,5 mil em 251 sem eles; 2.164 são os tipos gerados do banco) |
-| Migrações SQL | **31**, somando ~**8,7 mil linhas** (a maior, 0022, tem 1.237) — 0029 a 0031 (Captação) ainda não aplicadas em produção |
+| Migrações SQL | **31**, somando ~**8,7 mil linhas** (a maior, 0022, tem 1.237) — todas aplicadas em produção (a Captação, 0029 a 0031, em 25/09/2026) |
 | Tabelas no schema `public` | **29** — todas com RLS; só uma com DELETE (fotos, pela LGPD) |
 | Políticas de RLS | **72** (69 em `public` + 3 no Storage) |
 | Gatilhos | **77** em `public`, dos quais **23** de auditoria |
 | Funções no banco | **57** — 24 em `public`, 33 em `private`; 18 chamadas pela aplicação, **4** alcançáveis por `anon` |
 | Verificações automatizadas | **1516** — 936 Vitest · 269 SQL por perfil · 311 Playwright (260 Chromium, 47 WebKit, 4 iPhone 13) |
 | Dependências | **7** de execução, 18 de desenvolvimento |
-| Histórico | **299 commits** no `main`, de 01/08/2026 a 25/09/2026; o `jamal-do-mal`, que a Vercel publica, está atrás dele |
+| Histórico | Um branch só, o `main`, que a Vercel publica (desde 25/09/2026; o `jamal-do-mal` foi apagado nesse dia) |
 
 </details>
 
@@ -498,8 +498,8 @@ restantes passaram repetidas — todas por lentidão do dev, nenhuma com erro de
 > [!NOTE]
 > **CI em [`.github/workflows/ci.yml`](.github/workflows/ci.yml)**: qualidade (lint, tipos, Vitest), banco
 > (migrações, seed e `test:banco` num Supabase local dentro do runner), E2E (Chromium e WebKit sobre o build de
-> produção) e build. Nenhum job usa banco real nem segredo da clínica. **Ainda não rodou no GitHub.** O branch
-> `jamal-do-mal` está protegido desde 23/09/2026 contra force push e exclusão, inclusive para administradores; o
+> produção) e build. Nenhum job usa banco real nem segredo da clínica. Roda no GitHub a cada push no `main`. O branch
+> `main` está protegido contra force push e exclusão, inclusive para administradores; o
 > push direto continua, então a CI avisa mas não barra (ver [`AGENTS.md`](AGENTS.md) §2). Os números deste README
 > são a contagem do estado atual (23/09/2026), não um selo de build.
 
@@ -605,7 +605,7 @@ processamento de pagamentos · automações · inteligência artificial · **qua
 - Leia o [`AGENTS.md`](AGENTS.md) inteiro antes da primeira alteração; se ele divergir do código, **o código vence** e o documento é corrigido no mesmo commit.
 - Português em tudo. Comentário explica o **porquê**, não o quê.
 - Commits em português, título curto e concreto (sem `feat:`), corpo com a decisão e o motivo.
-- O repositório tem um único branch, `jamal-do-mal` (o padrão); não existe `main`. O trabalho entra direto nele, sem criar outros branches (decisão do dono); a CI roda a cada push, então os gates rodam antes do commit. Migração aplicada é imutável — correção vira arquivo novo.
+- O repositório tem um único branch, `main` (o padrão, que a Vercel publica). O trabalho entra direto nele, sem criar outros branches (decisão do dono); a CI roda a cada push, então os gates rodam antes do commit. Migração aplicada é imutável — correção vira arquivo novo.
 - Antes de comitar, passe pelo checklist de invariantes do [`AGENTS.md`](AGENTS.md) §9.
 - Agente de IA não se autentica no Supabase nem roda nada em produção: escreve a migração, testa no banco local e para (§2).
 

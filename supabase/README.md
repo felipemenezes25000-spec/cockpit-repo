@@ -109,7 +109,13 @@ API de administração do Auth, como o painel.
 
 ### Próxima onda: 0029 → 0031 (Captação)
 
-**Não aplicadas em produção.** Escritas no branch `main` e verificadas no banco
+> **Aplicado em 25/09/2026.** `db push` 0029 → 0031 no `pghmzbtfsaupwezglddo`
+> (sem dado nenhum no banco: nenhuma paciente, atendimento, venda, prontuário
+> ou documento), as quatro conferências do passo 4 bateram, o `db:tipos` saiu
+> idêntico ao arquivo do repositório e só depois o `main` foi para a
+> produção. O roteiro fica como registro.
+
+Escritas no `main` e verificadas no banco
 local em 25/09/2026: `db reset` do zero (0001 → 0031 + seed), `test:banco` com
 269 asserções verdes (as da Captação incluídas) e `db:tipos:local` gerando só o
 acréscimo das quatro tabelas, do enum `etapa_lead` e da função
@@ -132,7 +138,7 @@ acréscimo das quatro tabelas, do enum `etapa_lead` e da função
    - `select bool_and(relrowsecurity) from pg_class where oid in ('public.leads'::regclass, 'public.lead_etapas'::regclass, 'public.metas_comerciais'::regclass, 'public.lead_interacoes'::regclass)` → `t`;
    - `select has_function_privilege('anon', 'public.lead_converter_em_paciente(uuid)', 'execute')` → `f`;
    - `select count(*) from pg_constraint where conname = 'leads_encerrado_sem_retorno'` → `1`.
-5. Só então o código: levar o `main` para o branch que a Vercel publica.
+5. Só então o código: o push no `main`, que a Vercel publica.
 
 ### Onda anterior: 0019 → 0028
 

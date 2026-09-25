@@ -17,7 +17,7 @@ on:
   pull_request:
   push:
     # Branch principal do repositório (origin/HEAD).
-    branches: [jamal-do-mal]
+    branches: [main]
   workflow_dispatch:
 
 # Uma execução por branch: push novo cancela a anterior.

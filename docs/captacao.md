@@ -5,9 +5,9 @@ Implementado nas migrações `0029_captacao_e_metas.sql` (funil, metas e convers
 `0031_acompanhamento_comercial_conferido.sql` (as regras do acompanhamento conferidas
 pelo banco), e na rota `/captacao`.
 
-> **Produção:** 0029, 0030 e 0031 ainda não foram aplicadas no projeto de produção.
-> A ordem é banco primeiro, código depois — roteiro em
-> [`supabase/README.md`](../supabase/README.md#próxima-onda-0029--0031-captação).
+> **Produção:** 0029, 0030 e 0031 aplicadas em 25/09/2026, antes do deploy do código
+> (banco primeiro, código depois — roteiro em
+> [`supabase/README.md`](../supabase/README.md#próxima-onda-0029--0031-captação)).
 
 ## Propósito
 
