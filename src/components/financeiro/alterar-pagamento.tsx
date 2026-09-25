@@ -4,7 +4,8 @@ import { ArrowRight, CircleAlert, LoaderCircle, Repeat } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
+import { AREA_TEXTO, Campo, ENTRADA, ENTRADA_ERRO, GrupoDeCampos } from "@/components/ui/field";
+import { RodapeAcoesFormulario } from "@/components/ui/form-actions";
 import { cn } from "@/lib/cn";
 import { formatarMoeda } from "@/lib/format";
 import { bpDoBanco, centavosDoBanco, custoDaTaxa, formatarPercentual } from "@/lib/moeda";
@@ -29,7 +30,7 @@ function BotaoConfirmar({ pronto }: { pronto: boolean }) {
     <button
       type="submit"
       disabled={pending || !pronto}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+      className="premium-interactive inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[0_12px_28px_-20px_rgba(8,84,160,.75)] hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? (
         <>
@@ -46,33 +47,25 @@ function BotaoConfirmar({ pronto }: { pronto: boolean }) {
   );
 }
 
-/** Uma linha do comparativo: antes → depois, com destaque quando muda. */
-function LinhaComparativa({
-  rotulo,
-  antes,
-  depois,
-}: {
-  rotulo: string;
-  antes: string;
-  depois: string;
-}) {
+function LinhaComparativa({ rotulo, antes, depois }: { rotulo: string; antes: string; depois: string }) {
   const mudou = antes !== depois;
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm">
-      <span className="text-right text-on-surface-variant">{antes}</span>
-      <span className="flex flex-col items-center px-2">
-        <span className="rotulo text-[0.625rem]">{rotulo}</span>
-        <ArrowRight
-          aria-hidden="true"
-          size={14}
-          strokeWidth={1.75}
-          className={mudou ? "text-primary" : "text-outline-variant"}
-        />
+    <div className={cn("grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)] items-center gap-2 rounded-[var(--radius-controle)] border px-3 py-3 text-sm", mudou ? "border-primary-fixed bg-selecao/65" : "border-card-border bg-surface")}>
+      <div className="min-w-0 text-right">
+        <span className="block text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase sm:hidden">Atual</span>
+        <span className="tabular block truncate text-on-surface-variant">{antes}</span>
+      </div>
+      <span className="flex flex-col items-center justify-center">
+        <span className="rotulo max-w-full truncate text-[0.58rem] text-outline">{rotulo}</span>
+        <span className={cn("mt-1 flex size-6 items-center justify-center rounded-full border", mudou ? "border-primary-fixed-dim bg-surface text-primary" : "border-card-border bg-surface-container-low text-outline")}>
+          <ArrowRight aria-hidden="true" size={12} strokeWidth={1.9} />
+        </span>
       </span>
-      <span className={cn("tabular", mudou ? "font-semibold text-on-surface" : "text-on-surface-variant")}>
-        {depois}
-      </span>
+      <div className="min-w-0">
+        <span className="block text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase sm:hidden">Novo</span>
+        <span className={cn("tabular block truncate", mudou ? "font-semibold text-on-surface" : "text-on-surface-variant")}>{depois}</span>
+      </div>
     </div>
   );
 }
@@ -85,31 +78,23 @@ export function AlterarPagamento({
 }: {
   venda: VendaCompleta;
   taxas: TaxaParaVenda[];
-  /** O valor que de fato entrou, quando confirmado — muda o aviso do rodapé. */
   recebimentoConfirmado: number | null;
-  /** Sem recebimento ativo (cancelado): a função do banco muda só a venda. */
   semRecebimentoVivo?: boolean;
 }) {
   const [estado, enviar] = useActionState(alterarFormaPagamento, INICIAL);
-
   const [forma, setForma] = useState<FormaPagamento>(venda.forma);
   const [operadora, setOperadora] = useState("");
   const [taxaId, setTaxaId] = useState("");
 
   const usaCartao = formaUsaCartao(forma);
   const taxasDoTipo = useMemo(() => taxas.filter((t) => t.tipo === forma), [taxas, forma]);
-  const operadoras = useMemo(
-    () => [...new Set(taxasDoTipo.map((t) => t.operadora))],
-    [taxasDoTipo],
-  );
+  const operadoras = useMemo(() => [...new Set(taxasDoTipo.map((t) => t.operadora))], [taxasDoTipo]);
   const opcoesDeParcela = taxasDoTipo.filter((t) => t.operadora === operadora);
   const taxaEscolhida = taxasDoTipo.find((t) => t.id === taxaId) ?? null;
-
   const finalCent = Math.round(venda.valorFinal * 100);
 
   const comparativo = useMemo(() => {
     const bpPadrao = usaCartao && taxaEscolhida ? bpDoBanco(taxaEscolhida.percentual) : 0;
-    // A troca de forma usa sempre a taxa padrão; taxa manual tem tela própria.
     const bp = usaCartao ? bpPadrao : 0;
     const taxaCent = custoDaTaxa(finalCent, bp);
 
@@ -133,19 +118,9 @@ export function AlterarPagamento({
 
   const pronto = !usaCartao || taxaEscolhida !== null;
   const erros = estado.erros;
-
-  // O ajuste que o banco vai gravar é `novo líquido − valor que entrou`, não a
-  // diferença de líquidos do comparativo (AGENTS.md §8.4). A tela mostra o
-  // número que será gravado — com divergência ou ajuste anterior, os dois
-  // não batem, e a pessoa precisa ver isso antes de confirmar.
-  const efeito =
-    recebimentoConfirmado === null
-      ? null
-      : decidirEfeito(
-          "recebido",
-          centavosDoBanco(recebimentoConfirmado),
-          comparativo.depois.liquidoCent,
-        );
+  const efeito = recebimentoConfirmado === null
+    ? null
+    : decidirEfeito("recebido", centavosDoBanco(recebimentoConfirmado), comparativo.depois.liquidoCent);
   const ajusteCent = efeito?.tipo === "ajuste" ? efeito.valorCent : 0;
 
   return (
@@ -153,182 +128,117 @@ export function AlterarPagamento({
       <input type="hidden" name="venda_id" value={venda.id} />
 
       {erros.geral ? (
-        <p
-          role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
-        >
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-3 text-sm text-on-error-container">
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
           {erros.geral}
         </p>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Campo id="forma" rotulo="Nova forma de pagamento" obrigatorio erro={erros.forma}>
-          <select
-            id="forma"
-            name="forma"
-            value={forma}
-            onChange={(e) => {
-              setForma(e.target.value as FormaPagamento);
-              setOperadora("");
-              setTaxaId("");
-            }}
-            className={cn(ENTRADA, erros.forma && ENTRADA_ERRO)}
-          >
-            {FORMAS_EM_ORDEM.map((f) => (
-              <option key={f} value={f}>
-                {ROTULO_FORMA[f]}
-              </option>
-            ))}
-          </select>
-        </Campo>
+      <GrupoDeCampos titulo="Novo meio de pagamento" descricao="Escolha a nova forma. No cartão, selecione também a combinação de operadora e parcelamento para calcular a taxa padrão.">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Campo id="forma" rotulo="Nova forma de pagamento" obrigatorio erro={erros.forma}>
+            <select
+              id="forma"
+              name="forma"
+              value={forma}
+              onChange={(e) => {
+                setForma(e.target.value as FormaPagamento);
+                setOperadora("");
+                setTaxaId("");
+              }}
+              className={cn(ENTRADA, erros.forma && ENTRADA_ERRO)}
+            >
+              {FORMAS_EM_ORDEM.map((f) => <option key={f} value={f}>{ROTULO_FORMA[f]}</option>)}
+            </select>
+          </Campo>
 
-        {usaCartao ? (
-          <>
-            <Campo id="operadora" rotulo="Operadora" obrigatorio erro={erros.taxa}>
-              <select
-                id="operadora"
-                value={operadora}
-                onChange={(e) => {
-                  setOperadora(e.target.value);
-                  const linhas = taxasDoTipo.filter((t) => t.operadora === e.target.value);
-                  setTaxaId(linhas.length === 1 ? linhas[0].id : "");
-                }}
-                className={ENTRADA}
-              >
-                <option value="">Escolher…</option>
-                {operadoras.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            </Campo>
-
-            {formaParcela(forma) ? (
-              <Campo id="parcelas_campo" rotulo="Parcelas" obrigatorio erro={erros.parcelas}>
+          {usaCartao ? (
+            <>
+              <Campo id="operadora" rotulo="Operadora" obrigatorio erro={erros.taxa}>
                 <select
-                  id="parcelas_campo"
-                  value={taxaId}
-                  onChange={(e) => setTaxaId(e.target.value)}
-                  disabled={!operadora}
+                  id="operadora"
+                  value={operadora}
+                  onChange={(e) => {
+                    setOperadora(e.target.value);
+                    const linhas = taxasDoTipo.filter((t) => t.operadora === e.target.value);
+                    setTaxaId(linhas.length === 1 ? linhas[0].id : "");
+                  }}
                   className={ENTRADA}
                 >
                   <option value="">Escolher…</option>
-                  {opcoesDeParcela.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.parcelas}x — taxa {formatarPercentual(bpDoBanco(t.percentual))}
-                    </option>
-                  ))}
+                  {operadoras.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </Campo>
-            ) : null}
 
-            <input type="hidden" name="taxa_cartao_id" value={taxaId} />
-            <input
-              type="hidden"
-              name="parcelas"
-              value={taxaEscolhida ? String(taxaEscolhida.parcelas) : "1"}
-            />
-          </>
-        ) : (
-          <input type="hidden" name="parcelas" value="1" />
-        )}
-      </div>
+              {formaParcela(forma) ? (
+                <Campo id="parcelas_campo" rotulo="Parcelas" obrigatorio erro={erros.parcelas}>
+                  <select id="parcelas_campo" value={taxaId} onChange={(e) => setTaxaId(e.target.value)} disabled={!operadora} className={ENTRADA}>
+                    <option value="">Escolher…</option>
+                    {opcoesDeParcela.map((t) => <option key={t.id} value={t.id}>{t.parcelas}x — taxa {formatarPercentual(bpDoBanco(t.percentual))}</option>)}
+                  </select>
+                </Campo>
+              ) : null}
 
-      {/* Comparativo: o que muda, lado a lado, antes de confirmar. */}
-      <div className="flex flex-col gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-5">
-        <p className="rotulo">Antes → depois</p>
-        <LinhaComparativa
-          rotulo="Forma"
-          antes={`${ROTULO_FORMA[comparativo.antes.forma]}${comparativo.antes.parcelas > 1 ? ` ${comparativo.antes.parcelas}x` : ""}`}
-          depois={
-            pronto
-              ? `${ROTULO_FORMA[comparativo.depois.forma]}${comparativo.depois.parcelas > 1 ? ` ${comparativo.depois.parcelas}x` : ""}`
-              : "—"
-          }
-        />
-        <LinhaComparativa
-          rotulo="Taxa"
-          antes={`${formatarPercentual(comparativo.antes.taxaBp)} · ${formatarMoeda(comparativo.antes.taxaCent / 100)}`}
-          depois={
-            pronto
-              ? `${formatarPercentual(comparativo.depois.taxaBp)} · ${formatarMoeda(comparativo.depois.taxaCent / 100)}`
-              : "—"
-          }
-        />
-        <LinhaComparativa
-          rotulo="Líquido"
-          antes={formatarMoeda(comparativo.antes.liquidoCent / 100)}
-          depois={pronto ? formatarMoeda(comparativo.depois.liquidoCent / 100) : "—"}
-        />
+              <input type="hidden" name="taxa_cartao_id" value={taxaId} />
+              <input type="hidden" name="parcelas" value={taxaEscolhida ? String(taxaEscolhida.parcelas) : "1"} />
+            </>
+          ) : (
+            <input type="hidden" name="parcelas" value="1" />
+          )}
+        </div>
+      </GrupoDeCampos>
+
+      <section aria-labelledby="comparativo-pagamento" className="premium-panel overflow-hidden rounded-[var(--radius-painel)] border p-4 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-card-border pb-4">
+          <div>
+            <p className="rotulo text-primary">Impacto da mudança</p>
+            <h3 id="comparativo-pagamento" className="mt-1.5 text-base font-semibold text-on-surface">Antes × novo cenário</h3>
+          </div>
+          <div className="hidden grid-cols-[1fr_2.5rem_1fr] gap-2 text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase sm:grid">
+            <span className="text-right">Atual</span><span /><span>Novo</span>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2.5">
+          <LinhaComparativa
+            rotulo="Forma"
+            antes={`${ROTULO_FORMA[comparativo.antes.forma]}${comparativo.antes.parcelas > 1 ? ` ${comparativo.antes.parcelas}x` : ""}`}
+            depois={pronto ? `${ROTULO_FORMA[comparativo.depois.forma]}${comparativo.depois.parcelas > 1 ? ` ${comparativo.depois.parcelas}x` : ""}` : "—"}
+          />
+          <LinhaComparativa
+            rotulo="Taxa"
+            antes={`${formatarPercentual(comparativo.antes.taxaBp)} · ${formatarMoeda(comparativo.antes.taxaCent / 100)}`}
+            depois={pronto ? `${formatarPercentual(comparativo.depois.taxaBp)} · ${formatarMoeda(comparativo.depois.taxaCent / 100)}` : "—"}
+          />
+          <LinhaComparativa rotulo="Líquido" antes={formatarMoeda(comparativo.antes.liquidoCent / 100)} depois={pronto ? formatarMoeda(comparativo.depois.liquidoCent / 100) : "—"} />
+        </div>
 
         {pronto && (comparativo.diferencaCent !== 0 || ajusteCent !== 0) ? (
-          <p
-            className={cn(
-              "border-t border-card-border pt-3 text-xs",
-              comparativo.diferencaCent < 0 || ajusteCent < 0 ? "text-atencao" : "text-positivo",
-            )}
-          >
-            {comparativo.diferencaCent !== 0 ? (
-              <>
-                A clínica passa a receber{" "}
-                <strong className="tabular">
-                  {formatarMoeda(Math.abs(comparativo.diferencaCent) / 100)}
-                </strong>{" "}
-                {comparativo.diferencaCent < 0 ? "a menos" : "a mais"}.{" "}
-              </>
-            ) : null}
-            {semRecebimentoVivo ? (
-              "Esta venda não tem recebimento ativo (foi cancelado): só a venda muda, nenhum recebimento é tocado."
-            ) : recebimentoConfirmado !== null ? (
-              ajusteCent !== 0 ? (
-                <>
-                  Como o recebimento já foi confirmado, o registro original fica intacto e
-                  entra um ajuste de{" "}
-                  <strong className="tabular">
-                    {ajusteCent < 0 ? "− " : "+ "}
-                    {formatarMoeda(Math.abs(ajusteCent) / 100)}
-                  </strong>
-                  : o novo líquido menos o valor que de fato entrou (
-                  {formatarMoeda(recebimentoConfirmado)}).
-                </>
-              ) : (
-                "Como o recebimento já foi confirmado e o novo líquido é igual ao valor que entrou, nenhum ajuste é lançado."
-              )
-            ) : (
-              "O recebimento previsto será atualizado."
-            )}
-          </p>
+          <div className={cn("mt-4 rounded-[var(--radius-controle)] border px-3.5 py-3 text-xs leading-5", comparativo.diferencaCent < 0 || ajusteCent < 0 ? "border-atencao-borda bg-atencao-fundo text-atencao" : "border-positivo-borda bg-positivo-fundo text-positivo")}>
+            {comparativo.diferencaCent !== 0 ? <p>A clínica passa a receber <strong className="tabular">{formatarMoeda(Math.abs(comparativo.diferencaCent) / 100)}</strong> {comparativo.diferencaCent < 0 ? "a menos" : "a mais"}.</p> : null}
+            <p className={comparativo.diferencaCent !== 0 ? "mt-1" : undefined}>
+              {semRecebimentoVivo
+                ? "Esta venda não tem recebimento ativo: só a venda muda."
+                : recebimentoConfirmado !== null
+                  ? ajusteCent !== 0
+                    ? <>Como o recebimento já foi confirmado, entra um ajuste de <strong className="tabular">{ajusteCent < 0 ? "− " : "+ "}{formatarMoeda(Math.abs(ajusteCent) / 100)}</strong>, calculado contra o valor que efetivamente entrou ({formatarMoeda(recebimentoConfirmado)}).</>
+                    : "O recebimento confirmado já coincide com o novo líquido; nenhum ajuste será lançado."
+                  : "O recebimento previsto será atualizado junto com a venda."}
+            </p>
+          </div>
         ) : null}
-      </div>
+      </section>
 
-      <Campo
-        id="motivo"
-        rotulo="Motivo da alteração"
-        obrigatorio
-        erro={erros.motivo}
-        dica="Fica no histórico da venda, com seu nome, data e hora."
-      >
-        <textarea
-          id="motivo"
-          name="motivo"
-          maxLength={500}
-          defaultValue={estado.valores?.motivo ?? ""}
-          placeholder="A paciente preferiu parcelar no cartão"
-          className={AREA_TEXTO}
-        />
-      </Campo>
+      <GrupoDeCampos titulo="Justificativa" descricao="A mudança fica auditável no histórico da venda, com autor, data e hora.">
+        <Campo id="motivo" rotulo="Motivo da alteração" obrigatorio erro={erros.motivo}>
+          <textarea id="motivo" name="motivo" maxLength={500} defaultValue={estado.valores?.motivo ?? ""} placeholder="A paciente preferiu parcelar no cartão" className={AREA_TEXTO} />
+        </Campo>
+      </GrupoDeCampos>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
+      <RodapeAcoesFormulario>
         <BotaoConfirmar pronto={pronto} />
-        <Link
-          href={`/financeiro/vendas/${venda.id}`}
-          className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
-        >
-          Cancelar
-        </Link>
-      </div>
+        <Link href={`/financeiro/vendas/${venda.id}`} className="premium-interactive inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface px-6 text-sm font-semibold text-on-surface-variant hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary">Cancelar</Link>
+      </RodapeAcoesFormulario>
     </form>
   );
 }
