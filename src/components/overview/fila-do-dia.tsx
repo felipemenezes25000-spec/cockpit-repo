@@ -46,10 +46,20 @@ export function FilaDoDia({ atendimentos }: { atendimentos: AtendimentoDoAgora[]
     const inicio = caixa.getBoundingClientRect().left - caixa.scrollLeft;
     const posicao = (elemento: Element) => elemento.getBoundingClientRect().left - inicio;
     const alvo = posicao(marcador) - caixa.clientWidth / 3;
-    const primeiro = Array.from(caixa.children).filter((cartao) => posicao(cartao) <= alvo).pop();
+    const cartoes = Array.from(caixa.children);
+    const primeiro = cartoes.filter((cartao) => posicao(cartao) <= alvo).pop();
     // A folga de 44 px é a do esmaecimento da borda (`scroll-px-11`): ele cai
     // sobre a sobra do cartão anterior, não sobre o primeiro inteiro.
-    caixa.scrollLeft = primeiro ? Math.max(0, posicao(primeiro) - 44) : 0;
+    let destino = primeiro ? posicao(primeiro) - 44 : 0;
+    // Perto do fim do dia a faixa não rola até lá (bate no limite) e a borda
+    // esquerda cortaria um cartão pela metade: recua até um que caiba inteiro,
+    // e o corte fica à direita, no sentido da leitura ("tem mais para lá").
+    const limite = caixa.scrollWidth - caixa.clientWidth;
+    if (destino > limite) {
+      const cabe = cartoes.filter((cartao) => posicao(cartao) - 44 <= limite).pop();
+      destino = cabe ? posicao(cabe) - 44 : limite;
+    }
+    caixa.scrollLeft = Math.max(0, destino);
   }, [posicaoDoAgora]);
 
   if (lista.length === 0) {
