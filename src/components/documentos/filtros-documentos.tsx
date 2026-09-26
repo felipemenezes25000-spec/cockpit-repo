@@ -61,7 +61,7 @@ export function FiltrosDocumentos({
     relogio.current = setTimeout(() => navegar({ busca: valor.trim() }), 350);
   }
 
-  const seletor = `${classeDeEntrada({ largura: "auto" })} bg-surface font-medium shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)]`;
+  const seletor = `${classeDeEntrada()} bg-surface font-medium shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)] lg:w-auto`;
   const filtrosAtivos = Number(Boolean(busca)) + Number(Boolean(situacao)) + Number(Boolean(tipo));
 
   return (
@@ -72,36 +72,36 @@ export function FiltrosDocumentos({
         evento.preventDefault();
         navegar({ busca: termo.trim() });
       }}
-      className="relative overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface-container-low p-4 sm:p-5"
+      className="relative min-w-0 overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface-container-low p-4 sm:p-5"
     >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
+      <div className="mb-4 flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary">
             <SlidersHorizontal aria-hidden="true" size={16} strokeWidth={1.8} />
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="rotulo text-primary">Refine os documentos</p>
-            <p className="mt-1 text-xs leading-5 text-outline">Pesquise por paciente ou título e combine situação e tipo.</p>
+            <p className="mt-1 max-w-2xl break-words text-xs leading-5 text-outline">Pesquise por paciente ou título e combine situação e tipo.</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span aria-live="polite" className="tabular inline-flex items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-on-surface-variant">
-            <FileSignature aria-hidden="true" size={13} strokeWidth={1.65} className="text-primary" />
-            {total === 1 ? "1 documento" : `${total} documentos`}
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span aria-live="polite" className="tabular inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1 text-xs font-semibold text-on-surface-variant">
+            <FileSignature aria-hidden="true" size={13} strokeWidth={1.65} className="shrink-0 text-primary" />
+            <span className="min-w-0 break-words">{total === 1 ? "1 documento" : `${total} documentos`}</span>
           </span>
           {filtrosAtivos > 0 ? (
-            <span className="tabular rounded-full border border-primary-fixed bg-selecao px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
+            <span className="tabular max-w-full rounded-full border border-primary-fixed bg-selecao px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
               {filtrosAtivos} {filtrosAtivos === 1 ? "filtro ativo" : "filtros ativos"}
             </span>
           ) : null}
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
-        <div>
-          <label htmlFor="busca-documento" className="mb-1.5 block text-[0.72rem] font-semibold text-on-surface-variant">Paciente ou título</label>
-          <div className="relative w-full">
+      <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
+        <div className="min-w-0">
+          <label htmlFor="busca-documento" className="mb-1.5 block break-words text-[0.72rem] font-semibold text-on-surface-variant">Paciente ou título</label>
+          <div className="relative w-full min-w-0">
             <Search aria-hidden="true" size={18} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-primary" />
             <input
               id="busca-documento"
@@ -115,9 +115,9 @@ export function FiltrosDocumentos({
               className={`${classeDeEntrada({ recuo: "busca" })} bg-surface shadow-[0_8px_20px_-18px_rgba(7,57,112,.45)]`}
             />
             {pendente ? (
-              <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[var(--radius-controle)] bg-surface px-2 py-1 text-[0.65rem] font-medium text-outline">
-                <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
-                buscando
+              <span role="status" className="pointer-events-none absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] bg-surface text-primary shadow-[0_6px_14px_-12px_rgba(7,57,112,.4)]">
+                <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
+                <span className="sr-only">Buscando documentos…</span>
               </span>
             ) : termo ? (
               <button
@@ -135,7 +135,7 @@ export function FiltrosDocumentos({
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <label htmlFor="situacao-documento" className="mb-1.5 block text-[0.72rem] font-semibold text-on-surface-variant">Situação</label>
           <select id="situacao-documento" name="situacao" value={situacao} onChange={(evento) => navegar({ situacao: evento.target.value })} aria-label="Filtrar por situação" className={seletor}>
             <option value="">Todas as situações</option>
@@ -143,7 +143,7 @@ export function FiltrosDocumentos({
           </select>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <label htmlFor="tipo-documento" className="mb-1.5 block text-[0.72rem] font-semibold text-on-surface-variant">Tipo</label>
           <select id="tipo-documento" name="tipo" value={tipo} onChange={(evento) => navegar({ tipo: evento.target.value })} aria-label="Filtrar por tipo" className={seletor}>
             <option value="">Todos os tipos</option>
