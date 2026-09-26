@@ -115,11 +115,11 @@ export function FiltrosLeads({
         evento.preventDefault();
         navegar(atuais());
       }}
-      className="flex flex-col gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low p-3.5"
+      className="premium-panel flex min-w-0 flex-col gap-3 rounded-[var(--radius-painel)] border p-3.5 sm:p-4"
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full lg:max-w-md">
-          <Search aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-outline" />
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full min-w-0 lg:max-w-md">
+          <Search aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-primary" />
           <input
             type="search"
             name="busca"
@@ -128,13 +128,13 @@ export function FiltrosLeads({
             maxLength={80}
             aria-label="Buscar lead por nome, telefone, e-mail, origem ou campanha"
             placeholder="Buscar nome, telefone, e-mail ou campanha"
-            className={classeDeEntrada({ recuo: "busca" })}
+            className={`${classeDeEntrada({ recuo: "busca" })} shadow-[0_8px_20px_-18px_rgba(7,57,112,.4)]`}
           />
 
           {pendente ? (
-            <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[var(--radius-controle)] bg-surface px-2 py-1 text-[0.65rem] font-medium text-outline">
-              <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
-              buscando
+            <span role="status" className="pointer-events-none absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] bg-surface text-primary shadow-[0_6px_14px_-12px_rgba(7,57,112,.4)]">
+              <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
+              <span className="sr-only">Buscando leads…</span>
             </span>
           ) : termo ? (
             <button
@@ -151,15 +151,15 @@ export function FiltrosLeads({
           ) : null}
         </div>
 
-        <span aria-live="polite" className="inline-flex h-9 w-fit items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 text-xs text-outline tabular">
-          <UsersRound aria-hidden="true" size={13} className="text-primary" />
-          {total === 1 ? "1 lead no recorte" : `${total} leads no recorte`}
+        <span aria-live="polite" className="tabular inline-flex min-h-9 max-w-full items-center gap-1.5 self-start rounded-full border border-card-border bg-surface px-2.5 py-1 text-xs font-medium text-outline shadow-[0_7px_16px_-15px_rgba(8,41,76,.35)] lg:self-auto">
+          <UsersRound aria-hidden="true" size={13} className="shrink-0 text-primary" />
+          <span className="min-w-0 break-words">{total === 1 ? "1 lead no recorte" : `${total} leads no recorte`}</span>
         </span>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-card-border pt-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex min-w-0 flex-col gap-2 border-t border-card-border pt-3 sm:flex-row sm:flex-wrap sm:items-end">
         <span className="mb-1 inline-flex items-center gap-1.5 text-[0.64rem] font-semibold tracking-[0.06em] text-outline uppercase sm:mr-1 sm:h-9 sm:items-center">
-          <SlidersHorizontal aria-hidden="true" size={13} />
+          <SlidersHorizontal aria-hidden="true" size={13} className="shrink-0 text-primary" />
           Filtros
         </span>
 
@@ -210,7 +210,7 @@ export function FiltrosLeads({
             type="button"
             onClick={() => navegar({ ...atuais(), campanha: "" })}
             title={campanha}
-            className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-primary-fixed bg-selecao px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary-fixed"
+            className="inline-flex min-h-9 w-full max-w-full items-center justify-center gap-1.5 rounded-full border border-primary-fixed bg-selecao px-3 text-xs font-semibold text-primary transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-primary-fixed sm:w-auto"
           >
             <span className="max-w-52 truncate">Campanha: {campanha}</span>
             <X aria-hidden="true" size={13} className="shrink-0" />
@@ -221,7 +221,7 @@ export function FiltrosLeads({
           <button
             type="button"
             onClick={() => navegar({ termo, etapa: "todos", origem: "", campanha: "", atencao: "todos" })}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-primary transition-colors hover:bg-selecao"
+            className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 text-xs font-semibold text-primary transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-primary-fixed hover:bg-selecao sm:w-auto"
           >
             <X aria-hidden="true" size={14} />
             Limpar filtros
@@ -230,9 +230,9 @@ export function FiltrosLeads({
       </div>
 
       {recorteDeRetorno(atencao) ? (
-        <p className="flex items-start gap-2 border-t border-card-border pt-3 text-xs leading-5 text-on-surface-variant">
+        <p className="flex min-w-0 items-start gap-2 border-t border-card-border pt-3 text-xs leading-5 text-on-surface-variant">
           <Info aria-hidden="true" size={14} className="mt-0.5 shrink-0 text-primary" />
-          Retornos valem para toda a carteira aberta: aparecem aqui os leads de qualquer mês de entrada, não só os que entraram no período selecionado.
+          <span className="min-w-0 break-words">Retornos valem para toda a carteira aberta: aparecem aqui os leads de qualquer mês de entrada, não só os que entraram no período selecionado.</span>
         </p>
       ) : null}
     </form>
