@@ -18,6 +18,11 @@
 
 begin;
 
+-- O banco confere "não pode estar no futuro" pelo dia de São Paulo; o
+-- `current_date` dos testes precisa ser esse mesmo dia, senão entre 21h e
+-- meia-noite (já amanhã em UTC) toda data de hoje vira futuro.
+set local time zone 'America/Sao_Paulo';
+
 create schema testes;
 grant usage on schema testes to authenticated, anon, service_role;
 

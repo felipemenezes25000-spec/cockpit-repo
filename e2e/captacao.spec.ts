@@ -214,7 +214,9 @@ test.describe("captação", () => {
     await expect(linha.getByText("Perdido → Entrada de leads")).toBeVisible();
     const comercial = linha.locator("details", { has: pagina.locator("summary", { hasText: "Histórico comercial" }) });
     await comercial.locator("summary").click();
-    await expect(comercial.getByText("· 2")).toBeVisible();
+    // O contador fica no summary e precisa ser exato: "· 2" também casa com
+    // o horário "· 21:38" dos contatos, das 20h às 23h59.
+    await expect(comercial.locator("summary").getByText("· 2", { exact: true })).toBeVisible();
     await expect(comercial.getByText("Retorno combinado que venceu.")).toBeVisible();
     await fechar(pagina);
   });
