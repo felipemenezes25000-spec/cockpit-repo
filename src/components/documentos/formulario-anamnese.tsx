@@ -84,9 +84,10 @@ function GrupoDaPergunta({
       aria-labelledby={idRotulo}
       aria-describedby={descricao}
       disabled={somenteLeitura}
-      className="group/pergunta relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 transition-[border-color,background-color] duration-200 focus-within:border-primary-fixed focus-within:bg-surface sm:p-5"
+      className="group/pergunta premium-interactive relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] p-4 shadow-[0_12px_30px_-28px_rgba(8,41,76,.34)] transition-[border-color,background-color,box-shadow] duration-200 focus-within:border-primary-fixed focus-within:shadow-[0_18px_38px_-30px_rgba(8,84,160,.38)] sm:p-5"
     >
-      <legend id={idRotulo} className="relative rotulo mb-1.5">
+      <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-[linear-gradient(180deg,#75b5ef_0%,#0a6ed1_55%,#0854a0_100%)] opacity-65" />
+      <legend id={idRotulo} className="rotulo relative mb-1.5 max-w-full break-words pl-1 text-on-surface">
         {rotulo}
         {obrigatorio ? (
           <>
@@ -102,10 +103,10 @@ function GrupoDaPergunta({
         )}
       </legend>
 
-      <div className="relative">{children}</div>
+      <div className="relative min-w-0 pl-1">{children}</div>
 
       {dica ? (
-        <p id={idDica} className="relative text-xs leading-5 text-outline transition-colors group-focus-within/pergunta:text-on-surface-variant">
+        <p id={idDica} className="relative min-w-0 break-words pl-1 text-xs leading-5 text-outline transition-colors group-focus-within/pergunta:text-on-surface-variant">
           {dica}
         </p>
       ) : null}
@@ -120,11 +121,11 @@ function GrupoDaPergunta({
  */
 function classeDaOpcao(marcada: boolean, somenteLeitura: boolean): string {
   return cn(
-    "rounded-[var(--radius-cartao)] border text-sm text-on-surface transition-[transform,background-color,border-color] duration-180",
+    "min-w-0 rounded-[var(--radius-cartao)] border text-sm text-on-surface shadow-[0_8px_20px_-20px_rgba(8,41,76,.28)] transition-[transform,background-color,border-color,box-shadow] duration-180",
     somenteLeitura ? "cursor-not-allowed" : "cursor-pointer active:scale-[0.99]",
     marcada
-      ? "border-primary-fixed-dim bg-primary-fixed"
-      : cn("border-card-border bg-surface", !somenteLeitura && "hover:border-primary-fixed hover:bg-selecao"),
+      ? "border-primary-fixed-dim bg-primary-fixed shadow-[0_10px_24px_-20px_rgba(8,84,160,.38)]"
+      : cn("border-card-border bg-surface", !somenteLeitura && "hover:-translate-y-0.5 hover:border-primary-fixed hover:bg-selecao hover:shadow-[0_12px_26px_-20px_rgba(8,84,160,.34)]"),
   );
 }
 
@@ -156,7 +157,7 @@ function PerguntaSimNao({
           <label
             key={opcao.valor}
             className={cn(
-              "inline-flex h-10 min-w-20 items-center justify-center gap-2 px-4 font-medium",
+              "inline-flex min-h-10 min-w-20 items-center justify-center gap-2 px-4 font-medium",
               classeDaOpcao(marcada, somenteLeitura),
             )}
           >
@@ -203,7 +204,7 @@ function PerguntaEscolha({
       : [];
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       {campo.opcoes.map((opcao) => {
         const marcada = marcadas.includes(opcao);
 
@@ -211,7 +212,7 @@ function PerguntaEscolha({
           <label
             key={opcao}
             className={cn(
-              "flex items-start gap-2.5 px-3.5 py-2.5",
+              "flex min-w-0 items-start gap-2.5 px-3.5 py-2.5",
               classeDaOpcao(marcada, somenteLeitura),
             )}
           >
@@ -243,7 +244,7 @@ function PerguntaEscolha({
                 className={cn("mt-0.5", CONTROLE_DA_OPCAO)}
               />
             )}
-            {opcao}
+            <span className="min-w-0 break-words leading-5">{opcao}</span>
           </label>
         );
       })}
@@ -350,36 +351,37 @@ export function FormularioAnamnese({
 
   if (campos.length === 0) {
     return (
-      <p className="text-sm text-outline">
-        Este documento não tem perguntas.
-      </p>
+      <div className="rounded-[var(--radius-cartao)] border border-dashed border-outline-variant bg-surface-container-low px-4 py-5 text-center">
+        <p className="text-sm font-medium text-on-surface-variant">Este documento não tem perguntas.</p>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={salvar} className="flex flex-col gap-5">
-      <section className="relative overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-selecao p-4 sm:p-5" aria-label="Progresso da anamnese">
-        <div className="relative flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-on-surface">Preenchimento da anamnese</p>
-            <p className="mt-1 text-xs leading-5 text-outline">
+    <form onSubmit={salvar} className="flex min-w-0 flex-col gap-5">
+      <section className="relative isolate overflow-hidden rounded-[calc(var(--radius-painel)+1px)] border border-primary-fixed-dim bg-[linear-gradient(145deg,#f4f9ff_0%,#ffffff_62%,#edf6ff_100%)] p-4 shadow-[0_18px_42px_-34px_rgba(8,84,160,.4)] sm:p-5" aria-label="Progresso da anamnese">
+        <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-14 size-52 rounded-full bg-primary-fixed/45 blur-3xl" />
+        <div className="relative flex min-w-0 flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="break-words text-sm font-semibold text-on-surface">Preenchimento da anamnese</p>
+            <p className="mt-1 max-w-2xl break-words text-xs leading-5 text-outline">
               {somenteLeitura
                 ? `${feitas} de ${campos.length} perguntas respondidas.`
                 : "Você pode salvar parcialmente e voltar depois enquanto o formulário estiver disponível."}
             </p>
           </div>
-          <span className="tabular rounded-full border border-primary-fixed bg-surface px-2.5 py-1 text-xs font-bold text-primary">{progresso}%</span>
+          <span className="tabular shrink-0 rounded-full border border-primary-fixed bg-surface px-2.5 py-1 text-xs font-bold text-primary shadow-[0_8px_18px_-16px_rgba(8,84,160,.35)]">{progresso}%</span>
         </div>
-        <div className="relative mt-4 h-2 overflow-hidden rounded-full border border-primary-fixed bg-surface" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso} aria-label={`${feitas} de ${campos.length} perguntas respondidas`}>
-          <span className="absolute inset-y-0 left-0 rounded-full bg-primary-container transition-[width] duration-300 ease-out" style={{ width: `${progresso}%` }} />
+        <div className="relative mt-4 h-2 overflow-hidden rounded-full border border-primary-fixed bg-surface shadow-inner" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso} aria-label={`${feitas} de ${campos.length} perguntas respondidas`}>
+          <span className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,#0a6ed1_0%,#0854a0_100%)] transition-[width] duration-300 ease-out" style={{ width: `${progresso}%` }} />
         </div>
-        <div className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        <div className="relative mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-xs">
           <span className="tabular font-medium text-on-surface-variant">{feitas} respondidas</span>
           {pendentes > 0 ? <span className="font-medium text-atencao">{pendentes} obrigatória{pendentes > 1 ? "s" : ""} em falta</span> : <span className="font-medium text-positivo">Obrigatórias completas</span>}
         </div>
       </section>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex min-w-0 flex-col gap-3">
         {campos.map((campo, indice) => {
           const valor = valores[campo.chave];
           const idCampo = `campo-${campo.chave}`;
@@ -432,8 +434,9 @@ export function FormularioAnamnese({
           }
 
           return (
-            <div key={campo.chave} className="relative overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface p-4 transition-[border-color,background-color] duration-200 focus-within:border-primary-fixed focus-within:bg-surface sm:p-5">
-              <div className="relative">
+            <div key={campo.chave} className="premium-interactive relative min-w-0 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] p-4 shadow-[0_12px_30px_-28px_rgba(8,41,76,.34)] transition-[border-color,background-color,box-shadow] duration-200 focus-within:border-primary-fixed focus-within:shadow-[0_18px_38px_-30px_rgba(8,84,160,.38)] sm:p-5">
+              <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-[linear-gradient(180deg,#75b5ef_0%,#0a6ed1_55%,#0854a0_100%)] opacity-65" />
+              <div className="relative min-w-0 pl-1">
                 <Campo
                   id={idCampo}
                   rotulo={rotulo}
@@ -472,24 +475,24 @@ export function FormularioAnamnese({
       {erro ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
+          className="flex min-w-0 items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm leading-5 text-on-error-container"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
-          {erro}
+          <span className="min-w-0 break-words">{erro}</span>
         </p>
       ) : null}
 
       {somenteLeitura ? null : (
         <div className={cn(
-          "sticky z-20 flex flex-wrap items-center gap-3 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface px-3 py-3 sm:px-4",
+          "sticky z-20 grid min-w-0 gap-2 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface/96 px-3 py-3 shadow-[0_20px_50px_-32px_rgba(8,41,76,.5)] backdrop-blur-xl sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:px-4",
           destino.tipo === "link" ? "bottom-3" : "bottom-[calc(5.15rem+env(safe-area-inset-bottom))] lg:bottom-3",
         )}>
           <button
             type="submit"
             disabled={salvando}
             className={cn(
-              "relative inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55",
-              salvo ? "border border-positivo-borda bg-positivo-fundo text-positivo" : "bg-primary-container text-on-primary hover:bg-primary-hover",
+              "relative inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] border px-5 text-sm font-semibold shadow-[0_12px_26px_-20px_rgba(8,41,76,.35)] transition-[transform,background-color,border-color,box-shadow] duration-180 disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto",
+              salvo ? "border-positivo-borda bg-positivo-fundo text-positivo" : "border-primary-container bg-primary-container text-on-primary hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-[0_16px_30px_-18px_rgba(8,60,115,.65)]",
             )}
           >
             {salvando ? (
@@ -510,7 +513,7 @@ export function FormularioAnamnese({
             )}
           </button>
 
-          <span className="tabular text-xs text-outline">
+          <span className="tabular min-w-0 break-words text-center text-xs leading-5 text-outline sm:text-left">
             {feitas} de {campos.length} respondidas
             {pendentes > 0
               ? ` · ${pendentes} obrigatória${pendentes > 1 ? "s" : ""} em falta`
@@ -520,7 +523,7 @@ export function FormularioAnamnese({
       )}
 
       {pendentes > 0 && !somenteLeitura ? (
-        <p className="text-xs text-atencao">
+        <p className="break-words text-xs leading-5 text-atencao">
           Dá para salvar assim mesmo e completar depois.
         </p>
       ) : null}
