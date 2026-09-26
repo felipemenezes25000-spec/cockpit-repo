@@ -35,37 +35,37 @@ export function ListaProntuarios({
   }
 
   return (
-    <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="min-w-0">
+      <div className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="rotulo text-primary">Registros encontrados</p>
-          <p className="mt-1 text-xs text-outline">Cada nova edição preserva o histórico anterior.</p>
+          <p className="mt-1 break-words text-xs leading-5 text-outline">Cada nova edição preserva o histórico anterior.</p>
         </div>
-        <span className="rounded-full border border-card-border bg-surface-container-low px-2.5 py-1 text-xs font-medium text-outline">
+        <span className="max-w-full rounded-full border border-card-border bg-surface-container-low px-2.5 py-1 text-xs font-medium text-outline">
           Mais recentes primeiro
         </span>
       </div>
 
-      <ul className="flex flex-col gap-3.5">
+      <ul className="flex min-w-0 flex-col gap-3.5">
         {prontuarios.map((prontuario, indice) => (
           <li
             key={prontuario.id}
             style={{ animationDelay: `${Math.min(indice * 45, 240)}ms` }}
-            className="dashboard-stagger premium-interactive group relative isolate overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface p-4 sm:p-5"
+            className="dashboard-stagger premium-interactive group relative isolate min-w-0 overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface p-4 sm:p-5"
           >
             <span aria-hidden="true" className="absolute inset-y-4 left-0 w-1 rounded-r-full bg-primary-fixed-dim transition-colors duration-200 group-hover:bg-primary-container" />
 
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 items-start gap-3.5 pl-1">
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-gradient-to-br from-surface to-selecao text-primary shadow-[0_14px_26px_-22px_rgba(8,84,160,.6)]">
                   <FileText aria-hidden="true" size={21} strokeWidth={1.7} />
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <Link
                       href={`/prontuarios/${prontuario.id}`}
-                      className="inline-flex min-h-6 items-center text-[1rem] font-bold tracking-[-0.015em] text-on-surface transition-colors after:absolute after:inset-0 after:content-[''] hover:text-primary"
+                      className="inline-flex min-h-6 max-w-full items-center break-words text-[1rem] font-bold tracking-[-0.015em] text-on-surface transition-colors after:absolute after:inset-0 after:content-[''] hover:text-primary"
                     >
                       {prontuario.titulo}
                     </Link>
@@ -76,39 +76,39 @@ export function ListaProntuarios({
                     ) : null}
                   </div>
 
-                  <p className="mt-1.5 text-sm font-semibold text-on-surface-variant">
+                  <p className="mt-1.5 min-w-0 break-words text-sm font-semibold leading-5 text-on-surface-variant">
                     {prontuario.paciente}
                     {prontuario.contato ? <span className="font-normal text-outline"> · {prontuario.contato}</span> : null}
                   </p>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-outline">
-                    <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border bg-surface-container-low px-2.5">
-                      <CalendarDays aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
-                      Registro {formatarData(prontuario.dataRegistro)}
+                  <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-xs text-outline">
+                    <span className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low px-2.5">
+                      <CalendarDays aria-hidden="true" size={13} strokeWidth={1.75} className="shrink-0 text-primary" />
+                      <span className="min-w-0 break-words">Registro {formatarData(prontuario.dataRegistro)}</span>
                     </span>
 
                     {prontuario.ultimaVersao ? (
-                      <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-primary-fixed bg-selecao px-2.5 font-medium text-primary">
-                        <History aria-hidden="true" size={13} strokeWidth={1.75} />
-                        Versão {prontuario.ultimaVersao.numero} · {formatarData(prontuario.ultimaVersao.criadoEm)} às {formatarHora(prontuario.ultimaVersao.criadoEm)}
+                      <span className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-[var(--radius-cartao)] border border-primary-fixed bg-selecao px-2.5 font-medium text-primary">
+                        <History aria-hidden="true" size={13} strokeWidth={1.75} className="shrink-0" />
+                        <span className="min-w-0 break-words">Versão {prontuario.ultimaVersao.numero} · {formatarData(prontuario.ultimaVersao.criadoEm)} às {formatarHora(prontuario.ultimaVersao.criadoEm)}</span>
                       </span>
                     ) : null}
 
                     {prontuario.atendimento ? (
-                      <span className="inline-flex min-h-7 items-center rounded-full border border-card-border bg-surface-container-low px-2.5">
-                        {prontuario.atendimento.procedimento ?? "Atendimento"} · {formatarData(prontuario.atendimento.inicio)}
+                      <span className="inline-flex min-h-7 max-w-full items-center rounded-[var(--radius-cartao)] border border-card-border bg-surface-container-low px-2.5 py-1">
+                        <span className="min-w-0 break-words">{prontuario.atendimento.procedimento ?? "Atendimento"} · {formatarData(prontuario.atendimento.inicio)}</span>
                       </span>
                     ) : null}
                   </div>
                 </div>
               </div>
 
-              <div className="relative z-[1] flex shrink-0 flex-wrap items-center gap-2 pl-1 lg:justify-end lg:pl-0">
-                <BotaoLink href={`/prontuarios/${prontuario.id}`} variante="contorno" tamanho="sm">
+              <div className="relative z-[1] grid w-full min-w-0 grid-cols-2 gap-2 pl-1 sm:w-auto lg:shrink-0 lg:pl-0">
+                <BotaoLink href={`/prontuarios/${prontuario.id}`} variante="contorno" tamanho="sm" className="w-full">
                   <FileText aria-hidden="true" size={16} strokeWidth={1.75} />
                   Abrir
                 </BotaoLink>
-                <BotaoLink href={`/prontuarios/${prontuario.id}/editar`} variante="secundaria" tamanho="sm">
+                <BotaoLink href={`/prontuarios/${prontuario.id}/editar`} variante="secundaria" tamanho="sm" className="w-full">
                   <History aria-hidden="true" size={16} strokeWidth={1.75} />
                   Nova versão
                 </BotaoLink>
