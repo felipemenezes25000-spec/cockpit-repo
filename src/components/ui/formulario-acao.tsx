@@ -27,15 +27,15 @@ export function FormularioDeAcao({
     <form
       action={executar}
       onSubmit={confirmacao ? (evento) => { if (!window.confirm(confirmacao)) evento.preventDefault(); } : undefined}
-      className={cn("flex flex-col gap-1.5", alinhamento === "fim" && "items-end", className)}
+      className={cn("flex min-w-0 max-w-full flex-col gap-1.5", alinhamento === "fim" && "items-end", className)}
     >
       {Object.entries(campos).map(([nome, valor]) => <input key={nome} type="hidden" name={nome} value={valor} />)}
       {children}
 
       {!estado.ok && estado.mensagem ? (
-        <p role="alert" className={cn("inline-flex max-w-sm items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3 py-2 text-xs leading-5 text-negativo shadow-[0_10px_24px_-20px_rgba(187,0,0,.45)]", alinhamento === "fim" && "text-right")}>
+        <p role="alert" className={cn("inline-flex max-w-full items-start gap-2 rounded-[var(--radius-cartao)] border border-negativo-borda bg-negativo-fundo px-3 py-2 text-xs leading-5 text-negativo shadow-[0_10px_24px_-20px_rgba(187,0,0,.45)] sm:max-w-sm", alinhamento === "fim" && "text-right")}>
           <CircleAlert aria-hidden="true" size={14} strokeWidth={1.8} className="mt-0.5 shrink-0" />
-          <span>{estado.mensagem}</span>
+          <span className="min-w-0 break-words">{estado.mensagem}</span>
         </p>
       ) : null}
 
@@ -98,15 +98,15 @@ export function BotaoDeAcao({
       aria-label={rotuloAcessivel}
       title={indisponivel ? motivoIndisponivel : undefined}
       className={cn(
-        "group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,filter,box-shadow] duration-180 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100",
+        "group relative inline-flex max-w-full items-center justify-center gap-1.5 overflow-hidden rounded-[var(--radius-controle)] font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,filter,box-shadow] duration-180 ease-[var(--ease-standard)] active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100",
         TAMANHOS[tamanho],
         TONS[tom],
         className,
       )}
     >
-      <span className="relative inline-flex items-center gap-1.5">
-        {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : icone ? <span aria-hidden="true" className="inline-flex transition-transform duration-150">{icone}</span> : null}
-        {pending && rotuloPendente ? rotuloPendente : children}
+      <span className="relative inline-flex min-w-0 items-center gap-1.5">
+        {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : icone ? <span aria-hidden="true" className="inline-flex shrink-0 transition-transform duration-150">{icone}</span> : null}
+        <span className="min-w-0 truncate">{pending && rotuloPendente ? rotuloPendente : children}</span>
       </span>
     </button>
   );
