@@ -91,32 +91,32 @@ export function ModuloEmConstrucao({ href }: { href: string }) {
 
             <div className="relative flex items-start justify-between gap-4">
               <div>
-                <p className="text-[0.66rem] font-bold tracking-[0.09em] text-white/72 uppercase">Prévia estrutural</p>
+                <p className="text-[0.66rem] font-bold tracking-[0.09em] text-white/[0.72] uppercase">Prévia estrutural</p>
                 <p className="mt-1 text-base font-semibold tracking-[-0.015em] text-white">Como esta área vai se organizar</p>
               </div>
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-white/18 bg-white/10 text-white">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-white/[0.18] bg-white/10 text-white">
                 <BarChart3 aria-hidden="true" size={18} strokeWidth={1.7} />
               </span>
             </div>
 
             <div className="relative mt-7 grid grid-cols-3 gap-2" aria-hidden="true">
               {["72%", "48%", "61%"].map((largura, indice) => (
-                <div key={largura} className="rounded-[var(--radius-cartao)] border border-white/12 bg-white/[0.07] p-3">
-                  <div className="h-2 w-10 rounded-full bg-white/28" />
-                  <div className="mt-3 h-5 rounded-[var(--radius-tag)] bg-white/18" style={{ width: largura }} />
-                  <div className="mt-2 h-2 w-12 rounded-full bg-white/14" />
+                <div key={largura} className="rounded-[var(--radius-cartao)] border border-white/[0.12] bg-white/[0.07] p-3">
+                  <div className="h-2 w-10 rounded-full bg-white/[0.28]" />
+                  <div className="mt-3 h-5 rounded-[var(--radius-tag)] bg-white/[0.18]" style={{ width: largura }} />
+                  <div className="mt-2 h-2 w-12 rounded-full bg-white/[0.14]" />
                   <span className="sr-only">Indicador estrutural {indice + 1}</span>
                 </div>
               ))}
             </div>
 
-            <div className="relative mt-4 flex h-28 items-end gap-2 overflow-hidden rounded-[var(--radius-cartao)] border border-white/12 bg-black/[0.06] px-3 pt-4 pb-3" aria-hidden="true">
+            <div className="relative mt-4 flex h-28 items-end gap-2 overflow-hidden rounded-[var(--radius-cartao)] border border-white/[0.12] bg-black/[0.06] px-3 pt-4 pb-3" aria-hidden="true">
               {[34, 52, 44, 69, 58, 82, 66, 88, 76, 92].map((altura, indice) => (
                 <span key={`${altura}-${indice}`} className="min-w-0 flex-1 rounded-t-[3px] bg-white/20" style={{ height: `${altura}%` }} />
               ))}
             </div>
 
-            <div className="relative mt-4 flex items-center gap-2 text-xs leading-5 text-white/76">
+            <div className="relative mt-4 flex items-center gap-2 text-xs leading-5 text-white/[0.76]">
               <Check aria-hidden="true" size={14} strokeWidth={2} className="shrink-0 text-white" />
               <span>Somente estrutura visual; nenhum valor acima representa dado da clínica.</span>
             </div>
