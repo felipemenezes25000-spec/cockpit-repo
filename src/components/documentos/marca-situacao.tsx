@@ -24,7 +24,7 @@ const ESTILO: Record<
 > = {
   emitido: {
     icone: Clock3,
-    classes: "bg-atencao-fundo text-atencao",
+    classes: "border border-atencao-borda bg-atencao-fundo text-atencao",
   },
   assinado: {
     icone: CircleCheck,
@@ -56,21 +56,21 @@ export function MarcaSituacao({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] px-2 py-1 text-xs font-medium",
+        "inline-flex min-h-6 max-w-full items-center gap-1.5 rounded-full px-2.5 py-0.5 text-left text-xs leading-4 font-medium shadow-[0_7px_16px_-15px_rgba(8,41,76,.35)] [&_svg]:shrink-0",
         estilo.classes,
         className,
       )}
     >
       <Icone aria-hidden="true" size={13} strokeWidth={1.75} />
-      {rotuloDaSituacao(situacao, tipo)}
+      <span className="min-w-0 break-words">{rotuloDaSituacao(situacao, tipo)}</span>
     </span>
   );
 }
 
 export function MarcaTipo({ tipo }: { tipo: TipoDocumento }) {
   return (
-    <span className="rounded-[var(--radius-tag)] bg-secondary-fixed px-2 py-1 text-xs font-medium text-primary">
-      {ROTULO_TIPO[tipo]}
+    <span className="inline-flex min-h-6 max-w-full items-center rounded-full border border-primary-fixed bg-secondary-fixed px-2.5 py-0.5 text-left text-xs leading-4 font-medium text-primary shadow-[0_7px_16px_-15px_rgba(8,41,76,.3)]">
+      <span className="min-w-0 break-words">{ROTULO_TIPO[tipo]}</span>
     </span>
   );
 }
