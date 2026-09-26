@@ -4,6 +4,7 @@ import { ArrowRight, CircleAlert, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail }
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { BOTAO_ACESSO, CAMPO_ACESSO, ICONE_ACESSO, OLHO_ACESSO } from "@/components/ui/campo-de-acesso";
 import { ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { entrar, type EstadoLogin } from "./actions";
@@ -18,7 +19,7 @@ function BotaoEntrar() {
       type="submit"
       disabled={pending}
       aria-busy={pending || undefined}
-      className="group relative inline-flex h-[3.4rem] w-full items-center justify-center gap-2.5 overflow-hidden rounded-[var(--radius-cartao)] border border-primary-container bg-primary-container px-6 text-[0.98rem] font-semibold text-on-primary shadow-[0_22px_44px_-24px_rgba(10,110,209,.95)] transition-[transform,background-color,border-color,box-shadow] duration-150 hover:border-primary-hover hover:bg-primary-hover hover:shadow-[0_26px_48px_-24px_rgba(8,60,115,.95)] active:translate-y-px active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0"
+      className={BOTAO_ACESSO}
     >
       {pending ? (
         <>
@@ -42,9 +43,6 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
   const emailInvalido = estado.invalidos?.includes("email") ?? false;
   const senhaInvalida = estado.invalidos?.includes("senha") ?? false;
 
-  const classeCampo =
-    "h-[3.35rem]! rounded-[var(--radius-cartao)] border-[#c9d7e5] bg-[#f8fbff] px-3.5 pl-[3.35rem] text-[0.95rem] shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_1px_2px_rgba(8,41,76,.025)] transition-[border-color,background-color,box-shadow] duration-150 hover:border-[#9eb3c8] focus-visible:border-primary-container focus-visible:bg-surface focus-visible:shadow-[0_0_0_4px_rgba(10,110,209,.09)]";
-
   return (
     <form action={acao} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="proximo" value={proximo} />
@@ -54,7 +52,7 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           E-mail
         </label>
         <div className="relative">
-          <span className="pointer-events-none absolute top-1/2 left-3 z-[1] flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline shadow-[0_1px_2px_rgba(8,41,76,.04)] transition-colors group-focus-within/campo:border-primary-fixed-dim group-focus-within/campo:bg-primary-fixed group-focus-within/campo:text-primary">
+          <span className={ICONE_ACESSO}>
             <Mail aria-hidden="true" size={16} strokeWidth={1.7} />
           </span>
           <input
@@ -70,7 +68,7 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
             defaultValue={estado.email ?? ""}
             aria-invalid={emailInvalido || undefined}
             aria-describedby={comErro ? "erro-login" : undefined}
-            className={cn(ENTRADA, classeCampo, emailInvalido && ENTRADA_ERRO)}
+            className={cn(ENTRADA, CAMPO_ACESSO, emailInvalido && ENTRADA_ERRO)}
             placeholder="voce@clinica.com.br"
           />
         </div>
@@ -89,7 +87,7 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
           </Link>
         </div>
         <div className="relative">
-          <span className="pointer-events-none absolute top-1/2 left-3 z-[1] flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline shadow-[0_1px_2px_rgba(8,41,76,.04)] transition-colors group-focus-within/campo:border-primary-fixed-dim group-focus-within/campo:bg-primary-fixed group-focus-within/campo:text-primary">
+          <span className={ICONE_ACESSO}>
             <LockKeyhole aria-hidden="true" size={16} strokeWidth={1.7} />
           </span>
           <input
@@ -100,14 +98,14 @@ export function FormularioLogin({ proximo }: { proximo: string }) {
             required
             aria-invalid={senhaInvalida || undefined}
             aria-describedby={comErro ? "erro-login" : undefined}
-            className={cn(ENTRADA, classeCampo, "pr-13!", senhaInvalida && ENTRADA_ERRO)}
+            className={cn(ENTRADA, CAMPO_ACESSO, "pr-13!", senhaInvalida && ENTRADA_ERRO)}
           />
           <button
             type="button"
             onClick={() => setMostrarSenha((valor) => !valor)}
             aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
             aria-pressed={mostrarSenha}
-            className="absolute top-1/2 right-2.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95"
+            className={OLHO_ACESSO}
           >
             {mostrarSenha ? <EyeOff aria-hidden="true" size={18} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={18} strokeWidth={1.65} />}
           </button>

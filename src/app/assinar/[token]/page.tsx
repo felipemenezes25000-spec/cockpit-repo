@@ -26,7 +26,7 @@ export default async function PaginaAssinar({ params }: { params: Promise<{ toke
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[linear-gradient(180deg,#f5f9ff_0%,#fbfdff_38%,#f6f9fc_100%)] px-3 py-4 sm:px-6 sm:py-8 lg:py-10">
       <span aria-hidden="true" className="pointer-events-none absolute -top-40 -left-28 size-[30rem] rounded-full bg-primary-fixed/45 blur-3xl" />
-      <span aria-hidden="true" className="pointer-events-none top-[28rem] -right-48 size-[34rem] rounded-full bg-informativo-fundo/70 blur-3xl" />
+      <span aria-hidden="true" className="pointer-events-none absolute top-[28rem] -right-48 size-[34rem] rounded-full bg-informativo-fundo/70 blur-3xl" />
 
       <div className="relative mx-auto flex w-full max-w-4xl flex-col gap-4 sm:gap-6">
         <header className="sem-impressao glass-surface flex items-center justify-between gap-4 rounded-[calc(var(--radius-painel)+2px)] border border-card-border px-4 py-3.5 shadow-[0_18px_48px_-38px_rgba(8,41,76,.5)] sm:px-5">

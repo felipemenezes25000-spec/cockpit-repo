@@ -12,6 +12,7 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from "lucide-react";
+import { BOTAO_ACESSO, CAMPO_ACESSO, ICONE_ACESSO, OLHO_ACESSO } from "@/components/ui/campo-de-acesso";
 import { ENTRADA } from "@/components/ui/field";
 import { clienteNavegador } from "@/lib/supabase/client";
 
@@ -175,7 +176,7 @@ export function FormularioNovaSenha() {
   const coincidem = confirmacao.length > 0 && senha === confirmacao;
 
   return (
-    <form onSubmit={salvar} className="flex flex-col gap-4">
+    <form onSubmit={salvar} className="flex flex-col gap-5">
       <div className="rounded-[var(--radius-cartao)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3 text-xs leading-5 text-on-surface-variant">
         <span className="flex items-center gap-2 font-semibold text-positivo">
           <ShieldCheck aria-hidden="true" size={15} strokeWidth={1.8} />
@@ -184,10 +185,12 @@ export function FormularioNovaSenha() {
         <span className="mt-1 block">Defina uma nova senha para concluir a recuperação.</span>
       </div>
 
-      <div className="group/campo flex flex-col gap-1.5">
+      <div className="group/campo flex flex-col gap-2">
         <label htmlFor="nova-senha" className="text-[0.8125rem] font-semibold text-on-surface transition-colors duration-150 group-focus-within/campo:text-primary">Nova senha</label>
         <div className="relative">
-          <LockKeyhole aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors group-focus-within/campo:text-primary" />
+          <span className={ICONE_ACESSO}>
+            <LockKeyhole aria-hidden="true" size={16} strokeWidth={1.7} />
+          </span>
           <input
             id="nova-senha"
             name="nova-senha"
@@ -199,10 +202,10 @@ export function FormularioNovaSenha() {
             aria-describedby={erro ? "dica-nova-senha erro-nova-senha" : "dica-nova-senha"}
             value={senha}
             onChange={(evento) => definirSenha(evento.target.value)}
-            className={`${ENTRADA} pr-11 pl-10`}
+            className={`${ENTRADA} ${CAMPO_ACESSO} pr-13!`}
           />
-          <button type="button" onClick={() => definirMostrarSenha((valor) => !valor)} aria-label={mostrarSenha ? "Ocultar nova senha" : "Mostrar nova senha"} aria-pressed={mostrarSenha} className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95">
-            {mostrarSenha ? <EyeOff aria-hidden="true" size={17} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={17} strokeWidth={1.65} />}
+          <button type="button" onClick={() => definirMostrarSenha((valor) => !valor)} aria-label={mostrarSenha ? "Ocultar nova senha" : "Mostrar nova senha"} aria-pressed={mostrarSenha} className={OLHO_ACESSO}>
+            {mostrarSenha ? <EyeOff aria-hidden="true" size={18} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={18} strokeWidth={1.65} />}
           </button>
         </div>
         <div id="dica-nova-senha" className="flex items-center justify-between gap-3 text-xs">
@@ -211,10 +214,12 @@ export function FormularioNovaSenha() {
         </div>
       </div>
 
-      <div className="group/campo flex flex-col gap-1.5">
+      <div className="group/campo flex flex-col gap-2">
         <label htmlFor="confirmacao-senha" className="text-[0.8125rem] font-semibold text-on-surface transition-colors duration-150 group-focus-within/campo:text-primary">Confirme a nova senha</label>
         <div className="relative">
-          <LockKeyhole aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors group-focus-within/campo:text-primary" />
+          <span className={ICONE_ACESSO}>
+            <LockKeyhole aria-hidden="true" size={16} strokeWidth={1.7} />
+          </span>
           <input
             id="confirmacao-senha"
             name="confirmacao-senha"
@@ -225,10 +230,10 @@ export function FormularioNovaSenha() {
             aria-describedby={erro ? "erro-nova-senha" : undefined}
             value={confirmacao}
             onChange={(evento) => definirConfirmacao(evento.target.value)}
-            className={`${ENTRADA} pr-11 pl-10`}
+            className={`${ENTRADA} ${CAMPO_ACESSO} pr-13!`}
           />
-          <button type="button" onClick={() => definirMostrarConfirmacao((valor) => !valor)} aria-label={mostrarConfirmacao ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"} aria-pressed={mostrarConfirmacao} className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] text-outline transition-[transform,background-color,color] duration-150 hover:bg-selecao hover:text-primary active:scale-95">
-            {mostrarConfirmacao ? <EyeOff aria-hidden="true" size={17} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={17} strokeWidth={1.65} />}
+          <button type="button" onClick={() => definirMostrarConfirmacao((valor) => !valor)} aria-label={mostrarConfirmacao ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"} aria-pressed={mostrarConfirmacao} className={OLHO_ACESSO}>
+            {mostrarConfirmacao ? <EyeOff aria-hidden="true" size={18} strokeWidth={1.65} /> : <Eye aria-hidden="true" size={18} strokeWidth={1.65} />}
           </button>
         </div>
         {confirmacao ? (
@@ -246,11 +251,11 @@ export function FormularioNovaSenha() {
         </p>
       ) : null}
 
-      <button type="submit" disabled={salvando} className="group relative inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary transition-colors duration-150 hover:border-primary-hover hover:bg-primary-hover active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
+      <button type="submit" disabled={salvando} aria-busy={salvando || undefined} className={`mt-1 ${BOTAO_ACESSO}`}>
         {salvando ? (
-          <><LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> Salvando…</>
+          <><LoaderCircle aria-hidden="true" size={19} className="animate-spin" /> Salvando…</>
         ) : (
-          <>Salvar nova senha <ArrowRight aria-hidden="true" size={17} strokeWidth={1.8} className="transition-transform duration-180 group-hover:translate-x-0.5" /></>
+          <>Salvar nova senha <ArrowRight aria-hidden="true" size={19} strokeWidth={1.9} className="transition-transform duration-180 group-hover:translate-x-1" /></>
         )}
       </button>
     </form>

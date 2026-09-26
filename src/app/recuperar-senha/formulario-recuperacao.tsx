@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { ArrowRight, CircleAlert, LoaderCircle, Mail, MailCheck, ShieldCheck } from "lucide-react";
+import { BOTAO_ACESSO, CAMPO_ACESSO, ICONE_ACESSO } from "@/components/ui/campo-de-acesso";
 import { ENTRADA } from "@/components/ui/field";
 
 export function FormularioRecuperacao() {
@@ -65,11 +66,13 @@ export function FormularioRecuperacao() {
   }
 
   return (
-    <form onSubmit={enviar} className="flex flex-col gap-4">
-      <div className="group/campo flex flex-col gap-1.5">
+    <form onSubmit={enviar} className="flex flex-col gap-5">
+      <div className="group/campo flex flex-col gap-2">
         <label htmlFor="email-recuperacao" className="text-[0.8125rem] font-semibold text-on-surface transition-colors duration-150 group-focus-within/campo:text-primary">E-mail</label>
         <div className="relative">
-          <Mail aria-hidden="true" size={17} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors group-focus-within/campo:text-primary" />
+          <span className={ICONE_ACESSO}>
+            <Mail aria-hidden="true" size={16} strokeWidth={1.7} />
+          </span>
           <input
             id="email-recuperacao"
             name="email"
@@ -85,7 +88,7 @@ export function FormularioRecuperacao() {
             aria-describedby={erro ? "erro-recuperacao" : "dica-recuperacao"}
             value={email}
             onChange={(evento) => definirEmail(evento.target.value)}
-            className={`${ENTRADA} pl-10`}
+            className={`${ENTRADA} ${CAMPO_ACESSO}`}
             placeholder="voce@clinica.com.br"
           />
         </div>
@@ -99,11 +102,11 @@ export function FormularioRecuperacao() {
         </p>
       ) : null}
 
-      <button type="submit" disabled={enviando} className="group relative inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary transition-colors duration-150 hover:border-primary-hover hover:bg-primary-hover active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0">
+      <button type="submit" disabled={enviando} aria-busy={enviando || undefined} className={`mt-1 ${BOTAO_ACESSO}`}>
         {enviando ? (
-          <><LoaderCircle aria-hidden="true" size={18} className="animate-spin" /> Enviando…</>
+          <><LoaderCircle aria-hidden="true" size={19} className="animate-spin" /> Enviando…</>
         ) : (
-          <>Enviar link seguro <ArrowRight aria-hidden="true" size={17} strokeWidth={1.8} className="transition-transform duration-180 group-hover:translate-x-0.5" /></>
+          <>Enviar link seguro <ArrowRight aria-hidden="true" size={19} strokeWidth={1.9} className="transition-transform duration-180 group-hover:translate-x-1" /></>
         )}
       </button>
     </form>

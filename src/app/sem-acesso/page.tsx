@@ -20,7 +20,7 @@ export default async function PaginaSemAcesso() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden bg-[linear-gradient(180deg,#f5f9ff_0%,#fbfdff_46%,#f6f9fc_100%)] px-5 py-10">
       <span aria-hidden="true" className="pointer-events-none absolute -top-40 -left-28 size-[30rem] rounded-full bg-primary-fixed/45 blur-3xl" />
-      <span aria-hidden="true" className="pointer-events-none -right-44 -bottom-52 size-[34rem] rounded-full bg-informativo-fundo/75 blur-3xl" />
+      <span aria-hidden="true" className="pointer-events-none absolute -right-44 -bottom-52 size-[34rem] rounded-full bg-informativo-fundo/75 blur-3xl" />
 
       <div className="relative"><MarcaComNome tamanho="medio" /></div>
       <section className="premium-panel relative isolate w-full max-w-xl overflow-hidden rounded-[calc(var(--radius-painel)+4px)] border px-6 py-10 text-center shadow-[0_30px_72px_-54px_rgba(7,57,112,.58)] sm:px-10 sm:py-12">
