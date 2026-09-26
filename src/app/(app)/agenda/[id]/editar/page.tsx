@@ -58,14 +58,14 @@ export default async function PaginaEditarAtendimento({
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
         <Card>
           <CardCabecalho
             titulo="Editar atendimento"
             descricao="Ajuste os dados do horário. A paciente permanece vinculada ao atendimento atual."
           />
           <CardCorpo className="flex flex-col gap-6 py-7 sm:py-8">
-            <FocoAposAcao situacao={atendimento.situacao} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3.5">
+            <FocoAposAcao situacao={atendimento.situacao} className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-3.5 shadow-[0_12px_28px_-26px_rgba(8,41,76,.35)]">
               <BotoesSituacao atendimentoId={atendimento.id} situacao={atendimento.situacao} />
             </FocoAposAcao>
 
@@ -99,20 +99,23 @@ export default async function PaginaEditarAtendimento({
           </CardCorpo>
         </Card>
 
-        <aside className="xl:sticky xl:top-28">
+        <aside className="min-w-0 xl:sticky xl:top-28">
           <Card as="div">
             <CardCabecalho titulo="Histórico de situações" descricao="Gravado pelo banco a cada mudança." />
             <CardCorpo>
               {atendimento.trilha.length > 0 ? (
-                <ol className="relative flex flex-col gap-3 before:absolute before:top-4 before:bottom-4 before:left-[0.95rem] before:w-px before:bg-card-border">
+                <ol className="relative flex min-w-0 flex-col gap-3 before:absolute before:top-5 before:bottom-5 before:left-[1.08rem] before:w-px before:bg-[linear-gradient(180deg,var(--color-primary-fixed-dim),var(--color-card-border))]">
                   {atendimento.trilha.map((mudanca, i) => (
-                    <li key={`${mudanca.em.getTime()}-${i}`} className="relative flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
-                      <span className="relative z-[1] flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline">
-                        <History aria-hidden="true" size={13} strokeWidth={1.75} />
+                    <li
+                      key={`${mudanca.em.getTime()}-${i}`}
+                      className="premium-interactive relative flex min-w-0 items-start gap-3 overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] px-3.5 py-3.5 shadow-[0_10px_24px_-22px_rgba(8,41,76,.3)]"
+                    >
+                      <span className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary shadow-[0_8px_18px_-16px_rgba(8,84,160,.42)]">
+                        <History aria-hidden="true" size={14} strokeWidth={1.8} />
                       </span>
-                      <div className="min-w-0">
-                        <SituacaoChip situacao={mudanca.para} compacto />
-                        <p className="tabular mt-1.5 text-xs leading-5 text-outline">
+                      <div className="min-w-0 flex-1">
+                        <SituacaoChip situacao={mudanca.para} compacto className="max-w-full" />
+                        <p className="tabular mt-2 min-w-0 break-words text-xs leading-5 text-outline">
                           {formatarData(mudanca.em)} às {formatarHora(mudanca.em)}
                           {mudanca.por ? ` · ${mudanca.por}` : ""}
                         </p>
@@ -121,7 +124,12 @@ export default async function PaginaEditarAtendimento({
                   ))}
                 </ol>
               ) : (
-                <p className="text-sm text-outline">Nenhuma mudança de situação registrada.</p>
+                <div className="rounded-[var(--radius-cartao)] border border-dashed border-outline-variant bg-surface-container-low px-4 py-5 text-center">
+                  <span className="mx-auto flex size-9 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline">
+                    <History aria-hidden="true" size={16} strokeWidth={1.7} />
+                  </span>
+                  <p className="mt-3 text-sm font-medium text-on-surface-variant">Nenhuma mudança de situação registrada.</p>
+                </div>
               )}
             </CardCorpo>
           </Card>
