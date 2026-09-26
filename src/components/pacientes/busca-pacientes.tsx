@@ -83,23 +83,23 @@ export function BuscaPacientes({
         evento.preventDefault();
         navegar(termo, situacao);
       }}
-      className="relative overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface-container-low p-4 sm:p-5"
+      className="relative min-w-0 overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border border-card-border bg-surface-container-low p-4 sm:p-5"
     >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="mb-4 flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="rotulo text-primary">Localizar paciente</p>
-          <p className="mt-1 text-xs leading-5 text-outline">Pesquise por identificação ou contato e refine pela situação do cadastro.</p>
+          <p className="mt-1 max-w-2xl break-words text-xs leading-5 text-outline">Pesquise por identificação ou contato e refine pela situação do cadastro.</p>
         </div>
-        <span aria-live="polite" className="inline-flex items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-on-surface-variant tabular shadow-[0_6px_14px_-12px_rgba(7,57,112,.45)]">
-          <Users aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
-          {total === 1 ? "1 paciente" : `${total} pacientes`}
+        <span aria-live="polite" className="tabular inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border border-card-border bg-surface px-2.5 py-1 text-xs font-semibold text-on-surface-variant shadow-[0_6px_14px_-12px_rgba(7,57,112,.45)]">
+          <Users aria-hidden="true" size={13} strokeWidth={1.75} className="shrink-0 text-primary" />
+          <span className="min-w-0 break-words">{total === 1 ? "1 paciente" : `${total} pacientes`}</span>
         </span>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="w-full lg:max-w-xl">
-          <label htmlFor="busca-paciente" className="mb-1.5 block text-[0.72rem] font-semibold text-on-surface-variant">Nome, telefone, e-mail ou CPF</label>
-          <div className="relative">
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="w-full min-w-0 lg:max-w-xl">
+          <label htmlFor="busca-paciente" className="mb-1.5 block break-words text-[0.72rem] font-semibold text-on-surface-variant">Nome, telefone, e-mail ou CPF</label>
+          <div className="relative min-w-0">
             <Search aria-hidden="true" size={18} strokeWidth={1.6} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-primary" />
             <input
               id="busca-paciente"
@@ -114,9 +114,9 @@ export function BuscaPacientes({
             />
 
             {pendente ? (
-              <span className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 rounded-[var(--radius-controle)] bg-surface px-2 py-1 text-[0.65rem] font-medium text-outline">
-                <LoaderCircle aria-hidden="true" size={13} className="animate-spin" />
-                buscando
+              <span role="status" className="pointer-events-none absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-controle)] bg-surface text-primary shadow-[0_6px_14px_-12px_rgba(7,57,112,.4)]">
+                <LoaderCircle aria-hidden="true" size={14} className="animate-spin" />
+                <span className="sr-only">Buscando pacientes…</span>
               </span>
             ) : termo ? (
               <button
@@ -134,10 +134,10 @@ export function BuscaPacientes({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-2.5">
-          <div>
+        <div className="flex min-w-0 flex-wrap items-end gap-2.5">
+          <div className="min-w-0 max-w-full">
             <div className="mb-1.5 inline-flex items-center gap-1.5 text-[0.68rem] font-semibold tracking-[0.06em] text-outline uppercase">
-              <SlidersHorizontal aria-hidden="true" size={13} className="text-primary" />
+              <SlidersHorizontal aria-hidden="true" size={13} className="shrink-0 text-primary" />
               Situação
             </div>
 
