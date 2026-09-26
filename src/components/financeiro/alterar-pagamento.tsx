@@ -50,21 +50,24 @@ function BotaoConfirmar({ pronto }: { pronto: boolean }) {
 function LinhaComparativa({ rotulo, antes, depois }: { rotulo: string; antes: string; depois: string }) {
   const mudou = antes !== depois;
 
+  // O rótulo vai em cima, na largura toda, e os valores nunca são cortados:
+  // no celular a coluna do meio (antes 2,5 rem com o rótulo truncado) não
+  // cabia "Forma"/"Líquido" e os dois lados viravam "R$ 1.450,…".
   return (
-    <div className={cn("grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)] items-center gap-2 rounded-[var(--radius-controle)] border px-3 py-3 text-sm", mudou ? "border-primary-fixed bg-selecao/65" : "border-card-border bg-surface")}>
-      <div className="min-w-0 text-right">
-        <span className="block text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase sm:hidden">Atual</span>
-        <span className="tabular block truncate text-on-surface-variant">{antes}</span>
-      </div>
-      <span className="flex flex-col items-center justify-center">
-        <span className="rotulo max-w-full truncate text-[0.58rem] text-outline">{rotulo}</span>
-        <span className={cn("mt-1 flex size-6 items-center justify-center rounded-full border", mudou ? "border-primary-fixed-dim bg-surface text-primary" : "border-card-border bg-surface-container-low text-outline")}>
+    <div className={cn("rounded-[var(--radius-controle)] border px-3 py-2.5 text-sm", mudou ? "border-primary-fixed bg-selecao/65" : "border-card-border bg-surface")}>
+      <p className="rotulo text-center text-[0.6rem] text-outline">{rotulo}</p>
+      <div className="mt-1.5 grid grid-cols-[minmax(0,1fr)_1.5rem_minmax(0,1fr)] items-center gap-2">
+        <div className="min-w-0 text-right">
+          <span className="block text-[0.6rem] font-semibold tracking-[0.06em] text-outline uppercase sm:hidden">Atual</span>
+          <span className="tabular block break-words text-on-surface-variant">{antes}</span>
+        </div>
+        <span className={cn("flex size-6 items-center justify-center rounded-full border", mudou ? "border-primary-fixed-dim bg-surface text-primary" : "border-card-border bg-surface-container-low text-outline")}>
           <ArrowRight aria-hidden="true" size={12} strokeWidth={1.9} />
         </span>
-      </span>
-      <div className="min-w-0">
-        <span className="block text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase sm:hidden">Novo</span>
-        <span className={cn("tabular block truncate", mudou ? "font-semibold text-on-surface" : "text-on-surface-variant")}>{depois}</span>
+        <div className="min-w-0">
+          <span className="block text-[0.6rem] font-semibold tracking-[0.06em] text-outline uppercase sm:hidden">Novo</span>
+          <span className={cn("tabular block break-words", mudou ? "font-semibold text-on-surface" : "text-on-surface-variant")}>{depois}</span>
+        </div>
       </div>
     </div>
   );
@@ -194,12 +197,16 @@ export function AlterarPagamento({
             <p className="rotulo text-primary">Impacto da mudança</p>
             <h3 id="comparativo-pagamento" className="mt-1.5 text-base font-semibold text-on-surface">Antes × novo cenário</h3>
           </div>
-          <div className="hidden grid-cols-[1fr_2.5rem_1fr] gap-2 text-[0.62rem] font-semibold tracking-[0.06em] text-outline uppercase sm:grid">
-            <span className="text-right">Atual</span><span /><span>Novo</span>
-          </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2.5">
+        {/* A legenda usa a mesma grade das linhas: "Atual" e "Novo" ficam em cima das colunas certas. */}
+        <div aria-hidden="true" className="mt-4 hidden grid-cols-[minmax(0,1fr)_1.5rem_minmax(0,1fr)] gap-2 px-3 text-[0.6rem] font-semibold tracking-[0.06em] text-outline uppercase sm:grid">
+          <span className="text-right">Atual</span>
+          <span />
+          <span>Novo</span>
+        </div>
+
+        <div className="mt-2 flex flex-col gap-2.5 max-sm:mt-4">
           <LinhaComparativa
             rotulo="Forma"
             antes={`${ROTULO_FORMA[comparativo.antes.forma]}${comparativo.antes.parcelas > 1 ? ` ${comparativo.antes.parcelas}x` : ""}`}

@@ -37,7 +37,7 @@ function Numero({
       <div className="min-w-0">
         <p className="text-[0.68rem] font-semibold tracking-[0.06em] text-outline uppercase">{rotulo}</p>
         <p
-          className={`mt-0.5 truncate text-xl font-semibold tracking-[-0.03em] tabular-nums ${
+          className={`mt-0.5 break-words text-xl font-semibold tracking-[-0.03em] tabular-nums ${
             destaque ? "text-primary" : "text-on-surface"
           }`}
         >

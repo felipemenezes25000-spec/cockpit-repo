@@ -166,6 +166,23 @@
   box-shadow: 0 0 0 4px rgba(10, 110, 209, 0.11);
 }
 
+/* As regras acima têm peso de id e passavam por cima dos estados do campo
+   (utilitários aria-invalid:/disabled: de ENTRADA): o campo com erro perdia a
+   borda e o fundo vermelhos. Os estados voltam aqui com o mesmo peso. */
+.app-premium #conteudo input[aria-invalid="true"]:not([type="checkbox"]):not([type="radio"]),
+.app-premium #conteudo select[aria-invalid="true"],
+.app-premium #conteudo textarea[aria-invalid="true"] {
+  border-color: var(--color-error);
+  background-color: var(--color-error-container);
+}
+
+.app-premium #conteudo input:not([type="checkbox"]):not([type="radio"]):disabled,
+.app-premium #conteudo select:disabled,
+.app-premium #conteudo textarea:disabled {
+  border-color: var(--color-card-border);
+  background-color: var(--color-surface-container-low);
+}
+
 .app-premium #conteudo button[class*="bg-primary-container"],
 .app-premium #conteudo a[class*="bg-primary-container"] {
   box-shadow: 0 12px 26px -18px rgba(10, 110, 209, 0.82);
@@ -219,6 +236,15 @@
   border-color: #aebdcb;
   background: linear-gradient(180deg, #fff 0%, #f5f8fb 100%);
   box-shadow: 0 1px 1px rgba(8, 41, 76, 0.05);
+}
+
+/* Tecla sobre fundo escuro (botão principal, cabines): continua vazada. Sem
+   isto a regra acima pintava de branco a tecla de letra branca. */
+.app-premium .cabine .tecla,
+.app-premium .tecla.bg-transparent {
+  border-color: var(--color-cabine-texto-secundario);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Visão Geral */
@@ -289,18 +315,6 @@
   box-shadow: 0 2px 4px rgba(7, 38, 76, .035), 0 30px 70px -46px rgba(7, 57, 112, .4);
 }
 
-.app-premium nav[aria-label="Seções de relacionamento"] {
-  border: 1px solid var(--premium-borda);
-  border-radius: var(--radius-painel);
-  background: rgba(255,255,255,.92);
-  padding: .35rem .5rem 0;
-  box-shadow: var(--premium-sombra);
-}
-
-.app-premium nav[aria-label="Seções de relacionamento"] a {
-  border-radius: var(--radius-controle) var(--radius-controle) 0 0;
-}
-
 .app-premium #conteudo details {
   border-color: #dce6f0;
 }
@@ -349,11 +363,6 @@
 
   .app-premium .premium-panel {
     box-shadow: 0 1px 2px rgba(7,38,76,.025), 0 14px 34px -28px rgba(7,57,112,.22);
-  }
-
-  .app-premium nav[aria-label="Seções de relacionamento"] {
-    margin-inline: -0.15rem;
-    padding-inline: .25rem;
   }
 }
 

@@ -57,15 +57,17 @@ export function Campo({ id, rotulo, dica, erro, obrigatorio = false, children, c
       <label
         htmlFor={id}
         className={cn(
-          "flex min-w-0 flex-wrap items-center gap-x-1 text-[0.8125rem] font-semibold transition-colors duration-150 group-focus-within/campo:text-primary",
+          "block min-w-0 break-words text-[0.8125rem] font-semibold transition-colors duration-150 group-focus-within/campo:text-primary",
           erro ? "text-error" : "text-on-surface",
         )}
       >
-        <span className="min-w-0 break-words">{rotulo}</span>
+        {/* Texto corrido, não flex: quando o rótulo quebra, o "*" segue a
+            última palavra em vez de cair sozinho numa linha. */}
+        {rotulo}
         {obrigatorio ? (
-          <span aria-hidden="true" className="shrink-0 text-atencao-acento">*</span>
+          <span aria-hidden="true" className="ml-1 text-atencao-acento">*</span>
         ) : (
-          <span className="shrink-0 text-xs font-normal text-outline">
+          <span className="ml-1.5 whitespace-nowrap text-xs font-normal text-outline">
             opcional
           </span>
         )}

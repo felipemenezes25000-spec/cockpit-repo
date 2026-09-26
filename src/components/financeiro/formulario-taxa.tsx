@@ -3,6 +3,7 @@
 import { CircleAlert, Save } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { RodapeAcoesFormulario } from "@/components/ui/form-actions";
 import { BotaoDeAcao } from "@/components/ui/formulario-acao";
 import { Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
@@ -74,14 +75,16 @@ export function FormularioTaxa({
         Alterar a tabela vale só para as próximas vendas: cada venda guarda a própria cópia da taxa do momento.
       </p>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
+      {/* O mesmo rodapé grudado dos outros formulários: no celular o botão
+          ocupa a largura toda e fica ao alcance do polegar. */}
+      <RodapeAcoesFormulario>
         <BotaoDeAcao tom="primario" tamanho="md" icone={<Save aria-hidden="true" strokeWidth={1.75} />} rotuloPendente="Salvando taxa…">
           {rotuloSalvar}
         </BotaoDeAcao>
         <Link href="/financeiro/taxas" className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-5 text-sm font-medium text-on-surface-variant transition-[transform,background-color,color] duration-150 hover:bg-surface-container-low hover:text-primary active:scale-[0.985]">
           Cancelar
         </Link>
-      </div>
+      </RodapeAcoesFormulario>
     </form>
   );
 }

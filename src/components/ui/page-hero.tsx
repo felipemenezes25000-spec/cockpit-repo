@@ -43,7 +43,7 @@ export function SeloHero({ children, tom = "neutro", className }: { children: Re
  */
 export function CabecalhoDePagina({ icone: Icone, rotulo, titulo, descricao, acoes, meta, className }: { icone: LucideIcon; rotulo: string; titulo: string; descricao: ReactNode; acoes?: ReactNode; meta?: ReactNode; className?: string }) {
   return (
-    <header className={cn("mb-6 sm:mb-7", className)}>
+    <header className={cn("mb-4 sm:mb-7", className)}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex min-w-0 items-start gap-4">
           <span aria-hidden="true" className="selo-tela mt-0.5 hidden size-12 shrink-0 items-center justify-center rounded-[var(--radius-cartao)] text-primary sm:flex">
@@ -62,7 +62,7 @@ export function CabecalhoDePagina({ icone: Icone, rotulo, titulo, descricao, aco
         ) : null}
       </div>
 
-      {meta ? <div className="mt-5 flex min-w-0 flex-wrap items-center gap-2 border-t border-card-border/70 pt-4">{meta}</div> : null}
+      {meta ? <div className="mt-4 flex min-w-0 flex-wrap items-center gap-2 border-t border-card-border/70 pt-3 sm:mt-5 sm:pt-4">{meta}</div> : null}
     </header>
   );
 }

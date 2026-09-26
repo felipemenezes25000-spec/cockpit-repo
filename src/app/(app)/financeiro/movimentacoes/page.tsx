@@ -65,8 +65,6 @@ export default async function PaginaMovimentacoes({ searchParams }: { searchPara
 
   return (
     <div className="flex flex-col gap-6">
-      <AbasFinanceiro podeFinanceiro={podeFinanceiro} />
-
       <CabecalhoDePagina
         icone={History}
         rotulo="Financeiro"
@@ -80,6 +78,9 @@ export default async function PaginaMovimentacoes({ searchParams }: { searchPara
           </>
         }
       />
+
+      {/* Abaixo do cabeçalho, como nas outras telas do Financeiro. */}
+      <AbasFinanceiro podeFinanceiro={podeFinanceiro} />
 
       <section className="cabine financeiro-cabine p-4 sm:p-5" aria-label="Pulso financeiro do período">
         <div className="relative z-10 flex flex-col gap-4">

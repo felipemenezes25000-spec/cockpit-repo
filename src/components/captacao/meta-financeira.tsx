@@ -144,7 +144,11 @@ export function MetaFinanceira({
                 />
               </Campo>
 
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+              {/* As três taxas lado a lado só quando o próprio cartão tem largura
+                  para o rótulo inteiro numa linha (container query, não a tela):
+                  estreito, uma embaixo da outra, cada campo alinhado ao de cima. */}
+              <div className="@container">
+              <div className="grid gap-3 @lg:grid-cols-3">
                 <Campo id="taxa_lead_qualificado" rotulo="Lead → qualificado" obrigatorio erro={estado.erros.taxa_lead_qualificado}>
                   <input id="taxa_lead_qualificado" name="taxa_lead_qualificado" inputMode="decimal" defaultValue={estado.valores?.taxa_lead_qualificado ?? textoNumero(meta.taxaLeadQualificado)} className={classeDeEntrada({ altura: "compacta" })} />
                 </Campo>
@@ -154,6 +158,7 @@ export function MetaFinanceira({
                 <Campo id="taxa_agendamento_venda" rotulo="Agenda → venda" obrigatorio erro={estado.erros.taxa_agendamento_venda}>
                   <input id="taxa_agendamento_venda" name="taxa_agendamento_venda" inputMode="decimal" defaultValue={estado.valores?.taxa_agendamento_venda ?? textoNumero(meta.taxaAgendamentoVenda)} className={classeDeEntrada({ altura: "compacta" })} />
                 </Campo>
+              </div>
               </div>
 
               {estado.erros.geral ? (

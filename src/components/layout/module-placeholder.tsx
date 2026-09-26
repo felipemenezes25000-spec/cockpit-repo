@@ -79,9 +79,9 @@ export function ModuloEmConstrucao({ href }: { href: string }) {
               </div>
             ) : null}
 
-            <div className="mt-7 flex flex-wrap items-center gap-2 border-t border-card-border pt-5 text-xs text-outline">
-              <ShieldCheck aria-hidden="true" size={15} strokeWidth={1.75} className="text-primary" />
-              <span>Sem números artificiais, sem gráficos decorativos e sem botão que não funcione.</span>
+            <div className="mt-7 flex items-start gap-2 border-t border-card-border pt-5 text-xs leading-5 text-outline">
+              <ShieldCheck aria-hidden="true" size={15} strokeWidth={1.75} className="mt-0.5 shrink-0 text-primary" />
+              <span className="min-w-0">Sem números artificiais, sem gráficos decorativos e sem botão que não funcione.</span>
             </div>
           </div>
 

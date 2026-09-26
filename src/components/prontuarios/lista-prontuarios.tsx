@@ -103,7 +103,7 @@ export function ListaProntuarios({
                 </div>
               </div>
 
-              <div className="relative z-[1] grid w-full min-w-0 grid-cols-2 gap-2 pl-1 sm:w-auto lg:shrink-0 lg:pl-0">
+              <div className="relative z-[1] grid w-full min-w-0 grid-cols-2 items-center gap-2 pl-1 sm:w-auto lg:shrink-0 lg:pl-0 xl:grid-cols-[1fr_1fr_auto]">
                 <BotaoLink href={`/prontuarios/${prontuario.id}`} variante="contorno" tamanho="sm" className="w-full">
                   <FileText aria-hidden="true" size={16} strokeWidth={1.75} />
                   Abrir

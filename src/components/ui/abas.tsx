@@ -21,7 +21,8 @@ export function NavegacaoEmAbas({ rotulo, abas, className }: { rotulo: string; a
   return (
     <nav aria-label={rotulo} className={cn("relative rounded-[var(--radius-painel)] border border-card-border bg-surface p-1.5 shadow-[0_12px_28px_-26px_rgba(8,41,76,.38)]", className)}>
       <div ref={faixa} className="sem-barra-de-rolagem rolagem-esmaecida-x relative snap-x snap-mandatory scroll-px-1 overflow-x-auto">
-        <ul className="flex min-w-max gap-1">
+        {/* px-1: a primeira e a última aba nunca encostam na borda que recorta a faixa. */}
+        <ul className="flex min-w-max gap-1 px-1">
           {abas.map((aba) => (
             <li key={aba.href} className="snap-start">
               <Link
