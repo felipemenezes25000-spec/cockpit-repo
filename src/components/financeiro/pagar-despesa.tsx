@@ -19,9 +19,9 @@ export function PagarDespesa({
 
   return (
     <FormularioDeAcao acao={mudarSituacaoDespesa} campos={{ id: despesaId, acao: "pagar" }}>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`${id}-pago-em`} className="rotulo">
+      <div className="grid min-w-0 grid-cols-1 gap-3 rounded-[var(--radius-cartao)] bg-surface-container-low p-3 sm:grid-cols-[minmax(9rem,auto)_minmax(10rem,1fr)_auto] sm:items-end sm:p-3.5">
+        <div className="flex min-w-0 flex-col gap-1">
+          <label htmlFor={`${id}-pago-em`} className="rotulo text-on-surface-variant">
             Paga em
           </label>
           <input
@@ -31,19 +31,19 @@ export function PagarDespesa({
             defaultValue={dataPadrao}
             max={dataPadrao}
             required
-            className={classeDeEntrada({ altura: "compacta", largura: "auto" })}
+            className={`${classeDeEntrada({ altura: "compacta" })} bg-surface`}
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`${id}-forma`} className="rotulo">
+        <div className="flex min-w-0 flex-col gap-1">
+          <label htmlFor={`${id}-forma`} className="rotulo text-on-surface-variant">
             Forma
           </label>
           <select
             id={`${id}-forma`}
             name="forma"
             defaultValue="pix"
-            className={classeDeEntrada({ altura: "compacta", largura: "auto" })}
+            className={`${classeDeEntrada({ altura: "compacta" })} bg-surface`}
           >
             {FORMAS_EM_ORDEM.map((f) => (
               <option key={f} value={f}>
@@ -53,7 +53,7 @@ export function PagarDespesa({
           </select>
         </div>
 
-        <BotaoDeAcao tom="primario" icone={<CircleCheckBig strokeWidth={1.75} />}>
+        <BotaoDeAcao tom="primario" icone={<CircleCheckBig strokeWidth={1.75} />} className="w-full sm:w-auto">
           Marcar como paga
         </BotaoDeAcao>
       </div>
