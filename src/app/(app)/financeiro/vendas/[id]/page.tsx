@@ -46,12 +46,12 @@ function Linha({
   return (
     <div
       className={cn(
-        "flex items-baseline justify-between gap-3 rounded-[var(--radius-controle)] px-3 py-2.5 text-sm",
-        destaque ? "bg-selecao" : "bg-surface",
+        "grid min-w-0 gap-1.5 rounded-[var(--radius-controle)] px-3 py-2.5 text-sm sm:grid-cols-[minmax(8rem,.8fr)_minmax(0,1.2fr)] sm:items-baseline sm:gap-3",
+        destaque ? "border border-primary-fixed bg-selecao" : "bg-surface",
       )}
     >
-      <span className={destaque ? "font-medium text-on-surface" : "text-on-surface-variant"}>{rotulo}</span>
-      <span className={cn("tabular text-right", destaque ? "font-semibold text-on-surface" : "text-on-surface")}>{children}</span>
+      <span className={cn("min-w-0 break-words", destaque ? "font-medium text-on-surface" : "text-on-surface-variant")}>{rotulo}</span>
+      <span className={cn("tabular min-w-0 break-words sm:text-right", destaque ? "font-semibold text-on-surface" : "text-on-surface")}>{children}</span>
     </div>
   );
 }
@@ -68,16 +68,16 @@ function Metrica({
   tom?: "neutro" | "positivo" | "negativo" | "atencao";
 }) {
   return (
-    <div className="rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="rotulo text-[0.65rem] text-outline">{rotulo}</span>
-        <span className="flex size-8 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
+    <div className="premium-interactive min-w-0 rounded-[var(--radius-cartao)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-4 shadow-[0_14px_30px_-28px_rgba(8,41,76,.34)]">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <span className="rotulo min-w-0 break-words text-[0.65rem] text-outline">{rotulo}</span>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary">
           <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
         </span>
       </div>
       <p
         className={cn(
-          "tabular mt-3 text-xl font-semibold tracking-[-0.025em]",
+          "tabular mt-3 min-w-0 break-words text-xl font-semibold tracking-[-0.025em]",
           tom === "positivo" && "text-positivo",
           tom === "negativo" && "text-negativo",
           tom === "atencao" && "text-atencao",
@@ -146,7 +146,7 @@ export default async function PaginaVenda({ params }: Props) {
 
       <section aria-labelledby="resumo-venda">
         <h2 id="resumo-venda" className="sr-only">Resumo financeiro da venda</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
           <Metrica icone={ShoppingBag} rotulo="Valor negociado" valor={formatarMoeda(venda.valorFinal)} />
           <Metrica
             icone={BadgePercent}
@@ -166,10 +166,10 @@ export default async function PaginaVenda({ params }: Props) {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-2">
         <CardRecolhivel id="venda-composicao-da-venda" titulo="Composição da venda" descricao="Do valor original ao líquido efetivo da clínica."
         >
-          <CardCorpo className="flex flex-col gap-2.5">
+          <CardCorpo className="flex min-w-0 flex-col gap-2.5">
             <Linha rotulo="Valor original">{formatarMoeda(venda.valorOriginal)}</Linha>
             {venda.desconto > 0 ? <Linha rotulo="Desconto">− {formatarMoeda(venda.desconto)}</Linha> : null}
             <Linha rotulo="Valor final negociado" destaque>{formatarMoeda(venda.valorFinal)}</Linha>
@@ -188,7 +188,7 @@ export default async function PaginaVenda({ params }: Props) {
                   <span className="text-positivo">{formatarMoeda(venda.valorLiquido)}</span>
                 </Linha>
                 {venda.parcelas > 1 ? (
-                  <p className="rounded-[var(--radius-controle)] bg-informativo-fundo px-3 py-2.5 text-xs leading-5 text-informativo-texto">
+                  <p className="break-words rounded-[var(--radius-controle)] border border-informativo-borda bg-informativo-fundo px-3 py-2.5 text-xs leading-5 text-informativo-texto">
                     A operadora antecipa: {venda.parcelas} parcelas da paciente e um repasse único para a clínica.
                   </p>
                 ) : null}
@@ -200,16 +200,16 @@ export default async function PaginaVenda({ params }: Props) {
             )}
 
             {venda.taxaManual ? (
-              <div className="mt-1 flex flex-col gap-1.5 rounded-[var(--radius-controle)] border border-atencao-borda bg-atencao-fundo p-3">
+              <div className="mt-1 flex min-w-0 flex-col gap-1.5 rounded-[var(--radius-controle)] border border-atencao-borda bg-atencao-fundo p-3">
                 <MarcaTaxaManual />
-                {venda.taxaJustificativa ? <p className="text-xs leading-5 text-atencao">{venda.taxaJustificativa}</p> : null}
+                {venda.taxaJustificativa ? <p className="break-words text-xs leading-5 text-atencao">{venda.taxaJustificativa}</p> : null}
               </div>
             ) : null}
 
             {venda.observacoes ? (
-              <div className="mt-1 border-t border-card-border pt-3">
+              <div className="mt-1 min-w-0 border-t border-card-border pt-3">
                 <p className="rotulo text-[0.65rem] text-outline">Observações</p>
-                <p className="mt-2 text-xs leading-5 whitespace-pre-line text-on-surface-variant">{venda.observacoes}</p>
+                <p className="mt-2 break-words text-xs leading-5 whitespace-pre-line text-on-surface-variant">{venda.observacoes}</p>
               </div>
             ) : null}
           </CardCorpo>
@@ -217,19 +217,19 @@ export default async function PaginaVenda({ params }: Props) {
 
         <CardRecolhivel id="venda-recebimento" titulo="Recebimento" descricao="Um registro pelo valor líquido; cartão parcelado continua sendo um repasse para a clínica."
         >
-          <CardCorpo className="flex flex-col gap-4">
+          <CardCorpo className="flex min-w-0 flex-col gap-4">
             {recebimento ? (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-[var(--radius-controle)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] px-3 py-3 shadow-[0_10px_24px_-22px_rgba(8,41,76,.3)]">
                   <ChipRecebimento situacao={recebimento.situacao} />
-                  <span className="tabular text-xs text-outline">
+                  <span className="tabular min-w-0 break-words text-xs text-outline">
                     {recebimento.recebidoEm
                       ? `entrou em ${formatarData(recebimento.recebidoEm)}`
                       : `previsto para ${formatarData(recebimento.vencimento)}`}
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex min-w-0 flex-col gap-2">
                   <Linha rotulo="Bruto">{formatarMoeda(recebimento.valor)}</Linha>
                   {recebimento.taxaValor > 0 ? <Linha rotulo="Taxa">− {formatarMoeda(recebimento.taxaValor)}</Linha> : null}
                   <Linha rotulo="Líquido previsto" destaque>{formatarMoeda(recebimento.valorLiquido)}</Linha>
@@ -251,7 +251,7 @@ export default async function PaginaVenda({ params }: Props) {
                       dataPadrao={chaveDoDia(hoje())}
                     />
 
-                    <div className="mt-4 flex flex-wrap items-start gap-2">
+                    <div className="mt-4 flex min-w-0 flex-wrap items-start gap-2">
                       <FormularioDeAcao
                         acao={mudarSituacaoRecebimento}
                         campos={{
@@ -279,24 +279,24 @@ export default async function PaginaVenda({ params }: Props) {
                 ) : null}
               </>
             ) : (
-              <div className="rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm text-negativo">
+              <div className="break-words rounded-[var(--radius-controle)] border border-negativo-borda bg-negativo-fundo px-3.5 py-3 text-sm text-negativo">
                 O recebimento desta venda foi cancelado.
               </div>
             )}
 
             {venda.ajustes.length > 0 ? (
-              <div className="border-t border-card-border pt-4">
-                <p className="rotulo mb-3">Ajustes financeiros</p>
-                <ul className="flex flex-col gap-2.5">
+              <div className="min-w-0 border-t border-card-border pt-4">
+                <p className="rotulo mb-3 text-primary">Ajustes financeiros</p>
+                <ul className="flex min-w-0 flex-col gap-2.5">
                   {venda.ajustes.map((ajuste) => (
-                    <li key={ajuste.id} className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-2.5 text-sm">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <span className="text-on-surface-variant">{formatarData(ajuste.em)}{ajuste.por ? ` · ${ajuste.por}` : ""}</span>
-                        <span className={cn("tabular font-semibold", ajuste.valor >= 0 ? "text-positivo" : "text-negativo")}>
+                    <li key={ajuste.id} className="premium-interactive min-w-0 rounded-[var(--radius-cartao)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] px-3.5 py-3 text-sm shadow-[0_10px_24px_-22px_rgba(8,41,76,.3)]">
+                      <div className="grid min-w-0 gap-1.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline sm:gap-3">
+                        <span className="min-w-0 break-words text-on-surface-variant">{formatarData(ajuste.em)}{ajuste.por ? ` · ${ajuste.por}` : ""}</span>
+                        <span className={cn("tabular shrink-0 font-semibold", ajuste.valor >= 0 ? "text-positivo" : "text-negativo")}>
                           {ajuste.valor >= 0 ? "+ " : "− "}{formatarMoeda(Math.abs(ajuste.valor))}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs leading-5 text-outline">{ajuste.motivo}</p>
+                      <p className="mt-1.5 min-w-0 break-words text-xs leading-5 text-outline">{ajuste.motivo}</p>
                     </li>
                   ))}
                 </ul>
@@ -310,20 +310,28 @@ export default async function PaginaVenda({ params }: Props) {
         <CardRecolhivel id="venda-historico-de-alteracoes" titulo="Histórico de alterações" descricao="Trilha imutável de mudanças financeiras registradas no banco."
         >
           <CardCorpo>
-            <ol className="relative flex flex-col gap-3 before:absolute before:top-4 before:bottom-4 before:left-[1.05rem] before:w-px before:bg-card-border">
+            <ol className="relative flex min-w-0 flex-col gap-3 before:absolute before:top-5 before:bottom-5 before:left-[1.08rem] before:w-px before:bg-[linear-gradient(180deg,var(--color-primary-fixed-dim),var(--color-card-border))]">
               {venda.alteracoes.map((alteracao, i) => (
-                <li key={i} className="relative flex items-start gap-3 rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3 text-sm">
-                  <span className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline">
-                    <History aria-hidden="true" size={14} strokeWidth={1.75} />
+                <li key={i} className="premium-interactive relative flex min-w-0 items-start gap-3 overflow-hidden rounded-[var(--radius-cartao)] border border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] px-3.5 py-3.5 text-sm shadow-[0_10px_24px_-22px_rgba(8,41,76,.3)] sm:px-4">
+                  <span className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-primary-fixed bg-selecao text-primary shadow-[0_8px_18px_-16px_rgba(8,84,160,.42)]">
+                    <History aria-hidden="true" size={14} strokeWidth={1.8} />
                   </span>
-                  <div className="min-w-0 pt-0.5">
-                    <p className="text-on-surface">
-                      <span className="font-semibold">{alteracao.tipo === "forma_pagamento" ? "Forma de pagamento alterada" : "Taxa alterada manualmente"}</span>: {" "}
-                      <span className="tabular text-on-surface-variant">
-                        {ROTULO_FORMA[alteracao.de.forma]}{alteracao.de.parcelas > 1 ? ` ${alteracao.de.parcelas}x` : ""} (líquido {formatarMoeda(alteracao.de.valor_liquido)}) → {ROTULO_FORMA[alteracao.para.forma]}{alteracao.para.parcelas > 1 ? ` ${alteracao.para.parcelas}x` : ""} (líquido {formatarMoeda(alteracao.para.valor_liquido)})
-                      </span>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <p className="break-words font-semibold text-on-surface">
+                      {alteracao.tipo === "forma_pagamento" ? "Forma de pagamento alterada" : "Taxa alterada manualmente"}
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-outline">
+                    <div className="tabular mt-2 grid min-w-0 gap-2 rounded-[var(--radius-controle)] border border-card-border bg-surface-container-low px-3 py-2.5 text-xs leading-5 text-on-surface-variant sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
+                      <span className="min-w-0 break-words">
+                        {ROTULO_FORMA[alteracao.de.forma]}{alteracao.de.parcelas > 1 ? ` ${alteracao.de.parcelas}x` : ""}
+                        <span className="block text-outline">Líquido {formatarMoeda(alteracao.de.valor_liquido)}</span>
+                      </span>
+                      <span aria-hidden="true" className="hidden text-center font-bold text-primary sm:block">→</span>
+                      <span className="min-w-0 break-words sm:text-right">
+                        {ROTULO_FORMA[alteracao.para.forma]}{alteracao.para.parcelas > 1 ? ` ${alteracao.para.parcelas}x` : ""}
+                        <span className="block text-outline">Líquido {formatarMoeda(alteracao.para.valor_liquido)}</span>
+                      </span>
+                    </div>
+                    <p className="mt-2 min-w-0 break-words text-xs leading-5 text-outline">
                       {formatarData(alteracao.em)} às {formatarHora(alteracao.em)}{alteracao.por ? ` · por ${alteracao.por}` : ""} · {alteracao.motivo}
                     </p>
                   </div>
