@@ -484,7 +484,7 @@ export function FormularioAnamnese({
 
       {somenteLeitura ? null : (
         <div className={cn(
-          "sticky z-20 grid min-w-0 gap-2 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface/96 px-3 py-3 shadow-[0_20px_50px_-32px_rgba(8,41,76,.5)] backdrop-blur-xl sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:px-4",
+          "sticky z-20 grid min-w-0 gap-2 overflow-hidden rounded-[var(--radius-painel)] border border-card-border bg-surface/95 px-3 py-3 shadow-[0_20px_50px_-32px_rgba(8,41,76,.5)] backdrop-blur-xl sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:px-4",
           destino.tipo === "link" ? "bottom-3" : "bottom-[calc(5.15rem+env(safe-area-inset-bottom))] lg:bottom-3",
         )}>
           <button
