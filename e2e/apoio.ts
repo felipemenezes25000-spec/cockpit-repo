@@ -134,6 +134,8 @@ export const TELAS_PUBLICAS = [
   "/recuperar-senha",
   "/redefinir-senha",
   "/assinar/link-que-nao-existe-xxxxxxxxxxxxxxxxxxxxxxxxx",
+  "/verificar",
+  "/verificar/AAAA-BBBB-CCCC",
   "/nao-existe",
 ];
 
@@ -191,4 +193,32 @@ export function diaSemAtendimento(): string {
   `);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) throw new Error(`Nenhum dia livre na agenda local: "${dia}".`);
   return dia;
+}
+
+/** Cria um modelo de contrato pela tela, como a administradora. */
+export async function criarModeloDeContrato(browser: Browser, nome: string, texto = "Eu, paciente, concordo com o procedimento descrito."): Promise<void> {
+  const admin = await comoPerfil(browser, "administradora");
+  await admin.goto("/formularios/modelos/novo");
+  await admin.getByLabel("Tipo").selectOption("contrato");
+  await admin.getByLabel("Nome").fill(nome);
+  await admin.getByLabel("Texto do documento").fill(texto);
+  await admin.getByRole("button", { name: "Criar modelo" }).click();
+  await expect(admin).toHaveURL(/\/formularios\/modelos\/[0-9a-f-]{36}\/editar$/);
+  await fechar(admin);
+}
+
+/** Desenha uma rubrica no quadro, com o mouse (vira evento de ponteiro). */
+export async function rubricar(pagina: Page): Promise<void> {
+  const quadro = pagina.getByRole("img", { name: "Sua rubrica" });
+  await quadro.scrollIntoViewIfNeeded();
+  const caixa = await quadro.boundingBox();
+  if (!caixa) throw new Error("quadro de rubrica sem tamanho");
+  const y = caixa.y + caixa.height * 0.55;
+  await pagina.mouse.move(caixa.x + caixa.width * 0.15, y);
+  await pagina.mouse.down();
+  for (let i = 1; i <= 24; i++) {
+    await pagina.mouse.move(caixa.x + caixa.width * (0.15 + i * 0.028), y + (i % 2 === 0 ? -1 : 1) * caixa.height * 0.18);
+  }
+  await pagina.mouse.up();
+  await expect(pagina.getByText("Rubrica pronta")).toBeVisible();
 }

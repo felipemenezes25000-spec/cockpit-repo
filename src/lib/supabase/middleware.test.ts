@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 describe("atualizarSessao — sem sessão", () => {
-  it.each(["/entrar", "/sem-acesso", "/assinar/abc123", "/recuperar-senha", "/redefinir-senha"])(
+  it.each(["/entrar", "/sem-acesso", "/assinar/abc123", "/verificar", "/verificar/ABCD-EFGH-JKLM", "/recuperar-senha", "/redefinir-senha"])(
     "rota pública %s passa",
     async (caminho) => {
       const resposta = await atualizarSessao(pedido(caminho));
@@ -47,7 +47,7 @@ describe("atualizarSessao — sem sessão", () => {
     },
   );
 
-  it.each(["/", "/pacientes", "/prontuarios/1", "/rota-que-nao-existe", "/assinarfalso", "/entrarx"])(
+  it.each(["/", "/pacientes", "/prontuarios/1", "/rota-que-nao-existe", "/assinarfalso", "/entrarx", "/verificarx"])(
     "%s vai para /entrar — rota inexistente também, sem revelar que não existe",
     async (caminho) => {
       const resposta = await atualizarSessao(pedido(caminho));

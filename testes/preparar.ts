@@ -14,3 +14,12 @@ afterEach(async () => {
     cleanup();
   }
 });
+
+/**
+ * O jsdom não desenha: `getContext` só existe com o pacote `canvas` nativo, e
+ * sem ele cada chamada vira um erro no console. O quadro de rubrica já trata
+ * contexto nulo (não desenha), então o teste de componente segue igual.
+ */
+if (typeof HTMLCanvasElement !== "undefined") {
+  HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
+}

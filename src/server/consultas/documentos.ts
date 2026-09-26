@@ -16,7 +16,8 @@ import { tokenPlausivel } from "@/lib/documento";
 import { estruturaAusente } from "@/lib/erros-banco";
 import { uuidValido } from "@/lib/formulario";
 import { nomeExibido } from "@/lib/paciente";
-import { clienteServidor } from "@/lib/supabase/server";
+import { clienteAnonimo, clienteServidor } from "@/lib/supabase/server";
+import { segredoDoServidor } from "@/server/assinatura/segredo";
 import { paginaAlemDoFim } from "./todas-as-linhas";
 
 export const POR_PAGINA_DOCUMENTOS = 20;
@@ -349,6 +350,21 @@ export type AssinaturaDoDocumento = {
   provedor: string;
   referenciaExterna: string | null;
   urlComprovante: string | null;
+  /** Traçado da rubrica (viewBox 0 0 1000 400), ou nulo quando dispensada. */
+  rubrica: string | null;
+  rubricaDispensada: boolean;
+  /** Tempo com o documento aberto até assinar, e se rolou até o fim. */
+  leituraSegundos: number | null;
+  leituraCompleta: boolean | null;
+  localizacao: string | null;
+  /** O que foi conferido: `posse_do_link`, `data_de_nascimento`… (0032). */
+  fatores: string[];
+  /** XXXX-XXXX-XXXX: abre /verificar e a paciente confere a autenticidade. */
+  codigoVerificacao: string | null;
+  manifesto: string | null;
+  manifestoHash: string | null;
+  carimboEm: Date | null;
+  carimboAutoridade: string | null;
 };
 
 export type DocumentoDaLista = {
@@ -380,6 +396,8 @@ export type DocumentoCompleto = {
   paciente: string;
   /** Só dígitos, como o cadastro guarda. Vira o número do WhatsApp. */
   pacienteTelefone: string | null;
+  /** Mascarado: a ficha do documento só precisa saber que existe e para onde vai. */
+  pacienteEmail: string | null;
   corpo: string;
   hash: string;
   modeloId: string | null;
@@ -522,13 +540,16 @@ export const documentoPorId = cache(
         `id, tipo, titulo, situacao, paciente_id, corpo_congelado, corpo_hash,
          modelo_id, modelo_versao, documento_anterior_id, motivo_cancelamento,
          emitido_em, exemplo,
-         pacientes ( nome, nome_social, telefone ),
+         pacientes ( nome, nome_social, telefone, email ),
          perfis ( nome ),
          modelos_documento ( nome ),
          documento_assinaturas (
            nome_informado, cpf_informado, assinado_em, hash_assinado, ip,
            dispositivo, verificacao_identidade, canal, provedor,
-           referencia_externa, url_comprovante, perfis ( nome )
+           referencia_externa, url_comprovante, perfis ( nome ),
+           rubrica, rubrica_dispensada, leitura_segundos, leitura_completa,
+           localizacao, fatores, codigo_verificacao, manifesto, manifesto_hash,
+           carimbo_em, carimbo_autoridade
          )`,
       )
       .eq("id", id)
@@ -558,6 +579,7 @@ export const documentoPorId = cache(
       pacienteId: data.paciente_id,
       paciente: data.pacientes ? nomeExibido(data.pacientes) : "Paciente",
       pacienteTelefone: data.pacientes?.telefone ?? null,
+      pacienteEmail: mascararEmail(data.pacientes?.email),
       corpo: data.corpo_congelado,
       hash: data.corpo_hash,
       modeloId: data.modelo_id,
@@ -585,6 +607,17 @@ export const documentoPorId = cache(
             provedor: assinatura.provedor,
             referenciaExterna: assinatura.referencia_externa,
             urlComprovante: assinatura.url_comprovante,
+            rubrica: assinatura.rubrica,
+            rubricaDispensada: assinatura.rubrica_dispensada,
+            leituraSegundos: assinatura.leitura_segundos,
+            leituraCompleta: assinatura.leitura_completa,
+            localizacao: assinatura.localizacao,
+            fatores: assinatura.fatores ?? [],
+            codigoVerificacao: assinatura.codigo_verificacao,
+            manifesto: assinatura.manifesto,
+            manifestoHash: assinatura.manifesto_hash,
+            carimboEm: assinatura.carimbo_em ? new Date(assinatura.carimbo_em) : null,
+            carimboAutoridade: assinatura.carimbo_autoridade,
           }
         : null,
       campos: (campos ?? []).map((campo) => ({
@@ -617,8 +650,13 @@ export type LinkDeAssinatura = {
   tentativas: number;
   /** Vivo: não revogado e dentro da validade. */
   ativo: boolean;
-  /** Fechado por tentativas erradas de data de nascimento. */
+  /** Fechado por tentativas erradas de data de nascimento ou de código. */
   bloqueado: boolean;
+  /** `nascimento` ou `nascimento_email` (código por e-mail, 0032). */
+  verificacao: string;
+  /** O e-mail do código, mascarado ("b••••a@exemplo.com"). */
+  emailDestino: string | null;
+  codigosEnviados: number;
 };
 
 /**
@@ -637,7 +675,8 @@ export const linksDoDocumento = cache(
       .from("documento_links")
       .select(
         `id, criado_em, expira_em, revogado_em, canal_envio, aberto_em,
-         aberturas, tentativas, perfis ( nome )`,
+         aberturas, tentativas, verificacao, email_destino, codigo_envios,
+         perfis ( nome )`,
       )
       .eq("documento_id", documentoId)
       .order("criado_em", { ascending: false });
@@ -667,31 +706,145 @@ export const linksDoDocumento = cache(
         tentativas: linha.tentativas,
         ativo: !revogadoEm && expiraEm.getTime() > agora,
         bloqueado: linha.tentativas >= 10,
+        verificacao: linha.verificacao,
+        emailDestino: mascararEmail(linha.email_destino),
+        codigosEnviados: linha.codigo_envios,
       };
     });
   },
 );
 
+/** "beatriz@exemplo.com" → "b••••z@exemplo.com" (mesma regra do banco, 0032). */
+export function mascararEmail(email: string | null | undefined): string | null {
+  if (!email || email.indexOf("@") < 1) return null;
+  const [local, dominio] = email.split("@");
+  const meio = "•".repeat(Math.max(2, Math.min(6, local.length - 2)));
+  return `${local[0]}${meio}${local.length > 2 ? local.at(-1) : ""}@${dominio}`;
+}
+
 /**
- * O link público serve? Só a situação e o tipo — nada do conteúdo antes da
- * data de nascimento (0014).
+ * O link público serve? Só a situação, o tipo e o modo de verificação — nada
+ * do conteúdo antes da data de nascimento (0014, 0032).
  *
  * Falha de infraestrutura volta como `falhou`, e não como "link inválido": a
- * paciente precisa saber que pode tentar de novo.
+ * paciente precisa saber que pode tentar de novo. Sem o segredo do servidor
+ * configurado também é `falhou` — e o log diz o motivo.
  */
 export async function estadoDoLinkPublico(
   token: string,
-): Promise<{ situacao: string; tipo: string | null }> {
-  if (!tokenPlausivel(token)) return { situacao: "nao_encontrado", tipo: null };
+): Promise<{ situacao: string; tipo: string | null; verificacao: string | null }> {
+  if (!tokenPlausivel(token)) return { situacao: "nao_encontrado", tipo: null, verificacao: null };
 
-  const supabase = await clienteServidor();
-  const { data, error } = await supabase.rpc("documento_link_estado", { p_token: token });
+  const segredo = segredoDoServidor();
+  if (!segredo) {
+    registrarFalha("consulta documentos: estado do link", {
+      code: "configuracao",
+      message: "ASSINATURA_SEGREDO_SERVIDOR ausente",
+    });
+    return { situacao: "falhou", tipo: null, verificacao: null };
+  }
+
+  const supabase = clienteAnonimo();
+  const { data, error } = await supabase.rpc("documento_link_estado", { p_token: token, p_servidor: segredo });
 
   if (error) {
     registrarFalha("consulta documentos: estado do link", error);
-    return { situacao: "falhou", tipo: null };
+    return { situacao: "falhou", tipo: null, verificacao: null };
   }
 
   const linha = Array.isArray(data) ? data[0] : null;
-  return { situacao: linha?.situacao ?? "nao_encontrado", tipo: linha?.tipo ?? null };
+  if (linha?.situacao === "nao_autorizado") {
+    registrarFalha("consulta documentos: estado do link", {
+      code: "configuracao",
+      message: "segredo do servidor não confere com o banco",
+    });
+    return { situacao: "falhou", tipo: null, verificacao: null };
+  }
+  return {
+    situacao: linha?.situacao ?? "nao_encontrado",
+    tipo: linha?.tipo ?? null,
+    verificacao: linha?.verificacao ?? null,
+  };
+}
+
+export type VerificacaoPublica = {
+  situacao: "valido" | "cancelado" | "substituido" | "nao_encontrado" | "falhou";
+  tipo: string | null;
+  emitidoEm: Date | null;
+  assinadoEm: Date | null;
+  iniciais: string | null;
+  canal: string | null;
+  fatores: string[];
+  textoHash: string | null;
+  manifestoHash: string | null;
+  carimboEm: Date | null;
+  carimboAutoridade: string | null;
+  rubrica: boolean;
+};
+
+/**
+ * Verificação pública de autenticidade (/verificar). Sem dado de saúde: nem
+ * título, nem nome completo, nem texto — iniciais, datas, hashes e carimbo
+ * (0032).
+ */
+export async function verificarAssinaturaPublica(codigo: string): Promise<VerificacaoPublica> {
+  const vazio: VerificacaoPublica = {
+    situacao: "nao_encontrado",
+    tipo: null,
+    emitidoEm: null,
+    assinadoEm: null,
+    iniciais: null,
+    canal: null,
+    fatores: [],
+    textoHash: null,
+    manifestoHash: null,
+    carimboEm: null,
+    carimboAutoridade: null,
+    rubrica: false,
+  };
+  const limpo = String(codigo ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (limpo.length !== 12) return vazio;
+
+  const segredo = segredoDoServidor();
+  if (!segredo) {
+    registrarFalha("consulta documentos: verificar", {
+      code: "configuracao",
+      message: "ASSINATURA_SEGREDO_SERVIDOR ausente",
+    });
+    return { ...vazio, situacao: "falhou" };
+  }
+
+  const { data, error } = await clienteAnonimo().rpc("documento_verificar", {
+    p_codigo: limpo,
+    p_servidor: segredo,
+  });
+  if (error) {
+    registrarFalha("consulta documentos: verificar", error);
+    return { ...vazio, situacao: "falhou" };
+  }
+
+  const linha = Array.isArray(data) ? data[0] : null;
+  if (linha?.situacao === "nao_autorizado") {
+    registrarFalha("consulta documentos: verificar", {
+      code: "configuracao",
+      message: "segredo do servidor não confere com o banco",
+    });
+    return { ...vazio, situacao: "falhou" };
+  }
+  if (!linha || !["valido", "cancelado", "substituido"].includes(linha.situacao)) return vazio;
+
+  return {
+    situacao: linha.situacao as VerificacaoPublica["situacao"],
+    tipo: linha.tipo,
+    emitidoEm: linha.emitido_em ? new Date(linha.emitido_em) : null,
+    assinadoEm: linha.assinado_em ? new Date(linha.assinado_em) : null,
+    iniciais: linha.iniciais,
+    canal: linha.canal,
+    fatores: linha.fatores ?? [],
+    textoHash: linha.texto_hash,
+    manifestoHash: linha.manifesto_hash,
+    carimboEm: linha.carimbo_em ? new Date(linha.carimbo_em) : null,
+    carimboAutoridade: linha.carimbo_autoridade,
+    rubrica: linha.rubrica === true,
+  };
 }

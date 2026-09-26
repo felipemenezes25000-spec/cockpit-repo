@@ -8,12 +8,15 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
  *
  * `/assinar` serve documentos a quem não tem sessão: quem decide o que aparece
  * são as funções públicas do banco, que exigem o token do link e a data de
- * nascimento da paciente. As rotas de senha só chamam o Supabase Auth.
+ * nascimento da paciente. `/verificar` confere a autenticidade de uma via
+ * pelo código impresso nela, e só mostra iniciais, datas e identificações
+ * (0032) — nada de dado de saúde. As rotas de senha só chamam o Supabase Auth.
  */
 const PUBLICAS = [
   "/entrar",
   "/sem-acesso",
   "/assinar",
+  "/verificar",
   "/recuperar-senha",
   "/redefinir-senha",
 ];

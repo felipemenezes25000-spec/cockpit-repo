@@ -100,7 +100,9 @@ jobs:
         run: npm run local:usuarios
       # O `.env.local` é gerado a partir do Supabase local do runner e recusa
       # qualquer URL que não seja 127.0.0.1/localhost — mesma trava de
-      # e2e/preparar.ts. A chave anônima local é a de demonstração.
+      # e2e/preparar.ts. A chave anônima local é a de demonstração; o segredo
+      # da assinatura é o de desenvolvimento (supabase/usuarios-locais.json),
+      # cujo hash `local:usuarios` gravou; os e-mails vão para uma pasta.
       - name: Gerar .env.local apontando para o banco local
         run: |
           npx supabase status -o json > "$RUNNER_TEMP/supabase.json"
@@ -115,8 +117,10 @@ jobs:
             }
             const anon = s.ANON_KEY || s.PUBLISHABLE_KEY;
             if (!anon) { console.error("Chave anônima local não encontrada."); process.exit(1); }
+            const contas = JSON.parse(fs.readFileSync("supabase/usuarios-locais.json", "utf8"));
             fs.writeFileSync(".env.local",
-              `NEXT_PUBLIC_SUPABASE_URL=${url.origin}\nNEXT_PUBLIC_SUPABASE_ANON_KEY=${anon}\n`);
+              `NEXT_PUBLIC_SUPABASE_URL=${url.origin}\nNEXT_PUBLIC_SUPABASE_ANON_KEY=${anon}\n` +
+              `ASSINATURA_SEGREDO_SERVIDOR=${contas.segredoDoServidor}\nEMAIL_PASTA=${contas.pastaDeEmails}\n`);
           ' "$RUNNER_TEMP/supabase.json"
       # Navegadores do Playwright: cache pela versão instalada no lock.
       - name: Versão do Playwright

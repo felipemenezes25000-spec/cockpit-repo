@@ -22,7 +22,7 @@ type Valor = string | string[] | null;
  */
 export type DestinoDaAnamnese =
   | { tipo: "consulta"; documentoId: string }
-  | { tipo: "link"; token: string; nascimento: string };
+  | { tipo: "link"; token: string; nascimento: string; codigo?: string };
 
 function valorInicial(campo: CampoRespondido): Valor {
   if (campo.tipo === "escolha_multipla") return campo.respostas ?? [];
@@ -326,12 +326,15 @@ export function FormularioAnamnese({
         const situacao = await responderPorLink({
           token: destino.token,
           nascimento: destino.nascimento,
+          codigo: destino.codigo,
           respostas,
         });
 
         if (situacao === "ok") setSalvo(true);
         else if (situacao === "data_incorreta")
           setErro("A data de nascimento não confere. Recarregue a página.");
+        else if (situacao === "codigo_expirado" || situacao === "codigo_incorreto" || situacao === "codigo_necessario")
+          setErro("Sua verificação por código venceu (ela vale uma hora). O que já foi salvo continua guardado; recarregue a página para receber um novo código e salvar o resto.");
         else if (situacao === "expirado" || situacao === "revogado" || situacao === "bloqueado")
           setErro("Este link não vale mais. Peça um novo à clínica.");
         else if (situacao === "indisponivel")

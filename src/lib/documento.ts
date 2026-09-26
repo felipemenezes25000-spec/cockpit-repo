@@ -143,7 +143,7 @@ export type ValoresAssinatura = {
 };
 
 export type ErrosAssinatura = Partial<
-  Record<keyof ValoresAssinatura | "geral" | "confirmacao", string>
+  Record<keyof ValoresAssinatura | "geral" | "confirmacao" | "rubrica", string>
 >;
 
 export function somenteDigitos(valor: string): string {

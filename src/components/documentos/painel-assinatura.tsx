@@ -8,6 +8,7 @@ import { Campo, ENTRADA, ENTRADA_ERRO } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { VERIFICACOES_SUGERIDAS } from "@/lib/documento";
 import { assinarDocumento, type EstadoAssinatura } from "@/server/acoes/documentos";
+import { QuadroDeRubrica } from "./quadro-de-rubrica";
 
 const INICIAL: EstadoAssinatura = { erros: {} };
 
@@ -65,6 +66,18 @@ export function PainelAssinatura({ documentoId }: { documentoId: string }) {
           </datalist>
         </Campo>
 
+        {/* A rubrica é feita pela paciente, na tela da clínica (tablet, celular
+            ou mouse). Quem não consegue desenhar assina pelo nome — e isso fica
+            registrado como tal. O quadro mantém o traço se a validação falhar. */}
+        <div className="rounded-[var(--radius-painel)] border border-card-border bg-surface p-4">
+          <QuadroDeRubrica
+            nomes
+            rotulo="Rubrica da paciente"
+            textoDispensa="A paciente não consegue rubricar — assinar só pelo nome"
+            erro={estado.erros.rubrica}
+          />
+        </div>
+
         <div className="rounded-[var(--radius-painel)] border border-card-border bg-surface p-4">
           <label className="group/consentimento flex cursor-pointer items-start gap-3 text-sm leading-6 text-on-surface">
             <input type="checkbox" name="confirmacao" value="sim" required className="peer sr-only" />
@@ -89,7 +102,7 @@ export function PainelAssinatura({ documentoId }: { documentoId: string }) {
 
       <CardRodape className="flex flex-wrap items-center gap-3">
         <Assinar />
-        <span className="text-xs leading-5 text-outline">Registra data, hora, IP e dispositivo automaticamente. Não tem desfazer.</span>
+        <span className="text-xs leading-5 text-outline">Registra data, hora, rede, aparelho e rubrica; o registro recebe carimbo de tempo e código de verificação. Não tem desfazer.</span>
       </CardRodape>
     </form>
   );

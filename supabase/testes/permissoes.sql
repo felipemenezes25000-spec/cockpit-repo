@@ -100,6 +100,15 @@ begin
 end;
 $$;
 
+-- O segredo do servidor (0032): o banco guarda só o SHA-256. O de produção e
+-- o de desenvolvimento ficam de fora — este vale só dentro desta transação.
+create function testes.segredo() returns text
+language sql immutable as $$ select 'segredo-dos-testes-do-banco-0032-com-mais-de-32-caracteres'::text $$;
+
+insert into private.segredo_do_servidor (id, hash)
+values (1, encode(sha256(convert_to(testes.segredo(), 'UTF8')), 'hex'))
+on conflict (id) do update set hash = excluded.hash;
+
 -- A expressão precisa valer o texto esperado.
 create function testes.igual(p_nome text, p_sql text, p_esperado text) returns void
 language plpgsql as $$
@@ -125,25 +134,34 @@ select testes.falha('anon não lê pacientes', 'select * from public.pacientes',
 select testes.falha('anon não lê documento_links', 'select * from public.documento_links', '42501');
 select testes.falha('anon não lê vendas', 'select * from public.vendas', '42501');
 select testes.igual('anon consulta estado de link inexistente',
-  $q$ select situacao from public.documento_link_estado('x') $q$, 'nao_encontrado');
+  $q$ select situacao from public.documento_link_estado('x', testes.segredo()) $q$, 'nao_encontrado');
+-- Sem o segredo do servidor, a porta pública não atende ninguém: quem chama a
+-- API direto com a chave pública não grava nada, nem IP inventado (0032).
+select testes.igual('sem o segredo do servidor, a porta pública não atende',
+  $q$ select situacao from public.documento_link_estado('x', 'segredo-errado-mas-com-mais-de-trinta-e-dois') $q$, 'nao_autorizado');
+select testes.igual('segredo curto nem é conferido',
+  $q$ select situacao from public.documento_link_estado('x', null) $q$, 'nao_autorizado');
+select testes.falha('anon não lê o hash do segredo',
+  $q$ select * from private.segredo_do_servidor $q$, '42501');
 select testes.falha('anon não chama venda_registrar',
   $q$ select public.venda_registrar(null,null,null,0,0,'pix',1,null,0,0,false,null,null,'previsto',null,null,null) $q$, '42501');
 
--- A superfície anônima é a das quatro funções do link, e só ela (§9). Pega a
--- função nova criada sem `revoke ... from public` e o drop + create que
--- esquecer de refazer o EXECUTE (como o da 0027).
-select testes.igual('anon executa só as quatro funções do link',
+-- A superfície anônima é a das sete funções do link e da verificação, e só
+-- ela (§9) — todas exigem o segredo do servidor. Pega a função nova criada
+-- sem `revoke ... from public` e o drop + create que esquecer de refazer o
+-- EXECUTE (como o da 0027).
+select testes.igual('anon executa só as sete funções do link e da verificação',
   $q$ select string_agg(n.nspname || '.' || p.proname, ',' order by n.nspname, p.proname)
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
      where n.nspname in ('public', 'private') and has_function_privilege('anon', p.oid, 'execute') $q$,
-  'public.documento_assinar_por_link,public.documento_link_estado,public.documento_para_assinatura,public.documento_responder_por_link');
+  'public.documento_assinar_por_link,public.documento_assinatura_carimbar,public.documento_link_codigo_enviar,public.documento_link_estado,public.documento_para_assinatura,public.documento_responder_por_link,public.documento_verificar');
 select testes.igual('nenhuma função de gatilho é executável pela API',
   $q$ select count(*)::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
      where n.nspname in ('public', 'private') and p.prorettype = 'trigger'::regtype
        and (has_function_privilege('anon', p.oid, 'execute')
             or has_function_privilege('authenticated', p.oid, 'execute')) $q$, '0');
 select testes.igual('a sessão ainda abre a via pelo link',
-  $q$ select has_function_privilege('authenticated', 'public.documento_para_assinatura(text,date)', 'execute')::text $q$,
+  $q$ select has_function_privilege('authenticated', 'public.documento_para_assinatura(text,date,text,text)', 'execute')::text $q$,
   'true');
 
 -- ---------------------------------------------------------------------
@@ -370,9 +388,9 @@ select testes.falha('documento assinado não se cancela',
 select testes.guardar('contrato_link', public.documento_emitir(
   'c0000000-0000-4000-8000-000000000002', testes.lido('modelo_contrato')::uuid, 'Contrato por link', null)::text);
 select public.documento_link_criar(testes.lido('contrato_link')::uuid,
-  'tokenDeTesteComQuarentaETresCaracteres_abcd', 7, '');
+  'tokenDeTesteComQuarentaETresCaracteres_abcd', 7, '', 'nascimento');
 select testes.falha('link não aceita token fora do formato',
-  format($q$ select public.documento_link_criar(%L, 'curto', 7, '') $q$, testes.lido('contrato_link')), 'P0001');
+  format($q$ select public.documento_link_criar(%L, 'curto', 7, '', 'nascimento') $q$, testes.lido('contrato_link')), 'P0001');
 select testes.falha('recepção não reescreve o token do link',
   $q$ update public.documento_links set token_hash = repeat('0', 64) $q$, '42501');
 
@@ -381,9 +399,30 @@ select testes.falha('recepção não reescreve o token do link',
 select testes.guardar('contrato_balcao', public.documento_emitir(
   'c0000000-0000-4000-8000-000000000002', testes.lido('modelo_contrato')::uuid, 'Contrato no balcão', null)::text);
 select public.documento_link_criar(testes.lido('contrato_balcao')::uuid,
-  'tokenDoBalcaoComQuarentaETresCaracteresXYZ_', 7, '');
-select public.documento_assinar(testes.lido('contrato_balcao')::uuid, 'Beatriz Nogueira', null,
-  'Documento com foto conferido', null, null);
+  'tokenDoBalcaoComQuarentaETresCaracteresXYZ_', 7, '', 'nascimento');
+select testes.falha('balcão sem o segredo do servidor não assina',
+  format($q$ select public.documento_assinar(%L, 'Beatriz Nogueira', null, 'Documento com foto conferido',
+        null, true, null, null, null, 'segredo-errado-mas-com-mais-de-trinta-e-dois') $q$,
+    testes.lido('contrato_balcao')), 'P0001');
+select testes.falha('balcão sem rubrica nem dispensa não assina',
+  format($q$ select public.documento_assinar(%L, 'Beatriz Nogueira', null, 'Documento com foto conferido',
+        null, false, null, null, null, testes.segredo()) $q$,
+    testes.lido('contrato_balcao')), 'P0001');
+select testes.falha('balcão recusa rubrica que não é traçado',
+  format($q$ select public.documento_assinar(%L, 'Beatriz Nogueira', null, 'Documento com foto conferido',
+        '<svg onload=x>', false, null, null, null, testes.segredo()) $q$,
+    testes.lido('contrato_balcao')), 'P0001');
+select testes.guardar('codigo_balcao', public.documento_assinar(testes.lido('contrato_balcao')::uuid,
+  'Beatriz Nogueira', null, 'Documento com foto conferido', 'M100 200L300 220L500 180', false,
+  '203.0.113.7', 'Navegador de teste', 'São Paulo, SP, BR', testes.segredo()));
+select testes.igual('balcão grava rubrica, local, fatores e código de verificação',
+  format($q$ select (rubrica = 'M100 200L300 220L500 180') || ':' || rubrica_dispensada || ':' || localizacao
+        || ':' || array_to_string(fatores, ',') || ':' || (codigo_verificacao = %L)
+        || ':' || (codigo_verificacao ~ '^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$')
+        || ':' || (manifesto_hash = encode(sha256(convert_to(manifesto, 'UTF8')), 'hex'))
+      from public.documento_assinaturas where documento_id = %L $q$,
+    testes.lido('codigo_balcao'), testes.lido('contrato_balcao')),
+  'true:false:São Paulo, SP, BR:conferencia_presencial,documento_com_foto:true:true:true');
 
 -- A data de nascimento vem do seed, não de uma constante: `dados-exemplo.sql`
 -- põe o aniversário de Beatriz no dia 11 do mês em que o `db reset` rodou.
@@ -399,45 +438,169 @@ select testes.guardar('nasc_beatriz', (select data_nascimento::text from public.
 select testes.como(null);
 
 select testes.igual('estado do link antes da data',
-  $q$ select situacao || ':' || tipo from public.documento_link_estado('tokenDeTesteComQuarentaETresCaracteres_abcd') $q$,
-  'ok:contrato');
+  $q$ select situacao || ':' || tipo || ':' || verificacao
+      from public.documento_link_estado('tokenDeTesteComQuarentaETresCaracteres_abcd', testes.segredo()) $q$,
+  'ok:contrato:nascimento');
 select testes.igual('data errada é contada',
-  $q$ select situacao from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '2000-01-01') $q$,
+  $q$ select situacao from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '2000-01-01', '', testes.segredo()) $q$,
   'data_incorreta');
 select testes.igual('data errada não revela o texto',
-  $q$ select coalesce(corpo, 'sem corpo') from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '2000-01-02') $q$,
+  $q$ select coalesce(corpo, 'sem corpo') from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '2000-01-02', '', testes.segredo()) $q$,
   'sem corpo');
+select testes.igual('sem o segredo, nem a data certa abre',
+  format($q$ select situacao || ':' || coalesce(corpo, 'sem corpo')
+      from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '', 'segredo-errado-mas-com-mais-de-trinta-e-dois') $q$,
+    testes.lido('nasc_beatriz')),
+  'nao_autorizado:sem corpo');
 select testes.igual('data certa abre o documento',
-  format($q$ select situacao || ':' || corpo from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L) $q$,
+  format($q$ select situacao || ':' || corpo from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '', testes.segredo()) $q$,
     testes.lido('nasc_beatriz')),
   'ok:Texto do contrato de teste.');
+select testes.igual('sem o segredo, assinar pelo link não grava',
+  format($q$ select situacao from public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '',
+        'Beatriz Nogueira', null, '', true, 30, true, '198.51.100.1', 'Navegador', '', 'segredo-errado-mas-com-mais-de-trinta-e-dois') $q$,
+    testes.lido('nasc_beatriz')), 'nao_autorizado');
+select testes.igual('pelo link, sem rubrica nem dispensa não assina',
+  format($q$ select situacao from public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '',
+        'Beatriz Nogueira', null, '', false, 30, true, null, null, null, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz')), 'rubrica_necessaria');
+select testes.igual('pelo link, rubrica que não é traçado é recusada',
+  format($q$ select situacao from public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '',
+        'Beatriz Nogueira', null, 'M1 1 <script>', false, 30, true, null, null, null, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz')), 'rubrica_invalida');
 select testes.igual('assinar pelo link',
-  format($q$ select public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L,
-        'Beatriz Nogueira', null, 'isto não é um ip', 'Navegador de teste') $q$, testes.lido('nasc_beatriz')), 'ok');
+  format($q$ select situacao from public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '',
+        'Beatriz Nogueira', null, 'M100 200L300 220L500 180', false, 95, true, 'isto não é um ip', 'Navegador de teste',
+        'São Paulo, SP, BR', testes.segredo()) $q$, testes.lido('nasc_beatriz')), 'ok');
 select testes.igual('segunda assinatura devolve ja_assinado',
-  format($q$ select public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L,
-        'Beatriz Nogueira', null, null, null) $q$, testes.lido('nasc_beatriz')), 'ja_assinado');
-select testes.igual('a via diz que a assinatura veio pelo link',
-  format($q$ select situacao || ':' || assinado_canal
-      from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L) $q$,
-    testes.lido('nasc_beatriz')), 'ja_assinado:link');
+  format($q$ select situacao from public.documento_assinar_por_link('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '',
+        'Beatriz Nogueira', null, '', true, null, null, null, null, null, testes.segredo()) $q$, testes.lido('nasc_beatriz')), 'ja_assinado');
+select testes.igual('a via diz que a assinatura veio pelo link, com as evidências',
+  format($q$ select situacao || ':' || assinado_canal || ':' || array_to_string(fatores, ',') || ':' || (rubrica is not null)
+        || ':' || coalesce(ip, 'sem ip') || ':' || localizacao || ':' || (codigo_verificacao is not null)
+      from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '', testes.segredo()) $q$,
+    testes.lido('nasc_beatriz')), 'ja_assinado:link:posse_do_link,data_de_nascimento:true:sem ip:São Paulo, SP, BR:true');
 select testes.igual('a via diz que a assinatura foi no balcão',
   format($q$ select situacao || ':' || assinado_canal
-      from public.documento_para_assinatura('tokenDoBalcaoComQuarentaETresCaracteresXYZ_', %L) $q$,
+      from public.documento_para_assinatura('tokenDoBalcaoComQuarentaETresCaracteresXYZ_', %L, '', testes.segredo()) $q$,
     testes.lido('nasc_beatriz')), 'ja_assinado:balcao');
+select testes.guardar('codigo_link', (select codigo_verificacao
+  from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', testes.lido('nasc_beatriz')::date, '', testes.segredo())));
+
+-- Verificação pública: o código da via confirma a assinatura sem abrir o
+-- documento (sem título, sem nome completo, sem texto).
+select testes.igual('verificação pública pelo código da via',
+  format($q$ select situacao || ':' || tipo || ':' || iniciais || ':' || canal || ':' || rubrica
+        || ':' || (manifesto_hash ~ '^[0-9a-f]{64}$') || ':' || coalesce(carimbo_autoridade, 'sem carimbo')
+      from public.documento_verificar(%L, testes.segredo()) $q$, lower(replace(testes.lido('codigo_link'), '-', ' '))),
+  'valido:contrato:B. N.:link:true:true:sem carimbo');
+select testes.igual('verificação sem o segredo não responde',
+  format($q$ select situacao from public.documento_verificar(%L, 'segredo-errado-mas-com-mais-de-trinta-e-dois') $q$,
+    testes.lido('codigo_link')), 'nao_autorizado');
+select testes.igual('código inexistente não é encontrado',
+  $q$ select situacao from public.documento_verificar('AAAA-AAAA-AAAA', testes.segredo()) $q$, 'nao_encontrado');
+
+-- Carimbo de tempo: gravado uma vez, e só pelo servidor.
+select testes.igual('carimbo sem o segredo é recusado',
+  format($q$ select public.documento_assinatura_carimbar(%L, 'MIIB', now(), 'Autoridade de Teste',
+        'segredo-errado-mas-com-mais-de-trinta-e-dois') $q$, testes.lido('codigo_link')), 'nao_autorizado');
+select testes.igual('carimbo com data fora do instante da assinatura é recusado',
+  format($q$ select public.documento_assinatura_carimbar(%L, 'MIIB', now() - interval '1 day', 'Autoridade de Teste',
+        testes.segredo()) $q$, testes.lido('codigo_link')), 'invalido');
+select testes.igual('carimbo gravado',
+  format($q$ select public.documento_assinatura_carimbar(%L, 'MIIB', now(), 'Autoridade de Teste', testes.segredo()) $q$,
+    testes.lido('codigo_link')), 'ok');
+select testes.igual('carimbo não se regrava',
+  format($q$ select public.documento_assinatura_carimbar(%L, 'MIIC', now(), 'Outra Autoridade', testes.segredo()) $q$,
+    testes.lido('codigo_link')), 'ja_carimbado');
+select testes.igual('a verificação mostra o carimbo',
+  format($q$ select carimbo_autoridade from public.documento_verificar(%L, testes.segredo()) $q$, testes.lido('codigo_link')),
+  'Autoridade de Teste');
 
 do $$
 begin
   for i in 1..10 loop
-    perform * from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '2000-01-01');
+    perform * from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', '2000-01-01', '', testes.segredo());
   end loop;
 end $$;
 select testes.igual('décima tentativa errada bloqueia o link',
-  $q$ select situacao from public.documento_link_estado('tokenDeTesteComQuarentaETresCaracteres_abcd') $q$, 'bloqueado');
+  $q$ select situacao from public.documento_link_estado('tokenDeTesteComQuarentaETresCaracteres_abcd', testes.segredo()) $q$, 'bloqueado');
 select testes.igual('bloqueado não abre nem com a data certa',
-  format($q$ select situacao from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L) $q$,
+  format($q$ select situacao from public.documento_para_assinatura('tokenDeTesteComQuarentaETresCaracteres_abcd', %L, '', testes.segredo()) $q$,
     testes.lido('nasc_beatriz')),
   'bloqueado');
+
+-- A assinatura não se altera: nem a administradora reescreve evidência.
+select testes.como('admin@cockpit.local');
+select testes.falha('assinatura não se reescreve',
+  format($q$ update public.documento_assinaturas set nome_informado = 'Outra Pessoa' where codigo_verificacao = %L $q$,
+    testes.lido('codigo_link')));
+select testes.falha('carimbo não se troca por UPDATE',
+  format($q$ update public.documento_assinaturas set carimbo_autoridade = 'Falsa' where codigo_verificacao = %L $q$,
+    testes.lido('codigo_link')));
+
+-- Código por e-mail: segundo fator do link.
+select testes.como('recepcao@cockpit.local');
+update public.pacientes set email = 'beatriz@exemplo.com', cpf = '52998224725'
+ where id = 'c0000000-0000-4000-8000-000000000002';
+select testes.guardar('contrato_codigo', public.documento_emitir(
+  'c0000000-0000-4000-8000-000000000002', testes.lido('modelo_contrato')::uuid, 'Contrato com código', null)::text);
+select public.documento_link_criar(testes.lido('contrato_codigo')::uuid,
+  'tokenDoCodigoComQuarentaETresCaracteres_xyz', 7, '', 'nascimento_email');
+select testes.falha('código por e-mail exige e-mail na ficha',
+  format($q$ select public.documento_link_criar(%L, 'tokenSemEmailComQuarentaETresCaracteres_abc', 7, '', 'nascimento_email') $q$,
+    public.documento_emitir('c0000000-0000-4000-8000-000000000003', testes.lido('modelo_contrato')::uuid, 'Contrato sem e-mail', null)),
+  'P0001');
+
+select testes.como(null);
+select testes.igual('com código por e-mail, a data sozinha não abre',
+  format($q$ select situacao || ':' || verificacao || ':' || email_mascarado || ':' || coalesce(corpo, 'sem corpo')
+      from public.documento_para_assinatura('tokenDoCodigoComQuarentaETresCaracteres_xyz', %L, '', testes.segredo()) $q$,
+    testes.lido('nasc_beatriz')), 'codigo_necessario:nascimento_email:b•••••z@exemplo.com:sem corpo');
+select testes.igual('data errada não gera código',
+  $q$ select situacao || ':' || coalesce(codigo, 'sem código')
+      from public.documento_link_codigo_enviar('tokenDoCodigoComQuarentaETresCaracteres_xyz', '2000-01-01', testes.segredo()) $q$,
+  'data_incorreta:sem código');
+select testes.guardar('codigo_email', (select codigo
+  from public.documento_link_codigo_enviar('tokenDoCodigoComQuarentaETresCaracteres_xyz', testes.lido('nasc_beatriz')::date, testes.segredo())));
+select testes.igual('o código tem 6 dígitos',
+  $q$ select (testes.lido('codigo_email') ~ '^[0-9]{6}$')::text $q$, 'true');
+select testes.igual('pedir de novo antes de 45 s: aguarde, sem código',
+  format($q$ select situacao || ':' || coalesce(codigo, 'sem código') || ':' || (reenviar_em > now())
+      from public.documento_link_codigo_enviar('tokenDoCodigoComQuarentaETresCaracteres_xyz', %L, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz')), 'aguarde:sem código:true');
+select testes.igual('código errado é contado e não abre',
+  format($q$ select situacao || ':' || coalesce(corpo, 'sem corpo')
+      from public.documento_para_assinatura('tokenDoCodigoComQuarentaETresCaracteres_xyz', %L, %L, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz'), lpad(((testes.lido('codigo_email')::int + 1) % 1000000)::text, 6, '0')),
+  'codigo_incorreto:sem corpo');
+select testes.igual('código certo abre',
+  format($q$ select situacao || ':' || corpo
+      from public.documento_para_assinatura('tokenDoCodigoComQuarentaETresCaracteres_xyz', %L, %L, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz'), testes.lido('codigo_email')),
+  'ok:Texto do contrato de teste.');
+select testes.igual('CPF diferente do da ficha é recusado',
+  format($q$ select situacao from public.documento_assinar_por_link('tokenDoCodigoComQuarentaETresCaracteres_xyz', %L, %L,
+        'Beatriz Nogueira', '11144477735', '', true, 60, true, null, null, null, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz'), testes.lido('codigo_email')), 'cpf_nao_confere');
+select testes.igual('assinar com código e CPF da ficha',
+  format($q$ select situacao from public.documento_assinar_por_link('tokenDoCodigoComQuarentaETresCaracteres_xyz', %L, %L,
+        'Beatriz Nogueira', '529.982.247-25', '', true, 60, false, null, null, null, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz'), testes.lido('codigo_email')), 'ok');
+select testes.igual('fatores: link, data, código e CPF; rubrica dispensada; leitura registrada',
+  format($q$ select array_to_string(fatores, ',') || ':' || rubrica_dispensada
+      from public.documento_para_assinatura('tokenDoCodigoComQuarentaETresCaracteres_xyz', %L, %L, testes.segredo()) $q$,
+    testes.lido('nasc_beatriz'), testes.lido('codigo_email')),
+  'posse_do_link,data_de_nascimento,codigo_por_email,cpf_conferido:true');
+select testes.como('admin@cockpit.local');
+select testes.igual('a assinatura guarda o tempo e a leitura incompleta',
+  format($q$ select leitura_segundos || ':' || leitura_completa || ':' || (manifesto like '%%leitura%%')
+      from public.documento_assinaturas where documento_id = %L $q$, testes.lido('contrato_codigo')),
+  '60:false:true');
+select testes.igual('o hash do código não é o código',
+  format($q$ select (codigo_hash <> %L and codigo_hash ~ '^[0-9a-f]{64}$')::text
+      from public.documento_links where documento_id = %L $q$, testes.lido('codigo_email'), testes.lido('contrato_codigo')),
+  'true');
 
 -- ---------------------------------------------------------------------
 -- Financeiro
@@ -560,11 +723,11 @@ select testes.guardar('anamnese_link', public.documento_emitir(
   'c0000000-0000-4000-8000-000000000002', testes.lido('modelo_anamnese')::uuid, 'Anamnese pelo link', null)::text);
 select public.documento_campos_responder(testes.lido('anamnese_link')::uuid, '{"alergia":"nao"}'::jsonb);
 select public.documento_link_criar(testes.lido('anamnese_link')::uuid,
-  'tokenDaAnamneseComQuarentaETresCaracteres_z', 7, '');
+  'tokenDaAnamneseComQuarentaETresCaracteres_z', 7, '', 'nascimento');
 select testes.como(null);
 select testes.igual('paciente responde pelo link',
   format($q$ select public.documento_responder_por_link('tokenDaAnamneseComQuarentaETresCaracteres_z', %L,
-        '{"alergia":"sim"}'::jsonb) $q$, testes.lido('nasc_beatriz')), 'ok');
+        '{"alergia":"sim"}'::jsonb, '', testes.segredo()) $q$, testes.lido('nasc_beatriz')), 'ok');
 select testes.como('admin@cockpit.local');
 select testes.igual('resposta pelo link fica sem autor de perfil',
   format($q$ select resposta || ':' || coalesce(respondido_por::text, 'nulo')
@@ -577,14 +740,15 @@ select testes.igual('resposta pelo link fica sem autor de perfil',
 select testes.como('recepcao@cockpit.local');
 select testes.igual('paciente responde pelo link num navegador com sessão da equipe',
   format($q$ select public.documento_responder_por_link('tokenDaAnamneseComQuarentaETresCaracteres_z', %L,
-        '{"alergia":"nao"}'::jsonb) $q$, testes.lido('nasc_beatriz')), 'ok');
+        '{"alergia":"nao"}'::jsonb, '', testes.segredo()) $q$, testes.lido('nasc_beatriz')), 'ok');
 select testes.como('admin@cockpit.local');
 select testes.igual('resposta pelo link com sessão da equipe também fica sem autor',
   format($q$ select resposta || ':' || coalesce(respondido_por::text, 'nulo')
       from public.documento_campos where documento_id = %L and chave = 'alergia' $q$, testes.lido('anamnese_link')),
   'nao:nulo');
 select testes.falha('anamnese não se assina no balcão',
-  format($q$ select public.documento_assinar(%L, 'Carolina Meireles', null, 'Documento conferido', null, null) $q$,
+  format($q$ select public.documento_assinar(%L, 'Carolina Meireles', null, 'Documento conferido', null, true,
+        null, null, null, testes.segredo()) $q$,
     testes.lido('anamnese')), 'P0001');
 select testes.linhas('anamnese cancelada',
   format($q$ update public.documentos set situacao = 'cancelado', motivo_cancelamento = 'emitida por engano' where id = %L $q$,

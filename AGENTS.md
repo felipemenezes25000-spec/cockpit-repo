@@ -392,7 +392,27 @@ Modelo em [`.env.local.example`](.env.local.example); os valores reais ficam em
 NEXT_PUBLIC_SUPABASE_URL=       # Supabase > Project Settings > API
 NEXT_PUBLIC_SUPABASE_ANON_KEY=  # chave "anon public" / "publishable"
 ORIGEM_PUBLICA=                 # só servidor: origem do link de assinatura
+ASSINATURA_SEGREDO_SERVIDOR=    # só servidor: segredo que o banco confere (0032)
+SMTP_URL=                       # só servidor: e-mail do código de verificação
+SMTP_REMETENTE=                 # só servidor: "Clínica <nao-responda@dominio>"
+EMAIL_PASTA=                    # só dev/testes: e-mails viram JSON nesta pasta
 ```
+
+**`ASSINATURA_SEGREDO_SERVIDOR` é pré-requisito da assinatura** (0032). As
+funções públicas do link, a verificação, o carimbo e a assinatura no balcão só
+atendem quem apresenta o segredo; o banco guarda apenas o SHA-256 dele em
+`private.segredo_do_servidor` (definido por ambiente, fora das migrações).
+Sem a variável, ou com o hash errado no banco, o link mostra "não foi possível
+abrir agora", o balcão avisa que a assinatura não está configurada, e o log diz
+o motivo. Para trocar: gere um valor novo (32 bytes aleatórios), grave na
+Vercel e o SHA-256 dele no banco (`insert ... on conflict (id) do update`,
+modelo no `.env.local.example`) — nos dois lugares, na mesma janela. Local e
+CI usam o segredo de desenvolvimento de `supabase/usuarios-locais.json`, cujo
+hash `npm run local:usuarios` grava.
+
+**`SMTP_URL` + `SMTP_REMETENTE`** ligam o código por e-mail. Sem eles, o painel
+do link oferece só a data de nascimento (e diz por quê). `EMAIL_PASTA` é para
+desenvolvimento e E2E — em `VERCEL_ENV=production` é ignorada.
 
 `ORIGEM_PUBLICA` fixa a origem (`https://dominio`, sem caminho, sem barra no
 fim; http só em localhost) do endereço público que vai para a paciente
@@ -551,6 +571,7 @@ arquivo de migração versionado em [`supabase/migrations/`](supabase/migrations
 | `0029_captacao_e_metas.sql` | Captação: `leads`, trilha `lead_etapas` (gatilho, com o motivo de cada perda) e `metas_comerciais`. `ganho ⇔ venda_id` por CHECK; `lead_converter_em_paciente` (DEFINER, confere o perfil, trava o lead, idempotente); atendimento avança o lead para `agendamento` e venda o leva a `ganho`, por gatilho. Grants por coluna |
 | `0030_contatos_comerciais.sql` | `lead_interacoes` (contato comercial, só INSERT, só em lead aberto) e o resumo `leads.ultimo_contato_em`/`proximo_contato`, escrito por gatilho |
 | `0031_acompanhamento_comercial_conferido.sql` | Lead encerrado sem retorno (gatilho + CHECK `leads_encerrado_sem_retorno`); `lead_interacao_conferida`: trava o lead, frase para lead encerrado, próximo contato não no passado (com sessão); resumo só anda para a frente; `lead_interacoes` auditada; sequência de `lead_etapas` sem `authenticated` |
+| `0032_assinatura_com_prova.sql` | Assinatura com prova: **segredo do servidor** conferido pelo banco em toda função pública e no balcão (`private.segredo_do_servidor` guarda só o SHA-256; sem ele, `nao_autorizado`); link com **código por e-mail** (`documento_links.verificacao`, código de 6 dígitos com hash, 15 min, reenvio a cada 45 s, até 10); **rubrica** desenhada (traçado validado por regex) ou dispensa registrada; tempo de leitura; CPF conferido com a ficha; **fatores**; **código de verificação** e **manifesto** com SHA-256 (gatilho); **carimbo de tempo** RFC 3161 gravado uma vez; assinatura imutável (gatilho); `documento_verificar` público. Sete funções para `anon` |
 
 ### Tabelas
 
@@ -686,8 +707,9 @@ As outras seis que a aplicação chama também são **`SECURITY DEFINER`**, porq
 chama não tem permissão na tabela: `documento_link_criar` e
 `documento_link_revogar` (a equipe só tem SELECT e UPDATE de `canal_envio` em
 `documento_links`; cada uma confere `private.tem_acesso()` e, na anamnese,
-`private.e_administradora()` por conta própria) e as quatro funções públicas do
-link, que `anon` executa (§8.7).
+`private.e_administradora()` por conta própria) e as sete funções públicas do
+link e da verificação, que `anon` executa — todas exigindo o segredo do
+servidor desde a 0032 (§8.7).
 
 **Invoker não quer dizer que o banco confie no que chega.** Desde a 0020 a
 origem da taxa de toda venda é conferida por gatilho, e desde a 0023 a venda só
@@ -2325,20 +2347,68 @@ não têm a mesma força de prova**:
 | Canal | Como a identidade é conferida | Prova |
 |---|---|---|
 | `balcao` | Alguém da clínica olha documento com foto | Mais forte |
-| `link` | Posse do endereço + data de nascimento | Mais fraca, e o registro diz isso |
+| `link` | Posse do endereço + data de nascimento (+ código por e-mail, quando o link pede) | Mais fraca, e o registro diz isso — os fatores ficam gravados |
 
 **IP e dispositivo vêm dos cabeçalhos da requisição, nunca do formulário.**
 Evidência que o próprio assinante pudesse digitar não serviria de evidência.
 Quando o ambiente não informa, ficam nulos — não saber o IP não invalida o que
 foi acordado.
 
-**Mas isso vale para a aplicação, não para o banco.** As funções recebem IP e
-dispositivo por parâmetro, e `documento_assinar_por_link` é executável por
-`anon`, com a chave pública: quem tem o token e a data chama a função direto e
-grava o IP que quiser. O banco não distingue a server action de uma chamada
-direta, e o IP que o PostgREST enxerga, na chamada da aplicação, é o do
-servidor. No canal `link`, trate IP e dispositivo como **informados**, não como
-prova (§13, Dívidas conhecidas).
+**E desde a 0032 isso vale também para o banco.** Até a 0031, quem tivesse o
+token e a data chamava `documento_assinar_por_link` direto, com a chave
+pública, e gravava o IP que quisesse. Agora toda função pública (e a do balcão)
+exige o segredo do servidor (`ASSINATURA_SEGREDO_SERVIDOR`, §3): sem ele a
+resposta é `nao_autorizado` e nada é gravado. IP, aparelho e local chegam só
+pela aplicação, lidos de `x-real-ip`/`x-forwarded-for`/`x-vercel-ip-*`, que a
+borda da Vercel reescreve (`lib/assinatura/evidencia.ts`). Ver "Assinatura com
+prova" abaixo.
+
+#### Assinatura com prova (migração 0032)
+
+> **Decidido em 26/09/2026** ("deixe fodástico em todos os aspectos; não
+> precisa de ICP-Brasil"): continua assinatura eletrônica **simples** (Lei
+> 14.063/2020), mas com cada circunstância reforçada e verificável fora do
+> sistema. Fecha o item 16 do §10.
+
+O que a assinatura guarda, e quem garante:
+
+| Evidência | Onde nasce | Por que conta |
+|---|---|---|
+| Segredo do servidor | `ASSINATURA_SEGREDO_SERVIDOR`, conferido por `private.servidor_confere` | Só a aplicação grava assinatura, IP e aparelho; a API direta recebe `nao_autorizado` |
+| Código por e-mail | `documento_link_codigo_enviar` gera (6 dígitos, `gen_random_uuid`), guarda só `sha256(link_id:código)`; `server/email.ts` envia | Prova posse da caixa de e-mail da ficha, além da data. 15 min para digitar; conferido, vale 60 min; errado conta tentativa (10 fecham o link); reenvio a cada 45 s, até 10 |
+| Rubrica | `QuadroDeRubrica` (canvas, dedo/caneta/mouse), traçado `M x y L x y…` em 0–1000 × 0–400 | É desenho da pessoa. O banco só aceita o formato por regex (`private.rubrica_valida`) — nunca SVG livre. "Prefiro não desenhar" é a alternativa acessível, e fica registrada (`rubrica_dispensada`) |
+| Leitura | A tela mede o tempo com o texto aberto e se rolou até o fim | Informada pelo navegador — o manifesto diz isso |
+| CPF | Pelo link, CPF informado diferente do da ficha é recusado (`cpf_nao_confere`); igual vira fator | |
+| Fatores | `fatores text[]`: `posse_do_link`, `data_de_nascimento`, `codigo_por_email`, `cpf_conferido`, `conferencia_presencial`, `documento_com_foto` | O que foi conferido, escrito pelo banco |
+| Código de verificação | Gatilho `documento_assinaturas_manifesto`: `XXXX-XXXX-XXXX` (sem I, O, 0, 1; 60 bits) | Vai na via com QR; `/verificar/<código>` confere sem login |
+| Manifesto | Mesmo gatilho: texto canônico (`private.manifesto_da_assinatura`) + SHA-256 | Tudo o que foi registrado, numa forma fixa; quem tem o texto recalcula o hash |
+| Carimbo de tempo | `lib/assinatura/carimbo.ts` pede a DigiCert → Sectigo → FreeTSA (RFC 3161, sem biblioteca de ASN.1) o carimbo do SHA-256 do manifesto; `after()` roda depois da resposta; `documento_assinatura_carimbar` grava **uma vez** | A hora deixa de depender do relógio da clínica. A resposta inteira fica guardada (base64) e sai como `.tsr` |
+
+**A assinatura não se altera.** Até a 0031 ninguém tinha UPDATE na tabela; o
+carimbo precisa de uma escrita, e o gatilho `documento_assinaturas_imutavel`
+só deixa preencher as três colunas do carimbo, uma vez.
+
+**`/verificar` é pública e não mostra dado de saúde.** `documento_verificar`
+devolve situação (válido, cancelado, substituído), tipo, iniciais, datas,
+canal, fatores, hashes e carimbo — nunca título (pode revelar procedimento),
+nome completo, CPF ou texto. O código tem 60 bits: não se adivinha.
+
+**Onde fica cada peça.** Ações em `server/acoes/assinatura-link.ts`
+(`enviarCodigoDeVerificacao`, `abrirDocumentoParaAssinatura`, `assinarPorLink`,
+`carimbarAgora`, `carimboDaVia`) e `server/acoes/documentos.ts`
+(`assinarDocumento`, balcão). O carimbo mora em `server/assinatura/carimbar.ts`,
+**fora** do arquivo `"use server"` de propósito: o que mora lá vira endpoint
+público. A tela da paciente é um fluxo em etapas (Identidade → Código →
+Leitura → Assinatura → Sua via) em `assinar-por-link.tsx`; a via traz rubrica,
+fatores, local aproximado, aparelho legível, hashes, carimbo (a via pergunta
+por ele algumas vezes, até ~12 s) e o QR. Na ficha, "Evidências da assinatura"
+mostra tudo, oferece "Carimbar agora" quando a autoridade não respondeu e baixa
+manifesto (`.txt`) e carimbo (`.tsr`) por `/formularios/<id>/prova/<arquivo>`,
+lidos pela sessão (RLS).
+
+**Conferir fora do sistema:** `sha256sum manifesto.txt` deve dar o "Registro
+(SHA-256)"; `openssl ts -reply -in carimbo.tsr -text` mostra a autoridade, a
+hora e o hash carimbado (o mesmo).
 
 #### A primeira superfície anônima (migração 0014)
 
@@ -2348,7 +2418,10 @@ prova (§13, Dívidas conhecidas).
 
 Isto muda a postura do projeto e precisa estar na cara de quem for mexer:
 **`anon` deixou de alcançar nada e passou a alcançar quatro funções** — as três
-abaixo e `documento_responder_por_link` (0017). Nenhuma tabela: todas continuam
+abaixo e `documento_responder_por_link` (0017). Desde a 0032 são **sete**
+(`documento_link_codigo_enviar`, `documento_verificar` e
+`documento_assinatura_carimbar` entraram), e **todas exigem o segredo do
+servidor** — a chave pública sozinha não abre mais nada. Nenhuma tabela: todas continuam
 com `revoke all ... from anon`, respondendo 401 (`npm run test:banco` confere).
 
 ```
@@ -2730,7 +2803,7 @@ errada, ou precisa de uma conversa com a clínica antes.
 
 - [ ] RLS ligada em toda tabela nova, com política associada
 - [ ] `anon` revogado nas tabelas novas
-- [ ] Nenhuma função nova ficou executável por `anon` — as quatro do link público (0014 e 0017) são a **única** exceção, e foram decididas com o dono do projeto
+- [ ] Nenhuma função nova ficou executável por `anon` — as sete do link público e da verificação (0014, 0017 e 0032) são a **única** exceção, foram decididas com o dono do projeto e **todas exigem o segredo do servidor**
 - [ ] Tabela nova declarou seus grants (o default não concede nada) e não ganhou DELETE sem decisão explícita
 - [ ] Migração nova passou por `npx supabase db reset` e `npm run test:banco` no banco local
 - [ ] `service_role` não aparece em lugar nenhum da aplicação
@@ -2814,10 +2887,10 @@ padrão para destravar.**
     no log da Vercel.
 15. **Domínio final** (HSTS com `includeSubDomains`/`preload`) e liberar
     `vercel.live` na CSP só no Preview.
-16. **IP e dispositivo da assinatura pelo link.** Hoje são declarados por quem
-    chama (comentário das colunas, 0028). Conferir exige que o banco reconheça
-    o servidor — um HMAC com segredo só do servidor, guardado no banco e
-    conferido pela função pública: configuração nova em produção.
+16. ~~**IP e dispositivo da assinatura pelo link.**~~ Decidido e feito em
+    26/09/2026 (0032): o banco confere o segredo do servidor (§8.7, "Assinatura
+    com prova"). Fica em aberto só **qual SMTP** a clínica usa para o código
+    por e-mail (sem ele, o link pede só a data de nascimento).
 17. **Arquivo de foto no bucket sem linha** (`/configuracoes/fotos`):
     eliminar com motivo, religar a um prontuário ou manter. A 0012 cobre só a
     eliminação de foto **registrada** a pedido da titular; uma ação nova seria
@@ -2968,6 +3041,14 @@ refeito, contra o schema efetivo e o código, em **22/09/2026** e
 **23/09/2026**. O que foi corrigido fica registrado abaixo para ninguém tomar o
 comportamento antigo por padrão.
 
+### Resolvidos em 26/09/2026
+
+| Era | Como ficou |
+|---|---|
+| IP e aparelho da assinatura eram informados por quem chamasse a função: pelo link, `anon` chamava `documento_assinar_por_link` direto com o que quisesse | 0032: toda função pública e a do balcão exigem o segredo do servidor; sem ele, `nao_autorizado` (testado em `permissoes.sql`) |
+| A hora da assinatura dependia só do relógio da clínica | Carimbo de tempo RFC 3161 de autoridade independente sobre o SHA-256 do manifesto |
+| A via não tinha como ser conferida por quem a recebesse | Código de verificação + QR na via e `/verificar` pública, sem dado de saúde |
+
 ### Resolvidos em 25/09/2026
 
 | Era | Como ficou |
@@ -3032,13 +3113,17 @@ muda o que o banco faz.
 
 ### Dívidas conhecidas
 
-- **IP e dispositivo da assinatura são informados por quem chama a função.**
-  Pelo link, `anon` chama `documento_assinar_por_link` direto com o IP e o
-  user-agent que quiser; no balcão, qualquer perfil ativo chama
-  `documento_assinar` do mesmo jeito. Só a server action lê os cabeçalhos. A
-  0028 deixou isso escrito no comentário das colunas ("declarados, não
-  conferidos"); fechar exige um segredo só do servidor conferido pelo banco —
-  decisão do dono (§10, item 16).
+- **INSERT direto em `documento_assinaturas` pela equipe autenticada.** O
+  caminho do balcão é `documento_assinar` (que exige o segredo), mas o grant de
+  INSERT continua — é o que a função `security invoker` usa. Quem tem sessão e
+  chama a API direto grava uma assinatura de balcão sem passar pelo segredo: o
+  banco reescreve canal, hora, operador e hash (0022), mas IP, aparelho e
+  rubrica ficam os informados. Fechar exige tornar `documento_assinar`
+  `security definer` e revogar o INSERT — mudança de modelo de permissão, não
+  feita às escondidas.
+- **O carimbo pode faltar.** Se as três autoridades falharem, a assinatura
+  vale sem ele e a ficha mostra "Carimbar agora"; não há rotina que carimbe
+  sozinha as pendentes.
 - **Vendas antigas sem recebimento em produção** (entraram pela porta que a
   0023 fechou): a migração não mexe em dado; a clínica decide caso a caso
   (consulta no `supabase/README.md`).

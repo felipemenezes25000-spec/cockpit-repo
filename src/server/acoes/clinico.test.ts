@@ -17,6 +17,19 @@ const sessao = vi.hoisted(() => ({
 const banco = vi.hoisted(() => ({ cliente: null as unknown, comSessao: 0 }));
 const navegacao = vi.hoisted(() => ({ revalidados: [] as string[] }));
 const requisicao = vi.hoisted(() => ({ cabecalhos: {} as Record<string, string> }));
+/** O que foi agendado com `after` (roda depois da resposta, no Next). */
+const depois = vi.hoisted(() => ({ tarefas: [] as (() => Promise<void> | void)[] }));
+const correio = vi.hoisted(() => ({
+  disponivel: true,
+  enviados: [] as { para: string; assunto: string; texto: string; html: string }[],
+  resultado: { ok: true } as { ok: true } | { ok: false; motivo: string },
+}));
+const autoridade = vi.hoisted(() => ({
+  pedidos: [] as string[],
+  resposta: null as null | { autoridade: string; hora: Date; tokenBase64: string },
+}));
+
+const SEGREDO = "segredo-de-teste-com-mais-de-trinta-e-dois-caracteres";
 
 vi.mock("@/lib/auth", () => ({
   usuarioAtual: async () =>
@@ -35,6 +48,28 @@ vi.mock("next/cache", () => ({
 }));
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(requisicao.cabecalhos),
+}));
+vi.mock("next/server", () => ({
+  after: (tarefa: () => Promise<void> | void) => {
+    depois.tarefas.push(tarefa);
+  },
+}));
+vi.mock("@/server/email", () => ({
+  emailDisponivel: () => correio.disponivel,
+  enviarEmail: async (mensagem: { para: string; assunto: string; texto: string; html: string }) => {
+    correio.enviados.push(mensagem);
+    return correio.resultado;
+  },
+  html: (texto: string) => texto,
+}));
+vi.mock("@/lib/assinatura/carimbo", () => ({
+  carimbar: async (hash: string) => {
+    autoridade.pedidos.push(hash);
+    return { carimbo: autoridade.resposta, falhas: autoridade.resposta ? [] : ["DigiCert: HTTP 503"] };
+  },
+}));
+vi.mock("@/server/assinatura/qr", () => ({
+  qrEmSvg: async (texto: string) => `<svg data-texto="${texto}"></svg>`,
 }));
 vi.mock("next/navigation", async () => {
   const { Redirecionou: R } = await import("../../../testes/supabase-falso");
@@ -85,6 +120,13 @@ beforeEach(() => {
   banco.comSessao = 0;
   navegacao.revalidados = [];
   requisicao.cabecalhos = {};
+  depois.tarefas = [];
+  correio.disponivel = true;
+  correio.enviados = [];
+  correio.resultado = { ok: true };
+  autoridade.pedidos = [];
+  autoridade.resposta = null;
+  vi.stubEnv("ASSINATURA_SEGREDO_SERVIDOR", SEGREDO);
   vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
@@ -558,8 +600,14 @@ describe("documentos", () => {
   });
 
   it("assinatura no balcão: IP vem do cabeçalho, nunca do formulário", async () => {
-    requisicao.cabecalhos = { "x-forwarded-for": "203.0.113.7, 10.0.0.1", "user-agent": "Navegador" };
-    const falso = supabaseFalso();
+    requisicao.cabecalhos = {
+      "x-forwarded-for": "203.0.113.7, 10.0.0.1",
+      "user-agent": "Navegador",
+      "x-vercel-ip-city": "S%C3%A3o%20Paulo",
+      "x-vercel-ip-country-region": "SP",
+      "x-vercel-ip-country": "BR",
+    };
+    const falso = supabaseFalso({ "rpc:documento_assinar": { data: "ABCD-EFGH-JKLM" } });
     banco.cliente = falso.cliente;
     const { assinarDocumento } = await import("./documentos");
 
@@ -571,7 +619,9 @@ describe("documentos", () => {
         nome: "Ana Maria Souza",
         cpf: "",
         verificacao: "RG conferido",
+        rubrica: "M100 200L300 220L500 180",
         ip: "1.1.1.1",
+        localizacao: "Lugar Inventado",
       }),
     );
     expect(r.erros).toEqual({});
@@ -579,6 +629,50 @@ describe("documentos", () => {
       Record<string, unknown>,
     ];
     expect(argumentos.p_ip).toBe("203.0.113.7");
+    expect(argumentos.p_localizacao).toBe("São Paulo, SP, BR");
+    expect(argumentos.p_rubrica).toBe("M100 200L300 220L500 180");
+    expect(argumentos.p_rubrica_dispensada).toBe(false);
+    expect(argumentos.p_servidor).toBe(SEGREDO);
+    // O carimbo fica para depois da resposta.
+    expect(depois.tarefas).toHaveLength(1);
+  });
+
+  it("assinatura no balcão: sem rubrica nem dispensa, ou com traçado inválido, não chega ao banco", async () => {
+    const falso = supabaseFalso();
+    banco.cliente = falso.cliente;
+    const { assinarDocumento } = await import("./documentos");
+    const base = { documento_id: DOCUMENTO, confirmacao: "sim", nome: "Ana Maria Souza", cpf: "", verificacao: "RG conferido" };
+
+    const semRubrica = await assinarDocumento({ erros: {} }, formulario(base));
+    expect(semRubrica.erros.rubrica).toMatch(/rubricar/);
+
+    const invalida = await assinarDocumento({ erros: {} }, formulario({ ...base, rubrica: '<svg onload="x">' }));
+    expect(invalida.erros.rubrica).toBeDefined();
+    expect(falso.chamadas).toHaveLength(0);
+
+    // Dispensada: vai, e registrada como dispensa.
+    const dispensada = supabaseFalso({ "rpc:documento_assinar": { data: "ABCD-EFGH-JKLM" } });
+    banco.cliente = dispensada.cliente;
+    const r = await assinarDocumento({ erros: {} }, formulario({ ...base, rubrica_dispensada: "sim" }));
+    expect(r.erros).toEqual({});
+    const [argumentos] = dispensada.passosDe("rpc:documento_assinar")[0].argumentos as [Record<string, unknown>];
+    expect(argumentos.p_rubrica).toBe("");
+    expect(argumentos.p_rubrica_dispensada).toBe(true);
+  });
+
+  it("assinatura no balcão: sem o segredo do servidor, avisa em vez de gravar", async () => {
+    vi.stubEnv("ASSINATURA_SEGREDO_SERVIDOR", "");
+    const falso = supabaseFalso();
+    banco.cliente = falso.cliente;
+    const { assinarDocumento } = await import("./documentos");
+
+    const r = await assinarDocumento(
+      { erros: {} },
+      formulario({ documento_id: DOCUMENTO, confirmacao: "sim", nome: "Ana Maria Souza", cpf: "", verificacao: "RG conferido", rubrica_dispensada: "sim" }),
+    );
+    expect(r.erros.geral).toMatch(/não está configurada/);
+    expect(falso.chamadas).toHaveLength(0);
+    expect(logado()).toMatch(/ASSINATURA_SEGREDO_SERVIDOR/);
   });
 
   it("cancelar: assinado não cancela, e a situação vai na condição do UPDATE", async () => {
@@ -726,21 +820,167 @@ describe("link de assinatura", () => {
     // A paciente abre o link no tablet do balcão, com alguém da equipe logado:
     // com os cookies, o banco gravaria a funcionária como autora da resposta.
     const falso = supabaseFalso({
+      "rpc:documento_link_codigo_enviar": { data: [{ situacao: "ok", email: "ana@exemplo.com", email_mascarado: "a•••a@exemplo.com", codigo: "123456", reenviar_em: null }] },
       "rpc:documento_para_assinatura": { data: [{ situacao: "ok", campos: [] }] },
-      "rpc:documento_assinar_por_link": { data: "ok" },
+      "rpc:documento_assinar_por_link": { data: [{ situacao: "ok", codigo_verificacao: "ABCD-EFGH-JKLM" }] },
       "rpc:documento_responder_por_link": { data: "ok" },
     });
     banco.cliente = falso.cliente;
-    const { abrirDocumentoParaAssinatura, assinarPorLink, responderPorLink } = await import("./assinatura-link");
+    const { abrirDocumentoParaAssinatura, assinarPorLink, enviarCodigoDeVerificacao, responderPorLink } = await import("./assinatura-link");
 
+    await enviarCodigoDeVerificacao(TOKEN, "1990-01-01");
     await abrirDocumentoParaAssinatura(TOKEN, "1990-01-01");
-    await assinarPorLink({ token: TOKEN, nascimento: "1990-01-01", nome: "Ana Maria Souza", cpf: "", confirmou: true });
+    await assinarPorLink({ token: TOKEN, nascimento: "1990-01-01", nome: "Ana Maria Souza", cpf: "", confirmou: true, rubricaDispensada: true });
     await responderPorLink({ token: TOKEN, nascimento: "1990-01-01", respostas: { alergia: "nao" } });
 
-    expect(falso.passosDe("rpc:documento_para_assinatura")).not.toHaveLength(0);
-    expect(falso.passosDe("rpc:documento_assinar_por_link")).not.toHaveLength(0);
-    expect(falso.passosDe("rpc:documento_responder_por_link")).not.toHaveLength(0);
+    for (const funcao of ["documento_link_codigo_enviar", "documento_para_assinatura", "documento_assinar_por_link", "documento_responder_por_link"]) {
+      const passos = falso.passosDe(`rpc:${funcao}`);
+      expect(passos).not.toHaveLength(0);
+      // Toda porta pública leva o segredo do servidor (0032).
+      const [argumentos] = passos[0].argumentos as [Record<string, unknown>];
+      expect(argumentos.p_servidor).toBe(SEGREDO);
+    }
     expect(banco.comSessao).toBe(0);
+  });
+
+  it("sem o segredo do servidor: 'falhou' sem chamar o banco, e o log diz o motivo", async () => {
+    vi.stubEnv("ASSINATURA_SEGREDO_SERVIDOR", "curto-demais");
+    const falso = supabaseFalso();
+    banco.cliente = falso.cliente;
+    const { abrirDocumentoParaAssinatura, enviarCodigoDeVerificacao, responderPorLink } = await import("./assinatura-link");
+
+    expect((await abrirDocumentoParaAssinatura(TOKEN, "1990-01-01")).situacao).toBe("falhou");
+    expect((await enviarCodigoDeVerificacao(TOKEN, "1990-01-01")).situacao).toBe("falhou");
+    expect(await responderPorLink({ token: TOKEN, nascimento: "1990-01-01", respostas: {} })).toBe("falhou");
+    expect(falso.chamadas).toHaveLength(0);
+    expect(logado()).toMatch(/ASSINATURA_SEGREDO_SERVIDOR/);
+  });
+
+  it("segredo que não confere com o banco ('nao_autorizado') vira 'falhou' e vai para o log", async () => {
+    banco.cliente = supabaseFalso({
+      "rpc:documento_para_assinatura": { data: [{ situacao: "nao_autorizado", campos: [] }] },
+    }).cliente;
+    const { abrirDocumentoParaAssinatura } = await import("./assinatura-link");
+
+    const r = await abrirDocumentoParaAssinatura(TOKEN, "1990-01-01");
+    expect(r.situacao).toBe("falhou");
+    expect(logado()).toMatch(/segredo do servidor não confere/);
+  });
+
+  it("código por e-mail: o código vai só para o e-mail; a tela recebe o endereço mascarado", async () => {
+    const falso = supabaseFalso({
+      "rpc:documento_link_codigo_enviar": {
+        data: [{ situacao: "ok", email: "ana@exemplo.com", email_mascarado: "a•••a@exemplo.com", codigo: "482913", reenviar_em: "2026-09-26T12:00:45Z" }],
+      },
+    });
+    banco.cliente = falso.cliente;
+    const { enviarCodigoDeVerificacao } = await import("./assinatura-link");
+
+    const r = await enviarCodigoDeVerificacao(TOKEN, "1990-01-01");
+    expect(r).toEqual({ situacao: "ok", emailMascarado: "a•••a@exemplo.com", reenviarEm: "2026-09-26T12:00:45Z" });
+    expect(JSON.stringify(r)).not.toContain("482913");
+    expect(JSON.stringify(r)).not.toContain("ana@exemplo.com");
+    expect(correio.enviados).toHaveLength(1);
+    expect(correio.enviados[0].para).toBe("ana@exemplo.com");
+    expect(correio.enviados[0].texto).toContain("482913");
+    expect(logado()).not.toContain("482913");
+  });
+
+  it("código por e-mail: envio que falha vira 'email_falhou'; 'aguarde' não envia de novo", async () => {
+    correio.resultado = { ok: false, motivo: "SMTP recusou" };
+    banco.cliente = supabaseFalso({
+      "rpc:documento_link_codigo_enviar": [
+        { data: [{ situacao: "ok", email: "ana@exemplo.com", email_mascarado: "a•••a@exemplo.com", codigo: "482913", reenviar_em: null }] },
+        { data: [{ situacao: "aguarde", email: null, email_mascarado: "a•••a@exemplo.com", codigo: null, reenviar_em: "2026-09-26T12:00:45Z" }] },
+      ],
+    }).cliente;
+    const { enviarCodigoDeVerificacao } = await import("./assinatura-link");
+
+    expect((await enviarCodigoDeVerificacao(TOKEN, "1990-01-01")).situacao).toBe("email_falhou");
+    expect(logado()).toMatch(/SMTP recusou/);
+
+    correio.enviados = [];
+    const espera = await enviarCodigoDeVerificacao(TOKEN, "1990-01-01");
+    expect(espera.situacao).toBe("aguarde");
+    expect(correio.enviados).toHaveLength(0);
+  });
+
+  it("criar link com código por e-mail sem envio configurado: recusa antes do banco", async () => {
+    vi.stubEnv("ORIGEM_PUBLICA", "http://localhost:3000");
+    correio.disponivel = false;
+    const falso = supabaseFalso();
+    banco.cliente = falso.cliente;
+    const { criarLinkAssinatura } = await import("./assinatura-link");
+
+    const r = await criarLinkAssinatura({ documentoId: DOCUMENTO, dias: 15, verificacao: "nascimento_email" });
+    expect(r.ok).toBe(false);
+    expect(falso.chamadas).toHaveLength(0);
+
+    correio.disponivel = true;
+    const ok = supabaseFalso({ "rpc:documento_link_criar": { data: LINK } });
+    banco.cliente = ok.cliente;
+    expect((await criarLinkAssinatura({ documentoId: DOCUMENTO, dias: 15, verificacao: "nascimento_email" })).ok).toBe(true);
+    const [argumentos] = ok.passosDe("rpc:documento_link_criar")[0].argumentos as [Record<string, unknown>];
+    expect(argumentos.p_verificacao).toBe("nascimento_email");
+  });
+
+  it("carimbo: pede à autoridade o SHA-256 do manifesto que está no banco e grava", async () => {
+    vi.stubEnv("ORIGEM_PUBLICA", "http://localhost:3000");
+    requisicao.cabecalhos = { "x-real-ip": "198.51.100.9" };
+    autoridade.resposta = { autoridade: "DigiCert", hora: new Date("2026-09-26T12:00:02Z"), tokenBase64: "MIIB" };
+    const falso = supabaseFalso({
+      "rpc:documento_assinar_por_link": { data: [{ situacao: "ok", codigo_verificacao: "ABCD-EFGH-JKLM" }] },
+      "rpc:documento_verificar": { data: [{ situacao: "valido", manifesto_hash: "c".repeat(64), carimbo_em: null }] },
+      "rpc:documento_assinatura_carimbar": { data: "ok" },
+    });
+    banco.cliente = falso.cliente;
+    const { assinarPorLink } = await import("./assinatura-link");
+
+    const r = await assinarPorLink({ token: TOKEN, nascimento: "1990-01-01", nome: "Ana Maria Souza", cpf: "", confirmou: true, rubrica: "M100 200L300 220L500 180" });
+    expect(r).toEqual({ situacao: "ok", erros: {} });
+    // Nada de autoridade antes da resposta.
+    expect(autoridade.pedidos).toHaveLength(0);
+    expect(depois.tarefas).toHaveLength(1);
+
+    await depois.tarefas[0]();
+    expect(autoridade.pedidos).toEqual(["c".repeat(64)]);
+    const [gravacao] = falso.passosDe("rpc:documento_assinatura_carimbar")[0].argumentos as [Record<string, unknown>];
+    expect(gravacao).toMatchObject({
+      p_codigo_verificacao: "ABCD-EFGH-JKLM",
+      p_token_base64: "MIIB",
+      p_autoridade: "DigiCert",
+      p_carimbo_em: "2026-09-26T12:00:02.000Z",
+      p_servidor: SEGREDO,
+    });
+  });
+
+  it("carimbar agora: autoridade fora do ar diz para tentar depois, e o log registra", async () => {
+    banco.cliente = supabaseFalso({
+      documento_assinaturas: { data: { codigo_verificacao: "ABCD-EFGH-JKLM" } },
+      "rpc:documento_verificar": { data: [{ situacao: "valido", manifesto_hash: "c".repeat(64), carimbo_em: null }] },
+    }).cliente;
+    const { carimbarAgora } = await import("./assinatura-link");
+
+    const r = await carimbarAgora(ACAO_INICIAL, formulario({ documento_id: DOCUMENTO }));
+    expect(r.ok).toBe(false);
+    expect(r.mensagem).toMatch(/Tente de novo/);
+    expect(logado()).toMatch(/DigiCert: HTTP 503/);
+  });
+
+  it("a via lida pelo link traz código de verificação, endereço e QR", async () => {
+    vi.stubEnv("ORIGEM_PUBLICA", "https://cockpit.exemplo.com.br");
+    banco.cliente = supabaseFalso({
+      "rpc:documento_para_assinatura": {
+        data: [{ situacao: "ja_assinado", campos: [], codigo_verificacao: "ABCD-EFGH-JKLM", fatores: ["posse_do_link"], rubrica_dispensada: false }],
+      },
+    }).cliente;
+    const { abrirDocumentoParaAssinatura } = await import("./assinatura-link");
+
+    const r = await abrirDocumentoParaAssinatura(TOKEN, "1990-01-01", "12 34 56");
+    expect(r.codigoVerificacao).toBe("ABCD-EFGH-JKLM");
+    expect(r.enderecoVerificacao).toBe("https://cockpit.exemplo.com.br/verificar/ABCD-EFGH-JKLM");
+    expect(r.qrVerificacao).toContain("/verificar/ABCD-EFGH-JKLM");
+    expect(r.fatores).toEqual(["posse_do_link"]);
   });
 
   it("abrir: token malformado e data inválida nem chegam ao banco", async () => {
@@ -768,21 +1008,35 @@ describe("link de assinatura", () => {
 
   it("assinar pelo link: sem confirmação não chama o banco; IP vem do cabeçalho", async () => {
     requisicao.cabecalhos = { "x-forwarded-for": "198.51.100.4" };
-    const falso = supabaseFalso({ "rpc:documento_assinar_por_link": { data: "ok" } });
+    const falso = supabaseFalso({ "rpc:documento_assinar_por_link": { data: [{ situacao: "ok", codigo_verificacao: "ABCD-EFGH-JKLM" }] } });
     banco.cliente = falso.cliente;
     const { assinarPorLink } = await import("./assinatura-link");
 
-    const base = { token: TOKEN, nascimento: "1990-01-01", nome: "Ana Maria Souza", cpf: "" };
+    const base = { token: TOKEN, nascimento: "1990-01-01", nome: "Ana Maria Souza", cpf: "", rubricaDispensada: true };
     const semConfirmar = await assinarPorLink({ ...base, confirmou: false });
     expect(semConfirmar.erros.confirmacao).toBeDefined();
     expect(falso.chamadas).toHaveLength(0);
 
-    const r = await assinarPorLink({ ...base, confirmou: true });
+    const r = await assinarPorLink({ ...base, confirmou: true, leituraSegundos: 93.4, leituraCompleta: true });
     expect(r).toEqual({ situacao: "ok", erros: {} });
     const [argumentos] = falso.passosDe("rpc:documento_assinar_por_link")[0].argumentos as [
       Record<string, unknown>,
     ];
     expect(argumentos.p_ip).toBe("198.51.100.4");
+    expect(argumentos.p_leitura_segundos).toBe(93);
+    expect(argumentos.p_leitura_completa).toBe(true);
+    expect(argumentos.p_rubrica_dispensada).toBe(true);
+  });
+
+  it("assinar pelo link: sem rubrica nem dispensa, ou traçado que não é traçado, não chega ao banco", async () => {
+    const falso = supabaseFalso();
+    banco.cliente = falso.cliente;
+    const { assinarPorLink } = await import("./assinatura-link");
+
+    const base = { token: TOKEN, nascimento: "1990-01-01", nome: "Ana Maria Souza", cpf: "", confirmou: true };
+    expect((await assinarPorLink(base)).erros.rubrica).toBeDefined();
+    expect((await assinarPorLink({ ...base, rubrica: "M1 1 <script>" })).erros.rubrica).toBeDefined();
+    expect(falso.chamadas).toHaveLength(0);
   });
 
   it("responder pelo link: envio fora do tamanho vira 'respostas_invalidas' sem banco", async () => {

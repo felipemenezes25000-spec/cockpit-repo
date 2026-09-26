@@ -281,54 +281,90 @@ export type Database = {
         Row: {
           assinado_em: string
           canal: string
+          carimbo_autoridade: string | null
+          carimbo_em: string | null
+          carimbo_token: string | null
+          codigo_verificacao: string | null
           cpf_informado: string | null
           dispositivo: string | null
           documento_id: string
           exemplo: boolean
+          fatores: string[]
           hash_assinado: string
           id: string
           ip: unknown
+          leitura_completa: boolean | null
+          leitura_segundos: number | null
           link_id: string | null
+          localizacao: string | null
+          manifesto: string | null
+          manifesto_hash: string | null
           nome_informado: string
           operador_id: string | null
           provedor: string
           referencia_externa: string | null
+          rubrica: string | null
+          rubrica_dispensada: boolean
           url_comprovante: string | null
           verificacao_identidade: string
         }
         Insert: {
           assinado_em?: string
           canal?: string
+          carimbo_autoridade?: string | null
+          carimbo_em?: string | null
+          carimbo_token?: string | null
+          codigo_verificacao?: string | null
           cpf_informado?: string | null
           dispositivo?: string | null
           documento_id: string
           exemplo?: boolean
+          fatores?: string[]
           hash_assinado: string
           id?: string
           ip?: unknown
+          leitura_completa?: boolean | null
+          leitura_segundos?: number | null
           link_id?: string | null
+          localizacao?: string | null
+          manifesto?: string | null
+          manifesto_hash?: string | null
           nome_informado: string
           operador_id?: string | null
           provedor?: string
           referencia_externa?: string | null
+          rubrica?: string | null
+          rubrica_dispensada?: boolean
           url_comprovante?: string | null
           verificacao_identidade: string
         }
         Update: {
           assinado_em?: string
           canal?: string
+          carimbo_autoridade?: string | null
+          carimbo_em?: string | null
+          carimbo_token?: string | null
+          codigo_verificacao?: string | null
           cpf_informado?: string | null
           dispositivo?: string | null
           documento_id?: string
           exemplo?: boolean
+          fatores?: string[]
           hash_assinado?: string
           id?: string
           ip?: unknown
+          leitura_completa?: boolean | null
+          leitura_segundos?: number | null
           link_id?: string | null
+          localizacao?: string | null
+          manifesto?: string | null
+          manifesto_hash?: string | null
           nome_informado?: string
           operador_id?: string | null
           provedor?: string
           referencia_externa?: string | null
+          rubrica?: string | null
+          rubrica_dispensada?: boolean
           url_comprovante?: string | null
           verificacao_identidade?: string
         }
@@ -433,43 +469,64 @@ export type Database = {
           aberto_em: string | null
           aberturas: number
           canal_envio: string
+          codigo_conferido_em: string | null
+          codigo_enviado_em: string | null
+          codigo_envios: number
+          codigo_expira_em: string | null
+          codigo_hash: string | null
           criado_em: string
           criado_por: string | null
           documento_id: string
+          email_destino: string | null
           exemplo: boolean
           expira_em: string
           id: string
           revogado_em: string | null
           tentativas: number
           token_hash: string
+          verificacao: string
         }
         Insert: {
           aberto_em?: string | null
           aberturas?: number
           canal_envio?: string
+          codigo_conferido_em?: string | null
+          codigo_enviado_em?: string | null
+          codigo_envios?: number
+          codigo_expira_em?: string | null
+          codigo_hash?: string | null
           criado_em?: string
           criado_por?: string | null
           documento_id: string
+          email_destino?: string | null
           exemplo?: boolean
           expira_em: string
           id?: string
           revogado_em?: string | null
           tentativas?: number
           token_hash: string
+          verificacao?: string
         }
         Update: {
           aberto_em?: string | null
           aberturas?: number
           canal_envio?: string
+          codigo_conferido_em?: string | null
+          codigo_enviado_em?: string | null
+          codigo_envios?: number
+          codigo_expira_em?: string | null
+          codigo_hash?: string | null
           criado_em?: string
           criado_por?: string | null
           documento_id?: string
+          email_destino?: string | null
           exemplo?: boolean
           expira_em?: string
           id?: string
           revogado_em?: string | null
           tentativas?: number
           token_hash?: string
+          verificacao?: string
         }
         Relationships: [
           {
@@ -1743,19 +1800,43 @@ export type Database = {
           p_dispositivo: string
           p_documento_id: string
           p_ip: string
+          p_localizacao: string
           p_nome: string
+          p_rubrica: string
+          p_rubrica_dispensada: boolean
+          p_servidor: string
           p_verificacao: string
         }
-        Returns: undefined
+        Returns: string
       }
       documento_assinar_por_link: {
         Args: {
+          p_codigo: string
           p_cpf: string
           p_dispositivo: string
           p_ip: string
+          p_leitura_completa: boolean
+          p_leitura_segundos: number
+          p_localizacao: string
           p_nascimento: string
           p_nome: string
+          p_rubrica: string
+          p_rubrica_dispensada: boolean
+          p_servidor: string
           p_token: string
+        }
+        Returns: {
+          codigo_verificacao: string
+          situacao: string
+        }[]
+      }
+      documento_assinatura_carimbar: {
+        Args: {
+          p_autoridade: string
+          p_carimbo_em: string
+          p_codigo_verificacao: string
+          p_servidor: string
+          p_token_base64: string
         }
         Returns: string
       }
@@ -1772,20 +1853,32 @@ export type Database = {
         }
         Returns: string
       }
+      documento_link_codigo_enviar: {
+        Args: { p_nascimento: string; p_servidor: string; p_token: string }
+        Returns: {
+          codigo: string
+          email: string
+          email_mascarado: string
+          reenviar_em: string
+          situacao: string
+        }[]
+      }
       documento_link_criar: {
         Args: {
           p_canal: string
           p_dias: number
           p_documento_id: string
           p_token: string
+          p_verificacao: string
         }
         Returns: string
       }
       documento_link_estado: {
-        Args: { p_token: string }
+        Args: { p_servidor: string; p_token: string }
         Returns: {
           situacao: string
           tipo: string
+          verificacao: string
         }[]
       }
       documento_link_revogar: {
@@ -1793,24 +1886,64 @@ export type Database = {
         Returns: undefined
       }
       documento_para_assinatura: {
-        Args: { p_nascimento: string; p_token: string }
+        Args: {
+          p_codigo: string
+          p_nascimento: string
+          p_servidor: string
+          p_token: string
+        }
         Returns: {
           assinado_canal: string
           assinado_em: string
           assinado_por: string
           campos: Json
+          carimbo_autoridade: string
+          carimbo_em: string
+          codigo_verificacao: string
           corpo: string
+          dispositivo: string
+          email_mascarado: string
           emitido_em: string
+          fatores: string[]
           hash: string
+          ip: string
+          localizacao: string
+          manifesto_hash: string
           paciente: string
+          rubrica: string
+          rubrica_dispensada: boolean
           situacao: string
           tipo: string
           titulo: string
+          verificacao: string
         }[]
       }
       documento_responder_por_link: {
-        Args: { p_nascimento: string; p_respostas: Json; p_token: string }
+        Args: {
+          p_codigo: string
+          p_nascimento: string
+          p_respostas: Json
+          p_servidor: string
+          p_token: string
+        }
         Returns: string
+      }
+      documento_verificar: {
+        Args: { p_codigo: string; p_servidor: string }
+        Returns: {
+          assinado_em: string
+          canal: string
+          carimbo_autoridade: string
+          carimbo_em: string
+          emitido_em: string
+          fatores: string[]
+          iniciais: string
+          manifesto_hash: string
+          rubrica: boolean
+          situacao: string
+          texto_hash: string
+          tipo: string
+        }[]
       }
       lead_converter_em_paciente: {
         Args: { p_lead_id: string }

@@ -21,6 +21,9 @@ function link(mudanca: Partial<LinkDeAssinatura>): LinkDeAssinatura {
     tentativas: 0,
     ativo: true,
     bloqueado: false,
+    verificacao: "nascimento",
+    emailDestino: null,
+    codigosEnviados: 0,
     ...mudanca,
   };
 }

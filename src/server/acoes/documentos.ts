@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { avisarNaProximaTela } from "@/server/aviso";
+import { agendarCarimbo } from "@/server/assinatura/carimbar";
+import { segredoDoServidor } from "@/server/assinatura/segredo";
+import { evidenciaDaRequisicao } from "@/lib/assinatura/evidencia";
+import { rubricaValida } from "@/lib/assinatura/rubrica";
 import { falha, sucesso, type ResultadoAcao } from "@/lib/acao";
 import { usuarioAtual } from "@/lib/auth";
 import { mensagemDoBanco, type ErroDoBanco } from "@/lib/erros-banco";
@@ -350,20 +354,51 @@ export async function assinarDocumento(
     return { erros, valores: valoresDigitados(dados) };
   }
 
-  const cabecalhos = await headers();
-  // `x-forwarded-for` é uma lista; o primeiro é o cliente. Em rede local ou
-  // sem proxy o cabeçalho não existe, e aí não há IP para registrar.
-  const encaminhado = cabecalhos.get("x-forwarded-for") ?? "";
-  const ip = encaminhado.split(",")[0]?.trim() ?? "";
+  // A rubrica feita no quadro, ou a dispensa explícita (paciente que não
+  // consegue rubricar assina pelo nome). O banco confere as duas de novo.
+  const rubrica = texto(dados, "rubrica");
+  const dispensada = !rubrica && dados.get("rubrica_dispensada") === "sim";
+  if (!rubrica && !dispensada) {
+    return {
+      erros: { rubrica: "Peça à paciente para rubricar no quadro, ou marque que ela assina só pelo nome." },
+      valores: valoresDigitados(dados),
+    };
+  }
+  if (!rubricaValida(rubrica || null)) {
+    return {
+      erros: { rubrica: "A rubrica não pôde ser lida. Limpe o quadro e peça para rubricar de novo." },
+      valores: valoresDigitados(dados),
+    };
+  }
+
+  const segredo = segredoDoServidor();
+  if (!segredo) {
+    registrarFalha("documentos: assinar no balcão", {
+      code: "configuracao",
+      message: "ASSINATURA_SEGREDO_SERVIDOR ausente",
+    });
+    return {
+      erros: { geral: "A assinatura eletrônica não está configurada neste servidor. Avise quem cuida do sistema." },
+      valores: valoresDigitados(dados),
+    };
+  }
+
+  // IP, aparelho e local vêm dos cabeçalhos que a plataforma escreve — o
+  // formulário não tem campo para eles (`lib/assinatura/evidencia.ts`).
+  const evidencia = evidenciaDaRequisicao(await headers());
 
   const supabase = await clienteServidor();
-  const { error } = await supabase.rpc("documento_assinar", {
+  const { data: codigoVerificacao, error } = await supabase.rpc("documento_assinar", {
     p_documento_id: documentoId,
     p_nome: valores.nome,
     p_cpf: valores.cpf,
     p_verificacao: valores.verificacao,
-    p_ip: ip,
-    p_dispositivo: (cabecalhos.get("user-agent") ?? "").slice(0, 400),
+    p_rubrica: rubrica,
+    p_rubrica_dispensada: dispensada,
+    p_ip: evidencia.ip,
+    p_dispositivo: evidencia.dispositivo,
+    p_localizacao: evidencia.localizacao,
+    p_servidor: segredo,
   });
 
   if (error) {
@@ -372,6 +407,8 @@ export async function assinarDocumento(
       valores: valoresDigitados(dados),
     };
   }
+
+  agendarCarimbo(codigoVerificacao);
 
   revalidatePath("/formularios");
   revalidatePath(`/formularios/${documentoId}`);

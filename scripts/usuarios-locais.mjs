@@ -17,6 +17,7 @@
  */
 
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const contas = JSON.parse(
@@ -78,5 +79,20 @@ for (const conta of contas.usuarios) {
 
   console.log(`${resposta.status === 422 ? "conferida" : "criada"}: ${conta.email} (${conta.papel})`);
 }
+
+// O segredo do servidor da assinatura (0032): o banco guarda só o SHA-256.
+// Vale o do ambiente, se houver; senão o de desenvolvimento, que é o mesmo
+// que a CI escreve no .env.local. Nunca é o de produção.
+const segredo = (process.env.ASSINATURA_SEGREDO_SERVIDOR ?? "").trim() || contas.segredoDoServidor;
+if (segredo.length < 32) {
+  console.error("ASSINATURA_SEGREDO_SERVIDOR precisa de pelo menos 32 caracteres.");
+  process.exit(1);
+}
+const hash = createHash("sha256").update(segredo, "utf8").digest("hex");
+sqlLocal(
+  `insert into private.segredo_do_servidor (id, hash) values (1, '${hash}') ` +
+    `on conflict (id) do update set hash = excluded.hash, definido_em = now();`,
+);
+console.log("segredo do servidor da assinatura: hash gravado no banco local");
 
 console.log(`\nSenha das três contas: ${contas.senha}`);

@@ -1,9 +1,14 @@
 import {
+  BadgeCheck,
   CalendarDays,
+  Download,
+  ExternalLink,
   Fingerprint,
   FileSignature,
+  QrCode,
   Replace,
   ShieldCheck,
+  Stamp,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +16,10 @@ import { BotaoLink } from "@/components/ui/button";
 import { CardCorpo, CardRodape } from "@/components/ui/card";
 import { CardRecolhivel } from "@/components/ui/card-recolhivel";
 import { CabecalhoDePagina, LinkDeVoltar, SeloHero } from "@/components/ui/page-hero";
+import { BotaoDeAcao, FormularioDeAcao } from "@/components/ui/formulario-acao";
+import { aparelhoLegivel, rotuloDoFator } from "@/lib/assinatura/evidencia";
 import { formatarData, formatarHora } from "@/lib/format";
+import { carimbarAgora } from "@/server/acoes/assinatura-link";
 import { formatarCpf } from "@/lib/paciente";
 import { hashCurto, seAssina, situacaoDaAnamnese, ROTULO_ANAMNESE } from "@/lib/documento";
 import type {
@@ -24,6 +32,20 @@ import { MarcaSituacao, MarcaTipo } from "./marca-situacao";
 import { PainelAssinatura } from "./painel-assinatura";
 import { PainelLink } from "./painel-link";
 import { LinkDaVia } from "./link-da-via";
+import { RubricaDesenhada } from "./rubrica-desenhada";
+
+/** "2 min 14 s", "45 s", "1 h 3 min" — o tempo com o documento aberto. */
+export function duracaoDeLeitura(segundos: number): string {
+  if (segundos < 60) return `${segundos} s`;
+  if (segundos < 3600) {
+    const minutos = Math.floor(segundos / 60);
+    const resto = segundos % 60;
+    return resto > 0 ? `${minutos} min ${resto} s` : `${minutos} min`;
+  }
+  const horas = Math.floor(segundos / 3600);
+  const minutos = Math.floor((segundos % 3600) / 60);
+  return minutos > 0 ? `${horas} h ${minutos} min` : `${horas} h`;
+}
 
 function Metadado({
   icone: Icone,
@@ -34,15 +56,17 @@ function Metadado({
   rotulo: string;
   children: React.ReactNode;
 }) {
+  // `dt` e `dd` filhos diretos da `div` do grupo: um invólucro a mais entre
+  // eles quebra a lista de definição para o leitor de tela (axe: dlitem).
   return (
-    <div className="documento-evidencia flex items-start gap-3 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
-        <Icone aria-hidden="true" size={15} strokeWidth={1.75} />
-      </span>
-      <div className="min-w-0">
-        <dt className="rotulo text-[0.65rem] text-outline">{rotulo}</dt>
-        <dd className="mt-1 text-sm leading-5 break-words text-on-surface">{children}</dd>
-      </div>
+    <div className="documento-evidencia relative min-w-0 rounded-[var(--radius-controle)] border border-card-border bg-surface py-3 pr-3 pl-14">
+      <dt className="rotulo text-[0.65rem] text-outline">
+        <span aria-hidden="true" className="absolute top-3 left-3 flex size-8 items-center justify-center rounded-[var(--radius-controle)] bg-selecao text-primary">
+          <Icone size={15} strokeWidth={1.75} />
+        </span>
+        {rotulo}
+      </dt>
+      <dd className="mt-1 text-sm leading-5 break-words text-on-surface">{children}</dd>
     </div>
   );
 }
@@ -59,9 +83,11 @@ function Evidencia({ rotulo, valor }: { rotulo: string; valor: string }) {
 export function DetalheDocumento({
   documento,
   links,
+  emailDisponivel = false,
 }: {
   documento: DocumentoCompleto;
   links: LinkDeAssinatura[];
+  emailDisponivel?: boolean;
 }) {
   const assinatura = documento.assinatura;
   const anamnese = !seAssina(documento.tipo);
@@ -165,7 +191,7 @@ export function DetalheDocumento({
           {documento.situacao === "emitido" ? (
             <CardRecolhivel id="doc-envio"
                 titulo={anamnese ? "Enviar para a paciente preencher" : "Enviar para a paciente assinar"}
-                descricao="Link com validade e proteção pela data de nascimento da paciente."
+                descricao="Link pessoal com validade, data de nascimento e, quando houver e-mail, código de confirmação."
             >
               <PainelLink
                 documentoId={documento.id}
@@ -173,6 +199,8 @@ export function DetalheDocumento({
                 tipo={documento.tipo}
                 pacienteNome={documento.paciente}
                 pacienteTelefone={documento.pacienteTelefone}
+                pacienteEmail={documento.pacienteEmail}
+                emailDisponivel={emailDisponivel}
               />
             </CardRecolhivel>
           ) : null}
@@ -193,49 +221,181 @@ export function DetalheDocumento({
           {assinatura ? (
             <CardRecolhivel id="doc-evidencias-da-assinatura"
                 titulo="Evidências da assinatura"
-                descricao="A força da assinatura simples vem do conjunto de circunstâncias registradas."
+                descricao="A força da assinatura eletrônica vem do conjunto: quem, quando, onde, como foi conferido — e a prova de que nada mudou depois."
             >
-              <CardCorpo>
-                <div className="grid gap-2.5">
-                  <Evidencia rotulo="Assinado por" valor={assinatura.nome} />
-                  {assinatura.cpf ? <Evidencia rotulo="CPF" valor={formatarCpf(assinatura.cpf)} /> : null}
-                  <Evidencia
-                    rotulo="Data e hora"
-                    valor={`${formatarData(assinatura.assinadoEm)} às ${formatarHora(assinatura.assinadoEm)}`}
-                  />
-                  <Evidencia rotulo="Identidade conferida" valor={assinatura.verificacao} />
-                  <Evidencia
-                    rotulo="Como assinou"
-                    valor={
-                      assinatura.canal === "link"
-                        ? "À distância, pelo link enviado"
-                        : "Presencialmente, no balcão da clínica"
-                    }
-                  />
-                  {assinatura.canal === "balcao" ? (
-                    <Evidencia rotulo="Operador no balcão" valor={assinatura.operador ?? "não registrado"} />
-                  ) : null}
-                  <Evidencia
-                    rotulo={assinatura.canal === "link" ? "Endereço IP (informado pelo navegador)" : "Endereço IP"}
-                    valor={assinatura.ip ?? "não informado"}
-                  />
-                  <Evidencia
-                    rotulo={assinatura.canal === "link" ? "Dispositivo (informado pelo navegador)" : "Dispositivo"}
-                    valor={assinatura.dispositivo ?? "não informado"}
-                  />
-                  <Evidencia rotulo="Texto assinado" valor={hashCurto(assinatura.hashAssinado)} />
-                  <Evidencia
-                    rotulo="Provedor"
-                    valor={
-                      assinatura.provedor === "interno"
-                        ? "Interno (Lei 14.063/2020, assinatura simples)"
-                        : assinatura.provedor
-                    }
-                  />
+              <CardCorpo className="flex flex-col gap-5">
+                <div className="grid gap-2.5 sm:grid-cols-3">
+                  <div className={`documento-evidencia flex min-w-0 items-start gap-2.5 rounded-[var(--radius-controle)] border px-3 py-3 ${assinatura.carimboEm ? "border-positivo-borda bg-positivo-fundo" : "border-atencao-borda bg-atencao-fundo"}`}>
+                    <Stamp aria-hidden="true" size={17} strokeWidth={1.75} className={`mt-0.5 shrink-0 ${assinatura.carimboEm ? "text-positivo" : "text-atencao"}`} />
+                    <div className="min-w-0">
+                      <p className="rotulo text-[0.62rem] text-outline">Carimbo de tempo</p>
+                      {assinatura.carimboEm ? (
+                        <p className="mt-0.5 text-sm font-semibold text-positivo">
+                          {formatarData(assinatura.carimboEm)} às {formatarHora(assinatura.carimboEm)}
+                          <span className="block text-xs font-normal text-on-surface-variant">{assinatura.carimboAutoridade} · RFC 3161</span>
+                        </p>
+                      ) : (
+                        <div className="mt-1">
+                          <p className="text-xs leading-5 text-atencao">Ainda não emitido.</p>
+                          <FormularioDeAcao acao={carimbarAgora} campos={{ documento_id: documento.id }}>
+                            <BotaoDeAcao tamanho="xs" icone={<Stamp size={13} strokeWidth={1.8} />} rotuloPendente="Carimbando…">
+                              Carimbar agora
+                            </BotaoDeAcao>
+                          </FormularioDeAcao>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="documento-evidencia flex min-w-0 items-start gap-2.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+                    <QrCode aria-hidden="true" size={17} strokeWidth={1.75} className="mt-0.5 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="rotulo text-[0.62rem] text-outline">Código de verificação</p>
+                      {assinatura.codigoVerificacao ? (
+                        <a
+                          href={`/verificar/${assinatura.codigoVerificacao}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-0.5 inline-flex items-center gap-1 font-mono text-sm font-bold tracking-[0.05em] text-primary hover:underline"
+                        >
+                          {assinatura.codigoVerificacao}
+                          <ExternalLink aria-hidden="true" size={12} strokeWidth={1.9} />
+                        </a>
+                      ) : (
+                        <p className="mt-0.5 text-sm text-outline">não gerado</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="documento-evidencia flex min-w-0 items-start gap-2.5 rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-3">
+                    <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.75} className="mt-0.5 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="rotulo text-[0.62rem] text-outline">Integridade</p>
+                      <p className={`mt-0.5 text-sm font-semibold ${assinatura.hashAssinado === documento.hash ? "text-positivo" : "text-negativo"}`}>
+                        {assinatura.hashAssinado === documento.hash ? "Texto idêntico ao assinado" : "Divergência no texto"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
+                <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_16rem]">
+                  <div className="grid content-start gap-2.5">
+                    <Evidencia rotulo="Assinado por" valor={assinatura.nome} />
+                    {assinatura.cpf ? <Evidencia rotulo="CPF" valor={formatarCpf(assinatura.cpf)} /> : null}
+                    <Evidencia
+                      rotulo="Data e hora"
+                      valor={`${formatarData(assinatura.assinadoEm)} às ${formatarHora(assinatura.assinadoEm)}`}
+                    />
+                    <Evidencia rotulo="Identidade conferida" valor={assinatura.verificacao} />
+                    <Evidencia
+                      rotulo="Como assinou"
+                      valor={
+                        assinatura.canal === "link"
+                          ? "À distância, pelo link enviado"
+                          : "Presencialmente, no balcão da clínica"
+                      }
+                    />
+                    {assinatura.canal === "balcao" ? (
+                      <Evidencia rotulo="Operador no balcão" valor={assinatura.operador ?? "não registrado"} />
+                    ) : null}
+                    {assinatura.leituraSegundos !== null ? (
+                      <Evidencia
+                        rotulo="Leitura"
+                        valor={`Documento aberto por ${duracaoDeLeitura(assinatura.leituraSegundos)} antes de assinar${assinatura.leituraCompleta === true ? " · rolou o texto até o fim" : assinatura.leituraCompleta === false ? " · não rolou o texto até o fim" : ""}`}
+                      />
+                    ) : null}
+                    {assinatura.localizacao ? (
+                      <Evidencia rotulo="Local aproximado" valor={`${assinatura.localizacao} (pela rede)`} />
+                    ) : null}
+                    <Evidencia rotulo="Endereço de rede" valor={assinatura.ip ?? "não informado"} />
+                    <Evidencia
+                      rotulo="Aparelho"
+                      valor={
+                        assinatura.dispositivo
+                          ? `${aparelhoLegivel(assinatura.dispositivo) ?? "Navegador"} — ${assinatura.dispositivo}`
+                          : "não informado"
+                      }
+                    />
+                    <Evidencia rotulo="Texto assinado (SHA-256)" valor={hashCurto(assinatura.hashAssinado)} />
+                    {assinatura.manifestoHash ? (
+                      <Evidencia rotulo="Registro (SHA-256)" valor={hashCurto(assinatura.manifestoHash)} />
+                    ) : null}
+                    <Evidencia
+                      rotulo="Provedor"
+                      valor={
+                        assinatura.provedor === "interno"
+                          ? "Interno (Lei 14.063/2020, assinatura eletrônica simples)"
+                          : assinatura.provedor
+                      }
+                    />
+                  </div>
+
+                  <div className="flex min-w-0 flex-col gap-3">
+                    <figure className="documento-evidencia rounded-[var(--radius-cartao)] border border-card-border bg-surface px-4 pt-3 pb-3">
+                      {assinatura.rubrica ? (
+                        <RubricaDesenhada caminho={assinatura.rubrica} className="h-24 w-full text-[#0b2a4a]" />
+                      ) : (
+                        <p className="flex h-24 items-center justify-center text-center font-serif text-lg italic text-[#0b2a4a]">{assinatura.nome}</p>
+                      )}
+                      <figcaption className="mt-1 border-t border-outline-variant pt-1.5 text-center text-[0.68rem] leading-4 text-outline">
+                        {assinatura.rubrica ? "Rubrica feita na assinatura" : assinatura.rubricaDispensada ? "Assinou pelo nome (rubrica dispensada)" : "Assinatura anterior à rubrica"}
+                      </figcaption>
+                    </figure>
+
+                    {assinatura.fatores.length > 0 ? (
+                      <div className="documento-evidencia rounded-[var(--radius-cartao)] border border-card-border bg-surface px-3.5 py-3">
+                        <p className="rotulo text-[0.62rem] text-outline">Conferido</p>
+                        <ul className="mt-2 flex flex-wrap gap-1.5">
+                          {assinatura.fatores.map((fator) => (
+                            <li key={fator} className="inline-flex items-center gap-1 rounded-full border border-positivo-borda bg-positivo-fundo px-2 py-0.5 text-[0.7rem] font-medium text-positivo">
+                              <BadgeCheck aria-hidden="true" size={12} strokeWidth={1.9} />
+                              {rotuloDoFator(fator)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                {assinatura.manifesto ? (
+                  <details className="documento-evidencia group rounded-[var(--radius-controle)] border border-card-border bg-surface px-3.5 py-3">
+                    <summary className="cursor-pointer list-none text-sm font-semibold text-primary marker:hidden">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Fingerprint aria-hidden="true" size={14} strokeWidth={1.8} />
+                        Manifesto e arquivos de prova
+                      </span>
+                    </summary>
+                    <p className="mt-2 text-xs leading-5 text-outline">
+                      O manifesto reúne tudo o que a assinatura registrou. O SHA-256 dele é o que recebeu o carimbo de tempo: recalcule e compare para provar que nada mudou.
+                    </p>
+                    <pre className="mt-2 max-h-72 overflow-auto rounded-[var(--radius-controle)] border border-card-border bg-surface-container-low px-3 py-2.5 font-mono text-[0.7rem] leading-5 whitespace-pre-wrap break-all text-on-surface-variant">{assinatura.manifesto}</pre>
+                    {assinatura.manifestoHash ? (
+                      <p className="mt-2 break-all font-mono text-[0.7rem] text-outline">SHA-256 {assinatura.manifestoHash}</p>
+                    ) : null}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <a
+                        href={`/formularios/${documento.id}/prova/manifesto`}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-controle)] border border-primary-fixed-dim bg-surface px-3 text-xs font-semibold text-primary hover:bg-selecao"
+                      >
+                        <Download aria-hidden="true" size={13} strokeWidth={1.9} />
+                        Manifesto (.txt)
+                      </a>
+                      {assinatura.carimboEm ? (
+                        <a
+                          href={`/formularios/${documento.id}/prova/carimbo`}
+                          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-controle)] border border-primary-fixed-dim bg-surface px-3 text-xs font-semibold text-primary hover:bg-selecao"
+                        >
+                          <Download aria-hidden="true" size={13} strokeWidth={1.9} />
+                          Carimbo de tempo (.tsr)
+                        </a>
+                      ) : null}
+                    </div>
+                  </details>
+                ) : null}
+
                 {assinatura.hashAssinado !== documento.hash ? (
-                  <p role="alert" className="mt-5 rounded-[var(--radius-controle)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
+                  <p role="alert" className="rounded-[var(--radius-controle)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container">
                     O hash registrado na assinatura não corresponde ao texto atual do documento. Isso não deveria acontecer — o banco impede alteração do texto. Avise quem cuida do sistema.
                   </p>
                 ) : null}

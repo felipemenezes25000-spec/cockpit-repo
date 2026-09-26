@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResultadoDaCriacao } from "@/server/acoes/assinatura-link";
 import type { LinkDeAssinatura } from "@/server/consultas/documentos";
 
-const criarLinkAssinatura = vi.fn<(entrada: { documentoId: string; dias: number }) => Promise<ResultadoDaCriacao>>();
+type EntradaDoLink = { documentoId: string; dias: number; verificacao?: string };
+const criarLinkAssinatura = vi.fn<(entrada: EntradaDoLink) => Promise<ResultadoDaCriacao>>();
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/acoes/assinatura-link", () => ({
-  criarLinkAssinatura: (entrada: { documentoId: string; dias: number }) => criarLinkAssinatura(entrada),
+  criarLinkAssinatura: (entrada: EntradaDoLink) => criarLinkAssinatura(entrada),
   registrarCanalDoLink: vi.fn(async () => undefined),
   revogarLinkAssinatura: vi.fn(),
 }));
@@ -75,7 +76,7 @@ describe("PainelLink — a validade da mensagem é a do link criado", () => {
     await usuario.selectOptions(screen.getByLabelText(/Validade do link/), "7");
     await usuario.click(screen.getByRole("button", { name: /Gerar link/ }));
 
-    expect(criarLinkAssinatura).toHaveBeenCalledWith({ documentoId: DOCUMENTO, dias: 7 });
+    expect(criarLinkAssinatura).toHaveBeenCalledWith({ documentoId: DOCUMENTO, dias: 7, verificacao: "nascimento" });
     expect(mensagemDoWhatsapp()).toContain("O link vale até 30/09/2026.");
 
     // O select serve ao PRÓXIMO link; o que já foi gerado continua com 7 dias.
@@ -109,6 +110,9 @@ describe("PainelLink — a validade da mensagem é a do link criado", () => {
       tentativas: 0,
       ativo: true,
       bloqueado: false,
+      verificacao: "nascimento",
+      emailDestino: null,
+      codigosEnviados: 0,
     };
     rerender(
       <PainelLink
@@ -123,5 +127,73 @@ describe("PainelLink — a validade da mensagem é a do link criado", () => {
     expect(mensagemDoWhatsapp()).toContain("O link vale até 10/10/2026.");
     await usuario.selectOptions(screen.getByLabelText(/Validade do link/), "30");
     expect(mensagemDoWhatsapp()).toContain("O link vale até 10/10/2026.");
+  });
+});
+
+describe("PainelLink — como a paciente se identifica", () => {
+  beforeEach(() => {
+    criarLinkAssinatura.mockReset();
+    criarLinkAssinatura.mockResolvedValue({ ok: true, endereco: "https://clinica.exemplo/assinar/abc", linkId: LINK });
+  });
+
+  it("sem e-mail no cadastro, o código por e-mail aparece indisponível e explica por quê", async () => {
+    const usuario = userEvent.setup();
+    render(
+      <PainelLink documentoId={DOCUMENTO} links={[]} tipo="contrato" pacienteNome="Maria Souza" pacienteTelefone="11912345678" pacienteEmail={null} emailDisponivel />,
+    );
+
+    expect(screen.getByRole("radio", { name: /Data \+ código por e-mail/ })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: /^Data de nascimento/ })).toBeChecked();
+    expect(screen.getByText(/não tem e-mail no cadastro/)).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: /Gerar link/ }));
+    expect(criarLinkAssinatura).toHaveBeenCalledWith(expect.objectContaining({ verificacao: "nascimento" }));
+  });
+
+  it("com e-mail e envio configurado, a opção mais segura vem marcada e vai para o banco", async () => {
+    const usuario = userEvent.setup();
+    render(
+      <PainelLink documentoId={DOCUMENTO} links={[]} tipo="contrato" pacienteNome="Maria Souza" pacienteTelefone="11912345678" pacienteEmail="m••••a@exemplo.com" emailDisponivel />,
+    );
+
+    expect(screen.getByRole("radio", { name: /Data \+ código por e-mail/ })).toBeChecked();
+    expect(screen.getByText("Mais segura")).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: /Gerar link/ }));
+    expect(criarLinkAssinatura).toHaveBeenCalledWith(expect.objectContaining({ verificacao: "nascimento_email" }));
+    expect(await screen.findByText(/pede um código enviado para m••••a@exemplo.com/)).toBeInTheDocument();
+  });
+
+  it("sem envio de e-mail configurado no servidor, não oferece o código", () => {
+    render(
+      <PainelLink documentoId={DOCUMENTO} links={[]} tipo="contrato" pacienteNome="Maria Souza" pacienteTelefone={null} pacienteEmail="m••••a@exemplo.com" emailDisponivel={false} />,
+    );
+
+    expect(screen.getByRole("radio", { name: /Data \+ código por e-mail/ })).toBeDisabled();
+    expect(screen.getByText(/envio de e-mail do sistema não está configurado/)).toBeInTheDocument();
+  });
+
+  it("o link ativo diz como pede identificação e quantos códigos já foram", () => {
+    const ativo: LinkDeAssinatura = {
+      id: LINK,
+      criadoEm: new Date("2026-09-23T15:00:00Z"),
+      criadoPor: "Recepção",
+      expiraEm: new Date("2026-10-08T15:00:00Z"),
+      revogadoEm: null,
+      canalEnvio: "",
+      abertoEm: null,
+      aberturas: 0,
+      tentativas: 0,
+      ativo: true,
+      bloqueado: false,
+      verificacao: "nascimento_email",
+      emailDestino: "m••••a@exemplo.com",
+      codigosEnviados: 2,
+    };
+    render(
+      <PainelLink documentoId={DOCUMENTO} links={[ativo]} tipo="contrato" pacienteNome="Maria Souza" pacienteTelefone={null} pacienteEmail="m••••a@exemplo.com" emailDisponivel />,
+    );
+
+    expect(screen.getByText(/Pede data de nascimento e código por e-mail \(m••••a@exemplo.com\) · 2 códigos enviados/)).toBeInTheDocument();
   });
 });

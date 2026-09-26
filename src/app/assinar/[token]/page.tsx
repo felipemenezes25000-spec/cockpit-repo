@@ -48,7 +48,9 @@ export default async function PaginaAssinar({ params }: { params: Promise<{ toke
                 Leia com calma. Assine só depois de conferir tudo.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-on-surface-variant sm:text-[0.95rem]">
-                O documento só é exibido depois que você confirma sua data de nascimento. Esta página não pede senha do sistema, cartão ou qualquer dado de pagamento.
+                {estado.verificacao === "nascimento_email"
+                  ? "O documento só é exibido depois que você confirma sua data de nascimento e um código enviado ao seu e-mail. Esta página não pede senha, cartão ou qualquer dado de pagamento."
+                  : "O documento só é exibido depois que você confirma sua data de nascimento. Esta página não pede senha, cartão ou qualquer dado de pagamento."}
               </p>
             </div>
 
@@ -63,14 +65,14 @@ export default async function PaginaAssinar({ params }: { params: Promise<{ toke
               </div>
               <div className="rounded-[var(--radius-controle)] border border-card-border bg-surface px-3 py-2.5 text-center lg:flex lg:items-center lg:gap-2.5 lg:text-left">
                 <BadgeCheck aria-hidden="true" size={15} strokeWidth={1.75} className="mx-auto text-primary lg:mx-0 lg:shrink-0" />
-                <span className="mt-1 block text-[0.68rem] font-semibold leading-4 text-on-surface-variant lg:mt-0">Sem cobrança</span>
+                <span className="mt-1 block text-[0.68rem] font-semibold leading-4 text-on-surface-variant lg:mt-0">Via verificável</span>
               </div>
             </div>
           </div>
         </section>
 
         <div className="assinatura-publica-premium [&_form]:relative [&_form]:overflow-hidden [&_form]:border-card-border [&_form]:bg-surface [&_form]:shadow-[0_24px_64px_-50px_rgba(7,57,112,.48)] [&_.folha-texto]:bg-surface">
-          <AssinarPorLink token={limpo} tipo={tipo} situacaoInicial={situacao} />
+          <AssinarPorLink token={limpo} tipo={tipo} situacaoInicial={situacao} verificacao={estado.verificacao} />
         </div>
 
         <footer className="sem-impressao glass-surface flex items-start gap-3 rounded-[var(--radius-painel)] border border-card-border px-4 py-4 text-xs leading-5 text-outline shadow-[0_16px_44px_-38px_rgba(8,41,76,.42)] sm:px-5">

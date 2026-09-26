@@ -29,5 +29,6 @@ supabase/.temp/
 /test-results/
 /coverage/
 /e2e/capturas/
+/e2e/.emails/
 
 .vercel

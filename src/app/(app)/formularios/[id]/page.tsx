@@ -8,6 +8,7 @@ import {
   EstruturaDocumentoPendenteError,
   linksDoDocumento,
 } from "@/server/consultas/documentos";
+import { emailDisponivel } from "@/server/email";
 
 export const metadata: Metadata = {
   title: "Documento",
@@ -46,7 +47,7 @@ export default async function PaginaDocumento({
 
   return (
     <div>
-      <DetalheDocumento documento={documento} links={links} />
+      <DetalheDocumento documento={documento} links={links} emailDisponivel={emailDisponivel()} />
     </div>
   );
 }
