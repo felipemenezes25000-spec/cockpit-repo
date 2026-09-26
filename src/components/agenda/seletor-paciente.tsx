@@ -147,18 +147,18 @@ export function SeletorPaciente({
       <input ref={oculto} type="hidden" name="paciente_id" value={escolhida?.id ?? ""} />
 
       {escolhida ? (
-        <div className="premium-interactive group relative isolate flex items-center justify-between gap-3 overflow-hidden rounded-[var(--radius-painel)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3">
-          <span className="flex min-w-0 items-center gap-3 text-sm text-on-surface">
+        <div className="premium-interactive group relative isolate flex min-w-0 items-center justify-between gap-3 overflow-hidden rounded-[var(--radius-painel)] border border-positivo-borda bg-positivo-fundo px-3.5 py-3 shadow-[0_12px_28px_-24px_rgba(16,126,62,.32)]">
+          <span className="flex min-w-0 flex-1 items-center gap-3 text-sm text-on-surface">
             <span className="relative shrink-0">
               <Avatar nome={escolhida.nome} tamanho="sm" />
               <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full border-2 border-surface bg-positivo text-on-primary">
                 <Check aria-hidden="true" size={9} strokeWidth={2.4} />
               </span>
             </span>
-            <span className="min-w-0">
-              <span className="block truncate font-semibold tracking-[-0.01em]">{escolhida.nome}</span>
-              <span className="mt-0.5 block truncate text-xs text-outline">{escolhida.detalhe}</span>
-              <span className="mt-1.5 inline-flex rounded-full border border-positivo-borda bg-surface px-2 py-0.5 text-[0.62rem] font-semibold text-positivo">Paciente selecionada</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-semibold tracking-[-0.01em]" title={escolhida.nome}>{escolhida.nome}</span>
+              <span className="mt-0.5 block truncate text-xs text-outline" title={escolhida.detalhe}>{escolhida.detalhe}</span>
+              <span className="mt-1.5 inline-flex max-w-full rounded-full border border-positivo-borda bg-surface px-2 py-0.5 text-[0.62rem] font-semibold text-positivo">Paciente selecionada</span>
             </span>
           </span>
           <button
@@ -170,14 +170,14 @@ export function SeletorPaciente({
               aoEscolher?.(null);
               focarDepois(campo);
             }}
-            className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline transition-[transform,background-color,color,border-color] duration-150 hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary active:scale-95"
+            className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-controle)] border border-card-border bg-surface text-outline shadow-[0_8px_18px_-16px_rgba(8,41,76,.32)] transition-[transform,background-color,color,border-color] duration-150 hover:-translate-y-0.5 hover:border-primary-fixed-dim hover:bg-selecao hover:text-primary active:scale-95"
             aria-label={`Trocar a paciente (${escolhida.nome})`}
           >
             <X aria-hidden="true" size={16} strokeWidth={1.75} />
           </button>
         </div>
       ) : (
-        <div className="relative">
+        <div className="relative min-w-0">
           <Search aria-hidden="true" size={16} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-outline transition-colors" />
           <input
             ref={campo}
@@ -199,16 +199,16 @@ export function SeletorPaciente({
             onFocus={() => setListaFechada(false)}
             aria-describedby={erro ? idErro : undefined}
             placeholder="Buscar por nome, telefone ou CPF"
-            className={cn(classeDeEntrada({ recuo: "icone" }), erro && ENTRADA_ERRO)}
+            className={cn(classeDeEntrada({ recuo: "busca" }), erro && ENTRADA_ERRO)}
             {...(erro ? { "aria-invalid": true as const } : {})}
           />
-          {buscando ? <LoaderCircle aria-hidden="true" size={16} className="absolute top-1/2 right-3.5 -translate-y-1/2 animate-spin text-primary" /> : null}
+          {buscando ? <LoaderCircle aria-hidden="true" size={16} className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 animate-spin text-primary" /> : null}
 
           {listaAberta ? (
-            <div className="glass-surface page-reveal absolute z-30 mt-2 w-full overflow-hidden rounded-[var(--radius-painel)] border border-card-border shadow-flutuante">
-              <div className="flex items-center justify-between gap-3 border-b border-card-border bg-surface px-3.5 py-2 text-[0.65rem] text-outline">
-                <span>{opcoes.length === 1 ? "1 paciente encontrada" : `${opcoes.length} pacientes encontradas`}</span>
-                <span className="hidden sm:inline">↑ ↓ escolher · Enter confirmar</span>
+            <div className="glass-surface page-reveal absolute z-30 mt-2 w-full min-w-0 overflow-hidden rounded-[var(--radius-painel)] border border-card-border shadow-flutuante">
+              <div className="flex min-w-0 items-center justify-between gap-3 border-b border-card-border bg-surface px-3.5 py-2 text-[0.65rem] text-outline">
+                <span className="min-w-0 truncate">{opcoes.length === 1 ? "1 paciente encontrada" : `${opcoes.length} pacientes encontradas`}</span>
+                <span className="hidden shrink-0 sm:inline">↑ ↓ escolher · Enter confirmar</span>
               </div>
               <ul id={idLista} role="listbox" aria-label="Pacientes encontradas" className="rolagem-discreta rolagem-esmaecida max-h-80 overflow-y-auto p-1.5">
                 {opcoes.map((opcao, indice) => (
@@ -223,16 +223,16 @@ export function SeletorPaciente({
                     }}
                     onMouseEnter={() => setDestacada(indice)}
                     className={cn(
-                      "group flex cursor-pointer items-center gap-3 rounded-[var(--radius-cartao)] border px-3 py-2.5 text-left transition-[transform,background-color,border-color] duration-150",
+                      "group flex min-w-0 cursor-pointer items-center gap-3 rounded-[var(--radius-cartao)] border px-3 py-2.5 text-left transition-[transform,background-color,border-color,box-shadow] duration-150",
                       indice === destacada
-                        ? "border-primary-fixed bg-selecao"
+                        ? "border-primary-fixed bg-selecao shadow-[0_10px_24px_-20px_rgba(8,84,160,.36)]"
                         : "border-transparent hover:bg-surface-container-low",
                     )}
                   >
                     <Avatar nome={opcao.nome} tamanho="sm" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-on-surface">{opcao.nome}</span>
-                      <span className="mt-0.5 block truncate text-xs text-outline">{opcao.detalhe}</span>
+                      <span className="block truncate text-sm font-semibold text-on-surface" title={opcao.nome}>{opcao.nome}</span>
+                      <span className="mt-0.5 block truncate text-xs text-outline" title={opcao.detalhe}>{opcao.detalhe}</span>
                     </span>
                     {indice === destacada ? <Check aria-hidden="true" size={16} strokeWidth={1.9} className="shrink-0 text-primary" /> : null}
                   </li>
@@ -242,10 +242,10 @@ export function SeletorPaciente({
           ) : null}
 
           {!buscando && falhouBusca ? (
-            <p role="alert" className="mt-1.5 text-xs text-negativo">Não foi possível buscar agora. Confira a conexão e digite de novo.</p>
+            <p role="alert" className="mt-1.5 break-words text-xs leading-5 text-negativo">Não foi possível buscar agora. Confira a conexão e digite de novo.</p>
           ) : null}
 
-          <div role="status">
+          <div role="status" className="min-w-0">
             {buscando ? <span className="sr-only">Buscando…</span> : null}
             {!buscando && listaAberta ? (
               <span className="sr-only">
@@ -253,7 +253,7 @@ export function SeletorPaciente({
               </span>
             ) : null}
             {!buscando && !falhouBusca && termo.trim().length >= 2 && opcoes.length === 0 ? (
-              <p className="mt-1.5 text-xs text-outline">
+              <p className="mt-1.5 break-words text-xs leading-5 text-outline">
                 Nenhuma paciente encontrada. Confira a escrita ou{" "}
                 <Link href="/pacientes/novo" className="font-medium text-primary underline underline-offset-2">cadastre primeiro</Link>.
               </p>
