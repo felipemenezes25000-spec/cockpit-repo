@@ -1,125 +1,105 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="220" viewBox="0 0 1280 220" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="596" viewBox="0 0 1200 596" role="img" aria-labelledby="t d">
   <title id="t">O Cockpit em números</title>
-  <desc id="d">Faixa com seis cartões de números do projeto: 31 migrações SQL versionadas; 42 rotas testadas em três larguras (320, 768 e 1440 pixels); 936 testes de unidade e de componente; 269 testes de permissão no banco, trocando de perfil como a API troca; 47 testes de fluxo de ponta a ponta no navegador (Chromium, e os fluxos também no WebKit); 3 perfis de acesso (administradora, financeiro e recepção), com RLS ligada em toda tabela. Na entrada, cada dígito gira como um odômetro até o valor final e uma régua azul se preenche embaixo do número; depois, em laço, um brilho atravessa os cartões e o ícone de cada um pulsa quando ele passa.</desc>
+  <desc id="d">Faixa com os números do Cockpit, contados no código no commit 1764905, em 26/09/2026. Primeira linha, o sistema: 51 telas (44 internas e 7 públicas), 30 tabelas (29 com RLS no schema public e 1 no schema private), 32 migrações SQL (de 0001 a 0032, com uma barra por arquivo proporcional ao número de linhas; a maior é a 0032, da assinatura com prova) e 486 commits desde 01/08/2026 no branch main. Segunda linha, num painel azul, as três camadas de teste: 1004 testes unitários (Vitest, em 97 arquivos), 302 testes de banco (permissões e regras, trocando de perfil) e 325 testes E2E no navegador (Chromium, WebKit e iPhone). Uma barra divide as 1631 verificações automáticas entre as três camadas; ao lado, o axe confere WCAG 2.2 AA em todas as telas e a CI do GitHub Actions roda os jobs qualidade, banco, build e E2E. Na entrada, cada dígito gira como um odômetro até o valor final e as barras se desenham; depois, em laço suave, um brilho atravessa os cartões e os pontos pulsam.</desc>
 
   <style>
     svg {
-      --painel: #ffffff;
-      --painel-2: #f9f9fa;
-      --borda: #e3e5e8;
-      --texto: #1b1c1e;
-      --texto-2: #43474d;
-      --marca: #0854a0;
-      --marca-acao: #0a6ed1;
-      --marca-suave: #d6e9fb;
-      --brilho: #0a6ed1;
-      --brilho-forca: 0.11;
+      --fundo-a: #f5f9ff; --fundo-b: #eef6ff; --borda-ext: #d6e6f7;
+      --cartao: #ffffff; --borda: #dce8f5;
+      --texto: #1b1c1e; --texto-2: #43474d; --num: #0b2a4a;
+      --marca: #0854a0; --marca-suave: #d6e9fb;
+      --tk: #0a6ed1; --tk2: #a9cdf2; --tk3: #063f7c;
+      --positivo: #107e3e; --brilho: #0a6ed1; --brilho-forca: .09;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
     }
     @media (prefers-color-scheme: dark) {
       svg {
-        --painel: #0d1117;
-        --painel-2: #161b22;
-        --borda: #30363d;
-        --texto: #e6edf3;
-        --texto-2: #9da7b3;
-        --marca: #58a6ff;
-        --marca-acao: #388bfd;
-        --marca-suave: #0c2d6b;
-        --brilho: #58a6ff;
-        --brilho-forca: 0.16;
+        --fundo-a: #0d1117; --fundo-b: #0b1f36; --borda-ext: #30363d;
+        --cartao: #161b22; --borda: #30363d;
+        --texto: #e6edf3; --texto-2: #9da7b3; --num: #f0f6fc;
+        --marca: #58a6ff; --marca-suave: #0c2d6b;
+        --tk: #388bfd; --tk2: #1f4f8f; --tk3: #9ccfff;
+        --positivo: #3fb950; --brilho: #58a6ff; --brilho-forca: .12;
       }
     }
-
-    text {
-      font-family: "Hanken Grotesk", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-    }
-    .painel { fill: var(--painel); stroke: var(--borda); }
-    .cartao { fill: var(--painel-2); stroke: var(--borda); }
+    .mono { font-family: ui-monospace, Consolas, monospace; }
+    .fa { stop-color: var(--fundo-a); } .fb { stop-color: var(--fundo-b); }
+    .externo { fill: url(#fundo); stroke: var(--borda-ext); }
+    .olho { fill: var(--marca); font-size: 14px; font-weight: 700; letter-spacing: .14em; }
+    .titulo { fill: var(--texto); font-size: 30px; font-weight: 800; letter-spacing: -.4px; }
+    .medido { fill: var(--texto-2); font-size: 14px; }
+    .cabeca-chip { fill: var(--cartao); stroke: var(--borda); }
+    .cabeca-t { fill: var(--texto); font-size: 13.5px; font-weight: 600; }
+    .cartao { fill: var(--cartao); stroke: var(--borda); }
     .ladrilho { fill: var(--marca-suave); }
-    .icone { stroke: var(--marca); }
-    .num { fill: var(--texto); font-size: 52px; font-weight: 700; text-anchor: middle; }
-    .l1 { fill: var(--texto); font-size: 16px; font-weight: 600; }
-    .l2 { fill: var(--texto-2); font-size: 16px; }
-    .aro { fill: none; stroke: var(--marca-acao); stroke-width: 1.5; }
-    .anel { fill: none; stroke: var(--marca-acao); stroke-width: 1.5; }
-    .r0 { stop-color: var(--marca); }
-    .r1 { stop-color: var(--marca-acao); stop-opacity: 0.45; }
-    .r2 { stop-color: var(--marca-acao); stop-opacity: 0; }
-    .b0 { stop-color: var(--brilho); stop-opacity: 0; }
-    .b1 { stop-color: var(--brilho); stop-opacity: var(--brilho-forca); }
+    .icone { fill: none; stroke: var(--marca); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .n1 { fill: var(--num); }
+    .rot { fill: var(--texto); font-size: 18px; font-weight: 700; }
+    .an { fill: var(--texto-2); font-size: 14px; }
+    .an.mono { font-size: 13.5px; }
+    .tk { fill: var(--tk); } .tk2 { fill: var(--tk2); } .tk3 { fill: var(--tk3); }
+    .vazado { fill: none; stroke: var(--tk3); stroke-width: 1.4; }
+    .linha2 { fill: none; stroke: var(--tk2); stroke-width: 2; stroke-linecap: round; }
+    .ponto { fill: var(--cartao); stroke: var(--tk); stroke-width: 2; }
+    .cabeca { fill: var(--tk3); }
+    .vivo { fill: var(--positivo); }
+    .vivo-onda, .onda { fill: none; stroke-width: 1.6; }
+    .vivo-onda { stroke: var(--positivo); }
+    .onda { stroke: var(--tk3); }
+    .fluxo { fill: none; stroke: var(--tk); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 12; }
+    .b0 { stop-color: var(--brilho); stop-opacity: 0; } .b1 { stop-color: var(--brilho); stop-opacity: var(--brilho-forca); }
 
-    /* Odômetro: a posição BASE de cada coluna já é o dígito final
-       (é o que aparece sem movimento); a animação só parte do zero. */
-    .p0 { transform: translateY(0); }
-    .p1 { transform: translateY(-64px); }
-    .p2 { transform: translateY(-128px); }
-    .p3 { transform: translateY(-192px); }
-    .p4 { transform: translateY(-256px); }
-    .p5 { transform: translateY(-320px); }
-    .p6 { transform: translateY(-384px); }
-    .p7 { transform: translateY(-448px); }
-    .p8 { transform: translateY(-512px); }
-    .p9 { transform: translateY(-576px); }
-    .p10 { transform: translateY(-640px); }
-    .p11 { transform: translateY(-704px); }
-    .p12 { transform: translateY(-768px); }
-    .p13 { transform: translateY(-832px); }
-    .p14 { transform: translateY(-896px); }
-    .p15 { transform: translateY(-960px); }
-    .p16 { transform: translateY(-1024px); }
-    .p17 { transform: translateY(-1088px); }
-    .p18 { transform: translateY(-1152px); }
-    .p19 { transform: translateY(-1216px); }
+    /* painel azul: mesma cor nos dois temas (é o azul da marca, como o hero) */
+    .vidro { fill: url(#vidro); stroke: #ffffff; stroke-opacity: .2; }
+    .ladrilho2 { fill: #ffffff; fill-opacity: .12; stroke: #ffffff; stroke-opacity: .22; }
+    .icone2 { fill: none; stroke: #ffffff; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .n2 { fill: #ffffff; }
+    .rot2 { fill: #ffffff; font-size: 18px; font-weight: 700; }
+    .det2 { fill: #cfe3f8; font-size: 14.5px; }
+    .olho2 { fill: #bfe3ff; font-size: 12.5px; font-weight: 700; letter-spacing: .14em; }
+    .k1 { fill: #ffffff; } .k2 { fill: #9fd8ff; } .k3 { fill: #4fb3ff; }
+    .trilho { fill: #021226; fill-opacity: .4; }
+    .cap-forte { fill: #ffffff; font-size: 15px; font-weight: 700; }
+    .cap { fill: #cfe3f8; font-size: 14.5px; }
+    .pilula { fill: #ffffff; fill-opacity: .1; stroke: #ffffff; stroke-opacity: .24; }
+    .chip-t { fill: #ffffff; font-size: 13.5px; font-weight: 600; }
+    .ok { fill: #3fb950; }
+    .ok-onda { fill: none; stroke: #7ee787; stroke-width: 1.5; }
 
-    /* ---------- entrada (uma vez) ---------- */
-    .entra { animation: entra 0.7s cubic-bezier(.2, .8, .2, 1) both; }
-    @keyframes entra {
-      from { opacity: 0; transform: translateY(14px); }
-    }
-    .rolo { animation-name: rola; animation-timing-function: cubic-bezier(.2, .8, .2, 1); animation-fill-mode: both; }
-    @keyframes rola {
-      from { transform: translateY(0); }
-    }
-    .regua {
-      transform-box: fill-box;
-      transform-origin: 0 50%;
-      animation: regua 1.1s cubic-bezier(.2, .8, .2, 1) both;
-    }
-    @keyframes regua {
-      from { transform: scaleX(0); }
-    }
+    /* odômetro: a posição BASE de cada rolo já é o dígito final */
+    .p0{transform:translateY(0px)}.p1{transform:translateY(-72px)}.p2{transform:translateY(-144px)}.p3{transform:translateY(-216px)}.p4{transform:translateY(-288px)}.p5{transform:translateY(-360px)}.p6{transform:translateY(-432px)}.p7{transform:translateY(-504px)}.p8{transform:translateY(-576px)}.p9{transform:translateY(-648px)}.p10{transform:translateY(-720px)}.p11{transform:translateY(-792px)}.p12{transform:translateY(-864px)}.p13{transform:translateY(-936px)}.p14{transform:translateY(-1008px)}.p15{transform:translateY(-1080px)}.p16{transform:translateY(-1152px)}.p17{transform:translateY(-1224px)}.p18{transform:translateY(-1296px)}.p19{transform:translateY(-1368px)}
 
-    /* ---------- laço de 8 s: brilho atravessa, ícone pulsa quando ele passa ---------- */
-    .brilho { animation: varre 8s linear 3.4s infinite both; }
-    @keyframes varre {
-      0% { transform: translateX(-160px); }
-      30%, 100% { transform: translateX(1480px); }
-    }
-    .pulso {
-      transform-box: fill-box;
-      transform-origin: center;
-      animation: pulso 8s cubic-bezier(.2, .8, .2, 1) infinite both;
-    }
-    @keyframes pulso {
-      0%, 8%, 100% { transform: scale(1); }
-      3% { transform: scale(1.16); }
-    }
-    .aro { animation: aro 8s ease-out infinite both; }
-    @keyframes aro {
-      0%, 11%, 100% { opacity: 0; }
-      3% { opacity: 0.55; }
-    }
-    .anel {
-      transform-box: fill-box;
-      transform-origin: center;
-      animation: anel 8s ease-out infinite both;
-    }
-    @keyframes anel {
-      0% { opacity: 0; transform: scale(0.85); }
-      3% { opacity: 0.8; transform: scale(1); }
-      10%, 100% { opacity: 0; transform: scale(1.18); }
-    }
+    /* ---------------- entrada (uma vez) ---------------- */
+    .sobe { animation: sobe .75s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes sobe { from { opacity: 0; transform: translateY(14px); } }
+    .rolo { animation-name: rola; animation-timing-function: cubic-bezier(.16,.84,.24,1); animation-fill-mode: both; }
+    @keyframes rola { from { transform: translateY(0); } }
+    .cresce { transform-box: fill-box; transform-origin: 50% 100%; animation: cresce .6s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes cresce { from { opacity: 0; transform: scaleY(0); } }
+    .salta { transform-box: fill-box; transform-origin: center; animation: salta .5s cubic-bezier(.2,.9,.3,1.4) both; }
+    @keyframes salta { from { opacity: 0; transform: scale(0); } }
+    .traco { stroke-dasharray: 100; animation: traco 1.3s cubic-bezier(.45,0,.2,1) both; }
+    @keyframes traco { from { stroke-dashoffset: 100; } }
+    .aparece { animation: aparece .8s ease-out both; }
+    @keyframes aparece { from { opacity: 0; } }
+    .enche { transform-box: fill-box; transform-origin: 0 50%; animation: enche 1s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes enche { from { transform: scaleX(0); } }
+
+    /* ---------------- laços suaves ---------------- */
+    .fluxo { animation: fluxo 1.6s linear infinite; }
+    @keyframes fluxo { to { stroke-dashoffset: -28; } }
+    .onda, .vivo-onda { transform-box: fill-box; transform-origin: center; animation: onda 2.6s cubic-bezier(.2,.8,.2,1) infinite; }
+    @keyframes onda { 0% { opacity: .75; transform: scale(1); } 100% { opacity: 0; transform: scale(2.8); } }
+    .ok-onda { transform-box: fill-box; transform-origin: center; animation: ok 6s ease-out infinite both; }
+    @keyframes ok { 0% { opacity: 0; transform: scale(1); } 3% { opacity: .9; } 16%, 100% { opacity: 0; transform: scale(3); } }
+    .varre { animation: varre 9s cubic-bezier(.45,0,.3,1) 3.6s infinite both; }
+    .varre2 { animation: varre 9s cubic-bezier(.45,0,.3,1) 4.4s infinite both; }
+    @keyframes varre { 0% { transform: translateX(0); } 28%, 100% { transform: translateX(1480px); } }
+    .brilho-barra { animation: barra 7s cubic-bezier(.45,0,.3,1) 3.4s infinite both; }
+    @keyframes barra { 0% { transform: translateX(0); } 30%, 100% { transform: translateX(1300px); } }
+    .deriva { animation: deriva 16s ease-in-out infinite alternate; }
+    @keyframes deriva { to { transform: translate(-90px, 18px); } }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; }
@@ -128,248 +108,205 @@
   </style>
 
   <defs>
-    <!-- Janela do odômetro, em coordenadas do cartão: bordas esfumadas em cima e embaixo. -->
-    <linearGradient id="esfuma" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#000"/>
-      <stop offset="0.14" stop-color="#fff"/>
-      <stop offset="0.86" stop-color="#fff"/>
-      <stop offset="1" stop-color="#000"/>
+    <linearGradient id="fundo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1200" y2="596">
+      <stop offset="0" class="fa"/><stop offset="1" class="fb"/>
     </linearGradient>
-    <mask id="janela" maskUnits="userSpaceOnUse" x="0" y="10" width="190" height="58">
-      <rect x="0" y="10" width="190" height="58" fill="url(#esfuma)"/>
+    <linearGradient id="azul" gradientUnits="userSpaceOnUse" x1="40" y1="312" x2="1160" y2="556">
+      <stop offset="0" stop-color="#041b33"/><stop offset=".5" stop-color="#0854a0"/><stop offset="1" stop-color="#0a6ed1"/>
+    </linearGradient>
+    <radialGradient id="aurora-a" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#7dd3fc" stop-opacity=".38"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="aurora-b" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#1d8bff" stop-opacity=".45"/><stop offset="1" stop-color="#1d8bff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vidro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".14"/><stop offset="1" stop-color="#ffffff" stop-opacity=".06"/>
+    </linearGradient>
+    <pattern id="pontos" width="22" height="22" patternUnits="userSpaceOnUse" x="40" y="312">
+      <circle cx="11" cy="11" r="1" fill="#ffffff"/>
+    </pattern>
+    <radialGradient id="luz-grade" cx=".72" cy=".2" r=".8">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="mascara-grade" maskUnits="userSpaceOnUse" x="40" y="312" width="1120" height="244">
+      <rect x="40" y="312" width="1120" height="244" fill="url(#luz-grade)"/>
     </mask>
+    <clipPath id="recorte-azul"><rect x="40" y="312" width="1120" height="244" rx="20"/></clipPath>
 
-    <linearGradient id="regua" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" class="r0"/>
-      <stop offset="0.55" class="r1"/>
-      <stop offset="1" class="r2"/>
+    <filter id="sombra" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#0b2a4a" flood-opacity=".08"/>
+    </filter>
+
+    <!-- janelas do odômetro, com as bordas esfumadas -->
+    <linearGradient id="esfuma" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000"/><stop offset=".15" stop-color="#fff"/><stop offset=".85" stop-color="#fff"/><stop offset="1" stop-color="#000"/>
     </linearGradient>
+    <mask id="jan1" maskUnits="userSpaceOnUse" x="0" y="22" width="190" height="60"><rect x="0" y="22" width="190" height="60" fill="url(#esfuma)"/></mask>
+    <mask id="jan2" maskUnits="userSpaceOnUse" x="0" y="16" width="250" height="60"><rect x="0" y="16" width="250" height="60" fill="url(#esfuma)"/></mask>
+
+    <!-- rolos de dígitos: 10 (uma volta) e 20 (duas voltas) -->
+    <text id="r10" font-size="56" font-weight="800" text-anchor="middle"><tspan x="0" y="0">0</tspan><tspan x="0" y="72">1</tspan><tspan x="0" y="144">2</tspan><tspan x="0" y="216">3</tspan><tspan x="0" y="288">4</tspan><tspan x="0" y="360">5</tspan><tspan x="0" y="432">6</tspan><tspan x="0" y="504">7</tspan><tspan x="0" y="576">8</tspan><tspan x="0" y="648">9</tspan></text>
+    <text id="r20" font-size="56" font-weight="800" text-anchor="middle"><tspan x="0" y="0">0</tspan><tspan x="0" y="72">1</tspan><tspan x="0" y="144">2</tspan><tspan x="0" y="216">3</tspan><tspan x="0" y="288">4</tspan><tspan x="0" y="360">5</tspan><tspan x="0" y="432">6</tspan><tspan x="0" y="504">7</tspan><tspan x="0" y="576">8</tspan><tspan x="0" y="648">9</tspan><tspan x="0" y="720">0</tspan><tspan x="0" y="792">1</tspan><tspan x="0" y="864">2</tspan><tspan x="0" y="936">3</tspan><tspan x="0" y="1008">4</tspan><tspan x="0" y="1080">5</tspan><tspan x="0" y="1152">6</tspan><tspan x="0" y="1224">7</tspan><tspan x="0" y="1296">8</tspan><tspan x="0" y="1368">9</tspan></text>
 
     <linearGradient id="faixa-brilho" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" class="b0"/>
-      <stop offset="0.5" class="b1"/>
-      <stop offset="1" class="b0"/>
+      <stop offset="0" class="b0"/><stop offset=".5" class="b1"/><stop offset="1" class="b0"/>
     </linearGradient>
-
-    <!-- O brilho só aparece por dentro dos cartões. -->
-    <clipPath id="cartoes">
-      <rect x="40" y="40" width="190" height="140" rx="16"/>
-      <rect x="242" y="40" width="190" height="140" rx="16"/>
-      <rect x="444" y="40" width="190" height="140" rx="16"/>
-      <rect x="646" y="40" width="190" height="140" rx="16"/>
-      <rect x="848" y="40" width="190" height="140" rx="16"/>
-      <rect x="1050" y="40" width="190" height="140" rx="16"/>
-    </clipPath>
+    <linearGradient id="faixa-brilho2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".13"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="faixa-barra" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".85"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="cartoes1"><rect x="40" y="122" width="268" height="170" rx="18"/><rect x="324" y="122" width="268" height="170" rx="18"/><rect x="608" y="122" width="268" height="170" rx="18"/><rect x="892" y="122" width="268" height="170" rx="18"/></clipPath>
+    <clipPath id="cartoes2"><rect x="64" y="334" width="344" height="136" rx="16"/><rect x="428" y="334" width="344" height="136" rx="16"/><rect x="792" y="334" width="344" height="136" rx="16"/></clipPath>
+    <clipPath id="recorte-barra"><rect x="64" y="494" width="1072" height="8" rx="4"/></clipPath>
   </defs>
 
-  <rect class="painel" x="0.5" y="0.5" width="1279" height="219" rx="24"/>
+  <rect class="externo" x=".5" y=".5" width="1199" height="595" rx="24"/>
 
-  <!-- Camada 1: fundo dos cartões -->
-  <g>
-    <g transform="translate(40 40)">
-      <g class="entra" style="animation-delay:0.1s">
-        <rect class="cartao" x="0.5" y="0.5" width="189" height="139" rx="16"/>
+  <!-- cabeçalho -->
+  <g class="sobe">
+    <text class="olho mono" x="40" y="60">O COCKPIT EM NÚMEROS</text>
+    <text class="titulo" x="40" y="96">Contado no código, não estimado</text>
+  </g>
+  <g class="sobe" style="animation-delay:.1s">
+    <rect class="cabeca-chip" x="990.5" y="40.5" width="169" height="31" rx="15.5"/>
+    <g class="movimento"><circle class="vivo-onda" cx="1008" cy="56" r="4"/></g>
+    <circle class="vivo" cx="1008" cy="56" r="4"/>
+    <text class="cabeca-t mono" x="1021" y="60.5">main · 1764905</text>
+    <text class="medido" x="1160" y="96" text-anchor="end">medido em 26/09/2026</text>
+  </g>
+
+  <!-- linha 1: o sistema -->
+  
+    <g transform="translate(40 122)"><g class="sobe" style="animation-delay:0.12s">
+      <rect class="cartao" x=".5" y=".5" width="267" height="169" rx="18" filter="url(#sombra)"/>
+      <rect class="ladrilho" x="212" y="20" width="36" height="36" rx="10"/>
+      <g class="icone" transform="translate(220 28) scale(.8333)"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 9h20M6 4v5M10 4v5"/></g>
+      <g class="n1" mask="url(#jan1)"><g class="rolo p5" style="animation-delay:0.45s;animation-duration:1.35s"><use href="#r10" x="39.5" y="72"/></g><g class="rolo p11" style="animation-delay:0.52s;animation-duration:1.63s"><use href="#r20" x="74.5" y="72"/></g></g>
+      <text class="rot" x="24" y="102">telas</text>
+      <rect class="cresce tk" x="24.92" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.8s"/><rect class="cresce tk" x="29.15" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.82s"/><rect class="cresce tk" x="33.38" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.83s"/><rect class="cresce tk" x="37.61" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.85s"/><rect class="cresce tk" x="41.84" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.86s"/><rect class="cresce tk" x="46.07" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.88s"/><rect class="cresce tk" x="50.3" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.9s"/><rect class="cresce tk" x="54.53" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.91s"/><rect class="cresce tk" x="58.76" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.93s"/><rect class="cresce tk" x="62.99" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.94s"/><rect class="cresce tk" x="67.22" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.96s"/><rect class="cresce tk" x="71.45" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.98s"/><rect class="cresce tk" x="75.68" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:0.99s"/><rect class="cresce tk" x="79.92" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.01s"/><rect class="cresce tk" x="84.15" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.02s"/><rect class="cresce tk" x="88.38" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.04s"/><rect class="cresce tk" x="92.61" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.06s"/><rect class="cresce tk" x="96.84" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.07s"/><rect class="cresce tk" x="101.07" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.09s"/><rect class="cresce tk" x="105.3" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.1s"/><rect class="cresce tk" x="109.53" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.12s"/><rect class="cresce tk" x="113.76" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.14s"/><rect class="cresce tk" x="117.99" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.15s"/><rect class="cresce tk" x="122.22" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.17s"/><rect class="cresce tk" x="126.45" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.18s"/><rect class="cresce tk" x="130.68" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.2s"/><rect class="cresce tk" x="134.92" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.22s"/><rect class="cresce tk" x="139.15" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.23s"/><rect class="cresce tk" x="143.38" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.25s"/><rect class="cresce tk" x="147.61" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.26s"/><rect class="cresce tk" x="151.84" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.28s"/><rect class="cresce tk" x="156.07" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.3s"/><rect class="cresce tk" x="160.3" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.31s"/><rect class="cresce tk" x="164.53" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.33s"/><rect class="cresce tk" x="168.76" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.34s"/><rect class="cresce tk" x="172.99" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.36s"/><rect class="cresce tk" x="177.22" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.38s"/><rect class="cresce tk" x="181.45" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.39s"/><rect class="cresce tk" x="185.68" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.41s"/><rect class="cresce tk" x="189.92" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.42s"/><rect class="cresce tk" x="194.15" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.44s"/><rect class="cresce tk" x="198.38" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.46s"/><rect class="cresce tk" x="202.61" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.47s"/><rect class="cresce tk" x="206.84" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.49s"/><rect class="cresce tk2" x="215.3" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.5s"/><rect class="cresce tk2" x="219.53" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.52s"/><rect class="cresce tk2" x="223.76" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.54s"/><rect class="cresce tk2" x="227.99" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.55s"/><rect class="cresce tk2" x="232.22" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.57s"/><rect class="cresce tk2" x="236.45" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.58s"/><rect class="cresce tk2" x="240.68" y="116" width="2.4" height="20" rx="1.2" style="animation-delay:1.6s"/>
+      <text class="an" x="24" y="157">44 internas</text>
+      <text class="an" x="244" y="157" text-anchor="end">7 públicas</text>
+    </g></g>
+    <g transform="translate(324 122)"><g class="sobe" style="animation-delay:0.2s">
+      <rect class="cartao" x=".5" y=".5" width="267" height="169" rx="18" filter="url(#sombra)"/>
+      <rect class="ladrilho" x="212" y="20" width="36" height="36" rx="10"/>
+      <g class="icone" transform="translate(220 28) scale(.8333)"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 9v12"/></g>
+      <g class="n1" mask="url(#jan1)"><g class="rolo p3" style="animation-delay:0.55s;animation-duration:1.35s"><use href="#r10" x="39.5" y="72"/></g><g class="rolo p10" style="animation-delay:0.62s;animation-duration:1.63s"><use href="#r20" x="74.5" y="72"/></g></g>
+      <text class="rot" x="24" y="102">tabelas</text>
+      <rect class="cresce tk" x="25.6" y="116" width="11.47" height="9" rx="2" style="animation-delay:0.9s"/><rect class="cresce tk" x="40.27" y="116" width="11.47" height="9" rx="2" style="animation-delay:0.92s"/><rect class="cresce tk" x="54.93" y="116" width="11.47" height="9" rx="2" style="animation-delay:0.94s"/><rect class="cresce tk" x="69.6" y="116" width="11.47" height="9" rx="2" style="animation-delay:0.96s"/><rect class="cresce tk" x="84.27" y="116" width="11.47" height="9" rx="2" style="animation-delay:0.98s"/><rect class="cresce tk" x="98.93" y="116" width="11.47" height="9" rx="2" style="animation-delay:1s"/><rect class="cresce tk" x="113.6" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.02s"/><rect class="cresce tk" x="128.27" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.04s"/><rect class="cresce tk" x="142.93" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.06s"/><rect class="cresce tk" x="157.6" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.08s"/><rect class="cresce tk" x="172.27" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.1s"/><rect class="cresce tk" x="186.93" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.12s"/><rect class="cresce tk" x="201.6" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.14s"/><rect class="cresce tk" x="216.27" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.16s"/><rect class="cresce tk" x="230.93" y="116" width="11.47" height="9" rx="2" style="animation-delay:1.18s"/><rect class="cresce tk" x="25.6" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.2s"/><rect class="cresce tk" x="40.27" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.22s"/><rect class="cresce tk" x="54.93" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.24s"/><rect class="cresce tk" x="69.6" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.26s"/><rect class="cresce tk" x="84.27" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.28s"/><rect class="cresce tk" x="98.93" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.3s"/><rect class="cresce tk" x="113.6" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.32s"/><rect class="cresce tk" x="128.27" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.34s"/><rect class="cresce tk" x="142.93" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.36s"/><rect class="cresce tk" x="157.6" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.38s"/><rect class="cresce tk" x="172.27" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.4s"/><rect class="cresce tk" x="186.93" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.42s"/><rect class="cresce tk" x="201.6" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.44s"/><rect class="cresce tk" x="216.27" y="127" width="11.47" height="9" rx="2" style="animation-delay:1.46s"/><rect class="cresce vazado" x="231.63" y="127.7" width="10.07" height="7.6" rx="2" style="animation-delay:1.52s"/>
+      <text class="an" x="24" y="157">29 com RLS</text>
+      <text class="an" x="244" y="157" text-anchor="end">1 privada</text>
+    </g></g>
+    <g transform="translate(608 122)"><g class="sobe" style="animation-delay:0.28s">
+      <rect class="cartao" x=".5" y=".5" width="267" height="169" rx="18" filter="url(#sombra)"/>
+      <rect class="ladrilho" x="212" y="20" width="36" height="36" rx="10"/>
+      <g class="icone" transform="translate(220 28) scale(.8333)"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></g>
+      <g class="n1" mask="url(#jan1)"><g class="rolo p3" style="animation-delay:0.65s;animation-duration:1.35s"><use href="#r10" x="39.5" y="72"/></g><g class="rolo p12" style="animation-delay:0.72s;animation-duration:1.63s"><use href="#r20" x="74.5" y="72"/></g></g>
+      <text class="rot" x="24" y="102">migrações SQL</text>
+      <rect class="cresce tk2" x="25.34" y="127.24" width="4.2" height="8.76" rx="1.2" style="animation-delay:1s"/><rect class="cresce tk2" x="32.21" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.02s"/><rect class="cresce tk2" x="39.09" y="133.74" width="4.2" height="2.26" rx="1.2" style="animation-delay:1.04s"/><rect class="cresce tk2" x="45.96" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.07s"/><rect class="cresce tk2" x="52.84" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.09s"/><rect class="cresce tk2" x="59.71" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.11s"/><rect class="cresce tk2" x="66.59" y="131.56" width="4.2" height="4.44" rx="1.2" style="animation-delay:1.13s"/><rect class="cresce tk2" x="73.46" y="132.7" width="4.2" height="3.3" rx="1.2" style="animation-delay:1.15s"/><rect class="cresce tk2" x="80.34" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.18s"/><rect class="cresce tk2" x="87.21" y="129.54" width="4.2" height="6.46" rx="1.2" style="animation-delay:1.2s"/><rect class="cresce tk2" x="94.09" y="132.65" width="4.2" height="3.35" rx="1.2" style="animation-delay:1.22s"/><rect class="cresce tk2" x="100.96" y="133.6" width="4.2" height="2.4" rx="1.2" style="animation-delay:1.24s"/><rect class="cresce tk2" x="107.84" y="125.26" width="4.2" height="10.74" rx="1.2" style="animation-delay:1.26s"/><rect class="cresce tk2" x="114.71" y="127.86" width="4.2" height="8.14" rx="1.2" style="animation-delay:1.29s"/><rect class="cresce tk2" x="121.59" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.31s"/><rect class="cresce tk2" x="128.46" y="132.36" width="4.2" height="3.64" rx="1.2" style="animation-delay:1.33s"/><rect class="cresce tk2" x="135.34" y="122.01" width="4.2" height="13.99" rx="1.2" style="animation-delay:1.35s"/><rect class="cresce tk2" x="142.21" y="132.75" width="4.2" height="3.25" rx="1.2" style="animation-delay:1.37s"/><rect class="cresce tk2" x="149.09" y="131.74" width="4.2" height="4.26" rx="1.2" style="animation-delay:1.4s"/><rect class="cresce tk2" x="155.96" y="129.29" width="4.2" height="6.71" rx="1.2" style="animation-delay:1.42s"/><rect class="cresce tk2" x="162.84" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.44s"/><rect class="cresce tk2" x="169.71" y="116.75" width="4.2" height="19.25" rx="1.2" style="animation-delay:1.46s"/><rect class="cresce tk2" x="176.59" y="132.26" width="4.2" height="3.74" rx="1.2" style="animation-delay:1.48s"/><rect class="cresce tk2" x="183.46" y="133.65" width="4.2" height="2.35" rx="1.2" style="animation-delay:1.51s"/><rect class="cresce tk2" x="190.34" y="132.31" width="4.2" height="3.69" rx="1.2" style="animation-delay:1.53s"/><rect class="cresce tk2" x="197.21" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.55s"/><rect class="cresce tk2" x="204.09" y="130.99" width="4.2" height="5.01" rx="1.2" style="animation-delay:1.57s"/><rect class="cresce tk2" x="210.96" y="132.05" width="4.2" height="3.95" rx="1.2" style="animation-delay:1.59s"/><rect class="cresce tk2" x="217.84" y="130.71" width="4.2" height="5.29" rx="1.2" style="animation-delay:1.62s"/><rect class="cresce tk2" x="224.71" y="134" width="4.2" height="2" rx="1.2" style="animation-delay:1.64s"/><rect class="cresce tk2" x="231.59" y="133.14" width="4.2" height="2.86" rx="1.2" style="animation-delay:1.66s"/><rect class="cresce tk3" x="238.46" y="116" width="4.2" height="20" rx="1.2" style="animation-delay:1.68s"/>
+      <text class="an mono" x="24" y="157">0001</text><text class="an" x="134" y="157" text-anchor="middle">linhas por arquivo</text>
+      <text class="an mono" x="244" y="157" text-anchor="end">0032</text>
+    </g></g>
+    <g transform="translate(892 122)"><g class="sobe" style="animation-delay:0.36s">
+      <rect class="cartao" x=".5" y=".5" width="267" height="169" rx="18" filter="url(#sombra)"/>
+      <rect class="ladrilho" x="212" y="20" width="36" height="36" rx="10"/>
+      <g class="icone" transform="translate(220 28) scale(.8333)"><circle cx="12" cy="12" r="3"/><path d="M3 12h6M15 12h6"/></g>
+      <g class="n1" mask="url(#jan1)"><g class="rolo p4" style="animation-delay:0.75s;animation-duration:1.35s"><use href="#r10" x="39.5" y="72"/></g><g class="rolo p18" style="animation-delay:0.82s;animation-duration:1.63s"><use href="#r20" x="74.5" y="72"/></g><g class="rolo p16" style="animation-delay:0.89s;animation-duration:1.91s"><use href="#r20" x="109.5" y="72"/></g></g>
+      <text class="rot" x="24" y="102">commits</text>
+      <path class="traco linha2" d="M24 126H244" pathLength="100" style="animation-delay:1.1s"/><path class="traco linha2" d="M52 126C64 126 64 117 76 117H150C162 117 162 126 174 126" pathLength="100" style="animation-delay:1.35s"/><g class="movimento"><g class="aparece" style="animation-delay:2.4s"><path class="fluxo" d="M24 126H244"/><path class="fluxo" d="M52 126C64 126 64 117 76 117H150C162 117 162 126 174 126" style="animation-delay:-.4s"/></g></g><circle class="salta ponto" cx="24" cy="126" r="3.4" style="animation-delay:1.35s"/><circle class="salta ponto" cx="40" cy="126" r="3.4" style="animation-delay:1.45s"/><circle class="salta ponto" cx="92" cy="117" r="3.4" style="animation-delay:1.55s"/><circle class="salta ponto" cx="120" cy="117" r="3.4" style="animation-delay:1.65s"/><circle class="salta ponto" cx="196" cy="126" r="3.4" style="animation-delay:1.75s"/><circle class="salta ponto" cx="220" cy="126" r="3.4" style="animation-delay:1.85s"/><g class="movimento"><g class="aparece" style="animation-delay:2.4s"><circle class="onda" cx="244" cy="126" r="4.5"/></g></g><circle class="salta cabeca" cx="244" cy="126" r="4.5" style="animation-delay:2.05s"/>
+      <text class="an" x="24" y="157">desde 01/08/2026</text>
+      <text class="an mono" x="244" y="157" text-anchor="end">main</text>
+    </g></g>
+
+  <g class="movimento" clip-path="url(#cartoes1)">
+    <g class="varre"><rect x="-240" y="122" width="150" height="170" transform="skewX(-20)" fill="url(#faixa-brilho)"/></g>
+  </g>
+
+  <!-- linha 2: as três camadas de teste -->
+  <g class="sobe" style="animation-delay:.5s">
+    <g clip-path="url(#recorte-azul)">
+      <rect x="40" y="312" width="1120" height="244" fill="url(#azul)"/>
+      <g class="deriva">
+        <ellipse cx="930" cy="342" rx="360" ry="190" fill="url(#aurora-a)"/>
+        <ellipse cx="300" cy="556" rx="420" ry="170" fill="url(#aurora-b)"/>
       </g>
+      <rect x="40" y="312" width="1120" height="244" fill="url(#pontos)" opacity=".12" mask="url(#mascara-grade)"/>
     </g>
-    <g transform="translate(242 40)">
-      <g class="entra" style="animation-delay:0.19s">
-        <rect class="cartao" x="0.5" y="0.5" width="189" height="139" rx="16"/>
-      </g>
-    </g>
-    <g transform="translate(444 40)">
-      <g class="entra" style="animation-delay:0.28s">
-        <rect class="cartao" x="0.5" y="0.5" width="189" height="139" rx="16"/>
-      </g>
-    </g>
-    <g transform="translate(646 40)">
-      <g class="entra" style="animation-delay:0.37s">
-        <rect class="cartao" x="0.5" y="0.5" width="189" height="139" rx="16"/>
-      </g>
-    </g>
-    <g transform="translate(848 40)">
-      <g class="entra" style="animation-delay:0.46s">
-        <rect class="cartao" x="0.5" y="0.5" width="189" height="139" rx="16"/>
-      </g>
-    </g>
-    <g transform="translate(1050 40)">
-      <g class="entra" style="animation-delay:0.55s">
-        <rect class="cartao" x="0.5" y="0.5" width="189" height="139" rx="16"/>
-      </g>
+    <rect x="40.5" y="312.5" width="1119" height="243" rx="19.5" fill="none" stroke="#ffffff" stroke-opacity=".14"/>
+  </g>
+
+  
+    <g transform="translate(64 334)"><g class="sobe" style="animation-delay:0.62s">
+      <rect class="vidro" x=".5" y=".5" width="343" height="135" rx="16"/>
+      <rect class="ladrilho2" x="284" y="20" width="40" height="40" rx="11"/>
+      <g class="icone2" transform="translate(292 28)"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094M8.5 2h7"/></g>
+      <g class="n2" mask="url(#jan2)"><g class="rolo p1" style="animation-delay:0.9s;animation-duration:1.35s"><use href="#r10" x="39.5" y="66"/></g><g class="rolo p10" style="animation-delay:0.97s;animation-duration:1.63s"><use href="#r20" x="74.5" y="66"/></g><g class="rolo p10" style="animation-delay:1.04s;animation-duration:1.91s"><use href="#r20" x="109.5" y="66"/></g><g class="rolo p14" style="animation-delay:1.11s;animation-duration:2.19s"><use href="#r20" x="144.5" y="66"/></g></g>
+      <circle class="k1" cx="30" cy="93" r="4.5"/>
+      <text class="rot2" x="42" y="99">testes unitários</text>
+      <text class="det2" x="24" y="121">Vitest · 97 arquivos</text>
+    </g></g>
+    <g transform="translate(428 334)"><g class="sobe" style="animation-delay:0.72s">
+      <rect class="vidro" x=".5" y=".5" width="343" height="135" rx="16"/>
+      <rect class="ladrilho2" x="284" y="20" width="40" height="40" rx="11"/>
+      <g class="icone2" transform="translate(292 28)"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g>
+      <g class="n2" mask="url(#jan2)"><g class="rolo p3" style="animation-delay:1.02s;animation-duration:1.35s"><use href="#r10" x="39.5" y="66"/></g><g class="rolo p10" style="animation-delay:1.09s;animation-duration:1.63s"><use href="#r20" x="74.5" y="66"/></g><g class="rolo p12" style="animation-delay:1.16s;animation-duration:1.91s"><use href="#r20" x="109.5" y="66"/></g></g>
+      <circle class="k2" cx="30" cy="93" r="4.5"/>
+      <text class="rot2" x="42" y="99">testes de banco</text>
+      <text class="det2" x="24" y="121">permissões e regras, por perfil</text>
+    </g></g>
+    <g transform="translate(792 334)"><g class="sobe" style="animation-delay:0.82s">
+      <rect class="vidro" x=".5" y=".5" width="343" height="135" rx="16"/>
+      <rect class="ladrilho2" x="284" y="20" width="40" height="40" rx="11"/>
+      <g class="icone2" transform="translate(292 28)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m9 10 2 2 4-4M12 17v4M8 21h8"/></g>
+      <g class="n2" mask="url(#jan2)"><g class="rolo p3" style="animation-delay:1.14s;animation-duration:1.35s"><use href="#r10" x="39.5" y="66"/></g><g class="rolo p12" style="animation-delay:1.21s;animation-duration:1.63s"><use href="#r20" x="74.5" y="66"/></g><g class="rolo p15" style="animation-delay:1.28s;animation-duration:1.91s"><use href="#r20" x="109.5" y="66"/></g></g>
+      <circle class="k3" cx="30" cy="93" r="4.5"/>
+      <text class="rot2" x="42" y="99">testes E2E</text>
+      <text class="det2" x="24" y="121">Chromium, WebKit e iPhone</text>
+    </g></g>
+
+  <g class="movimento" clip-path="url(#cartoes2)">
+    <g class="varre2"><rect x="-240" y="334" width="160" height="136" transform="skewX(-20)" fill="url(#faixa-brilho2)"/></g>
+  </g>
+
+  <!-- barra: 1631 verificações divididas entre as camadas -->
+  <g class="sobe" style="animation-delay:1.5s">
+    <rect class="trilho" x="64" y="494" width="1072" height="8" rx="4"/>
+    <rect class="enche k1" x="64" y="494" width="659.82" height="8" rx="4" style="animation-delay:1.8s"/><rect class="enche k2" x="727.82" y="494" width="198.47" height="8" rx="4" style="animation-delay:2.15s"/><rect class="enche k3" x="930.3" y="494" width="205.7" height="8" rx="4" style="animation-delay:2.5s"/>
+    <g class="movimento" clip-path="url(#recorte-barra)">
+      <g class="brilho-barra"><rect x="-156" y="494" width="180" height="8" fill="url(#faixa-barra)" opacity=".55"/></g>
     </g>
   </g>
 
-  <!-- Camada 2: brilho diagonal (decorativo) -->
-  <g class="movimento" clip-path="url(#cartoes)">
-    <g class="brilho">
-      <rect x="-60" y="40" width="120" height="140" transform="skewX(-22)" fill="url(#faixa-brilho)"/>
-    </g>
+  <g class="sobe" style="animation-delay:2.1s">
+    <text x="64" y="534"><tspan class="cap-forte">1631 verificações automáticas</tspan><tspan class="cap" dx="9">·</tspan><tspan class="cap" dx="9">WCAG 2.2 AA (axe) em todas as telas</tspan></text>
+    <text class="cap" x="800" y="534" text-anchor="end">CI no GitHub Actions</text>
   </g>
-
-  <!-- Camada 3: conteúdo dos cartões -->
-  <g>
-    <!-- 1. 31 migrações SQL versionadas -->
-    <g transform="translate(40 40)">
-      <g class="entra" style="animation-delay:0.1s">
-        <g class="movimento">
-          <rect class="aro" x="0.5" y="0.5" width="189" height="139" rx="16" style="animation-delay:3.66s"/>
-          <rect class="anel" x="128" y="14" width="48" height="48" rx="13" style="animation-delay:3.66s"/>
-        </g>
-        <rect class="ladrilho" x="132" y="18" width="40" height="40" rx="10"/>
-        <g transform="translate(140 26)">
-          <g class="pulso icone" style="animation-delay:3.66s" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
-          </g>
-        </g>
-        <g mask="url(#janela)">
-          <g class="rolo p3" style="animation-duration:1.3s;animation-delay:0.35s">
-            <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
-          </g>
-          <g class="rolo p11" style="animation-duration:2.1s;animation-delay:0.42s">
-            <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
-          </g>
-        </g>
-        <rect class="regua" x="18" y="70" width="154" height="3" rx="1.5" fill="url(#regua)" style="animation-delay:0.55s"/>
-        <text class="l1" x="18" y="99">migrações SQL</text>
-        <text class="l2" x="18" y="120">versionadas</text>
+  
+      <g class="sobe" style="animation-delay:2.3s">
+        <rect class="pilula" x="814" y="516" width="100" height="26" rx="13"/>
+        <g class="movimento"><circle class="ok-onda" cx="828" cy="529" r="3.5" style="animation-delay:3.2s"/></g>
+        <circle class="ok" cx="828" cy="529" r="3.5"/>
+        <text class="chip-t" x="837" y="534">qualidade</text>
       </g>
-    </g>
-
-    <!-- 2. 42 rotas testadas em 3 larguras -->
-    <g transform="translate(242 40)">
-      <g class="entra" style="animation-delay:0.19s">
-        <g class="movimento">
-          <rect class="aro" x="0.5" y="0.5" width="189" height="139" rx="16" style="animation-delay:3.95s"/>
-          <rect class="anel" x="128" y="14" width="48" height="48" rx="13" style="animation-delay:3.95s"/>
-        </g>
-        <rect class="ladrilho" x="132" y="18" width="40" height="40" rx="10"/>
-        <g transform="translate(140 26)">
-          <g class="pulso icone" style="animation-delay:3.95s" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>
-          </g>
-        </g>
-        <g mask="url(#janela)">
-          <g class="rolo p4" style="animation-duration:1.3s;animation-delay:0.49s">
-            <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
-          </g>
-          <g class="rolo p12" style="animation-duration:2.1s;animation-delay:0.56s">
-            <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
-          </g>
-        </g>
-        <rect class="regua" x="18" y="70" width="154" height="3" rx="1.5" fill="url(#regua)" style="animation-delay:0.69s"/>
-        <text class="l1" x="18" y="99">rotas testadas</text>
-        <text class="l2" x="18" y="120">em 3 larguras</text>
+      <g class="sobe" style="animation-delay:2.4s">
+        <rect class="pilula" x="922" y="516" width="70" height="26" rx="13"/>
+        <g class="movimento"><circle class="ok-onda" cx="936" cy="529" r="3.5" style="animation-delay:3.65s"/></g>
+        <circle class="ok" cx="936" cy="529" r="3.5"/>
+        <text class="chip-t" x="945" y="534">banco</text>
       </g>
-    </g>
-
-    <!-- 3. 936 testes de unidade e de componente -->
-    <g transform="translate(444 40)">
-      <g class="entra" style="animation-delay:0.28s">
-        <g class="movimento">
-          <rect class="aro" x="0.5" y="0.5" width="189" height="139" rx="16" style="animation-delay:4.25s"/>
-          <rect class="anel" x="128" y="14" width="48" height="48" rx="13" style="animation-delay:4.25s"/>
-        </g>
-        <rect class="ladrilho" x="132" y="18" width="40" height="40" rx="10"/>
-        <g transform="translate(140 26)">
-          <g class="pulso icone" style="animation-delay:4.25s" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/>
-          </g>
-        </g>
-        <g mask="url(#janela)">
-          <g class="rolo p9" style="animation-duration:1.3s;animation-delay:0.63s">
-            <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
-          </g>
-          <g class="rolo p13" style="animation-duration:2.1s;animation-delay:0.7s">
-            <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
-          </g>
-          <g class="rolo p16" style="animation-duration:2.1s;animation-delay:0.77s">
-            <text class="num"><tspan x="95.5" y="56">0</tspan><tspan x="95.5" y="120">1</tspan><tspan x="95.5" y="184">2</tspan><tspan x="95.5" y="248">3</tspan><tspan x="95.5" y="312">4</tspan><tspan x="95.5" y="376">5</tspan><tspan x="95.5" y="440">6</tspan><tspan x="95.5" y="504">7</tspan><tspan x="95.5" y="568">8</tspan><tspan x="95.5" y="632">9</tspan><tspan x="95.5" y="696">0</tspan><tspan x="95.5" y="760">1</tspan><tspan x="95.5" y="824">2</tspan><tspan x="95.5" y="888">3</tspan><tspan x="95.5" y="952">4</tspan><tspan x="95.5" y="1016">5</tspan><tspan x="95.5" y="1080">6</tspan><tspan x="95.5" y="1144">7</tspan><tspan x="95.5" y="1208">8</tspan><tspan x="95.5" y="1272">9</tspan></text>
-          </g>
-        </g>
-        <rect class="regua" x="18" y="70" width="154" height="3" rx="1.5" fill="url(#regua)" style="animation-delay:0.83s"/>
-        <text class="l1" x="18" y="99">testes de unidade</text>
-        <text class="l2" x="18" y="120">e de componente</text>
+      <g class="sobe" style="animation-delay:2.5s">
+        <rect class="pilula" x="1000" y="516" width="70" height="26" rx="13"/>
+        <g class="movimento"><circle class="ok-onda" cx="1014" cy="529" r="3.5" style="animation-delay:4.1s"/></g>
+        <circle class="ok" cx="1014" cy="529" r="3.5"/>
+        <text class="chip-t" x="1023" y="534">build</text>
       </g>
-    </g>
-
-    <!-- 4. 269 testes de permissão no banco, por perfil -->
-    <g transform="translate(646 40)">
-      <g class="entra" style="animation-delay:0.37s">
-        <g class="movimento">
-          <rect class="aro" x="0.5" y="0.5" width="189" height="139" rx="16" style="animation-delay:4.54s"/>
-          <rect class="anel" x="128" y="14" width="48" height="48" rx="13" style="animation-delay:4.54s"/>
-        </g>
-        <rect class="ladrilho" x="132" y="18" width="40" height="40" rx="10"/>
-        <g transform="translate(140 26)">
-          <g class="pulso icone" style="animation-delay:4.54s" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>
-          </g>
-        </g>
-        <g mask="url(#janela)">
-          <g class="rolo p2" style="animation-duration:1.3s;animation-delay:0.77s">
-            <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
-          </g>
-          <g class="rolo p16" style="animation-duration:2.1s;animation-delay:0.84s">
-            <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
-          </g>
-          <g class="rolo p19" style="animation-duration:2.1s;animation-delay:0.91s">
-            <text class="num"><tspan x="95.5" y="56">0</tspan><tspan x="95.5" y="120">1</tspan><tspan x="95.5" y="184">2</tspan><tspan x="95.5" y="248">3</tspan><tspan x="95.5" y="312">4</tspan><tspan x="95.5" y="376">5</tspan><tspan x="95.5" y="440">6</tspan><tspan x="95.5" y="504">7</tspan><tspan x="95.5" y="568">8</tspan><tspan x="95.5" y="632">9</tspan><tspan x="95.5" y="696">0</tspan><tspan x="95.5" y="760">1</tspan><tspan x="95.5" y="824">2</tspan><tspan x="95.5" y="888">3</tspan><tspan x="95.5" y="952">4</tspan><tspan x="95.5" y="1016">5</tspan><tspan x="95.5" y="1080">6</tspan><tspan x="95.5" y="1144">7</tspan><tspan x="95.5" y="1208">8</tspan><tspan x="95.5" y="1272">9</tspan></text>
-          </g>
-        </g>
-        <rect class="regua" x="18" y="70" width="154" height="3" rx="1.5" fill="url(#regua)" style="animation-delay:0.97s"/>
-        <text class="l1" x="18" y="99">testes de permissão</text>
-        <text class="l2" x="18" y="120">no banco, por perfil</text>
+      <g class="sobe" style="animation-delay:2.6s">
+        <rect class="pilula" x="1078" y="516" width="58" height="26" rx="13"/>
+        <g class="movimento"><circle class="ok-onda" cx="1092" cy="529" r="3.5" style="animation-delay:4.55s"/></g>
+        <circle class="ok" cx="1092" cy="529" r="3.5"/>
+        <text class="chip-t" x="1101" y="534">E2E</text>
       </g>
-    </g>
-
-    <!-- 5. 47 fluxos E2E no navegador -->
-    <g transform="translate(848 40)">
-      <g class="entra" style="animation-delay:0.46s">
-        <g class="movimento">
-          <rect class="aro" x="0.5" y="0.5" width="189" height="139" rx="16" style="animation-delay:4.84s"/>
-          <rect class="anel" x="128" y="14" width="48" height="48" rx="13" style="animation-delay:4.84s"/>
-        </g>
-        <rect class="ladrilho" x="132" y="18" width="40" height="40" rx="10"/>
-        <g transform="translate(140 26)">
-          <g class="pulso icone" style="animation-delay:4.84s" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>
-          </g>
-        </g>
-        <g mask="url(#janela)">
-          <g class="rolo p4" style="animation-duration:1.3s;animation-delay:0.91s">
-            <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan></text>
-          </g>
-          <g class="rolo p17" style="animation-duration:2.1s;animation-delay:0.98s">
-            <text class="num"><tspan x="64.5" y="56">0</tspan><tspan x="64.5" y="120">1</tspan><tspan x="64.5" y="184">2</tspan><tspan x="64.5" y="248">3</tspan><tspan x="64.5" y="312">4</tspan><tspan x="64.5" y="376">5</tspan><tspan x="64.5" y="440">6</tspan><tspan x="64.5" y="504">7</tspan><tspan x="64.5" y="568">8</tspan><tspan x="64.5" y="632">9</tspan><tspan x="64.5" y="696">0</tspan><tspan x="64.5" y="760">1</tspan><tspan x="64.5" y="824">2</tspan><tspan x="64.5" y="888">3</tspan><tspan x="64.5" y="952">4</tspan><tspan x="64.5" y="1016">5</tspan><tspan x="64.5" y="1080">6</tspan><tspan x="64.5" y="1144">7</tspan><tspan x="64.5" y="1208">8</tspan><tspan x="64.5" y="1272">9</tspan></text>
-          </g>
-        </g>
-        <rect class="regua" x="18" y="70" width="154" height="3" rx="1.5" fill="url(#regua)" style="animation-delay:1.11s"/>
-        <text class="l1" x="18" y="99">fluxos E2E</text>
-        <text class="l2" x="18" y="120">no navegador</text>
-      </g>
-    </g>
-
-    <!-- 6. 3 perfis de acesso RLS em toda tabela -->
-    <g transform="translate(1050 40)">
-      <g class="entra" style="animation-delay:0.55s">
-        <g class="movimento">
-          <rect class="aro" x="0.5" y="0.5" width="189" height="139" rx="16" style="animation-delay:5.13s"/>
-          <rect class="anel" x="128" y="14" width="48" height="48" rx="13" style="animation-delay:5.13s"/>
-        </g>
-        <rect class="ladrilho" x="132" y="18" width="40" height="40" rx="10"/>
-        <g transform="translate(140 26)">
-          <g class="pulso icone" style="animation-delay:5.13s" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </g>
-        </g>
-        <g mask="url(#janela)">
-          <g class="rolo p13" style="animation-duration:2.1s;animation-delay:1.05s">
-            <text class="num"><tspan x="33.5" y="56">0</tspan><tspan x="33.5" y="120">1</tspan><tspan x="33.5" y="184">2</tspan><tspan x="33.5" y="248">3</tspan><tspan x="33.5" y="312">4</tspan><tspan x="33.5" y="376">5</tspan><tspan x="33.5" y="440">6</tspan><tspan x="33.5" y="504">7</tspan><tspan x="33.5" y="568">8</tspan><tspan x="33.5" y="632">9</tspan><tspan x="33.5" y="696">0</tspan><tspan x="33.5" y="760">1</tspan><tspan x="33.5" y="824">2</tspan><tspan x="33.5" y="888">3</tspan><tspan x="33.5" y="952">4</tspan><tspan x="33.5" y="1016">5</tspan><tspan x="33.5" y="1080">6</tspan><tspan x="33.5" y="1144">7</tspan><tspan x="33.5" y="1208">8</tspan><tspan x="33.5" y="1272">9</tspan></text>
-          </g>
-        </g>
-        <rect class="regua" x="18" y="70" width="154" height="3" rx="1.5" fill="url(#regua)" style="animation-delay:1.25s"/>
-        <text class="l1" x="18" y="99">perfis de acesso</text>
-        <text class="l2" x="18" y="120">RLS em toda tabela</text>
-      </g>
-    </g>
-  </g>
 </svg>

@@ -1,391 +1,126 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="410" viewBox="0 0 1280 410" role="img" aria-labelledby="t d">
-  <title id="t">A jornada do projeto</title>
-  <desc id="d">Linha do tempo com os marcos do histórico de commits, de 01/08 a 22/09/2026. 01/08: Etapa 1, estrutura navegável e Visão Geral. 02/08: fundação do banco no Supabase, com RLS nas tabelas. 04/08: autenticação real e correção da escalada de privilégio (migração 0004). 05/08: Visão Geral lendo do banco, no fuso da clínica. 19/08: Pacientes, importação por CSV com prévia e Agenda. 23/08: tabela de procedimentos em Configurações. 24/08: Financeiro, com vendas, recebimentos, taxas e fluxo de caixa. 29/08: Prontuários com registro versionado e o AGENTS.md. 14/09: fotos de evolução, Documentos e assinatura por link. 22/09: Relacionamento, busca global e recuperação de senha. 22/09: auditoria com privilégio mínimo no banco (migrações 0019 a 0022), 216 testes e Next 15.5.26. Próximos passos, ainda não entregues: Relatórios, perfil Profissional e Next 16.</desc>
-  <style>
-    svg {
-      --painel: #ffffff; --painel-2: #f9f9fa; --borda: #e3e5e8;
-      --texto: #1b1c1e; --texto-2: #43474d; --texto-3: #72767c;
-      --marca: #0854a0; --marca-acao: #0a6ed1; --marca-suave: #d6e9fb;
-      --positivo: #107e3e; --positivo-fundo: #eaf5ea;
-      --atencao-texto: #8f4700; --atencao-acento: #e9730c; --atencao-fundo: #fff3d6;
-      --nucleo: #ffffff;
-      font-family: "Hanken Grotesk", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      svg {
-        --painel: #0d1117; --painel-2: #161b22; --borda: #30363d;
-        --texto: #e6edf3; --texto-2: #9da7b3; --texto-3: #7d8590;
-        --marca: #58a6ff; --marca-acao: #388bfd; --marca-suave: #0c2d6b;
-        --positivo: #3fb950; --positivo-fundo: #0f2e1a;
-        --atencao-texto: #f0a24b; --atencao-acento: #e9730c; --atencao-fundo: #3a2508;
-        --nucleo: #e6edf3;
-      }
-    }
-
-    /* Cores por papel: azul = trilho e cometa (navegação), verde = entregue, laranja = o que falta */
-    .painel { fill: var(--painel); stroke: var(--borda); }
-    .t { fill: var(--texto); }
-    .t2 { fill: var(--texto-2); }
-    .marca { fill: var(--marca); }
-    .at { fill: var(--atencao-texto); }
-    .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace; }
-    .sobrancelha { font-size: 13px; font-weight: 700; letter-spacing: .14em; }
-    .manchete { font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
-    .meta { font-size: 15px; }
-    .legenda { font-size: 14px; }
-    .data { font-size: 13px; font-weight: 600; }
-    .etiqueta { fill: var(--painel); stroke: var(--borda); }
-    .etiqueta-txt { font-size: 13px; font-weight: 600; }
-    .titulo { font-size: 16px; font-weight: 700; }
-    .corpo { font-size: 15px; }
-    .cartao { fill: var(--painel-2); stroke: var(--borda); }
-    .cartao-prox { fill: var(--atencao-fundo); stroke: var(--atencao-acento); }
-    .trilho-base { stroke: var(--borda); fill: none; }
-    .trilho { stroke: var(--marca); fill: none; }
-    .futuro { stroke: var(--atencao-acento); fill: none; }
-    .haste { stroke: var(--borda); stroke-width: 1.5; }
-    .haste-prox { stroke: var(--atencao-acento); }
-    .no { fill: var(--positivo-fundo); stroke: var(--positivo); }
-    .ico-ok { stroke: var(--positivo); color: var(--positivo); }
-    .no-prox { fill: var(--atencao-fundo); }
-    .anel-prox { fill: none; stroke: var(--atencao-acento); }
-    .ico-prox { stroke: var(--atencao-texto); color: var(--atencao-texto); }
-    .anel-entra { fill: none; stroke: var(--positivo); }
-    .pulso { fill: none; stroke: var(--atencao-acento); }
-    .lampejo { fill: none; stroke: var(--marca-acao); }
-    .lampejo-prox { fill: none; stroke: var(--atencao-acento); }
-    .nucleo { fill: var(--nucleo); stroke: var(--marca-acao); }
-    .c-acao { stop-color: var(--marca-acao); }
-    .c-nucleo { stop-color: var(--nucleo); }
-
-    /* Entrada: cada peça parte do quadro 0% e termina no estado estático completo */
-    .sobe { animation: sobe .7s cubic-bezier(.2,.8,.2,1) both; }
-    .acende { transform-box: fill-box; transform-origin: center; animation: acende .6s cubic-bezier(.2,.8,.2,1) both; }
-    .trilho { stroke-dasharray: 1042; animation: desenha 2.4s linear 0.3s both; }
-    .haste { stroke-dasharray: 15; animation: haste .35s ease-out both; }
-    .haste-prox { stroke-dasharray: 3 3; animation: aparece .5s ease-out both; }
-    .futuro { stroke-dasharray: 6 5; animation: aparece .6s ease-out 2.75s both, fluxo 6s linear 2.75s infinite; }
-    .anel-entra { transform-box: fill-box; transform-origin: center; animation: anel-entra 1s cubic-bezier(.2,.8,.2,1) both; }
-    /* Laços */
-    .gira { transform-box: fill-box; transform-origin: center; animation: gira 14s linear infinite; }
-    .pulso { transform-box: fill-box; transform-origin: center; animation: pulso 6s cubic-bezier(.2,.8,.2,1) 3.4s infinite both; }
-
-    @keyframes sobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-    @keyframes acende {
-      0% { opacity: 0; transform: scale(.4); }
-      60% { opacity: 1; transform: scale(1.12); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-    @keyframes desenha { from { stroke-dashoffset: 1042; } to { stroke-dashoffset: 0; } }
-    @keyframes haste { from { stroke-dashoffset: 15; } to { stroke-dashoffset: 0; } }
-    @keyframes aparece { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes fluxo { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -66; } }
-    @keyframes anel-entra {
-      0% { opacity: 0; transform: scale(1); }
-      15% { opacity: .8; }
-      100% { opacity: 0; transform: scale(2); }
-    }
-    @keyframes gira { to { transform: rotate(360deg); } }
-    @keyframes pulso {
-      0% { opacity: 0; transform: scale(1); }
-      5% { opacity: .85; }
-      38% { opacity: 0; transform: scale(2.1); }
-      50% { opacity: 0; transform: scale(1); }
-      55% { opacity: .85; }
-      88% { opacity: 0; transform: scale(2.1); }
-      100% { opacity: 0; transform: scale(2.1); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; }
-      .movimento { display: none; }
-    }
-  </style>
-
-  <defs>
-    <linearGradient id="rastro" x1="0" x2="1" y1="0" y2="0">
-      <stop offset="0" class="c-acao" stop-opacity="0"/>
-      <stop offset="1" class="c-acao" stop-opacity=".6"/>
-    </linearGradient>
-    <linearGradient id="brilho" x1="0" x2="1" y1="0" y2="0">
-      <stop offset="0" class="c-nucleo" stop-opacity="0"/>
-      <stop offset="1" class="c-nucleo" stop-opacity="1"/>
-    </linearGradient>
-    <radialGradient id="halo">
-      <stop offset="0" class="c-acao" stop-opacity=".55"/>
-      <stop offset="1" class="c-acao" stop-opacity="0"/>
-    </radialGradient>
-    <clipPath id="faixa">
-      <rect x="48" y="218" width="1173" height="44"/>
-    </clipPath>
-  </defs>
-
-  <!-- Painel próprio: funciona no GitHub claro e no escuro -->
-  <rect class="painel" x=".5" y=".5" width="1279" height="409" rx="24"/>
-
-  <!-- Cabeçalho -->
-  <g class="sobe" style="animation-delay:.05s">
-    <text class="marca sobrancelha" x="40" y="52">A JORNADA DO PROJETO</text>
-    <text class="t manchete" x="40" y="86">Da primeira tela à auditoria</text>
-  </g>
-  <g class="sobe" style="animation-delay:.2s">
-    <circle class="no" cx="1056" cy="47" r="8" stroke-width="1.25"/>
-    <g class="ico-ok" transform="translate(1050 41) scale(0.5)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></g>
-    <text class="t2 legenda" x="1070" y="52">entregue</text>
-    <circle class="no-prox" cx="1162" cy="47" r="8"/>
-    <circle class="anel-prox" cx="1162" cy="47" r="8" stroke-width="1.5" stroke-dasharray="2.6 2.4"/>
-    <text class="at legenda" x="1176" y="52">próximo</text>
-  </g>
-  <g class="sobe" style="animation-delay:.3s">
-    <text class="t2 meta" x="1240" y="86" text-anchor="end">git log · 01/08 → 22/09/2026 · 22 migrações</text>
-  </g>
-
-  <!-- Trilho: a base neutra fica por baixo; o azul se desenha da esquerda para a direita -->
-  <line class="trilho-base" x1="58" y1="240" x2="1100" y2="240" stroke-width="3" stroke-linecap="round"/>
-  <path class="trilho" d="M58 240 H1100" stroke-width="3" stroke-linecap="round"/>
-  <circle class="marca" cx="58" cy="240" r="4"/>
-  <!-- O que falta: tracejado laranja correndo em direção ao próximo nó -->
-  <path class="futuro" d="M1117 240 H1184" stroke-width="2.5" stroke-linecap="round"/>
-
-  <!-- Hastes entre nó e cartão -->
-  <g>
-    <line class="haste" x1="90" y1="223" x2="90" y2="208" style="animation-delay:0.374s"/>
-    <line class="haste" x1="191" y1="257" x2="191" y2="272" style="animation-delay:0.606s"/>
-    <line class="haste" x1="292" y1="223" x2="292" y2="208" style="animation-delay:0.839s"/>
-    <line class="haste" x1="393" y1="257" x2="393" y2="272" style="animation-delay:1.072s"/>
-    <line class="haste" x1="494" y1="223" x2="494" y2="208" style="animation-delay:1.304s"/>
-    <line class="haste" x1="595" y1="257" x2="595" y2="272" style="animation-delay:1.537s"/>
-    <line class="haste" x1="696" y1="223" x2="696" y2="208" style="animation-delay:1.769s"/>
-    <line class="haste" x1="797" y1="257" x2="797" y2="272" style="animation-delay:2.002s"/>
-    <line class="haste" x1="898" y1="223" x2="898" y2="208" style="animation-delay:2.235s"/>
-    <line class="haste" x1="999" y1="257" x2="999" y2="272" style="animation-delay:2.467s"/>
-    <line class="haste" x1="1100" y1="223" x2="1100" y2="208" style="animation-delay:2.7s"/>
-    <line class="haste haste-prox" x1="1201" y1="257" x2="1201" y2="272" style="animation-delay:3s"/>
-  </g>
-
-  <!-- Movimento decorativo (some com movimento reduzido) -->
-  <g class="movimento">
-    <!-- anéis que se expandem quando cada nó acende -->
-    <circle class="anel-entra" cx="90" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.294s"/>
-    <circle class="anel-entra" cx="191" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.526s"/>
-    <circle class="anel-entra" cx="292" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.759s"/>
-    <circle class="anel-entra" cx="393" cy="240" r="17" stroke-width="1.5" style="animation-delay:0.992s"/>
-    <circle class="anel-entra" cx="494" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.224s"/>
-    <circle class="anel-entra" cx="595" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.457s"/>
-    <circle class="anel-entra" cx="696" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.689s"/>
-    <circle class="anel-entra" cx="797" cy="240" r="17" stroke-width="1.5" style="animation-delay:1.922s"/>
-    <circle class="anel-entra" cx="898" cy="240" r="17" stroke-width="1.5" style="animation-delay:2.155s"/>
-    <circle class="anel-entra" cx="999" cy="240" r="17" stroke-width="1.5" style="animation-delay:2.387s"/>
-    <circle class="anel-entra" cx="1100" cy="240" r="17" stroke-width="1.5" style="animation-delay:2.62s"/>
-    <!-- pulso do próximo passo -->
-    <circle class="pulso" cx="1201" cy="240" r="17" stroke-width="1.75"/>
-    <!-- lampejo de cada nó quando o cometa passa: mesmo relógio SMIL do cometa -->
-    <g>
-      <circle class="lampejo" cx="90" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.013;0.093;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.001;0.013;0.103;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="191" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.066;0.146;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.054;0.066;0.156;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="292" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.119;0.199;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.107;0.119;0.209;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="393" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.172;0.252;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.16;0.172;0.262;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="494" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.225;0.305;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.213;0.225;0.315;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="595" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.278;0.358;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.266;0.278;0.368;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="696" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.331;0.411;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.319;0.331;0.421;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="797" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.384;0.464;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.372;0.384;0.474;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="898" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.437;0.517;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.425;0.437;0.527;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="999" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.49;0.57;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.478;0.49;0.58;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo" cx="1100" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.543;0.623;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.531;0.543;0.633;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle class="lampejo-prox" cx="1201" cy="240" r="17" stroke-width="2" opacity="0">
-        <animate attributeName="r" values="17;17;31;31" keyTimes="0;0.596;0.676;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.584;0.596;0.686;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-      </circle>
-    </g>
-    <!-- cometa: percorre o trilho em laço de 10s (anda por 6s e se funde no próximo passo) -->
-    <g clip-path="url(#faixa)">
-      <g opacity="0">
-        <animateMotion path="M58 240 H1201" keyPoints="0;1;1" keyTimes="0;0.6;1" calcMode="linear" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;.04;0.56;0.6;1" dur="10s" begin="3.6s" repeatCount="indefinite"/>
-        <rect x="-96" y="-4" width="96" height="8" rx="4" fill="url(#rastro)"/>
-        <rect x="-64" y="-1" width="64" height="2" rx="1" fill="url(#brilho)"/>
-        <circle r="16" fill="url(#halo)"/>
-        <circle class="nucleo" r="4.5" stroke-width="2"/>
-      </g>
-    </g>
-  </g>
-
-  <!-- Nós: verde = entregue (deu certo); laranja tracejado = o que falta fazer -->
-  <g>
-    <g class="acende" style="animation-delay:0.294s">
-      <circle class="no" cx="90" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(81 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></g>
-    </g>
-    <g class="acende" style="animation-delay:0.526s">
-      <circle class="no" cx="191" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(182 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></g>
-    </g>
-    <g class="acende" style="animation-delay:0.759s">
-      <circle class="no" cx="292" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(283 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></g>
-    </g>
-    <g class="acende" style="animation-delay:0.992s">
-      <circle class="no" cx="393" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(384 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></g>
-    </g>
-    <g class="acende" style="animation-delay:1.224s">
-      <circle class="no" cx="494" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(485 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g>
-    </g>
-    <g class="acende" style="animation-delay:1.457s">
-      <circle class="no" cx="595" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(586 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></g>
-    </g>
-    <g class="acende" style="animation-delay:1.689s">
-      <circle class="no" cx="696" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(687 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></g>
-    </g>
-    <g class="acende" style="animation-delay:1.922s">
-      <circle class="no" cx="797" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(788 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14h6"/><path d="M12 17v-6"/></g>
-    </g>
-    <g class="acende" style="animation-delay:2.155s">
-      <circle class="no" cx="898" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(889 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 5-2.414-2.414A2 2 0 0 0 14.172 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><path d="M21.378 12.626a1 1 0 0 0-3.004-3.004l-4.01 4.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/><path d="M8 18h1"/></g>
-    </g>
-    <g class="acende" style="animation-delay:2.387s">
-      <circle class="no" cx="999" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(990 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M15.8 9.2a2.5 2.5 0 0 0-3.5 0l-.3.4-.35-.3a2.42 2.42 0 1 0-3.2 3.6l3.6 3.5 3.6-3.5c1.2-1.2 1.1-2.7.2-3.7"/></g>
-    </g>
-    <g class="acende" style="animation-delay:2.62s">
-      <circle class="no" cx="1100" cy="240" r="17" stroke-width="1.5"/>
-      <g class="ico-ok" transform="translate(1091 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g>
-    </g>
-    <g class="acende" style="animation-delay:2.95s">
-      <circle class="no-prox" cx="1201" cy="240" r="17"/>
-      <circle class="anel-prox gira" cx="1201" cy="240" r="17" stroke-width="1.75" stroke-dasharray="4.45 4.45"/>
-      <g class="ico-prox" transform="translate(1192 231) scale(0.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></g>
-    </g>
-  </g>
-
-  <!-- Cartões, alternando acima e abaixo do trilho -->
-  <g>
-    <g class="sobe" style="animation-delay:0.424s">
-      <rect class="cartao" x="40" y="110" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="54" y="134">01/08</text>
-      <text class="t titulo" x="54" y="158">Etapa 1</text>
-      <text class="t2 corpo" x="54" y="178">estrutura navegável</text>
-      <text class="t2 corpo" x="54" y="197">e a Visão Geral</text>
-    </g>
-    <g class="sobe" style="animation-delay:0.656s">
-      <rect class="cartao" x="40" y="272" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="54" y="296">02/08</text>
-      <text class="t titulo" x="54" y="320">Fundação do banco</text>
-      <text class="t2 corpo" x="54" y="340">Etapa 2 no Supabase,</text>
-      <text class="t2 corpo" x="54" y="359">com RLS nas tabelas</text>
-    </g>
-    <g class="sobe" style="animation-delay:0.889s">
-      <rect class="cartao" x="242" y="110" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="256" y="134">04/08</text>
-      <rect class="etiqueta" x="374" y="120" width="46" height="20" rx="10"/>
-      <text class="t2 mono etiqueta-txt" x="397" y="134" text-anchor="middle">0004</text>
-      <text class="t titulo" x="256" y="158">Autenticação real</text>
-      <text class="t2 corpo" x="256" y="178">escalada de privilégio</text>
-      <text class="t2 corpo" x="256" y="197">corrigida no banco</text>
-    </g>
-    <g class="sobe" style="animation-delay:1.122s">
-      <rect class="cartao" x="242" y="272" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="256" y="296">05/08</text>
-      <text class="t titulo" x="256" y="320">Visão Geral</text>
-      <text class="t2 corpo" x="256" y="340">lendo do banco, no</text>
-      <text class="t2 corpo" x="256" y="359">fuso da clínica</text>
-    </g>
-    <g class="sobe" style="animation-delay:1.354s">
-      <rect class="cartao" x="444" y="110" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="458" y="134">19/08</text>
-      <text class="t titulo" x="458" y="158">Pacientes e Agenda</text>
-      <text class="t2 corpo" x="458" y="178">importação CSV com</text>
-      <text class="t2 corpo" x="458" y="197">prévia antes de gravar</text>
-    </g>
-    <g class="sobe" style="animation-delay:1.587s">
-      <rect class="cartao" x="444" y="272" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="458" y="296">23/08</text>
-      <text class="t titulo" x="458" y="320">Procedimentos</text>
-      <text class="t2 corpo" x="458" y="340">em Configurações:</text>
-      <text class="t2 corpo" x="458" y="359">o que a clínica faz</text>
-    </g>
-    <g class="sobe" style="animation-delay:1.819s">
-      <rect class="cartao" x="646" y="110" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="660" y="134">24/08</text>
-      <text class="t titulo" x="660" y="158">Financeiro</text>
-      <text class="t2 corpo" x="660" y="178">vendas, recebimentos,</text>
-      <text class="t2 corpo" x="660" y="197">taxas e fluxo de caixa</text>
-    </g>
-    <g class="sobe" style="animation-delay:2.052s">
-      <rect class="cartao" x="646" y="272" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="660" y="296">29/08</text>
-      <text class="t titulo" x="660" y="320">Prontuários</text>
-      <text class="t2 corpo" x="660" y="340">registro versionado;</text>
-      <text class="t2 corpo" x="660" y="359">nasce o AGENTS.md</text>
-    </g>
-    <g class="sobe" style="animation-delay:2.285s">
-      <rect class="cartao" x="848" y="110" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="862" y="134">14/09</text>
-      <text class="t titulo" x="862" y="158">Documentos</text>
-      <text class="t2 corpo" x="862" y="178">fotos de evolução e</text>
-      <text class="t2 corpo" x="862" y="197">assinatura por link</text>
-    </g>
-    <g class="sobe" style="animation-delay:2.517s">
-      <rect class="cartao" x="848" y="272" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="862" y="296">22/09</text>
-      <text class="t titulo" x="862" y="320">Relacionamento</text>
-      <text class="t2 corpo" x="862" y="340">busca global e</text>
-      <text class="t2 corpo" x="862" y="359">recuperação de senha</text>
-    </g>
-    <g class="sobe" style="animation-delay:2.75s">
-      <rect class="cartao" x="1050" y="110" width="190" height="98" rx="12"/>
-      <text class="t2 mono data" x="1064" y="134">22/09</text>
-      <rect class="etiqueta" x="1119" y="120" width="109" height="20" rx="10"/>
-      <text class="t2 mono etiqueta-txt" x="1173.5" y="134" text-anchor="middle">Next 15.5.26</text>
-      <text class="t titulo" x="1064" y="158">Auditoria</text>
-      <text class="t2 corpo" x="1064" y="178">privilégio mínimo,</text>
-      <text class="t2 corpo" x="1064" y="197">0019–0022, 216 testes</text>
-    </g>
-    <g class="sobe" style="animation-delay:3.05s">
-      <rect class="cartao-prox" x="1050" y="272" width="190" height="98" rx="12" stroke-dasharray="5 4"/>
-      <text class="at mono data" x="1064" y="296">a seguir</text>
-      <text class="t titulo" x="1064" y="320">Próximos passos</text>
-      <text class="t2 corpo" x="1064" y="340">Relatórios · perfil</text>
-      <text class="t2 corpo" x="1064" y="359">Profissional · Next 16</text>
-    </g>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="724" viewBox="0 0 1200 724" role="img" aria-labelledby="t d">
+<title id="t">A jornada do projeto, de 01/08 a 26/09/2026</title>
+<desc id="d">Linha do tempo do projeto, tirada do git log, de 01/08 a 26/09/2026: 486 commits e 32 migrações. No alto, à direita, um histograma de commits por dia mostra a construção espaçada de agosto e a reta final de 22 a 26/09, com 463 commits em 5 dias. Primeira linha, a construção (01/08 a 14/09, 23 commits): 01/08, fundação e Visão Geral, a Etapa 1 com a estrutura navegável em Next.js 15, React 19 e TypeScript; 02/08 a 05/08, banco e segurança, Supabase com RLS em toda tabela e conta nova nascendo sem acesso (migrações 0001 a 0005); 19/08, Pacientes e Agenda, com ficha, importação CSV com prévia e a agenda do dia; 24/08, Financeiro, com vendas, recebimentos, despesas, taxas e fluxo, tudo em centavos (0006 a 0009); 29/08, Prontuários e fotos, com registro clínico versionado e fotos em bucket privado (0010 a 0012); 14/09, Documentos e Contratos, com texto congelado com SHA-256 e assinatura à distância por link (0013 a 0016). Segunda linha, a reta final (22/09 a 26/09, 463 commits): 22/09, Relacionamento e busca, com retornos, tarefas, aniversários, anamnese e recuperação de senha (0017 e 0018); 22/09 a 23/09, privilégio mínimo, com regras conferidas no banco, auditoria por gatilho e a produção no ar (0019 a 0028); 24/09 a 25/09, Captação e funil 3D, com leads, metas e contatos comerciais e o funil 3D vivo em SVG (0029 a 0031); 25/09, Cockpit vivo, com letreiro de pendências, painéis que recolhem e WhatsApp direto; 26/09, o marco mais recente, Assinatura com prova, com código por e-mail, rubrica, carimbo de tempo RFC 3161 e verificação pública em /verificar (0032). Depois dele, tracejado em laranja, os próximos passos ainda não entregues: Relatórios de verdade, perfil Profissional e Next 16. Um ponto luminoso percorre a linha, acende cada marco ao passar e pousa na assinatura com prova.</desc>
+<style>
+svg{--f1:#f5f9ff;--f2:#eef6ff;--fb:#d3e3f6;--cartao:#fff;--cb:#d6e4f4;--sombra:#0b2a4a;--so:.06;--tx:#0b2a4a;--t2:#465a73;--t3:#5f7189;--marca:#0854a0;--acao:#0a6ed1;--forte:#063f7c;--suave:#d6e9fb;--chip:#eef6ff;--chipb:#c9ddf4;--barra:#9cc3ea;--pos:#107e3e;--posf:#e7f4ec;--sobrepos:#fff;--at:#8f4700;--ac:#e9730c;--atf:#fff4e5;--base:#d6e4f4;--no:#fff;--nucleo:#fff;--ponto:#0854a0;--pontoo:.07;--sobremarca:#fff}
+@media (prefers-color-scheme:dark){svg{--f1:#0b2a4a;--f2:#06182c;--fb:#1c3d63;--cartao:#0f2f52;--cb:#24507f;--sombra:#000;--so:.28;--tx:#e6edf3;--t2:#adbdd0;--t3:#8fa3bb;--marca:#79b8ff;--acao:#4c9dff;--forte:#d4e7ff;--suave:#123d69;--chip:#123a63;--chipb:#2a5b8f;--barra:#2f6199;--pos:#3fb950;--posf:#10331f;--sobrepos:#07170d;--at:#f0a24b;--ac:#e9730c;--atf:#33210a;--base:#1f4670;--no:#0f2f52;--nucleo:#eaf4ff;--ponto:#79b8ff;--pontoo:.08;--sobremarca:#06182c}}
+text{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif}
+.mono{font-family:ui-monospace,'SF Mono','Cascadia Code',Consolas,monospace}
+.tab{font-variant-numeric:tabular-nums}
+.fundo{stroke:var(--fb)}
+.pt{fill:var(--ponto);fill-opacity:var(--pontoo)}
+.tx{fill:var(--tx)}.t2{fill:var(--t2)}.t3{fill:var(--t3)}.mc{fill:var(--marca)}.fo{fill:var(--forte)}.at{fill:var(--at)}.po{fill:var(--pos)}
+.sob{font-size:13px;font-weight:700;letter-spacing:.14em}
+.man{font-size:28px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:15px}
+.cap{font-size:12px;font-weight:700;letter-spacing:.12em}
+.eix{font-size:12px}
+.era{font-size:12px;font-weight:700;letter-spacing:.12em}
+.dat{font-size:13px;font-weight:700}
+.has{font-size:12px}
+.chipt{font-size:12px;font-weight:700}
+.tit{font-size:17px;font-weight:700}
+.cor{font-size:15px}
+.odo{font-size:28px;font-weight:700}
+.cartao{fill:var(--cartao);stroke:var(--cb)}
+.sombra{fill:var(--sombra);fill-opacity:var(--so)}
+.cartao-fim{fill:var(--cartao);stroke:var(--acao);stroke-width:1.5}
+.cartao-seg{fill:var(--atf);stroke:var(--ac);stroke-dasharray:5 4}
+.chip{fill:var(--chip);stroke:var(--chipb)}
+.pil{fill:var(--posf)}
+.acento{fill:var(--acao)}
+.acento-1{fill:var(--barra)}
+.base{stroke:var(--base);fill:none}
+.haste{stroke:var(--cb);stroke-width:1.5}
+.haste-seg{stroke:var(--ac);stroke-width:1.5;stroke-dasharray:3 3}
+.no{fill:var(--no);stroke:var(--acao)}
+.ic{stroke:var(--marca)}
+.no-fim{fill:var(--acao)}
+.ic-fim{stroke:var(--sobremarca)}
+.no-seg{fill:var(--atf)}
+.anel-seg{fill:none;stroke:var(--ac)}
+.ic-seg{stroke:var(--at)}
+.ok{fill:var(--pos);stroke:var(--no);stroke-width:2}
+.ok-v{stroke:var(--sobrepos)}
+.b1{fill:var(--barra)}.b2{fill:var(--acao)}.b0{fill:var(--base)}
+.lampejo{fill:none;stroke:var(--acao)}
+.brilha{fill:none;stroke:var(--acao);stroke-width:2}
+.nucleo{fill:var(--nucleo);stroke:var(--acao)}
+.fluxo{stroke:var(--ac);fill:none}
+.c-acao{stop-color:var(--acao)}.c-nuc{stop-color:var(--nucleo)}.c-f1{stop-color:var(--f1)}.c-f2{stop-color:var(--f2)}
+.c-br0{stop-color:var(--cartao);stop-opacity:0}.c-br1{stop-color:var(--acao);stop-opacity:.16}
+/* entrada: o estado final é o estado sem animação */
+.sobe{animation:sobe .7s cubic-bezier(.2,.8,.2,1) both}
+.acende{transform-box:fill-box;transform-origin:center;animation:acende .6s cubic-bezier(.2,.8,.2,1) both}
+.cresce{transform-box:fill-box;transform-origin:50% 100%;animation:cresce .6s cubic-bezier(.2,.8,.2,1) both}
+.r1{animation:r1 linear both}.r2{animation:r2 linear both}
+.hs{stroke-dasharray:14;animation:hs .3s ease-out both}
+.rolo{animation:rola cubic-bezier(.2,.8,.2,1) both}
+.aparece{animation:aparece .6s ease-out both}
+/* laços sutis */
+.flui{stroke-dasharray:6 5;animation:aparece .6s ease-out 2.85s both,flui 6s linear 2.85s infinite}
+.gira{transform-box:fill-box;transform-origin:center;animation:gira 16s linear infinite}
+.respira{transform-box:fill-box;transform-origin:center;animation:respira 3.6s ease-in-out 3.2s infinite alternate both}
+@keyframes sobe{from{opacity:0;transform:translateY(12px)}}
+@keyframes acende{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:none}}
+@keyframes cresce{from{transform:scaleY(0)}}
+@keyframes r1{from{stroke-dashoffset:1120}to{stroke-dashoffset:0}}@keyframes r2{from{stroke-dashoffset:803.6}to{stroke-dashoffset:0}}
+@keyframes hs{from{stroke-dashoffset:14}to{stroke-dashoffset:0}}
+@keyframes rola{from{transform:translateY(0)}}
+@keyframes aparece{from{opacity:0}}
+@keyframes flui{to{stroke-dashoffset:-66}}
+@keyframes gira{to{transform:rotate(360deg)}}
+@keyframes respira{from{opacity:.25;transform:scale(1)}to{opacity:.6;transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.movimento{display:none}}
+</style>
+<defs>
+<linearGradient id="gf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="c-f1"/><stop offset="1" class="c-f2"/></linearGradient>
+<radialGradient id="aurora"><stop offset="0" class="c-acao" stop-opacity=".13"/><stop offset="1" class="c-acao" stop-opacity="0"/></radialGradient>
+<pattern id="grade" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1" class="pt"/></pattern>
+<clipPath id="moldura"><rect x="1" y="1" width="1198" height="722" rx="23"/></clipPath>
+<linearGradient id="tr1" gradientUnits="userSpaceOnUse" x1="40" y1="0" x2="1160" y2="0"><stop offset="0" class="c-acao" stop-opacity="0"/><stop offset=".1" class="c-acao"/><stop offset=".9" class="c-acao"/><stop offset="1" class="c-acao" stop-opacity="0"/></linearGradient>
+<linearGradient id="tr2" gradientUnits="userSpaceOnUse" x1="40" y1="0" x2="843.6" y2="0"><stop offset="0" class="c-acao" stop-opacity="0"/><stop offset=".14" class="c-acao"/><stop offset="1" class="c-acao"/></linearGradient>
+<linearGradient id="rastro" x1="0" x2="1"><stop offset="0" class="c-acao" stop-opacity="0"/><stop offset="1" class="c-acao" stop-opacity=".6"/></linearGradient>
+<linearGradient id="fio" x1="0" x2="1"><stop offset="0" class="c-nuc" stop-opacity="0"/><stop offset="1" class="c-nuc"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" class="c-acao" stop-opacity=".55"/><stop offset="1" class="c-acao" stop-opacity="0"/></radialGradient>
+<linearGradient id="reflexo" x1="0" x2="1"><stop offset="0" class="c-br0"/><stop offset=".5" class="c-br1"/><stop offset="1" class="c-br0"/></linearGradient>
+<clipPath id="odo"><rect x="-2" y="-30" width="60" height="38"/></clipPath>
+<clipPath id="faixa1"><rect x="40" y="247" width="1120" height="44"/></clipPath>
+<clipPath id="faixa2"><rect x="40" y="541" width="1120" height="44"/></clipPath>
+<clipPath id="cf"><rect x="0" y="0" width="308" height="106" rx="14"/></clipPath><clipPath id="cf2"><rect x="689.6" y="426" width="308" height="106" rx="14"/></clipPath>
+</defs>
+<rect x=".5" y=".5" width="1199" height="723" rx="24" fill="url(#gf)" class="fundo"/>
+<g clip-path="url(#moldura)"><rect width="1200" height="724" fill="url(#grade)"/><ellipse cx="1010" cy="640" rx="420" ry="260" fill="url(#aurora)"/><ellipse cx="120" cy="40" rx="380" ry="200" fill="url(#aurora)"/></g>
+<g class="sobe" style="animation-delay:.05s"><text class="mc sob" x="40" y="50">A JORNADA DO PROJETO</text></g>
+<g class="sobe" style="animation-delay:.15s"><text class="tx man" x="40" y="86">Da primeira tela à assinatura com prova</text></g>
+<g class="sobe" style="animation-delay:.25s"><text class="t2 sub" x="40" y="113">git log · 01/08 → 26/09/2026 · 486 commits · 32 migrações</text></g>
+<g class="aparece" style="animation-delay:.3s"><text class="t3 cap" x="790" y="40">COMMITS POR DIA</text><text class="mc cap" x="1160" y="40" text-anchor="end">463 EM 5 DIAS</text>
+<text class="t3 mono eix" x="790" y="114">01/08</text><text class="t3 mono eix" x="994.474" y="114" text-anchor="middle">01/09</text><text class="t3 mono eix" x="1160" y="114" text-anchor="end">26/09</text>
+<line class="base" x1="790" y1="94.75" x2="1160" y2="94.75" stroke-width="1"/></g>
+<g><rect class="b1 cresce" x="791.046" y="90.953" width="4.4" height="3.047" rx="1.2" style="animation-delay:0.35s"/><rect class="b1 cresce" x="797.537" y="89.691" width="4.4" height="4.309" rx="1.2" style="animation-delay:0.362s"/><rect class="b1 cresce" x="804.028" y="90.953" width="4.4" height="3.047" rx="1.2" style="animation-delay:0.374s"/><rect class="b1 cresce" x="810.519" y="89.691" width="4.4" height="4.309" rx="1.2" style="animation-delay:0.386s"/><rect class="b1 cresce" x="817.011" y="90.953" width="4.4" height="3.047" rx="1.2" style="animation-delay:0.398s"/><rect class="b0" x="823.502" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="829.993" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="836.484" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="842.975" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="849.467" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="855.958" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="862.449" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="868.94" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="875.432" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="881.923" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="888.414" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="894.905" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="901.396" y="92.5" width="4.4" height="1.5"/><rect class="b1 cresce" x="907.888" y="87.187" width="4.4" height="6.813" rx="1.2" style="animation-delay:0.566s"/><rect class="b0" x="914.379" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="920.87" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="927.361" y="92.5" width="4.4" height="1.5"/><rect class="b1 cresce" x="933.853" y="90.953" width="4.4" height="3.047" rx="1.2" style="animation-delay:0.614s"/><rect class="b1 cresce" x="940.344" y="89.691" width="4.4" height="4.309" rx="1.2" style="animation-delay:0.626s"/><rect class="b0" x="946.835" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="953.326" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="959.818" y="92.5" width="4.4" height="1.5"/><rect class="b1 cresce" x="966.309" y="90.953" width="4.4" height="3.047" rx="1.2" style="animation-delay:0.674s"/><rect class="b1 cresce" x="972.8" y="87.187" width="4.4" height="6.813" rx="1.2" style="animation-delay:0.686s"/><rect class="b0" x="979.291" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="985.782" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="992.274" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="998.765" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1005.256" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1011.747" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1018.239" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1024.73" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1031.221" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1037.712" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1044.204" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1050.695" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1057.186" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1063.677" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1070.168" y="92.5" width="4.4" height="1.5"/><rect class="b1 cresce" x="1076.66" y="89.691" width="4.4" height="4.309" rx="1.2" style="animation-delay:0.878s"/><rect class="b0" x="1083.151" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1089.642" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1096.133" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1102.625" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1109.116" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1115.607" y="92.5" width="4.4" height="1.5"/><rect class="b0" x="1122.098" y="92.5" width="4.4" height="1.5"/><rect class="b2 cresce" x="1128.589" y="83.445" width="4.4" height="10.555" rx="1.2" style="animation-delay:0.974s"/><rect class="b2 cresce" x="1135.081" y="56.932" width="4.4" height="37.068" rx="1.2" style="animation-delay:0.986s"/><rect class="b2 cresce" x="1141.572" y="61.754" width="4.4" height="32.246" rx="1.2" style="animation-delay:0.998s"/><rect class="b2 cresce" x="1148.063" y="52" width="4.4" height="42" rx="1.2" style="animation-delay:1.01s"/><rect class="b2 cresce" x="1154.554" y="90.953" width="4.4" height="3.047" rx="1.2" style="animation-delay:1.022s"/></g>
+<g class="sobe" style="animation-delay:0.5s">
+<rect class="acento-1" x="40" y="306" width="3" height="84" rx="1.5"/>
+<text class="mc era" x="54" y="320">A CONSTRUÇÃO</text>
+<text class="t2 mono dat" x="54" y="343">01/08 → 14/09</text>
+<g transform="translate(54 382)" clip-path="url(#odo)"><g class="rolo tx odo tab" style="transform:translateY(-68px);animation-duration:1.1s;animation-delay:0.6s"><text x="0" y="0">0</text><text x="0" y="34">1</text><text x="0" y="68">2</text><text x="0" y="102">3</text><text x="0" y="136">4</text><text x="0" y="170">5</text><text x="0" y="204">6</text><text x="0" y="238">7</text><text x="0" y="272">8</text><text x="0" y="306">9</text></g><g class="rolo tx odo tab" style="transform:translateY(-102px);animation-duration:1.35s;animation-delay:0.6s"><text x="17" y="0">0</text><text x="17" y="34">1</text><text x="17" y="68">2</text><text x="17" y="102">3</text><text x="17" y="136">4</text><text x="17" y="170">5</text><text x="17" y="204">6</text><text x="17" y="238">7</text><text x="17" y="272">8</text><text x="17" y="306">9</text></g></g>
+<text class="t2 cor" x="94" y="382">commits</text>
+</g>
+<g class="sobe" style="animation-delay:1.75s">
+<rect class="acento" x="40" y="600" width="3" height="84" rx="1.5"/>
+<text class="mc era" x="54" y="614">A RETA FINAL</text>
+<text class="t2 mono dat" x="54" y="637">22/09 → 26/09</text>
+<g transform="translate(54 676)" clip-path="url(#odo)"><g class="rolo tx odo tab" style="transform:translateY(-136px);animation-duration:1.1s;animation-delay:1.85s"><text x="0" y="0">0</text><text x="0" y="34">1</text><text x="0" y="68">2</text><text x="0" y="102">3</text><text x="0" y="136">4</text><text x="0" y="170">5</text><text x="0" y="204">6</text><text x="0" y="238">7</text><text x="0" y="272">8</text><text x="0" y="306">9</text></g><g class="rolo tx odo tab" style="transform:translateY(-204px);animation-duration:1.35s;animation-delay:1.85s"><text x="17" y="0">0</text><text x="17" y="34">1</text><text x="17" y="68">2</text><text x="17" y="102">3</text><text x="17" y="136">4</text><text x="17" y="170">5</text><text x="17" y="204">6</text><text x="17" y="238">7</text><text x="17" y="272">8</text><text x="17" y="306">9</text></g><g class="rolo tx odo tab" style="transform:translateY(-102px);animation-duration:1.6s;animation-delay:1.85s"><text x="34" y="0">0</text><text x="34" y="34">1</text><text x="34" y="68">2</text><text x="34" y="102">3</text><text x="34" y="136">4</text><text x="34" y="170">5</text><text x="34" y="204">6</text><text x="34" y="238">7</text><text x="34" y="272">8</text><text x="34" y="306">9</text></g></g>
+<text class="t2 cor" x="111" y="676">commits</text>
+</g>
+<line class="base" x1="40" y1="269" x2="1160" y2="269" stroke-width="3" stroke-linecap="round"/>
+<path class="r1" d="M40 269H1160" stroke="url(#tr1)" stroke-width="3" fill="none" stroke-dasharray="1120" style="animation-duration:1.5s;animation-delay:0.45s"/>
+<line class="base" x1="40" y1="563" x2="843.6" y2="563" stroke-width="3" stroke-linecap="round"/>
+<path class="r2" d="M40 563H843.6" stroke="url(#tr2)" stroke-width="3" fill="none" stroke-dasharray="803.6" style="animation-duration:1.1s;animation-delay:1.7s"/>
+<path class="flui" d="M861 563H988" stroke-width="2.5" stroke-linecap="round"/>
+<g><line class="haste hs" x1="194" y1="252" x2="194" y2="238" style="animation-delay:0.706s"/><line class="haste hs" x1="356.4" y1="286" x2="356.4" y2="300" style="animation-delay:0.924s"/><line class="haste hs" x1="518.8" y1="252" x2="518.8" y2="238" style="animation-delay:1.141s"/><line class="haste hs" x1="681.2" y1="286" x2="681.2" y2="300" style="animation-delay:1.359s"/><line class="haste hs" x1="843.6" y1="252" x2="843.6" y2="238" style="animation-delay:1.576s"/><line class="haste hs" x1="1006" y1="286" x2="1006" y2="300" style="animation-delay:1.794s"/><line class="haste hs" x1="194" y1="546" x2="194" y2="532" style="animation-delay:1.961s"/><line class="haste hs" x1="356.4" y1="580" x2="356.4" y2="594" style="animation-delay:2.183s"/><line class="haste hs" x1="518.8" y1="546" x2="518.8" y2="532" style="animation-delay:2.405s"/><line class="haste hs" x1="681.2" y1="580" x2="681.2" y2="594" style="animation-delay:2.628s"/><line class="haste hs" x1="843.6" y1="546" x2="843.6" y2="532" style="animation-delay:2.85s"/><line class="haste-seg aparece" x1="1006" y1="580" x2="1006" y2="594" style="animation-delay:3.03s"/></g>
+<g class="movimento"><g class="aparece" style="animation-delay:3s"><circle class="respira" cx="843.6" cy="563" r="27" fill="url(#halo)"/></g><circle class="lampejo" cx="194" cy="269" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.059;0.121;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.059;0.063;0.121;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="356.4" cy="269" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.122;0.183;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.122;0.126;0.183;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="518.8" cy="269" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.184;0.246;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.184;0.188;0.246;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="681.2" cy="269" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.247;0.308;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.247;0.25;0.308;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="843.6" cy="269" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.309;0.371;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.309;0.313;0.371;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="1006" cy="269" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.372;0.433;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.372;0.375;0.433;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="194" cy="563" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.528;0.59;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.528;0.532;0.59;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="356.4" cy="563" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.591;0.652;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.591;0.595;0.652;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="518.8" cy="563" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.653;0.715;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.653;0.657;0.715;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="681.2" cy="563" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.716;0.777;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.716;0.72;0.777;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="843.6" cy="563" r="17" stroke-width="2" opacity="0"><animate attributeName="r" values="17;17;32;32" keyTimes="0;0.778;0.84;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.9;0;0" keyTimes="0;0.778;0.782;0.84;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="843.6" cy="563" r="18" stroke-width="1.5" opacity="0"><animate attributeName="r" values="18;18;48;48" keyTimes="0;0.778;0.878;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.8;0;0" keyTimes="0;0.778;0.783;0.878;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><circle class="lampejo" cx="843.6" cy="563" r="18" stroke-width="1.5" opacity="0"><animate attributeName="r" values="18;18;48;48" keyTimes="0;0.795;0.895;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;.8;0;0" keyTimes="0;0.795;0.8;0.895;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></circle><g clip-path="url(#faixa1)"><g opacity="0"><animateMotion path="M40 269H1160" keyPoints="0;1;1" keyTimes="0;0.431;1" calcMode="linear" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.023;0.404;0.431;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><rect x="-110" y="-3" width="110" height="6" rx="3" fill="url(#rastro)"/><rect x="-70" y="-1" width="70" height="2" rx="1" fill="url(#fio)"/><circle r="18" fill="url(#halo)"/><circle class="nucleo" r="5" stroke-width="2"/></g></g><g clip-path="url(#faixa2)"><g opacity="0"><animateMotion path="M40 563H843.6" keyPoints="0;0;1;1" keyTimes="0;0.469;0.778;1" calcMode="linear" dur="13s" begin="3.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.469;0.492;0.774;0.79;1" dur="13s" begin="3.4s" repeatCount="indefinite"/><rect x="-110" y="-3" width="110" height="6" rx="3" fill="url(#rastro)"/><rect x="-70" y="-1" width="70" height="2" rx="1" fill="url(#fio)"/><circle r="18" fill="url(#halo)"/><circle class="nucleo" r="5" stroke-width="2"/></g></g></g>
+<g><g class="acende" style="animation-delay:0.656s"><circle class="no" cx="194" cy="269" r="17" stroke-width="1.75"/><g transform="translate(185 260) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></g></g><g class="acende" style="animation-delay:0.936s"><circle class="ok" cx="206.5" cy="256.5" r="7"/><path class="ok-v" d="M203.5 256.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:0.874s"><circle class="no" cx="356.4" cy="269" r="17" stroke-width="1.75"/><g transform="translate(347.4 260) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></g></g><g class="acende" style="animation-delay:1.154s"><circle class="ok" cx="368.9" cy="256.5" r="7"/><path class="ok-v" d="M365.9 256.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:1.091s"><circle class="no" cx="518.8" cy="269" r="17" stroke-width="1.75"/><g transform="translate(509.8 260) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g></g><g class="acende" style="animation-delay:1.371s"><circle class="ok" cx="531.3" cy="256.5" r="7"/><path class="ok-v" d="M528.3 256.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:1.309s"><circle class="no" cx="681.2" cy="269" r="17" stroke-width="1.75"/><g transform="translate(672.2 260) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></g></g><g class="acende" style="animation-delay:1.589s"><circle class="ok" cx="693.7" cy="256.5" r="7"/><path class="ok-v" d="M690.7 256.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:1.526s"><circle class="no" cx="843.6" cy="269" r="17" stroke-width="1.75"/><g transform="translate(834.6 260) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14h6"/><path d="M12 17v-6"/></g></g><g class="acende" style="animation-delay:1.806s"><circle class="ok" cx="856.1" cy="256.5" r="7"/><path class="ok-v" d="M853.1 256.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:1.744s"><circle class="no" cx="1006" cy="269" r="17" stroke-width="1.75"/><g transform="translate(997 260) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="m18 5-2.414-2.414A2 2 0 0 0 14.172 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/><path d="M21.378 12.626a1 1 0 0 0-3.004-3.004l-4.01 4.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/><path d="M8 18h1"/></g></g><g class="acende" style="animation-delay:2.024s"><circle class="ok" cx="1018.5" cy="256.5" r="7"/><path class="ok-v" d="M1015.5 256.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:1.911s"><circle class="no" cx="194" cy="563" r="17" stroke-width="1.75"/><g transform="translate(185 554) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M15.8 9.2a2.5 2.5 0 0 0-3.5 0l-.3.4-.35-.3a2.42 2.42 0 1 0-3.2 3.6l3.6 3.5 3.6-3.5c1.2-1.2 1.1-2.7.2-3.7"/></g></g><g class="acende" style="animation-delay:2.191s"><circle class="ok" cx="206.5" cy="550.5" r="7"/><path class="ok-v" d="M203.5 550.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:2.133s"><circle class="no" cx="356.4" cy="563" r="17" stroke-width="1.75"/><g transform="translate(347.4 554) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g></g><g class="acende" style="animation-delay:2.413s"><circle class="ok" cx="368.9" cy="550.5" r="7"/><path class="ok-v" d="M365.9 550.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:2.355s"><circle class="no" cx="518.8" cy="563" r="17" stroke-width="1.75"/><g transform="translate(509.8 554) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></g></g><g class="acende" style="animation-delay:2.635s"><circle class="ok" cx="531.3" cy="550.5" r="7"/><path class="ok-v" d="M528.3 550.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:2.578s"><circle class="no" cx="681.2" cy="563" r="17" stroke-width="1.75"/><g transform="translate(672.2 554) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></g></g><g class="acende" style="animation-delay:2.858s"><circle class="ok" cx="693.7" cy="550.5" r="7"/><path class="ok-v" d="M690.7 550.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:2.8s"><circle class="no-fim" cx="843.6" cy="563" r="17"/><g transform="translate(834.6 554) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic-fim"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></g></g><g class="acende" style="animation-delay:3.08s"><circle class="ok" cx="856.1" cy="550.5" r="7"/><path class="ok-v" d="M853.1 550.4l2.1 2.1 3.9-4" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g><g class="acende" style="animation-delay:2.98s"><circle class="no-seg" cx="1006" cy="563" r="17"/><circle class="anel-seg gira" cx="1006" cy="563" r="17" stroke-width="1.75" stroke-dasharray="4.45 4.45"/><g transform="translate(997 554) scale(.75)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic-seg"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></g></g></g>
+<g><g transform="translate(40 132)"><g class="sobe" style="animation-delay:0.776s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">01/08</text><text class="t3 mono has" x="290" y="25" text-anchor="end">9186b3b</text><text class="tx tit" x="18" y="51">Fundação e Visão Geral</text><text class="t2 cor" x="18" y="73">Etapa 1: estrutura navegável</text><text class="t2 cor" x="18" y="93">em Next.js 15, React 19 e TS</text></g></g><g transform="translate(202.4 300)"><g class="sobe" style="animation-delay:0.994s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">02/08 → 05/08</text><rect class="chip" x="210.3" y="11" width="83.7" height="20" rx="10"/><text class="fo mono chipt" x="252.15" y="25.5" text-anchor="middle">0001–0005</text><text class="tx tit" x="18" y="51">Banco e segurança</text><text class="t2 cor" x="18" y="73">Supabase com RLS em toda tabela</text><text class="t2 cor" x="18" y="93">e conta nova nascendo sem acesso</text></g></g><g transform="translate(364.8 132)"><g class="sobe" style="animation-delay:1.211s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">19/08</text><text class="t3 mono has" x="290" y="25" text-anchor="end">f14e103</text><text class="tx tit" x="18" y="51">Pacientes e Agenda</text><text class="t2 cor" x="18" y="73">ficha, importação CSV com prévia</text><text class="t2 cor" x="18" y="93">e a agenda do dia</text></g></g><g transform="translate(527.2 300)"><g class="sobe" style="animation-delay:1.429s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">24/08</text><rect class="chip" x="210.3" y="11" width="83.7" height="20" rx="10"/><text class="fo mono chipt" x="252.15" y="25.5" text-anchor="middle">0006–0009</text><text class="tx tit" x="18" y="51">Financeiro</text><text class="t2 cor" x="18" y="73">vendas, recebimentos, despesas,</text><text class="t2 cor" x="18" y="93">taxas e fluxo, tudo em centavos</text></g></g><g transform="translate(689.6 132)"><g class="sobe" style="animation-delay:1.646s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">29/08</text><rect class="chip" x="210.3" y="11" width="83.7" height="20" rx="10"/><text class="fo mono chipt" x="252.15" y="25.5" text-anchor="middle">0010–0012</text><text class="tx tit" x="18" y="51">Prontuários e fotos</text><text class="t2 cor" x="18" y="73">registro clínico versionado e</text><text class="t2 cor" x="18" y="93">fotos em bucket privado</text></g></g><g transform="translate(852 300)"><g class="sobe" style="animation-delay:1.864s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">14/09</text><rect class="chip" x="210.3" y="11" width="83.7" height="20" rx="10"/><text class="fo mono chipt" x="252.15" y="25.5" text-anchor="middle">0013–0016</text><text class="tx tit" x="18" y="51">Documentos e Contratos</text><text class="t2 cor" x="18" y="73">texto congelado com SHA-256 e</text><text class="t2 cor" x="18" y="93">assinatura à distância por link</text></g></g><g transform="translate(40 426)"><g class="sobe" style="animation-delay:2.031s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">22/09</text><rect class="chip" x="210.3" y="11" width="83.7" height="20" rx="10"/><text class="fo mono chipt" x="252.15" y="25.5" text-anchor="middle">0017–0018</text><text class="tx tit" x="18" y="51">Relacionamento e busca</text><text class="t2 cor" x="18" y="73">retornos, tarefas, aniversários,</text><text class="t2 cor" x="18" y="93">anamnese e recuperação de senha</text></g></g><g transform="translate(202.4 594)"><g class="sobe" style="animation-delay:2.253s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">22/09 → 23/09</text><rect class="chip" x="210.3" y="11" width="83.7" height="20" rx="10"/><text class="fo mono chipt" x="252.15" y="25.5" text-anchor="middle">0019–0028</text><text class="tx tit" x="18" y="51">Privilégio mínimo</text><text class="t2 cor" x="18" y="73">regras conferidas no banco,</text><text class="t2 cor" x="18" y="93">auditoria e produção no ar</text></g></g><g transform="translate(364.8 426)"><g class="sobe" style="animation-delay:2.475s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">24/09 → 25/09</text><rect class="chip" x="210.3" y="11" width="83.7" height="20" rx="10"/><text class="fo mono chipt" x="252.15" y="25.5" text-anchor="middle">0029–0031</text><text class="tx tit" x="18" y="51">Captação e funil 3D</text><text class="t2 cor" x="18" y="73">leads, metas e contatos;</text><text class="t2 cor" x="18" y="93">o funil 3D vivo em SVG puro</text></g></g><g transform="translate(527.2 594)"><g class="sobe" style="animation-delay:2.698s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao" x=".5" y=".5" width="307" height="105" rx="14"/><text class="mc mono dat" x="18" y="25">25/09</text><text class="t3 mono has" x="290" y="25" text-anchor="end">9aa03c3</text><text class="tx tit" x="18" y="51">Cockpit vivo</text><text class="t2 cor" x="18" y="73">letreiro de pendências, painéis</text><text class="t2 cor" x="18" y="93">que recolhem e WhatsApp direto</text></g></g><g transform="translate(689.6 426)"><g class="sobe" style="animation-delay:2.92s"><rect class="sombra" x="0" y="3" width="308" height="106" rx="14"/><rect class="cartao-fim" x=".5" y=".5" width="307" height="105" rx="14"/><g clip-path="url(#cf)"><rect x="0" y="0" width="308" height="4" class="acento"/></g><text class="mc mono dat" x="18" y="25">26/09</text><rect class="pil" x="70" y="11" width="92" height="20" rx="10"/><text class="po chipt" x="116" y="25.5" text-anchor="middle">mais recente</text><rect class="chip" x="246.8" y="11" width="47.2" height="20" rx="10"/><text class="fo mono chipt" x="270.4" y="25.5" text-anchor="middle">0032</text><text class="tx tit" x="18" y="51">Assinatura com prova</text><text class="t2 cor" x="18" y="73">código por e-mail, rubrica e</text><text class="t2 cor" x="18" y="93">carimbo RFC 3161; /verificar</text></g></g><g transform="translate(852 594)"><g class="sobe" style="animation-delay:3.1s"><rect class="cartao-seg" x=".5" y=".5" width="307" height="105" rx="14"/><text class="at mono dat" x="18" y="25">a seguir</text><text class="tx tit" x="18" y="51">Próximos passos</text><text class="t2 cor" x="18" y="73">Relatórios de verdade, perfil</text><text class="t2 cor" x="18" y="93">Profissional e Next 16</text></g></g></g>
+<g class="movimento"><rect class="brilha" x="40.5" y="132.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.062;0.081;0.175;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="202.9" y="300.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.124;0.143;0.237;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="365.3" y="132.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.186;0.206;0.3;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="527.7" y="300.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.249;0.268;0.362;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="690.1" y="132.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.311;0.331;0.424;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="852.5" y="300.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.374;0.393;0.487;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="40.5" y="426.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.531;0.55;0.644;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="202.9" y="594.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.593;0.612;0.706;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="365.3" y="426.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.656;0.675;0.769;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="527.7" y="594.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.718;0.737;0.831;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><rect class="brilha" x="690.1" y="426.5" width="307" height="105" rx="14" opacity="0"><animate attributeName="opacity" values="0;0;.85;0;0" keyTimes="0;0.781;0.8;0.894;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect><g clip-path="url(#cf2)"><rect x="549.6" y="426" width="120" height="106" fill="url(#reflexo)" transform="skewX(0)"><animateTransform attributeName="transform" type="translate" values="0 0;0 0;468 0;468 0" keyTimes="0;0.782;0.882;1" dur="13s" begin="3.4s" repeatCount="indefinite"/></rect></g></g>
 </svg>
