@@ -13,7 +13,7 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "premium-panel relative overflow-hidden rounded-[var(--radius-painel)] border",
+        "premium-panel relative min-w-0 overflow-hidden rounded-[var(--radius-painel)] border",
         className,
       )}
     >
@@ -36,19 +36,23 @@ export function CardCabecalho({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-4 border-b border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] px-4 py-4.5 sm:px-6",
+        "flex min-w-0 flex-col gap-4 border-b border-card-border bg-[linear-gradient(180deg,#ffffff_0%,#fcfdff_100%)] px-4 py-4.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6",
         className,
       )}
     >
-      <div className="min-w-0">
-        <h2 className="titulo-secao text-on-surface">{titulo}</h2>
+      <div className="min-w-0 flex-1">
+        <h2 className="titulo-secao break-words text-on-surface">{titulo}</h2>
         {descricao ? (
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-on-surface-variant">
+          <div className="mt-1 max-w-3xl break-words text-sm leading-6 text-on-surface-variant">
             {descricao}
-          </p>
+          </div>
         ) : null}
       </div>
-      {acao ? <div className="max-w-full shrink-0">{acao}</div> : null}
+      {acao ? (
+        <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:w-auto sm:shrink-0 [&_a]:w-full [&_button]:w-full [&_form]:w-full sm:[&_a]:w-auto sm:[&_button]:w-auto sm:[&_form]:w-auto">
+          {acao}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -60,7 +64,7 @@ export function CardCorpo({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={cn("px-4 py-5 sm:px-6 sm:py-6", className)}>{children}</div>;
+  return <div className={cn("min-w-0 px-4 py-5 sm:px-6 sm:py-6", className)}>{children}</div>;
 }
 
 export function CardRodape({
@@ -73,7 +77,7 @@ export function CardRodape({
   return (
     <div
       className={cn(
-        "border-t border-card-border bg-[linear-gradient(180deg,#fafcff_0%,#f5f8fb_100%)] px-4 py-3.5 text-xs sm:px-6",
+        "min-w-0 border-t border-card-border bg-[linear-gradient(180deg,#fafcff_0%,#f5f8fb_100%)] px-4 py-3.5 text-xs sm:px-6",
         className,
       )}
     >
