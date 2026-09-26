@@ -20,11 +20,11 @@ import { despesaVencida, ROTULO_SITUACAO_DESPESA, type SituacaoDespesa } from "@
 type Estilo = { icone: LucideIcon; classes: string };
 
 const RECEBIMENTO: Record<SituacaoRecebimento, Estilo> = {
-  previsto: { icone: Clock3, classes: "bg-informativo-fundo text-informativo-texto" },
-  pendente: { icone: TriangleAlert, classes: "bg-atencao-fundo text-atencao" },
-  recebido: { icone: Check, classes: "bg-positivo-fundo text-positivo" },
-  recebido_divergencia: { icone: CircleAlert, classes: "bg-atencao-fundo text-atencao" },
-  cancelado: { icone: Ban, classes: "bg-negativo-fundo text-negativo" },
+  previsto: { icone: Clock3, classes: "border-informativo-borda bg-informativo-fundo text-informativo-texto" },
+  pendente: { icone: TriangleAlert, classes: "border-atencao-borda bg-atencao-fundo text-atencao" },
+  recebido: { icone: Check, classes: "border-positivo-borda bg-positivo-fundo text-positivo" },
+  recebido_divergencia: { icone: CircleAlert, classes: "border-atencao-borda bg-atencao-fundo text-atencao" },
+  cancelado: { icone: Ban, classes: "border-negativo-borda bg-negativo-fundo text-negativo" },
 };
 
 export function ChipRecebimento({
@@ -40,13 +40,13 @@ export function ChipRecebimento({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-[var(--radius-controle)] px-2 py-0.5 text-xs whitespace-nowrap",
+        "inline-flex min-h-6 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-left text-xs leading-4 font-semibold shadow-[0_7px_16px_-15px_rgba(8,41,76,.4)] [&_svg]:shrink-0",
         estilo.classes,
         className,
       )}
     >
-      <Icone aria-hidden="true" size={13} strokeWidth={1.75} />
-      {ROTULO_SITUACAO_RECEBIMENTO[situacao]}
+      <Icone aria-hidden="true" size={13} strokeWidth={1.85} />
+      <span className="min-w-0 break-words">{ROTULO_SITUACAO_RECEBIMENTO[situacao]}</span>
     </span>
   );
 }
@@ -64,25 +64,25 @@ export function ChipDespesa({
   const vencida = despesaVencida(situacao, venceEmDias);
 
   const estilo: Estilo = vencida
-    ? { icone: TriangleAlert, classes: "bg-negativo-fundo text-negativo" }
+    ? { icone: TriangleAlert, classes: "border-negativo-borda bg-negativo-fundo text-negativo" }
     : situacao === "paga"
-      ? { icone: Check, classes: "bg-positivo-fundo text-positivo" }
+      ? { icone: Check, classes: "border-positivo-borda bg-positivo-fundo text-positivo" }
       : situacao === "cancelada"
-        ? { icone: Ban, classes: "bg-surface-container text-on-surface-variant" }
-        : { icone: Clock3, classes: "bg-atencao-fundo text-atencao" };
+        ? { icone: Ban, classes: "border-card-border bg-surface-container text-on-surface-variant" }
+        : { icone: Clock3, classes: "border-atencao-borda bg-atencao-fundo text-atencao" };
 
   const Icone = estilo.icone;
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-[var(--radius-controle)] px-2 py-0.5 text-xs whitespace-nowrap",
+        "inline-flex min-h-6 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-left text-xs leading-4 font-semibold shadow-[0_7px_16px_-15px_rgba(8,41,76,.4)] [&_svg]:shrink-0",
         estilo.classes,
         className,
       )}
     >
-      <Icone aria-hidden="true" size={13} strokeWidth={1.75} />
-      {vencida ? "Vencida" : ROTULO_SITUACAO_DESPESA[situacao]}
+      <Icone aria-hidden="true" size={13} strokeWidth={1.85} />
+      <span className="min-w-0 break-words">{vencida ? "Vencida" : ROTULO_SITUACAO_DESPESA[situacao]}</span>
     </span>
   );
 }
@@ -92,12 +92,12 @@ export function MarcaTaxaManual({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-atencao-fundo px-1.5 py-0.5 text-[0.6875rem] font-medium text-atencao",
+        "inline-flex min-h-6 max-w-full items-center gap-1.5 rounded-full border border-atencao-borda bg-atencao-fundo px-2 py-0.5 text-left text-[0.6875rem] leading-4 font-semibold text-atencao shadow-[0_7px_16px_-15px_rgba(8,41,76,.35)] [&_svg]:shrink-0",
         className,
       )}
     >
-      <PencilLine aria-hidden="true" size={11} strokeWidth={1.75} />
-      Taxa alterada manualmente
+      <PencilLine aria-hidden="true" size={11} strokeWidth={1.85} />
+      <span className="min-w-0 break-words">Taxa alterada manualmente</span>
     </span>
   );
 }
