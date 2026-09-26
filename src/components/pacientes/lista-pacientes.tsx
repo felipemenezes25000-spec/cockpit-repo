@@ -15,7 +15,7 @@ function LinhaPaciente({ paciente, indice }: { paciente: PacienteDaLista; indice
     <li
       style={{ animationDelay: `${Math.min(indice * 42, 240)}ms` }}
       className={cn(
-        "dashboard-stagger premium-interactive group relative isolate flex items-center gap-4 overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border p-4 focus-within:border-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary sm:gap-5 sm:p-5",
+        "dashboard-stagger premium-interactive group relative isolate flex min-w-0 items-center gap-3 overflow-hidden rounded-[calc(var(--radius-painel)+2px)] border p-4 focus-within:border-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary sm:gap-5 sm:p-5",
         paciente.ativo
           ? "border-card-border bg-surface"
           : "border-card-border bg-surface-container-low",
@@ -41,28 +41,28 @@ function LinhaPaciente({ paciente, indice }: { paciente: PacienteDaLista; indice
       </div>
 
       <div className="relative z-[1] min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
           <Link
             href={`/pacientes/${paciente.id}`}
-            className="inline-flex min-h-6 items-center text-[1rem] font-bold tracking-[-0.015em] text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
+            className="inline-flex min-h-6 max-w-full items-center break-words text-[1rem] font-bold tracking-[-0.015em] text-on-surface outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary"
           >
             {paciente.exibicao}
           </Link>
 
           {paciente.ativo ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-positivo-borda bg-positivo-fundo px-2 py-0.5 text-[0.67rem] font-semibold text-positivo">
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-positivo" />
-              Ativa
+            <span className="inline-flex min-h-6 max-w-full items-center gap-1 rounded-full border border-positivo-borda bg-positivo-fundo px-2 py-0.5 text-[0.67rem] font-semibold text-positivo">
+              <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-positivo" />
+              <span className="min-w-0 break-words">Ativa</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full border border-card-border bg-surface px-2 py-0.5 text-[0.6875rem] font-medium text-on-surface-variant">
-              <Archive aria-hidden="true" size={11} strokeWidth={1.75} />
-              Arquivada
+            <span className="inline-flex min-h-6 max-w-full items-center gap-1 rounded-full border border-card-border bg-surface px-2 py-0.5 text-[0.6875rem] font-medium text-on-surface-variant">
+              <Archive aria-hidden="true" size={11} strokeWidth={1.75} className="shrink-0" />
+              <span className="min-w-0 break-words">Arquivada</span>
             </span>
           )}
 
           {paciente.nomeSocial ? (
-            <span className="rounded-full border border-card-border bg-surface px-2 py-0.5 text-[0.68rem] text-outline">
+            <span className="max-w-full break-words rounded-[var(--radius-cartao)] border border-card-border bg-surface px-2 py-0.5 text-[0.68rem] leading-4 text-outline">
               registro: {paciente.nome}
             </span>
           ) : null}
@@ -72,30 +72,30 @@ function LinhaPaciente({ paciente, indice }: { paciente: PacienteDaLista; indice
           ) : null}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-outline">
+        <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-xs text-outline">
           {telefone ? (
-            <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border bg-surface-container-low px-2.5">
-              <Phone aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
-              <span className="tabular font-medium text-on-surface-variant">{telefone}</span>
+            <span className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border border-card-border bg-surface-container-low px-2.5">
+              <Phone aria-hidden="true" size={13} strokeWidth={1.75} className="shrink-0 text-primary" />
+              <span className="tabular min-w-0 break-words font-medium text-on-surface-variant">{telefone}</span>
             </span>
           ) : null}
 
           {paciente.email ? (
-            <span className="inline-flex min-h-7 min-w-0 items-center gap-1.5 rounded-full border border-card-border bg-surface-container-low px-2.5">
-              <Mail aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
-              <span className="max-w-[18rem] truncate font-medium text-on-surface-variant">{paciente.email}</span>
+            <span className="inline-flex min-h-7 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-card-border bg-surface-container-low px-2.5">
+              <Mail aria-hidden="true" size={13} strokeWidth={1.75} className="shrink-0 text-primary" />
+              <span className="max-w-[18rem] min-w-0 truncate font-medium text-on-surface-variant" title={paciente.email}>{paciente.email}</span>
             </span>
           ) : null}
 
           {paciente.dataNascimento ? (
-            <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-card-border bg-surface-container-low px-2.5">
-              <Cake aria-hidden="true" size={13} strokeWidth={1.75} className="text-primary" />
-              <span className="tabular font-medium text-on-surface-variant">{formatarDiaMes(paciente.dataNascimento)} · {idadeEm(paciente.dataNascimento)} anos</span>
+            <span className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border border-card-border bg-surface-container-low px-2.5">
+              <Cake aria-hidden="true" size={13} strokeWidth={1.75} className="shrink-0 text-primary" />
+              <span className="tabular min-w-0 break-words font-medium text-on-surface-variant">{formatarDiaMes(paciente.dataNascimento)} · {idadeEm(paciente.dataNascimento)} anos</span>
             </span>
           ) : null}
 
           {!telefone && !paciente.email && !paciente.dataNascimento ? (
-            <span className="rounded-full border border-dashed border-outline-variant px-2.5 py-1 text-outline">Sem contato cadastrado</span>
+            <span className="max-w-full break-words rounded-full border border-dashed border-outline-variant px-2.5 py-1 text-outline">Sem contato cadastrado</span>
           ) : null}
         </div>
       </div>
@@ -131,12 +131,12 @@ export function ListaPacientes({ pacientes, busca }: { pacientes: PacienteDaList
   }
 
   return (
-    <div>
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <div className="min-w-0">
+      <div className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-3">
         <p className="rotulo text-primary">Diretório</p>
-        <p className="text-xs text-outline">Abra uma ficha para ver histórico, documentos e atendimentos.</p>
+        <p className="min-w-0 break-words text-xs leading-5 text-outline">Abra uma ficha para ver histórico, documentos e atendimentos.</p>
       </div>
-      <ul aria-label="Pacientes" className="flex flex-col gap-3.5">
+      <ul aria-label="Pacientes" className="flex min-w-0 flex-col gap-3.5">
         {pacientes.map((paciente, indice) => <LinhaPaciente key={paciente.id} paciente={paciente} indice={indice} />)}
       </ul>
     </div>
