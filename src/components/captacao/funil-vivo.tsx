@@ -219,14 +219,14 @@ export function FunilVivo({ etapas }: { etapas: EtapaDoPainel[] }) {
                 aria-pressed={atual}
                 aria-label={`${ROTULO_ETAPA[etapa.etapa]}: ${numero(etapa.volume)}`}
               >
+                {/* Nome e número centrados no eixo do funil: as quatro faixas
+                    ficam alinhadas pela mesma linha, qualquer que seja o texto. */}
                 <span className={estilos.rotuloFaixa} style={meio}>
-                  <span className={estilos.iconeFaixa}>
-                    <Icone aria-hidden="true" size={18} strokeWidth={1.9} />
+                  <span className={estilos.nomeFaixa}>
+                    <Icone aria-hidden="true" className={estilos.iconeFaixa} strokeWidth={2} />
+                    {ROTULO_ETAPA[etapa.etapa]}
                   </span>
-                  <span className={estilos.textoFaixa}>
-                    <span className={estilos.nomeFaixa}>{ROTULO_ETAPA[etapa.etapa]}</span>
-                    <span className={estilos.numeroFaixa}>{numero(etapa.volume)}</span>
-                  </span>
+                  <span className={estilos.numeroFaixa}>{numero(etapa.volume)}</span>
                 </span>
                 <span className={estilos.balao} style={meio}>
                   <span className={estilos.balaoNome}>{ROTULO_ETAPA[etapa.etapa]}</span>

@@ -19,18 +19,24 @@ import {
  * tela usa os botões por cima dele.
  *
  * Toda animação é SMIL, com períodos que dividem 6 s — a cena inteira se
- * repete a cada 6 s (as costelas dão uma volta em 12 s, mas são 6 iguais a
- * 60°) — e `svg.setCurrentTime(t)` congela qualquer instante. As cores vêm
- * dos tokens `--color-funil-*` de globals.css (AGENTS.md §7.3).
+ * repete a cada 6 s (as costelas e o vórtice dão uma volta em 12 s, mas são
+ * 6 iguais a 60°) — e `svg.setCurrentTime(t)` congela qualquer instante. As
+ * cores vêm dos tokens `--color-funil-*` de globals.css (AGENTS.md §7.3).
  *
  * Nenhum filtro (blur, sombra) na cena: com tudo se mexendo, o WebKit refazia
  * o desfoque na CPU a cada quadro e caía a 9 fps. Brilho aqui é degradê
  * radial ou traço em camadas — mesmo efeito, custo de pintura comum.
+ *
+ * Menos é mais: nada solto pelo palco (moedas de enfeite, setas tracejadas,
+ * anéis tracejados). O movimento conta a história do funil — leads entram
+ * pela boca, a energia desce girando, o faturamento sai pela ponta e cai na
+ * luz logo abaixo dela.
  */
 
 const COSTELAS = 6;
 const VOLTA_S = 12;
 const CICLO = "6s";
+const BRACOS = 6;
 
 const r = (n: number, casas = 3) => Math.round(n * 10 ** casas) / 10 ** casas;
 const cor = (nome: string) => `var(--color-funil-${nome})`;
@@ -44,75 +50,75 @@ function sorteio(i: number, sal: number): number {
   return v - Math.floor(v);
 }
 
-/** Estrelas só onde não há texto: sobre o funil, no alto e no rodapé do palco. */
-const ESTRELAS = Array.from({ length: 24 }, (_, i) => {
-  const zona = i % 3;
-  const x = zona === 0 ? 12 + sorteio(i, 1) * 400 : 12 + sorteio(i, 1) * 596;
-  const y = zona === 1 ? 8 + sorteio(i, 2) * 64 : zona === 2 ? 446 + sorteio(i, 2) * 46 : 60 + sorteio(i, 2) * 390;
+const PONTA = FAIXAS[FAIXAS.length - 1];
+/** A luz onde cai o que sai pela ponta: logo abaixo dela, não solta no rodapé. */
+const Y_POCA = r(PONTA.frenteBase + 30, 1);
+
+/**
+ * Estrelas só onde não há texto nem funil: a faixa de cima, a de baixo e a
+ * margem direita, além dos balões.
+ */
+const ESTRELAS = Array.from({ length: 16 }, (_, i) => {
+  const zona = i < 8 ? 0 : i < 12 ? 1 : 2;
+  const x = zona === 2 ? 588 + sorteio(i, 1) * 24 : 10 + sorteio(i, 1) * 600;
+  const y = zona === 0 ? 10 + sorteio(i, 2) * 40 : zona === 1 ? 474 + sorteio(i, 2) * 18 : 90 + sorteio(i, 2) * 360;
   return {
     x: r(x, 1),
     y: r(y, 1),
-    raio: r(0.6 + (i % 4) * 0.35, 2),
+    raio: r(0.6 + (i % 3) * 0.3, 2),
     dur: ["2s", "3s", "6s"][i % 3],
     inicio: `-${r((i * 0.37) % 3, 2)}s`,
   };
 });
 
-/** Estrelas de quatro pontas, maiores, que acendem de vez em quando. */
-const CINTILAS = [
-  { x: 36, y: 96, t: 7, inicio: "0s" },
-  { x: 410, y: 40, t: 6, inicio: "-2s" },
-  { x: 590, y: 28, t: 8, inicio: "-4s" },
-  { x: 28, y: 330, t: 5, inicio: "-1s" },
-  { x: 386, y: 452, t: 6, inicio: "-3s" },
-  { x: 600, y: 470, t: 7, inicio: "-5s" },
-];
-
+/** Leads chegando do alto e descendo na boca, em curva. */
 const LEADS = [
-  { de: [34, 36], para: [150, 102], controle: [74, 62] },
-  { de: [100, 12], para: [182, 106], controle: [132, 40] },
-  { de: [212, 8], para: [204, 100], controle: [218, 44] },
-  { de: [306, 14], para: [228, 106], controle: [276, 44] },
-  { de: [370, 40], para: [252, 101], controle: [336, 66] },
+  { de: [52, 26], para: [150, 100], controle: [84, 58] },
+  { de: [124, 10], para: [180, 104], controle: [146, 42] },
+  { de: [206, 6], para: [202, 98], controle: [214, 44] },
+  { de: [292, 12], para: [226, 104], controle: [268, 42] },
+  { de: [352, 30], para: [252, 100], controle: [322, 60] },
 ] as const;
 
 /** Partículas sugadas pelo vórtice: espiral para dentro da boca. */
 function sugada(k: number): string {
   const pontos: string[] = [];
   const passos = 28;
+  const boca = FAIXAS[0];
   for (let i = 0; i < passos; i++) {
     const t = i / (passos - 1);
-    const raio = 168 * (1 - t) + 8;
+    const raio = (boca.rxTopo - 26) * (1 - t) + 6;
     const ang = ((k * 45 + t * 540) * Math.PI) / 180;
-    pontos.push(`${i ? "L" : "M"} ${r(CX + raio * Math.cos(ang), 1)} ${r(100 + t * 8 + raio * 0.19 * Math.sin(ang), 1)}`);
+    pontos.push(`${i ? "L" : "M"} ${r(CX + raio * Math.cos(ang), 1)} ${r(boca.yTopo + 4 + t * 8 + raio * 0.19 * Math.sin(ang), 1)}`);
   }
   return pontos.join(" ");
 }
 const SUGADAS = Array.from({ length: 8 }, (_, k) => ({ d: sugada(k), inicio: `-${r(k * 0.375, 3)}s` }));
 
-const MOEDAS = [-14, 10, -4, 16].map((dx, i) => ({
-  de: [CX + dx, FAIXAS[3].yBase - 6],
-  para: [CX + dx * 2.6, 468],
-  inicio: `-${r(i * 0.75, 2)}s`,
-}));
+/** Braço do vórtice (num círculo de raio 1; a perspectiva vem do grupo). */
+function braco(k: number): string {
+  const pontos: string[] = [];
+  const passos = 22;
+  for (let i = 0; i < passos; i++) {
+    const t = i / (passos - 1);
+    const raio = 1 - t * 0.94;
+    const ang = ((k * (360 / BRACOS) + t * 150) * Math.PI) / 180;
+    pontos.push(`${i ? "L" : "M"} ${r(raio * Math.cos(ang), 4)} ${r(raio * Math.sin(ang), 4)}`);
+  }
+  return pontos.join(" ");
+}
+const BRACOS_DO_VORTICE = Array.from({ length: BRACOS }, (_, k) => braco(k));
 
-const MOEDAS_FUNDO = [
-  { x: 34, y: 236, escala: 1.2, inicio: "0s" },
-  { x: 376, y: 300, escala: 1, inicio: "-2s" },
-  { x: 56, y: 404, escala: 0.85, inicio: "-4s" },
-];
+const MOEDAS = [-12, 9, -3].map((dx, i) => ({
+  de: [CX + dx, PONTA.yBase - 4],
+  para: [CX + dx * 3.2, Y_POCA - 3],
+  inicio: `-${r(i * 1, 2)}s`,
+}));
 
 const ESPIRAIS = Array.from({ length: 8 }, (_, k) => ({
   movimento: movimentoDaEspiral(2.2, k * 45),
   inicio: `-${r(k * 0.75, 2)}s`,
 }));
-
-const VORTICE = [
-  { rx: 152, ry: 28, cy: 100, traco: "46 38", dur: "6s", forca: 0.34 },
-  { rx: 112, ry: 21, cy: 103, traco: "30 26", dur: "3s", forca: 0.46 },
-  { rx: 74, ry: 14, cy: 106, traco: "20 16", dur: "2s", forca: 0.58 },
-  { rx: 40, ry: 7.5, cy: 108, traco: "12 10", dur: "1.5s", forca: 0.72 },
-];
 
 function Moeda({ raio, desenho }: { raio: number; desenho: string }) {
   return (
@@ -151,8 +157,8 @@ export function CenaFunil3d({
   const movendo = animar && fluxo;
   const detalhe = animar && !leve;
   const boca = FAIXAS[0];
-  const bocaRx = boca.rxTopo - 12;
-  const bocaRy = boca.ryTopo - 2.6;
+  const bocaRx = boca.rxTopo - 11;
+  const bocaRy = boca.ryTopo - 2.4;
 
   return (
     <svg
@@ -188,28 +194,40 @@ export function CenaFunil3d({
           <stop offset="0" style={tom("noite")} />
           <stop offset="1" style={tom("profundo")} />
         </linearGradient>
-        <radialGradient id={id("boca")} cx="0.5" cy="0.62" r="0.62">
+        <radialGradient id={id("boca")} cx="0.5" cy="0.6" r="0.62">
           <stop offset="0" style={tom("abismo")} />
-          <stop offset="0.55" style={tom("noite")} />
+          <stop offset="0.5" style={tom("noite")} />
+          <stop offset="0.86" style={tom("profundo")} />
           <stop offset="1" style={tom("escuro")} />
+        </radialGradient>
+        {/* O braço do vórtice acende no meio do caminho e some nas pontas. */}
+        <radialGradient id={id("braco")} gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1">
+          <stop offset="0" style={tom("gelo")} stopOpacity="0" />
+          <stop offset="0.3" style={tom("gelo")} stopOpacity="0.55" />
+          <stop offset="0.7" style={tom("claro")} stopOpacity="0.3" />
+          <stop offset="1" style={tom("claro")} stopOpacity="0" />
         </radialGradient>
         <radialGradient id={id("brilho-centro")}>
           <stop offset="0" style={tom("gelo")} stopOpacity="0.9" />
           <stop offset="1" style={tom("claro")} stopOpacity="0" />
         </radialGradient>
         <radialGradient id={id("holofote")}>
-          <stop offset="0" style={tom("claro")} stopOpacity="0.42" />
-          <stop offset="0.6" style={tom("vivo")} stopOpacity="0.12" />
+          <stop offset="0" style={tom("claro")} stopOpacity="0.38" />
+          <stop offset="0.6" style={tom("vivo")} stopOpacity="0.1" />
           <stop offset="1" style={tom("medio")} stopOpacity="0" />
         </radialGradient>
-        <radialGradient id={id("base")}>
-          <stop offset="0" style={tom("gelo")} stopOpacity="0.95" />
-          <stop offset="0.35" style={tom("claro")} stopOpacity="0.5" />
+        <radialGradient id={id("poca")}>
+          <stop offset="0" style={tom("gelo")} stopOpacity="0.85" />
+          <stop offset="0.4" style={tom("claro")} stopOpacity="0.38" />
           <stop offset="1" style={tom("vivo")} stopOpacity="0" />
         </radialGradient>
+        <linearGradient id={id("feixe")} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" style={tom("claro")} stopOpacity="0.34" />
+          <stop offset="1" style={tom("claro")} stopOpacity="0" />
+        </linearGradient>
         <radialGradient id={id("ponta")}>
-          <stop offset="0" style={tom("ouro-luz")} stopOpacity="0.95" />
-          <stop offset="0.4" style={tom("claro")} stopOpacity="0.5" />
+          <stop offset="0" style={tom("ouro-luz")} stopOpacity="0.9" />
+          <stop offset="0.4" style={tom("claro")} stopOpacity="0.45" />
           <stop offset="1" style={tom("claro")} stopOpacity="0" />
         </radialGradient>
         <radialGradient id={id("moeda")} cx="0.38" cy="0.32" r="0.75">
@@ -222,27 +240,21 @@ export function CenaFunil3d({
           <stop offset="0" style={tom("luz")} />
           <stop offset="1" style={tom("gelo")} />
         </radialGradient>
+        <radialGradient id={id("aura")}>
+          <stop offset="0.55" style={tom("claro")} stopOpacity="0.45" />
+          <stop offset="1" style={tom("claro")} stopOpacity="0" />
+        </radialGradient>
         <linearGradient id={id("varredura")} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" style={tom("luz")} stopOpacity="0" />
-          <stop offset="0.5" style={tom("luz")} stopOpacity="0.5" />
+          <stop offset="0.5" style={tom("luz")} stopOpacity="0.4" />
           <stop offset="1" style={tom("luz")} stopOpacity="0" />
         </linearGradient>
-        {LEADS.map((l, i) => (
-          <linearGradient key={i} id={id(`trilha-${i}`)} gradientUnits="userSpaceOnUse" x1={l.de[0]} y1={l.de[1]} x2={l.para[0]} y2={l.para[1]}>
-            <stop offset="0" style={tom("gelo")} stopOpacity="0" />
-            <stop offset="0.55" style={tom("gelo")} stopOpacity="0.55" />
-            <stop offset="1" style={tom("luz")} stopOpacity="0.9" />
-          </linearGradient>
-        ))}
         <radialGradient id={id("faisca")}>
           <stop offset="0" style={tom("luz")} stopOpacity="1" />
           <stop offset="0.35" style={tom("luz")} stopOpacity="0.9" />
           <stop offset="0.6" style={tom("claro")} stopOpacity="0.35" />
           <stop offset="1" style={tom("claro")} stopOpacity="0" />
         </radialGradient>
-        <marker id={id("seta")} viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-          <path d="M 0 0 L 10 5 L 0 10 z" style={pinta("gelo")} />
-        </marker>
         {FAIXAS.map((f, i) => (
           <clipPath key={i} id={id(`corpo-${i}`)}>
             <path d={caminhoCorpo(f)} />
@@ -253,62 +265,36 @@ export function CenaFunil3d({
         </clipPath>
       </defs>
 
-      {/* céu: estrelas, cintilas e o holofote atrás do funil */}
+      {/* céu: poucas estrelas, longe do texto, e o holofote atrás do funil */}
       {ESTRELAS.map((e, i) => (
-        <circle key={i} cx={e.x} cy={e.y} r={e.raio} style={pinta("gelo")} opacity={detalhe ? 0.2 : 0.45}>
-          {detalhe ? <animate attributeName="opacity" values="0.15;0.95;0.15" dur={e.dur} begin={e.inicio} repeatCount="indefinite" /> : null}
+        <circle key={i} cx={e.x} cy={e.y} r={e.raio} style={pinta("gelo")} opacity={detalhe ? 0.2 : 0.4}>
+          {detalhe ? <animate attributeName="opacity" values="0.12;0.8;0.12" dur={e.dur} begin={e.inicio} repeatCount="indefinite" /> : null}
         </circle>
       ))}
-      {CINTILAS.map((c, i) => (
-        <path
-          key={i}
-          d={`M ${c.x} ${c.y - c.t} Q ${c.x} ${c.y} ${c.x + c.t} ${c.y} Q ${c.x} ${c.y} ${c.x} ${c.y + c.t} Q ${c.x} ${c.y} ${c.x - c.t} ${c.y} Q ${c.x} ${c.y} ${c.x} ${c.y - c.t} z`}
-          style={pinta("luz")}
-          opacity={detalhe ? 0 : 0.5}
-        >
-          {detalhe ? <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.4;0.5;0.6;1" dur={CICLO} begin={c.inicio} repeatCount="indefinite" /> : null}
-        </path>
-      ))}
-      {CINTILAS.map((c, i) => (
-        <circle key={`brilho-${i}`} cx={c.x} cy={c.y} r={c.t * 1.3} fill={url("faisca")} opacity={detalhe ? 0 : 0.3}>
-          {detalhe ? <animate attributeName="opacity" values="0;0;0.7;0;0" keyTimes="0;0.4;0.5;0.6;1" dur={CICLO} begin={c.inicio} repeatCount="indefinite" /> : null}
-        </circle>
-      ))}
-      <ellipse cx={CX} cy={262} rx={300} ry={250} fill={url("holofote")} />
+      <ellipse cx={CX} cy={262} rx={290} ry={240} fill={url("holofote")} />
 
-      {/* moedas ao fundo, flutuando e girando */}
-      {MOEDAS_FUNDO.map((m, i) => (
-        <g key={i} transform={`translate(${m.x} ${m.y}) scale(${m.escala})`} opacity={0.68}>
-          <g>
-            {animar ? (
-              <animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0" dur={CICLO} begin={m.inicio} repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" />
-            ) : null}
-            <g>
-              {animar ? <animateTransform attributeName="transform" type="scale" values="1 1;0.2 1;1 1" dur="3s" begin={m.inicio} repeatCount="indefinite" /> : null}
-              <Moeda raio={15} desenho={url("moeda")} />
-            </g>
-          </g>
-        </g>
-      ))}
-
-      {/* plataforma de saída: brilho, anel e uma onda a cada moeda */}
-      <ellipse cx={CX} cy={470} rx={176} ry={24} fill={url("base")} opacity={0.8}>
-        {animar ? <animate attributeName="opacity" values="0.65;1;0.65" dur="3s" repeatCount="indefinite" /> : null}
+      {/* saída: feixe da ponta até a luz de baixo, colada no funil */}
+      <path
+        d={`M ${r(CX - PONTA.rxBase + 8, 1)} ${PONTA.yBase} L ${r(CX - 118, 1)} ${Y_POCA} L ${r(CX + 118, 1)} ${Y_POCA} L ${r(CX + PONTA.rxBase - 8, 1)} ${PONTA.yBase} Z`}
+        fill={url("feixe")}
+      />
+      <ellipse cx={CX} cy={Y_POCA} rx={140} ry={20} fill={url("poca")} opacity={0.75}>
+        {animar ? <animate attributeName="opacity" values="0.6;0.9;0.6" dur="3s" repeatCount="indefinite" /> : null}
       </ellipse>
-      <ellipse cx={CX} cy={470} rx={118} ry={15} fill="none" style={risca("gelo")} strokeOpacity={0.55} strokeWidth={1.4} />
+      <ellipse cx={CX} cy={Y_POCA} rx={104} ry={13} fill="none" style={risca("gelo")} strokeOpacity={0.4} strokeWidth={1.2} />
       {movendo
-        ? [0, 1, 2, 3].map((k) => (
-            <ellipse key={k} cx={CX} cy={470} rx={20} ry={4} fill="none" style={risca("gelo")} strokeWidth={1.6} opacity={0}>
-              <animate attributeName="rx" values="16;150" dur="3s" begin={`-${k * 0.75}s`} repeatCount="indefinite" />
-              <animate attributeName="ry" values="3;20" dur="3s" begin={`-${k * 0.75}s`} repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.8;0" dur="3s" begin={`-${k * 0.75}s`} repeatCount="indefinite" />
+        ? [0, 1, 2].map((k) => (
+            <ellipse key={k} cx={CX} cy={Y_POCA} rx={16} ry={3} fill="none" style={risca("gelo")} strokeWidth={1.4} opacity={0}>
+              <animate attributeName="rx" values="16;128" dur="3s" begin={`-${k}s`} repeatCount="indefinite" />
+              <animate attributeName="ry" values="3;18" dur="3s" begin={`-${k}s`} repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.7;0" dur="3s" begin={`-${k}s`} repeatCount="indefinite" />
             </ellipse>
           ))
         : null}
 
-      {/* brilho na ponta, por onde saem as moedas */}
-      <ellipse cx={CX} cy={FAIXAS[3].yBase + 12} rx={58} ry={16} fill={url("ponta")} opacity={movendo ? 0.7 : 0.45}>
-        {movendo ? <animate attributeName="opacity" values="0.45;0.95;0.45" dur="0.75s" repeatCount="indefinite" /> : null}
+      {/* brilho na ponta, por onde sai o faturamento */}
+      <ellipse cx={CX} cy={PONTA.yBase + 12} rx={50} ry={13} fill={url("ponta")} opacity={movendo ? 0.7 : 0.45}>
+        {movendo ? <animate attributeName="opacity" values="0.45;0.9;0.45" dur="1.5s" repeatCount="indefinite" /> : null}
       </ellipse>
 
       {/* moedas saindo pela ponta (atrás da última faixa: aparecem ao passar da borda) */}
@@ -317,25 +303,25 @@ export function CenaFunil3d({
             <g key={i}>
               <g opacity={0}>
                 <animateMotion
-                  path={`M ${m.de[0]} ${m.de[1]} Q ${(m.de[0] + m.para[0]) / 2} ${m.de[1] + 8} ${m.para[0]} ${m.para[1]}`}
+                  path={`M ${m.de[0]} ${m.de[1]} Q ${(m.de[0] + m.para[0]) / 2} ${m.de[1] + 6} ${m.para[0]} ${m.para[1]}`}
                   keyPoints="0;1;1"
-                  keyTimes="0;0.32;1"
+                  keyTimes="0;0.36;1"
                   calcMode="spline"
                   keySplines="0.55 0 1 1;0 0 1 1"
                   dur="3s"
                   begin={m.inicio}
                   repeatCount="indefinite"
                 />
-                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.04;0.3;0.42;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.06;0.34;0.44;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
                 <g>
-                  <animateTransform attributeName="transform" type="scale" values="1 1;0.14 1;1 1" dur="0.5s" repeatCount="indefinite" />
-                  <Moeda raio={11} desenho={url("moeda")} />
+                  <animateTransform attributeName="transform" type="scale" values="1 1;0.14 1;1 1" dur="0.75s" repeatCount="indefinite" />
+                  <Moeda raio={9} desenho={url("moeda")} />
                 </g>
               </g>
-              <ellipse cx={m.para[0]} cy={m.para[1] + 2} rx={0} ry={0} fill="none" style={risca("ouro-luz")} strokeWidth={1.6} opacity={0}>
-                <animate attributeName="rx" values="0;0;30;30" keyTimes="0;0.32;0.56;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
-                <animate attributeName="ry" values="0;0;7;7" keyTimes="0;0.32;0.56;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0;0.95;0;0" keyTimes="0;0.32;0.56;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
+              <ellipse cx={m.para[0]} cy={m.para[1] + 2} rx={0} ry={0} fill="none" style={risca("ouro-luz")} strokeWidth={1.4} opacity={0}>
+                <animate attributeName="rx" values="0;0;24;24" keyTimes="0;0.36;0.6;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
+                <animate attributeName="ry" values="0;0;5;5" keyTimes="0;0.36;0.6;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0;0.9;0;0" keyTimes="0;0.36;0.6;1" dur="3s" begin={m.inicio} repeatCount="indefinite" />
               </ellipse>
             </g>
           ))
@@ -348,19 +334,18 @@ export function CenaFunil3d({
         const sobre = !sel && i === destaque;
         const corpo = caminhoCorpo(f);
         const volta = voltaDaCostela(f);
-        const labio = i === 0 ? 12 : 24;
+        const labio = i === 0 ? 11 : 20;
         return (
           <g key={i} data-faixa={i} data-sel={sel ? "sim" : undefined}>
             <g style={{ transition: "opacity 320ms ease" }} opacity={sel ? 1 : sobre ? 0.55 : 0}>
-              <path d={corpo} fill="none" style={risca("claro")} strokeWidth={26} strokeOpacity={0.12} strokeLinejoin="round" />
-              <path d={corpo} fill="none" style={risca("claro")} strokeWidth={14} strokeOpacity={0.2} strokeLinejoin="round" />
-              <path d={corpo} fill="none" style={risca("gelo")} strokeWidth={6} strokeOpacity={0.35} strokeLinejoin="round" />
+              <path d={corpo} fill="none" style={risca("claro")} strokeWidth={18} strokeOpacity={0.1} strokeLinejoin="round" />
+              <path d={corpo} fill="none" style={risca("claro")} strokeWidth={9} strokeOpacity={0.18} strokeLinejoin="round" />
             </g>
             {i === 0 ? (
               <g opacity={0.6}>
-                {animar ? <animate attributeName="opacity" values="0.35;0.85;0.35" dur="3s" repeatCount="indefinite" /> : null}
-                <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo + 4} ry={f.ryTopo + 3} fill="none" style={risca("claro")} strokeWidth={16} strokeOpacity={0.14} />
-                <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo + 1} ry={f.ryTopo + 1} fill="none" style={risca("claro")} strokeWidth={7} strokeOpacity={0.3} />
+                {animar ? <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" /> : null}
+                <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo + 3} ry={f.ryTopo + 2.5} fill="none" style={risca("claro")} strokeWidth={10} strokeOpacity={0.14} />
+                <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo + 1} ry={f.ryTopo + 1} fill="none" style={risca("claro")} strokeWidth={4} strokeOpacity={0.3} />
               </g>
             ) : null}
             {/* borda de cima (lábio) */}
@@ -369,61 +354,60 @@ export function CenaFunil3d({
               <>
                 <ellipse cx={CX} cy={f.yTopo} rx={bocaRx} ry={bocaRy} fill={url("boca")} />
                 <g clipPath={url("boca-recorte")}>
-                  <g>
-                    {VORTICE.map((a, k) => {
-                      const passo = a.traco.split(" ").reduce((s, v) => s + Number(v), 0) * 2;
-                      return (
+                  {/* vórtice: braços de luz girando em perspectiva, sem tracejado */}
+                  <g transform={`translate(${CX} ${f.yTopo + 3}) scale(${r(bocaRx - 4, 1)} ${r((bocaRy - 1) * 1.02, 2)})`}>
+                    <g>
+                      {animar ? (
+                        <animateTransform attributeName="transform" type="rotate" values="0;360" dur={`${VOLTA_S}s`} repeatCount="indefinite" />
+                      ) : null}
+                      {BRACOS_DO_VORTICE.map((d, k) => (
                         <g key={k}>
-                          <ellipse cx={CX} cy={a.cy} rx={a.rx} ry={a.ry} fill="none" style={risca("claro")} strokeOpacity={a.forca * 0.35} strokeWidth={5} strokeDasharray={a.traco} strokeLinecap="round">
-                            {animar ? <animate attributeName="stroke-dashoffset" values={`0;${passo}`} dur={a.dur} repeatCount="indefinite" /> : null}
-                          </ellipse>
-                          <ellipse cx={CX} cy={a.cy} rx={a.rx} ry={a.ry} fill="none" style={risca("gelo")} strokeOpacity={a.forca} strokeWidth={1.4} strokeDasharray={a.traco} strokeLinecap="round">
-                            {animar ? <animate attributeName="stroke-dashoffset" values={`0;${passo}`} dur={a.dur} repeatCount="indefinite" /> : null}
-                          </ellipse>
+                          <path d={d} fill="none" stroke={url("braco")} strokeWidth={0.08} strokeOpacity={0.35} strokeLinecap="round" />
+                          <path d={d} fill="none" stroke={url("braco")} strokeWidth={0.022} strokeLinecap="round" />
                         </g>
-                      );
-                    })}
-                    {movendo
-                      ? SUGADAS.map((p, k) => (
-                          <circle key={k} r={2} style={pinta("luz")} opacity={0}>
-                            <animateMotion path={p.d} dur="3s" begin={p.inicio} repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.5 0 0.9 0.6" />
-                            <animate attributeName="opacity" values="0;0.95;0.9;0" keyTimes="0;0.15;0.8;1" dur="3s" begin={p.inicio} repeatCount="indefinite" />
-                            <animate attributeName="r" values="2.4;2;0.6" keyTimes="0;0.6;1" dur="3s" begin={p.inicio} repeatCount="indefinite" />
-                          </circle>
-                        ))
-                      : null}
+                      ))}
+                    </g>
                   </g>
-                  <circle cx={CX} cy={110} r={30} fill={url("brilho-centro")}>
+                  {movendo
+                    ? SUGADAS.filter((_, k) => !leve || k % 2 === 0).map((p, k) => (
+                        <circle key={k} r={2} style={pinta("luz")} opacity={0}>
+                          <animateMotion path={p.d} dur="3s" begin={p.inicio} repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.5 0 0.9 0.6" />
+                          <animate attributeName="opacity" values="0;0.95;0.9;0" keyTimes="0;0.15;0.8;1" dur="3s" begin={p.inicio} repeatCount="indefinite" />
+                          <animate attributeName="r" values="2.2;1.8;0.6" keyTimes="0;0.6;1" dur="3s" begin={p.inicio} repeatCount="indefinite" />
+                        </circle>
+                      ))
+                    : null}
+                  <circle cx={CX} cy={f.yTopo + 10} r={28} fill={url("brilho-centro")}>
                     {animar ? (
                       <>
-                        <animate attributeName="r" values="24;36;24" dur="3s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0.65;1;0.65" dur="3s" repeatCount="indefinite" />
+                        <animate attributeName="r" values="22;32;22" dur="3s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
                       </>
                     ) : null}
                   </circle>
                 </g>
               </>
             ) : (
-              <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo - labio} ry={Math.max(2, f.ryTopo - 6)} fill={url("interior")} />
+              <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo - labio} ry={Math.max(2, f.ryTopo - 5)} fill={url("interior")} />
             )}
-            <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo} ry={f.ryTopo} fill="none" style={risca("luz")} strokeOpacity={0.85} strokeWidth={1.4} />
+            <ellipse cx={CX} cy={f.yTopo} rx={f.rxTopo} ry={f.ryTopo} fill="none" style={risca("luz")} strokeOpacity={0.85} strokeWidth={1.3} />
             {/* frente da faixa */}
             <path d={corpo} fill={url("corpo")} />
             <path d={corpo} fill={url("sombra-v")} />
-            <path d={corpo} style={{ ...pinta("luz"), transition: "opacity 320ms ease" }} opacity={sel ? 0.16 : sobre ? 0.08 : 0} />
+            <path d={corpo} style={{ ...pinta("luz"), transition: "opacity 320ms ease" }} opacity={sel ? 0.14 : sobre ? 0.07 : 0} />
             <g clipPath={url(`corpo-${i}`)}>
               {Array.from({ length: COSTELAS }, (_, k) => {
                 if (!detalhe) {
                   const fixa = costela(f, -75 + k * 30);
-                  return <path key={k} d={fixa.d} style={risca("luz")} strokeOpacity={r(0.3 * fixa.opacidade)} strokeWidth={1.3} />;
+                  return <path key={k} d={fixa.d} style={risca("luz")} strokeOpacity={r(0.26 * fixa.opacidade)} strokeWidth={1.2} />;
                 }
                 const inicio = `-${r((VOLTA_S / COSTELAS) * k, 2)}s`;
                 return (
-                  <path key={k} d={costela(f, -90).d} style={risca("luz")} strokeWidth={1.3} strokeOpacity={0}>
+                  <path key={k} d={costela(f, -90).d} style={risca("luz")} strokeWidth={1.2} strokeOpacity={0}>
                     <animate attributeName="d" values={volta.valores} keyTimes={volta.tempos} dur={`${VOLTA_S}s`} begin={inicio} repeatCount="indefinite" />
                     <animate
                       attributeName="stroke-opacity"
-                      values={volta.opacidades.split(";").map((o) => r(Number(o) * 0.42)).join(";")}
+                      values={volta.opacidades.split(";").map((o) => r(Number(o) * 0.36)).join(";")}
                       keyTimes={volta.tempos}
                       dur={`${VOLTA_S}s`}
                       begin={inicio}
@@ -433,7 +417,7 @@ export function CenaFunil3d({
                 );
               })}
               {animar ? (
-                <rect x={CX - f.rxTopo - 130} y={f.yTopo - 50} width={96} height={f.frenteBase - f.yTopo + 70} fill={url("varredura")} transform="skewX(-16)" opacity={0.9}>
+                <rect x={CX - f.rxTopo - 130} y={f.yTopo - 50} width={90} height={f.frenteBase - f.yTopo + 70} fill={url("varredura")} transform="skewX(-16)" opacity={0.85}>
                   <animateTransform
                     attributeName="transform"
                     type="translate"
@@ -449,22 +433,22 @@ export function CenaFunil3d({
                 </rect>
               ) : null}
             </g>
-            <path d={arcoFrente(f.rxBase, f.ryBase, f.yBase)} fill="none" style={risca("gelo")} strokeOpacity={0.6} strokeWidth={1.5} />
+            <path d={arcoFrente(f.rxBase, f.ryBase, f.yBase)} fill="none" style={risca("gelo")} strokeOpacity={0.6} strokeWidth={1.4} />
             <path
               d={`M ${r(CX - f.rxTopo, 1)} ${f.yTopo} L ${r(CX - f.rxBase, 1)} ${f.yBase} M ${r(CX + f.rxTopo, 1)} ${f.yTopo} L ${r(CX + f.rxBase, 1)} ${f.yBase}`}
               fill="none"
               style={risca("gelo")}
               strokeOpacity={0.5}
-              strokeWidth={1.3}
+              strokeWidth={1.2}
               strokeLinecap="round"
             />
             {sel ? (
-              <path d={corpo} fill="none" style={risca("luz")} strokeWidth={2.2} strokeOpacity={0.9}>
-                {animar ? <animate attributeName="stroke-opacity" values="0.35;1;0.35" dur="1.5s" repeatCount="indefinite" /> : null}
+              <path d={corpo} fill="none" style={risca("luz")} strokeWidth={1.8} strokeOpacity={0.85} strokeLinejoin="round">
+                {animar ? <animate attributeName="stroke-opacity" values="0.4;0.95;0.4" dur="3s" repeatCount="indefinite" /> : null}
               </path>
             ) : null}
             {sel && animar && toques > 0 ? (
-              <path key={`onda-${toques}`} d={corpo} fill="none" style={risca("luz")} strokeWidth={3} data-onda="" />
+              <path key={`onda-${toques}`} d={corpo} fill="none" style={risca("luz")} strokeWidth={2.4} strokeLinejoin="round" data-onda="" />
             ) : null}
           </g>
         );
@@ -473,7 +457,7 @@ export function CenaFunil3d({
       {/* energia descendo em espiral pela superfície */}
       {movendo
         ? ESPIRAIS.filter((_, k) => !leve || k % 2 === 0).map((p, k) => (
-            <circle key={k} r={5.5} fill={url("faisca")} opacity={0}>
+            <circle key={k} r={4.5} fill={url("faisca")} opacity={0}>
               <animateMotion path={p.movimento.d} keyPoints={p.movimento.keyPoints} keyTimes={p.movimento.keyTimes} calcMode="linear" dur={CICLO} begin={p.inicio} repeatCount="indefinite" />
               <animate attributeName="opacity" values={p.movimento.opacidades} keyTimes={p.movimento.keyTimes} calcMode="linear" dur={CICLO} begin={p.inicio} repeatCount="indefinite" />
             </circle>
@@ -487,58 +471,53 @@ export function CenaFunil3d({
             return [0, 1].map((k) => {
               const inicio = `-${r((dur / 2) * k + i * 0.4, 2)}s`;
               return (
-                <circle key={`${i}-${k}`} r={6} fill={url("faisca")}>
+                <circle key={`${i}-${k}`} r={5} fill={url("faisca")}>
                   <animateMotion path={caminhoElipse(f.rxTopo, f.ryTopo, f.yTopo)} keyPoints="1;0" keyTimes="0;1" calcMode="linear" dur={`${dur}s`} begin={inicio} repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0.18;0.18;1;1;0.18" keyTimes="0;0.47;0.56;0.96;1" dur={`${dur}s`} begin={inicio} repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.12;0.12;1;1;0.12" keyTimes="0;0.47;0.56;0.96;1" dur={`${dur}s`} begin={inicio} repeatCount="indefinite" />
                 </circle>
               );
             });
           })
         : null}
 
-      {/* leads entrando pela boca */}
+      {/* leads entrando pela boca: sem trilha tracejada, só a ficha com a aura */}
       {movendo
         ? LEADS.map((l, i) => {
             const caminho = `M ${l.de[0]} ${l.de[1]} Q ${l.controle[0]} ${l.controle[1]} ${l.para[0]} ${l.para[1]}`;
             const inicio = `-${r(i * 1.2, 2)}s`;
             const pessoa = pinta(`lead-${i + 1}`);
             return (
-              <g key={i}>
-                <path d={caminho} fill="none" stroke={url(`trilha-${i}`)} strokeWidth={2.2} strokeDasharray="7 6" strokeLinecap="round" markerEnd={url("seta")}>
-                  <animate attributeName="stroke-dashoffset" values="0;-26" dur="1.5s" repeatCount="indefinite" />
-                </path>
-                <g opacity={0}>
-                  <animateMotion path={caminho} keyPoints="0;1;1" keyTimes="0;0.42;1" calcMode="spline" keySplines="0.35 0 0.65 1;0 0 1 1" dur={CICLO} begin={inicio} repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.05;0.35;0.43;1" dur={CICLO} begin={inicio} repeatCount="indefinite" />
-                  <g>
-                    <animateTransform attributeName="transform" type="scale" values="0.7;1;1;0.35;0.35" keyTimes="0;0.08;0.28;0.42;1" dur={CICLO} begin={inicio} repeatCount="indefinite" />
-                    <g>
-                      <circle cy={2.6} r={15.6} style={pinta("sombra")} opacity={0.35} />
-                      <circle r={15} fill={url("ficha")} style={risca("luz")} strokeWidth={2} />
-                      <circle cy={-3.6} r={4.8} style={pessoa} />
-                      <path d="M -8.2 10 a 8.2 6.6 0 0 1 16.4 0 z" style={pessoa} />
-                    </g>
-                  </g>
+              <g key={i} opacity={0}>
+                <animateMotion path={caminho} keyPoints="0;1;1" keyTimes="0;0.42;1" calcMode="spline" keySplines="0.35 0 0.65 1;0 0 1 1" dur={CICLO} begin={inicio} repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.06;0.34;0.43;1" dur={CICLO} begin={inicio} repeatCount="indefinite" />
+                <g>
+                  <animateTransform attributeName="transform" type="scale" values="0.6;0.9;0.9;0.3;0.3" keyTimes="0;0.08;0.28;0.42;1" dur={CICLO} begin={inicio} repeatCount="indefinite" />
+                  <circle r={22} fill={url("aura")} />
+                  <circle r={13} fill={url("ficha")} style={risca("luz")} strokeWidth={1.6} />
+                  <circle cy={-3.1} r={4.1} style={pessoa} />
+                  <path d="M -7 8.6 a 7 5.6 0 0 1 14 0 z" style={pessoa} />
                 </g>
               </g>
             );
           })
         : null}
 
-      {/* traços até os balões */}
+      {/* traços até os balões: todos iguais; o da etapa escolhida acende e leva um ponto de luz */}
       {FAIXAS.map((f, i) => {
         const sel = i === selecionada;
-        const x0 = r(bordaDireita(i, f.centroY) + 7, 1);
-        const x1 = X_BALAO - 4;
+        const x0 = r(bordaDireita(i, f.centroY) + 8, 1);
+        const x1 = X_BALAO;
         return (
-          <g key={i} data-traco="" opacity={sel ? 1 : 0.62} style={{ transition: "opacity 320ms ease" }}>
-            <line x1={x0} y1={f.centroY} x2={x1} y2={f.centroY} style={risca("gelo")} strokeWidth={sel ? 1.8 : 1.3} strokeDasharray={sel ? "4 5" : undefined}>
-              {sel && animar ? <animate attributeName="stroke-dashoffset" values="0;-18" dur="1.5s" repeatCount="indefinite" /> : null}
-            </line>
-            <circle cx={x0} cy={f.centroY} r={3.4} style={pinta("luz")}>
-              {sel && animar ? <animate attributeName="r" values="3;5.2;3" dur="1.5s" repeatCount="indefinite" /> : null}
-            </circle>
+          <g key={i} data-traco="" opacity={sel ? 1 : 0.55} style={{ transition: "opacity 320ms ease" }}>
+            <line x1={x0} y1={f.centroY} x2={x1} y2={f.centroY} style={risca("gelo")} strokeWidth={sel ? 1.5 : 1.1} strokeOpacity={sel ? 0.9 : 0.7} />
+            <circle cx={x0} cy={f.centroY} r={3} style={pinta("luz")} />
             <circle cx={x1} cy={f.centroY} r={2.2} style={pinta("luz")} />
+            {sel && animar ? (
+              <circle cx={x0} cy={f.centroY} r={2.6} fill={url("faisca")}>
+                <animate attributeName="cx" values={`${x0};${x1}`} dur="1.5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="1.5s" repeatCount="indefinite" />
+              </circle>
+            ) : null}
           </g>
         );
       })}

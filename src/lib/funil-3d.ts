@@ -1,7 +1,8 @@
 /**
  * Geometria do funil 3D da Captação, em unidades do viewBox da cena
- * (620 × 500). O funil ocupa x 0–400 (eixo em x = 200); de 400 a 620 ficam
- * os balões de cada etapa, ligados às faixas por um traço.
+ * (620 × 500). O funil ocupa x 24–376 (eixo em x = 200, com folga dos dois
+ * lados para o brilho da borda não encostar no palco); de 400 a 620 ficam os
+ * balões de cada etapa, ligados às faixas por um traço.
  *
  * Cada faixa é um tronco de cone visto de cima: a borda de cima e a de baixo
  * são elipses com altura = 20% da largura (a "perspectiva"). A frente da
@@ -14,8 +15,8 @@ export const LARGURA_CENA = 620;
 export const LARGURA_FUNIL = 400;
 export const ALTURA_CENA = 500;
 export const CX = 200;
-/** Onde começam os balões (x do ponto em que o traço chega). */
-export const X_BALAO = 432;
+/** Onde o traço chega (o ponto); o balão começa 8 unidades depois. */
+export const X_BALAO = 430;
 export const PERSPECTIVA = 0.2;
 
 export type Faixa = {
@@ -36,10 +37,10 @@ export type Faixa = {
 };
 
 const BRUTAS: ReadonlyArray<readonly [number, number, number, number]> = [
-  [196, 166, 96, 176],
-  [160, 132, 190, 262],
-  [126, 100, 276, 342],
-  [94, 70, 356, 418],
+  [176, 150, 96, 176],
+  [144, 120, 190, 262],
+  [114, 92, 276, 342],
+  [86, 64, 356, 418],
 ];
 
 export const FAIXAS: readonly Faixa[] = BRUTAS.map(([rxTopo, rxBase, yTopo, yBase], i) => {

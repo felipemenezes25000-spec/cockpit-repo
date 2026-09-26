@@ -17,7 +17,7 @@
    proporção do viewBox (620 × 500) e os botões usam % dela, como o desenho. */
 .palco {
   --x-eixo: 32.258%; /* 200 / 620 */
-  --x-balao: 71.29%; /* 442 / 620 */
+  --x-balao: 70.645%; /* 438 / 620: 8 unidades depois do ponto do traço (X_BALAO) */
   position: relative;
   max-width: 47.5rem;
   margin-inline: auto;
@@ -72,10 +72,6 @@
   animation-delay: 0.41s;
 }
 
-.desenho [data-faixa][data-sel="sim"] {
-  transform: scale(1.03);
-}
-
 .desenho [data-onda] {
   transform-box: fill-box;
   transform-origin: 50% 50%;
@@ -126,22 +122,18 @@
   position: absolute;
   left: var(--x-eixo);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.2rem;
   white-space: nowrap;
+  text-align: center;
   pointer-events: none;
   transform: translate(-50%, -50%);
   text-shadow:
     0 1px 2px color-mix(in srgb, var(--color-funil-sombra) 70%, transparent),
     0 0 14px color-mix(in srgb, var(--color-funil-sombra) 45%, transparent);
-  transition: transform 260ms var(--ease-enter);
   animation: rotuloEntra 700ms var(--ease-enter) backwards;
   animation-delay: calc(var(--atraso, 0s) + 0.35s);
-}
-
-.faixa:hover .rotuloFaixa,
-.faixa[aria-pressed="true"] .rotuloFaixa {
-  transform: translate(-50%, -50%) scale(1.04);
 }
 
 @keyframes rotuloEntra {
@@ -151,62 +143,59 @@
   }
 }
 
-.iconeFaixa {
-  display: flex;
-  flex-shrink: 0;
-  width: 2.15rem;
-  height: 2.15rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--color-funil-luz) 60%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-funil-luz) 18%, transparent);
-  transition:
-    background-color 220ms var(--ease-standard),
-    transform 220ms var(--ease-enter);
-}
-
-.faixa[aria-pressed="true"] .iconeFaixa {
-  background: color-mix(in srgb, var(--color-funil-luz) 34%, transparent);
-  transform: scale(1.08);
-}
-
-.textoFaixa {
-  display: flex;
-  flex-direction: column;
-}
-
 .nomeFaixa {
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.15;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--color-cabine-texto) 88%, transparent);
+}
+
+.iconeFaixa {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .numeroFaixa {
-  font-size: 1.6rem;
-  font-weight: 700;
-  line-height: 1.05;
+  font-size: 1.65rem;
+  font-weight: 750;
+  line-height: 1.15;
   letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
+  transition: transform 260ms var(--ease-enter);
 }
 
+.faixa[aria-pressed="true"] .numeroFaixa {
+  transform: scale(1.08);
+}
+
+/* Balões: todos com a mesma caixa de vidro, na mesma coluna; o da etapa
+   escolhida só acende (borda e fundo), sem mudar de lugar nem de tamanho. */
 .balao {
   position: absolute;
   left: var(--x-balao);
   display: flex;
+  min-width: 8.2rem;
   flex-direction: column;
-  gap: 0.05rem;
-  padding: 0.4rem 0.65rem;
-  border: 1px solid transparent;
+  gap: 0;
+  padding: 0.32rem 0.65rem 0.36rem;
+  border: 1px solid color-mix(in srgb, var(--color-funil-luz) 16%, transparent);
   border-radius: var(--radius-cartao);
+  background: color-mix(in srgb, var(--color-funil-noite) 38%, transparent);
   color: var(--color-cabine-texto-secundario);
-  font-size: 0.74rem;
-  line-height: 1.35;
+  font-size: 0.72rem;
+  line-height: 1.3;
   pointer-events: none;
   transform: translateY(-50%);
   transition:
     background-color 220ms var(--ease-standard),
-    border-color 220ms var(--ease-standard);
+    border-color 220ms var(--ease-standard),
+    box-shadow 220ms var(--ease-standard);
   animation: balaoEntra 700ms var(--ease-enter) backwards;
   animation-delay: calc(var(--atraso, 0s) + 0.55s);
 }
@@ -225,18 +214,21 @@
 }
 
 .balaoNome {
+  margin-bottom: 0.05rem;
   color: var(--color-cabine-texto);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
 .faixa:hover .balao {
+  border-color: color-mix(in srgb, var(--color-funil-luz) 30%, transparent);
   background: color-mix(in srgb, var(--color-funil-luz) 8%, transparent);
 }
 
 .faixa[aria-pressed="true"] .balao {
-  border-color: color-mix(in srgb, var(--color-funil-luz) 45%, transparent);
+  border-color: color-mix(in srgb, var(--color-funil-luz) 55%, transparent);
   background: color-mix(in srgb, var(--color-funil-luz) 15%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-funil-claro) 16%, transparent);
 }
 
 /* Etapa selecionada, sob o palco. */
@@ -281,28 +273,24 @@
     display: none;
   }
 
-  .rotuloFaixa {
-    gap: 0.4rem;
-  }
-
-  .iconeFaixa {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
   .nomeFaixa {
     font-size: 0.66rem;
   }
 
+  .iconeFaixa {
+    width: 0.78rem;
+    height: 0.78rem;
+  }
+
   .numeroFaixa {
-    font-size: 1.25rem;
+    font-size: 1.3rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .desenho [data-faixa],
   .rotuloFaixa,
-  .iconeFaixa,
+  .numeroFaixa,
   .balao {
     animation: none;
     transition: none;
@@ -312,12 +300,7 @@
     display: none;
   }
 
-  .desenho [data-faixa][data-sel="sim"] {
+  .faixa[aria-pressed="true"] .numeroFaixa {
     transform: none;
-  }
-
-  .faixa:hover .rotuloFaixa,
-  .faixa[aria-pressed="true"] .rotuloFaixa {
-    transform: translate(-50%, -50%);
   }
 }

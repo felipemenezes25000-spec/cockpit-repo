@@ -31,8 +31,10 @@ describe("geometria do funil 3D", () => {
         expect(proxima.frenteTopo).toBeGreaterThan(f.frenteBase);
       }
     }
-    expect(CX - FAIXAS[0].rxTopo).toBeGreaterThanOrEqual(0);
-    expect(CX + FAIXAS[0].rxTopo).toBeLessThanOrEqual(LARGURA_FUNIL);
+    // Folga dos dois lados: o brilho da boca e o da faixa escolhida não
+    // podem encostar na borda do palco (o recorte deixava o funil "torto").
+    expect(CX - FAIXAS[0].rxTopo).toBeGreaterThanOrEqual(20);
+    expect(CX + FAIXAS[0].rxTopo).toBeLessThanOrEqual(LARGURA_FUNIL - 20);
     expect(FAIXAS[FAIXAS.length - 1].toqueBase).toBeLessThan(ALTURA_CENA);
   });
 
