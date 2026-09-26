@@ -68,12 +68,12 @@ export function ListaDespesas({
   }
 
   return (
-    <ul aria-label="Despesas" className="flex flex-col gap-3">
+    <ul aria-label="Despesas" className="flex min-w-0 flex-col gap-3">
       {despesas.map((despesa) => (
         <li
           key={despesa.id}
           className={cn(
-            "flex flex-col gap-3 rounded-[var(--radius-cartao)] border p-4",
+            "premium-interactive flex min-w-0 flex-col gap-3 rounded-[var(--radius-cartao)] border p-4",
             // Cancelada não usa opacidade: derrubaria o texto terciário para
             // 2,6:1. O estado vem do selo "Cancelada", do fundo recuado e da
             // borda tracejada, como em Configurações.
@@ -82,19 +82,19 @@ export function ListaDespesas({
               : "border-card-border bg-surface",
           )}
         >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-on-surface">{despesa.descricao}</span>
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="min-w-0 break-words font-medium text-on-surface">{despesa.descricao}</span>
                 <ChipDespesa situacao={despesa.situacao} venceEmDias={despesa.venceEmDias} />
                 {despesa.exemplo ? (
-                  <span className="rounded-[var(--radius-tag)] border border-dashed border-outline-variant px-1.5 py-0.5 text-[0.6875rem] text-outline">
+                  <span className="rounded-full border border-dashed border-outline-variant px-2 py-0.5 text-[0.6875rem] text-outline">
                     exemplo
                   </span>
                 ) : null}
               </div>
 
-              <p className="tabular mt-1 text-xs text-outline">
+              <p className="tabular mt-1 min-w-0 break-words text-xs leading-5 text-outline">
                 {ROTULO_CATEGORIA[despesa.categoria]}
                 {despesa.situacao === "paga" && despesa.pagoEm
                   ? ` · paga em ${formatarData(despesa.pagoEm)}${despesa.forma ? ` (${ROTULO_FORMA[despesa.forma]})` : ""}`
@@ -102,14 +102,14 @@ export function ListaDespesas({
               </p>
 
               {despesa.observacoes ? (
-                <p className="mt-1 text-xs text-outline">{despesa.observacoes}</p>
+                <p className="mt-1 min-w-0 break-words text-xs leading-5 text-outline">{despesa.observacoes}</p>
               ) : null}
             </div>
 
             {/* No celular estreito (320 px) o bloco pode encolher e quebrar em
                 linhas; com `shrink-0` ele passava da tela. Do `sm` para cima
                 não encolhe, para valor e botões ficarem juntos. */}
-            <div className="flex flex-wrap items-center gap-3 sm:shrink-0">
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2.5 border-t border-card-border pt-3 sm:w-auto sm:justify-start sm:gap-3 sm:border-t-0 sm:pt-0 sm:shrink-0">
               {/* Saída de dinheiro é vermelha. Cancelada perde a força:
                   o valor não saiu nem vai sair. */}
               <span
@@ -117,7 +117,7 @@ export function ListaDespesas({
                 // fica na mesma coluna em todas as linhas, com "Cancelar" ou
                 // "Reabrir" ao lado (também de largura fixa, abaixo).
                 className={cn(
-                  "tabular text-base font-semibold sm:w-36 sm:text-right",
+                  "tabular min-w-0 break-words text-base font-semibold sm:w-36 sm:text-right",
                   despesa.situacao === "cancelada"
                     ? "text-outline line-through"
                     : "text-negativo",
@@ -128,7 +128,7 @@ export function ListaDespesas({
 
               <Link
                 href={`/financeiro/despesas/${despesa.id}/editar`}
-                className="inline-flex h-8 items-center rounded-[var(--radius-cartao)] border border-card-border px-3 text-xs font-medium text-on-surface-variant transition-colors hover:border-primary hover:text-primary"
+                className="inline-flex min-h-8 items-center rounded-[var(--radius-cartao)] border border-card-border px-3 text-xs font-medium text-on-surface-variant transition-[transform,border-color,color,background-color] duration-150 hover:-translate-y-0.5 hover:border-primary hover:bg-selecao hover:text-primary"
               >
                 Editar
               </Link>
@@ -172,7 +172,7 @@ export function ListaDespesas({
           </div>
 
           {despesa.situacao === "pendente" ? (
-            <div className="border-t border-card-border pt-3">
+            <div className="min-w-0 border-t border-card-border pt-3">
               <PagarDespesa despesaId={despesa.id} dataPadrao={dataPadrao} />
             </div>
           ) : null}
