@@ -30,7 +30,7 @@ export function LinkDeVoltar({ href, children, className }: { href: string; chil
 
 export function SeloHero({ children, tom = "neutro", className }: { children: ReactNode; tom?: TomDoSelo; className?: string }) {
   return (
-    <span className={cn("inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-left text-xs font-semibold whitespace-normal shadow-[0_8px_20px_-18px_rgba(8,41,76,.45)] [&_svg]:shrink-0", TOM_DO_SELO[tom], className)}>
+    <span className={cn("inline-flex min-h-7 max-w-full items-center gap-1.5 break-words rounded-full border px-2.5 py-0.5 text-left text-xs font-semibold whitespace-normal shadow-[0_8px_20px_-18px_rgba(8,41,76,.45)] [&_svg]:shrink-0", TOM_DO_SELO[tom], className)}>
       {children}
     </span>
   );
