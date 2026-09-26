@@ -37,7 +37,7 @@ function BotaoSalvar() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-controle)] bg-primary-container px-6 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+      className="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-controle)] border border-primary-container bg-primary-container px-6 text-sm font-semibold text-on-primary shadow-[0_14px_28px_-18px_rgba(10,110,209,.72)] transition-[transform,background-color,box-shadow] duration-180 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-[0_18px_34px_-18px_rgba(8,60,115,.72)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto"
     >
       {pending ? (
         <>
@@ -46,7 +46,7 @@ function BotaoSalvar() {
         </>
       ) : (
         <>
-          <Receipt aria-hidden="true" size={18} strokeWidth={1.75} />
+          <Receipt aria-hidden="true" size={18} strokeWidth={1.75} className="transition-transform duration-180 group-hover:-translate-y-0.5" />
           Registrar venda
         </>
       )}
@@ -67,11 +67,14 @@ function LinhaDaConta({
   negativa?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
-      <span className="text-sm text-on-surface-variant">{rotulo}</span>
+    <div className={cn(
+      "grid min-w-0 gap-1.5 rounded-[var(--radius-controle)] px-2.5 py-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline sm:gap-3",
+      destaque && "border border-primary-fixed bg-selecao",
+    )}>
+      <span className="min-w-0 break-words text-sm text-on-surface-variant">{rotulo}</span>
       <span
         className={cn(
-          "tabular",
+          "tabular min-w-0 break-words sm:text-right",
           destaque ? "text-base font-semibold text-positivo" : "text-sm text-on-surface",
           negativa && "text-on-surface-variant",
         )}
@@ -173,21 +176,21 @@ export function FormularioVenda({
   }
 
   return (
-    <form action={enviar} className="flex flex-col gap-8" noValidate>
+    <form action={enviar} className="flex min-w-0 flex-col gap-8" noValidate>
       <input type="hidden" name="chave_envio" value={chaveEnvio} />
       {erros.geral ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm text-on-error-container"
+          className="flex min-w-0 items-start gap-2 rounded-[var(--radius-cartao)] border border-error bg-error-container px-3.5 py-2.5 text-sm leading-5 text-on-error-container"
         >
           <CircleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
-          {erros.geral}
+          <span className="min-w-0 break-words">{erros.geral}</span>
         </p>
       ) : null}
 
       <SeletorPaciente inicial={pacienteInicial} erro={erros.paciente_id} />
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
         <Campo
           id="procedimento_id"
           rotulo="Procedimento ou serviço"
@@ -269,7 +272,7 @@ export function FormularioVenda({
 
       {/* Pagamento --------------------------------------------------------- */}
       <GrupoDeCampos titulo="Pagamento">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
           <Campo id="forma" rotulo="Forma de pagamento" obrigatorio erro={erros.forma}>
             <select
               id="forma"
@@ -309,7 +312,7 @@ export function FormularioVenda({
                   ))}
                 </select>
                 {operadoras.length === 0 ? (
-                  <p className="mt-1.5 text-xs text-atencao">
+                  <p className="mt-1.5 break-words text-xs leading-5 text-atencao">
                     Nenhuma taxa de {ROTULO_FORMA[forma].toLowerCase()} cadastrada.
                     A administradora configura em Financeiro → Taxas de cartão.
                   </p>
@@ -349,7 +352,7 @@ export function FormularioVenda({
         </div>
 
         {erros.taxa && operadoras.length > 0 ? (
-          <p role="alert" className="mt-3 text-xs text-error">
+          <p role="alert" className="mt-3 break-words text-xs leading-5 text-error">
             {erros.taxa}
           </p>
         ) : null}
@@ -357,21 +360,21 @@ export function FormularioVenda({
         {/* Taxa manual — só para quem pode; a paciente nunca paga a taxa. */}
         {usaCartao && taxaEscolhida ? (
           podeAlterarTaxa ? (
-            <div className="mt-4 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-on-surface">
+            <div className="mt-4 min-w-0 rounded-[var(--radius-cartao)] border border-atencao-borda bg-[linear-gradient(180deg,#fffdf8_0%,var(--color-atencao-fundo)_100%)] p-4 shadow-[0_12px_28px_-26px_rgba(143,71,0,.32)]">
+              <label className="flex min-w-0 cursor-pointer items-start gap-2.5 text-sm leading-5 text-on-surface">
                 <input
                   type="checkbox"
                   name="taxa_manual"
                   value="sim"
                   checked={manual}
                   onChange={(e) => setManual(e.target.checked)}
-                  className="size-4 accent-[var(--color-primary-container)]"
+                  className="mt-0.5 size-4 shrink-0 accent-[var(--color-primary-container)]"
                 />
-                Alterar a taxa desta venda
+                <span className="min-w-0 break-words font-medium">Alterar a taxa desta venda</span>
               </label>
 
               {manual ? (
-                <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="mt-4 grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
                   <Campo
                     id="taxa_percentual"
                     rotulo="Nova taxa (%)"
@@ -412,7 +415,7 @@ export function FormularioVenda({
               ) : null}
             </div>
           ) : (
-            <p className="mt-3 text-xs text-outline">
+            <p className="mt-3 break-words text-xs leading-5 text-outline">
               Taxa padrão de {formatarPercentual(conta.bpPadrao)} aplicada. Alterar a
               taxa é restrito ao financeiro e à administradora.
             </p>
@@ -420,7 +423,11 @@ export function FormularioVenda({
         ) : null}
 
         {/* Resumo da conta ------------------------------------------------- */}
-        <div className="mt-5 flex flex-col gap-2 rounded-[var(--radius-cartao)] border border-card-border bg-surface p-4">
+        <div className="mt-5 flex min-w-0 flex-col gap-1.5 rounded-[var(--radius-painel)] border border-primary-fixed-dim bg-[linear-gradient(145deg,#f6faff_0%,#ffffff_54%,#edf6ff_100%)] p-3.5 shadow-[0_16px_36px_-30px_rgba(8,84,160,.38)] sm:p-4">
+          <div className="mb-1 flex items-center justify-between gap-3 px-2.5">
+            <span className="rotulo text-primary">Prévia financeira</span>
+            <span className="text-[0.65rem] font-medium text-outline">antes de salvar</span>
+          </div>
           <LinhaDaConta rotulo="Valor final negociado" valor={formatarMoeda(conta.finalCent / 100)} />
           {usaCartao ? (
             <LinhaDaConta
@@ -433,7 +440,7 @@ export function FormularioVenda({
               negativa
             />
           ) : null}
-          <div className="border-t border-card-border pt-2">
+          <div className="border-t border-card-border pt-1.5">
             <LinhaDaConta
               rotulo="Líquido para a clínica"
               valor={conta.liquidoCent === null ? "—" : formatarMoeda(conta.liquidoCent / 100)}
@@ -441,7 +448,7 @@ export function FormularioVenda({
             />
           </div>
           {usaCartao && taxaEscolhida && taxaEscolhida.parcelas > 1 ? (
-            <p className="text-xs text-outline">
+            <p className="px-2.5 pt-1 break-words text-xs leading-5 text-outline">
               A paciente parcela em {taxaEscolhida.parcelas}x; a operadora antecipa e a
               clínica recebe <strong>um único repasse</strong> — a taxa já inclui a
               antecipação.
@@ -455,13 +462,13 @@ export function FormularioVenda({
         titulo="Recebimento"
         descricao="A venda gera um recebimento só, pelo valor líquido."
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <div
             role="radiogroup"
             aria-label="Situação do recebimento"
             aria-invalid={erros.situacao_inicial ? true : undefined}
             aria-describedby={erros.situacao_inicial ? "situacao_inicial-erro" : undefined}
-            className="flex flex-wrap gap-3"
+            className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3"
           >
             {(
               [
@@ -473,10 +480,10 @@ export function FormularioVenda({
                 key={valor}
                 className={cn(
                   // O rádio é sr-only: o foco do teclado aparece no rótulo.
-                  "flex cursor-pointer items-center gap-2 rounded-[var(--radius-controle)] border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary",
+                  "flex min-h-10 min-w-0 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-controle)] border px-3 py-2 text-center text-sm font-medium transition-[transform,background-color,border-color,box-shadow] duration-180 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary sm:px-4",
                   situacaoInicial === valor
-                    ? "border-primary bg-secondary-fixed text-primary"
-                    : "border-card-border bg-surface text-on-surface-variant hover:border-primary",
+                    ? "border-primary bg-secondary-fixed text-primary shadow-[0_10px_22px_-18px_rgba(8,84,160,.42)]"
+                    : "border-card-border bg-surface text-on-surface-variant hover:-translate-y-0.5 hover:border-primary hover:bg-selecao",
                 )}
               >
                 <input
@@ -487,13 +494,13 @@ export function FormularioVenda({
                   onChange={() => setSituacaoInicial(valor)}
                   className="sr-only"
                 />
-                {rotulo}
+                <span className="min-w-0 break-words">{rotulo}</span>
               </label>
             ))}
           </div>
 
           {erros.situacao_inicial ? (
-            <p id="situacao_inicial-erro" role="alert" className="text-xs text-error">
+            <p id="situacao_inicial-erro" role="alert" className="break-words text-xs leading-5 text-error">
               {erros.situacao_inicial}
             </p>
           ) : null}
@@ -546,11 +553,11 @@ export function FormularioVenda({
         />
       </Campo>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
+      <div className="grid min-w-0 grid-cols-1 gap-2 border-t border-card-border pt-6 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
         <BotaoSalvar />
         <Link
           href="/financeiro/vendas"
-          className="inline-flex h-11 items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-controle)] px-6 text-sm font-medium text-on-surface-variant transition-[background-color,color] hover:bg-surface-container-low hover:text-primary sm:w-auto"
         >
           Cancelar
         </Link>
